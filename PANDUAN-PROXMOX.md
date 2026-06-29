@@ -27,7 +27,7 @@ Di Proxmox web UI:
 git init
 git add .
 git commit -m "Initial commit SMK Al-Munawwir"
-git remote add origin https://github.com/AKUN_ANDA/smk-almunawwir.git
+git remote add origin https://github.com/AnamScout02/smk-almunawwir.git
 git push -u origin main
 ```
 
