@@ -14,7 +14,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default async function AdminStudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const { id } = await params;
 
   const student = await prisma.student.findUnique({

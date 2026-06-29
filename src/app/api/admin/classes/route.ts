@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const classes = await prisma.class.findMany({
       include: {
         major: true,
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const body = await req.json();
     const cls = await prisma.class.create({
       data: {

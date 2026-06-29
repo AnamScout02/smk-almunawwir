@@ -7,7 +7,7 @@ import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 
 export default async function AdminDashboard() {
-  const session = await verifyRole(["ADMIN"]);
+  const session = await verifyRole(["ADMIN", "TAS"]);
 
   const [userCount, studentCount, teacherCount, classCount, admissionCount, admissionWawancara, messageUnread, newsCount] = await Promise.all([
     prisma.user.count(),

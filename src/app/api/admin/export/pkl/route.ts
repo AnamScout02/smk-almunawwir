@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
 
   const students = await prisma.student.findMany({
     include: {

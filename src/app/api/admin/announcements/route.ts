@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const items = await prisma.announcement.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const body = await req.json();
   const { title, content, targetRole, priority, active, startDate, endDate } = body;
   if (!title?.trim() || !content?.trim()) {

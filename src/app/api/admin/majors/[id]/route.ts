@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     const { name, code, description, icon } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     const major = await prisma.major.findUnique({
       where: { id },

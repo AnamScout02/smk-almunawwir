@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 export default async function AdminTeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const { id } = await params;
 
   const teacher = await prisma.teacher.findUnique({

@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     const { nip, subject, phone } = await req.json();
 

@@ -28,7 +28,7 @@ function s(val: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;

@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const body = await req.json();
   const { classId, teacherId, subject, day, startTime, endTime, room } = body;
   if (!classId || !subject || !day || !startTime || !endTime) {

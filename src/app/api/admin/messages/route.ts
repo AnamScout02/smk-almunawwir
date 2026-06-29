@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const items = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } });
     return Response.json(items);
   } catch { return Response.json({ error: "Gagal memuat" }, { status: 500 }); }
@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function PATCH() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     await prisma.contactMessage.updateMany({ where: { isRead: false }, data: { isRead: true } });
     return Response.json({ ok: true });
   } catch { return Response.json({ error: "Gagal" }, { status: 500 }); }

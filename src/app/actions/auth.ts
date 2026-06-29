@@ -45,6 +45,7 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
 
   const redirectMap: Record<string, string> = {
     ADMIN: "/dashboard/admin",
+    TAS: "/dashboard/admin",
     TEACHER: "/dashboard/teacher",
     STUDENT: "/dashboard/student",
   };

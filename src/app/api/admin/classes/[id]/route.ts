@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     const body = await req.json();
     const cls = await prisma.class.update({
@@ -28,7 +28,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     await prisma.class.delete({ where: { id } });
     return Response.json({ ok: true });

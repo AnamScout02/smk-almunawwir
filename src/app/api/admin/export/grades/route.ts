@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 
 export async function GET(req: Request) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get("classId") || undefined;
   const semester = searchParams.get("semester") || undefined;

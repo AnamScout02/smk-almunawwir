@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "TEACHER" | "STUDENT";
+export type Role = "ADMIN" | "TAS" | "TEACHER" | "STUDENT";
 
 export interface SessionPayload {
   userId: string;

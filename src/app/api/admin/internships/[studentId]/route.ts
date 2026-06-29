@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { studentId } = await params;
     const { company, position, supervisor, startDate, endDate, status } = await req.json();
 
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { studentId } = await params;
     await prisma.internship.delete({ where: { studentId } });
     return Response.json({ ok: true });

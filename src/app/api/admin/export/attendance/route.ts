@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
 
     const classId = req.nextUrl.searchParams.get("classId");
     const month = req.nextUrl.searchParams.get("month"); // format: "2025-06"

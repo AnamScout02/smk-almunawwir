@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import * as XLSX from "xlsx";
 
 export async function GET() {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
 
   const headers = [
     // Identitas utama

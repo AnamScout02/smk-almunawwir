@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const majors = await prisma.major.findMany({
       include: {
         _count: { select: { students: true, classes: true } },
@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const { name, code, description, icon } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
       return Response.json({ error: "Nama, kode, dan deskripsi wajib diisi." }, { status: 400 });

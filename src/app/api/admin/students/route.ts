@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const students = await prisma.student.findMany({
       include: {
         user: { select: { id: true, name: true, email: true } },

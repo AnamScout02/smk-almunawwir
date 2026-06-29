@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
 
     const admissions = await prisma.admission.findMany({
       orderBy: { createdAt: "desc" },

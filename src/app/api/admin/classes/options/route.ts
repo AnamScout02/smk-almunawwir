@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN"]);
+    await verifyRole(["ADMIN", "TAS"]);
     const [majors, teachers] = await Promise.all([
       prisma.major.findMany({ orderBy: { name: "asc" } }),
       prisma.teacher.findMany({

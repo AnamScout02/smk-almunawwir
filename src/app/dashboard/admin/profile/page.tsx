@@ -7,7 +7,7 @@ import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 
 export default async function AdminProfilePage() {
-  const session = await verifyRole(["ADMIN"]);
+  const session = await verifyRole(["ADMIN", "TAS"]);
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { avatar: true },

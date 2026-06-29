@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const { id } = await params;
   const body = await req.json();
   const {
