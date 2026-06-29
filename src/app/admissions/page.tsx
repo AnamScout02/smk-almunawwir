@@ -1,10 +1,7 @@
-"use client";
-import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AdmissionsForm from "@/components/sections/AdmissionsForm";
-import AdmissionsStatusCheck from "@/components/sections/AdmissionsStatusCheck";
-import { CheckCircle2, AlertCircle, Calendar, FileText, CreditCard, GraduationCap, Search } from "lucide-react";
+import AdmissionsTabSection from "@/components/sections/AdmissionsTabSection";
+import { CheckCircle2, AlertCircle, Calendar, FileText, CreditCard, GraduationCap } from "lucide-react";
 
 const steps = [
   { icon: FileText, title: "1. Isi Formulir Online", desc: "Lengkapi formulir pendaftaran dengan data yang benar dan valid." },
@@ -25,8 +22,6 @@ const requirements = [
 ];
 
 export default function AdmissionsPage() {
-  const [tab, setTab] = useState<"form" | "status">("form");
-
   return (
     <>
       <Navbar />
@@ -107,36 +102,8 @@ export default function AdmissionsPage() {
                 </div>
               </div>
 
-              {/* Kanan: Tab switcher */}
-              <div>
-                {/* Tab */}
-                <div className="flex gap-2 mb-5 p-1 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                  <button
-                    onClick={() => setTab("form")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-                      tab === "form"
-                        ? "bg-primary-700 text-white shadow-sm"
-                        : "text-gray-500 hover:text-primary-700"
-                    }`}
-                  >
-                    <FileText size={15} />
-                    Formulir Pendaftaran
-                  </button>
-                  <button
-                    onClick={() => setTab("status")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-                      tab === "status"
-                        ? "bg-primary-700 text-white shadow-sm"
-                        : "text-gray-500 hover:text-primary-700"
-                    }`}
-                  >
-                    <Search size={15} />
-                    Cek Status
-                  </button>
-                </div>
-
-                {tab === "form" ? <AdmissionsForm /> : <AdmissionsStatusCheck />}
-              </div>
+              {/* Kanan: Tab switcher + Form (client component) */}
+              <AdmissionsTabSection />
             </div>
           </div>
         </section>
