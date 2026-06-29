@@ -19,6 +19,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(STUDENT)
+  jabatan   String?
   avatar    String?
   teacher   Teacher?
   student   Student?
