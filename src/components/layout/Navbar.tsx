@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Globe } from "lucide-react";
@@ -47,9 +47,11 @@ export default function Navbar({ transparent = false }: NavbarProps) {
     if (saved === "en") setLang("en");
   }, []);
 
-  useEffect(() => {
+  // Inisialisasi scroll SEBELUM paint untuk menghindari flash transparent↔scrolled
+  useLayoutEffect(() => {
+    setScrolled(window.scrollY > 80);
     const onScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
