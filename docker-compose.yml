@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  # ===== DATABASE =====
+  postgres:
+    image: postgres:16-alpine
+    container_name: smk_almunawwir_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smk_almunawwir
+      POSTGRES_USER: smk_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smk_secure_password_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smk_user -d smk_almunawwir"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== NEXT.JS APP =====
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smk_almunawwir_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-smk_secure_password_2026}@postgres:5432/smk_almunawwir
+      SESSION_SECRET: ${SESSION_SECRET:-smk-almunawwir-iibs-secret-change-in-production-2026}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SCHOOL_NAME: SMK Al-Munawwir IIBS
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ===== MIGRATE + SEED (jalankan sekali) =====
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smk_almunawwir_migrate
+    environment:
+      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-smk_secure_password_2026}@postgres:5432/smk_almunawwir
+    command: >
+      sh -c "npx prisma migrate deploy && npx ts-node prisma/seed.ts"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
