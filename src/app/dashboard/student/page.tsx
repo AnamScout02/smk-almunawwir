@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle, CalendarDays, UserCircle, Printer, Newspaper } from "lucide-react";
+import { BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle, CalendarDays, UserCircle, Printer, Newspaper, Bell } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 
@@ -16,7 +16,8 @@ const STATUS_COLOR: Record<string, string> = {
 export default async function StudentDashboard() {
   const session = await verifyRole(["STUDENT"]);
 
-  const [student, latestNews] = await Promise.all([
+  const now = new Date();
+  const [student, latestNews, announcements] = await Promise.all([
     prisma.student.findFirst({
       where: { user: { email: session.email } },
       include: {
@@ -32,6 +33,16 @@ export default async function StudentDashboard() {
       orderBy: { createdAt: "desc" },
       take: 3,
       select: { id: true, slug: true, title: true, category: true, createdAt: true },
+    }),
+    prisma.announcement.findMany({
+      where: {
+        active: true,
+        targetRole: { in: ["ALL", "STUDENT"] },
+        startDate: { lte: now },
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
+      },
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+      take: 5,
     }),
   ]);
 
@@ -61,7 +72,6 @@ export default async function StudentDashboard() {
   });
 
   // Absensi bulan ini
-  const now = new Date();
   const thisMonthAtt = attendance.filter(a => {
     const d = new Date(a.date);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -117,6 +127,28 @@ export default async function StudentDashboard() {
           </h2>
           <p className="text-gray-500 mt-1 text-sm">NIS: {student?.nis ?? "—"}</p>
         </div>
+
+        {/* Pengumuman */}
+        {announcements.length > 0 && (
+          <div className="space-y-2">
+            {announcements.map(ann => (
+              <div key={ann.id} className={`flex items-start gap-3 p-4 rounded-xl border ${
+                ann.priority === "URGENT"
+                  ? "bg-red-50 border-red-200"
+                  : "bg-amber-50 border-amber-100"
+              }`}>
+                <Bell size={16} className={`shrink-0 mt-0.5 ${ann.priority === "URGENT" ? "text-red-500" : "text-amber-600"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className={`font-semibold text-sm ${ann.priority === "URGENT" ? "text-red-800" : "text-amber-900"}`}>
+                    {ann.priority === "URGENT" && <span className="text-red-500 mr-1">[URGENT]</span>}
+                    {ann.title}
+                  </p>
+                  <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">{ann.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

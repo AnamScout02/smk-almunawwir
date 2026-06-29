@@ -78,6 +78,8 @@ const translations = {
     footer_links: [
       { name: "Tentang Kami", href: "/about" },
       { name: "Konsentrasi Keahlian", href: "/programs" },
+      { name: "Fasilitas", href: "/facilities" },
+      { name: "Ekstrakurikuler", href: "/extracurricular" },
       { name: "Pendaftaran (PPDB)", href: "/admissions" },
       { name: "Berita & Kegiatan", href: "/news" },
       { name: "Galeri", href: "/gallery" },
@@ -169,6 +171,8 @@ const translations = {
     footer_links: [
       { name: "About Us", href: "/about" },
       { name: "Areas of Expertise", href: "/programs" },
+      { name: "Facilities", href: "/facilities" },
+      { name: "Extracurricular", href: "/extracurricular" },
       { name: "Admission (PPDB)", href: "/admissions" },
       { name: "News & Activities", href: "/news" },
       { name: "Gallery", href: "/gallery" },

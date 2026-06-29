@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, Users, MessageSquare, LogOut, Menu, X,
-  Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2,
+  Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
@@ -23,6 +23,7 @@ const menuItems = [
   { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
   { href: "/dashboard/admin/users", label: "Akun Pengguna", icon: Settings, badge: 0 },
   { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" },
+  { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, badge: 0 },
   { href: "/dashboard/admin/content", label: "Konten Halaman", icon: FileText, badge: 0 },
   { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
   { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },

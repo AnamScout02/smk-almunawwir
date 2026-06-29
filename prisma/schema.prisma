@@ -180,3 +180,16 @@ model SiteSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model Announcement {
+  id         String    @id @default(cuid())
+  title      String
+  content    String
+  targetRole String    @default("ALL") // ALL | STUDENT | TEACHER | ADMIN
+  priority   String    @default("NORMAL") // NORMAL | URGENT
+  active     Boolean   @default(true)
+  startDate  DateTime  @default(now())
+  endDate    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}

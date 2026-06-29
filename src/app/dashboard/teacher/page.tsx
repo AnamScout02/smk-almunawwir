@@ -2,13 +2,14 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { Users, BookOpen, ClipboardList, CheckSquare } from "lucide-react";
+import { Users, BookOpen, ClipboardList, CheckSquare, Bell } from "lucide-react";
 import Link from "next/link";
 
 export default async function TeacherDashboard() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
 
-  const teacher = await prisma.teacher.findFirst({
+  const now = new Date();
+  const [teacher, announcements] = await Promise.all([prisma.teacher.findFirst({
     where: { user: { email: session.email } },
     include: {
       homeroomOf: {
@@ -20,7 +21,16 @@ export default async function TeacherDashboard() {
       grades: { orderBy: { createdAt: "desc" }, take: 5 },
       _count: { select: { grades: true } },
     },
-  });
+  }), prisma.announcement.findMany({
+    where: {
+      active: true,
+      targetRole: { in: ["ALL", "TEACHER"] },
+      startDate: { lte: now },
+      OR: [{ endDate: null }, { endDate: { gte: now } }],
+    },
+    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+    take: 5,
+  })]);
 
   const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
   const totalGradesCount = teacher?._count?.grades ?? 0;
@@ -33,6 +43,28 @@ export default async function TeacherDashboard() {
         <h2 className="font-heading text-3xl font-bold text-primary-900">Halo, {session.name.split(" ")[0]}!</h2>
         <p className="text-gray-500 mt-1 text-sm">Mata Pelajaran: {teacher?.subject ?? "—"} · NIP: {teacher?.nip ?? "—"}</p>
       </div>
+
+      {/* Pengumuman */}
+      {announcements.length > 0 && (
+        <div className="mb-6 space-y-2">
+          {announcements.map(ann => (
+            <div key={ann.id} className={`flex items-start gap-3 p-4 rounded-xl border ${
+              ann.priority === "URGENT"
+                ? "bg-red-50 border-red-200"
+                : "bg-amber-50 border-amber-100"
+            }`}>
+              <Bell size={16} className={`shrink-0 mt-0.5 ${ann.priority === "URGENT" ? "text-red-500" : "text-amber-600"}`} />
+              <div>
+                <p className={`font-semibold text-sm ${ann.priority === "URGENT" ? "text-red-800" : "text-amber-900"}`}>
+                  {ann.priority === "URGENT" && <span className="text-red-500 mr-1">[URGENT]</span>}
+                  {ann.title}
+                </p>
+                <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">{ann.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
