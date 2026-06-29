@@ -34,6 +34,7 @@ model Teacher {
   phone      String?
   grades     Grade[]
   homeroomOf Class[]
+  schedules  Schedule[]
 }
 
 model Major {
@@ -53,8 +54,9 @@ model Class {
   majorId    String
   major      Major     @relation(fields: [majorId], references: [id])
   homeroomId String?
-  homeroom   Teacher?  @relation(fields: [homeroomId], references: [id])
+  homeroom   Teacher?   @relation(fields: [homeroomId], references: [id])
   students   Student[]
+  schedules  Schedule[]
 }
 
 model Student {
@@ -179,6 +181,20 @@ model SiteSetting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  subject   String
+  day       String   // SENIN | SELASA | RABU | KAMIS | JUMAT | SABTU
+  startTime String   // "07:00"
+  endTime   String   // "08:30"
+  room      String?
+  createdAt DateTime @default(now())
 }
 
 model Announcement {

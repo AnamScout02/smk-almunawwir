@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, UserCircle, Mail, IdCard, BookOpen, School } from "lucide-react";
+import { ArrowLeft, Mail, IdCard, BookOpen, School } from "lucide-react";
 import Link from "next/link";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import AvatarUpload from "@/components/shared/AvatarUpload";
 
 export default async function StudentProfilePage() {
   const session = await verifyRole(["STUDENT"]);
@@ -12,7 +13,7 @@ export default async function StudentProfilePage() {
   const student = await prisma.student.findFirst({
     where: { user: { email: session.email } },
     include: {
-      user: { select: { name: true, email: true } },
+      user: { select: { name: true, email: true, avatar: true } },
       class: { select: { name: true, grade: true } },
       major: { select: { name: true, code: true } },
     },
@@ -34,14 +35,9 @@ export default async function StudentProfilePage() {
       <div className="px-6 md:px-8 py-8 max-w-2xl mx-auto space-y-6">
         {/* Info profil */}
         <div className="bg-white rounded-2xl border shadow-sm p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
-              <UserCircle size={36} className="text-primary-700" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-bold text-primary-900">{session.name}</h2>
-              <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-0.5 rounded-full">Siswa</span>
-            </div>
+          <div className="flex items-center justify-between mb-6">
+            <AvatarUpload currentAvatar={student?.user.avatar} name={session.name} />
+            <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-1 rounded-full">Siswa</span>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4 text-sm">

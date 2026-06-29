@@ -1,11 +1,17 @@
 export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
-import { UserCircle, Mail, ShieldCheck } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { Mail, ShieldCheck } from "lucide-react";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import AvatarUpload from "@/components/shared/AvatarUpload";
 
 export default async function AdminProfilePage() {
   const session = await verifyRole(["ADMIN"]);
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { avatar: true },
+  });
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-2xl mx-auto">
@@ -16,19 +22,13 @@ export default async function AdminProfilePage() {
 
       {/* Info profil */}
       <div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
-            <UserCircle size={36} className="text-primary-700" />
-          </div>
-          <div>
-            <h2 className="font-heading text-xl font-bold text-primary-900">{session.name}</h2>
-            <span className="text-xs bg-gold/20 text-amber-700 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 w-fit mt-1">
-              <ShieldCheck size={11} /> Administrator
-            </span>
-          </div>
+        <div className="flex items-center justify-between mb-5">
+          <AvatarUpload currentAvatar={user?.avatar} name={session.name} />
+          <span className="text-xs bg-gold/20 text-amber-700 font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+            <ShieldCheck size={11} /> Administrator
+          </span>
         </div>
-
-        <div className="flex items-start gap-3 text-sm">
+        <div className="flex items-start gap-3 text-sm pt-4 border-t border-gray-100">
           <Mail size={16} className="text-gray-400 mt-0.5 shrink-0" />
           <div>
             <p className="text-gray-400 text-xs">Email</p>

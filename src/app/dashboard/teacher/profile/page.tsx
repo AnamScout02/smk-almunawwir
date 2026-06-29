@@ -2,8 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { UserCircle, Mail, BookOpen, IdCard, Phone } from "lucide-react";
+import { Mail, BookOpen, IdCard, Phone } from "lucide-react";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import AvatarUpload from "@/components/shared/AvatarUpload";
 
 export default async function TeacherProfilePage() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -11,7 +12,7 @@ export default async function TeacherProfilePage() {
   const teacher = await prisma.teacher.findFirst({
     where: { user: { email: session.email } },
     include: {
-      user: { select: { name: true, email: true, role: true } },
+      user: { select: { name: true, email: true, role: true, avatar: true } },
       homeroomOf: { select: { name: true, grade: true } },
     },
   });
@@ -25,14 +26,9 @@ export default async function TeacherProfilePage() {
 
       {/* Info profil */}
       <div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
-            <UserCircle size={36} className="text-primary-700" />
-          </div>
-          <div>
-            <h2 className="font-heading text-xl font-bold text-primary-900">{session.name}</h2>
-            <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-0.5 rounded-full">Guru</span>
-          </div>
+        <div className="flex items-center justify-between mb-6">
+          <AvatarUpload currentAvatar={teacher?.user.avatar} name={session.name} />
+          <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-1 rounded-full">Guru</span>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 text-sm">

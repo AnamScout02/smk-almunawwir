@@ -2,14 +2,14 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { Users, BookOpen, ClipboardList, CheckSquare, Bell } from "lucide-react";
+import { Users, BookOpen, ClipboardList, CheckSquare, Bell, Calendar } from "lucide-react";
 import Link from "next/link";
 
 export default async function TeacherDashboard() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
 
   const now = new Date();
-  const [teacher, announcements] = await Promise.all([prisma.teacher.findFirst({
+  const [teacher, announcements, teachingSchedules] = await Promise.all([prisma.teacher.findFirst({
     where: { user: { email: session.email } },
     include: {
       homeroomOf: {
@@ -30,6 +30,10 @@ export default async function TeacherDashboard() {
     },
     orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     take: 5,
+  }), prisma.schedule.findMany({
+    where: { teacher: { user: { email: session.email } } },
+    include: { class: { include: { major: true } } },
+    orderBy: [{ day: "asc" }, { startTime: "asc" }],
   })]);
 
   const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
@@ -116,6 +120,44 @@ export default async function TeacherDashboard() {
           <p className="text-gray-400 text-sm text-center py-8">Anda belum menjadi wali kelas manapun.</p>
         )}
       </div>
+
+      {/* Jadwal Mengajar */}
+      {teachingSchedules.length > 0 && (() => {
+        const DAYS = ["SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU"];
+        const DAY_LABEL: Record<string, string> = { SENIN:"Senin", SELASA:"Selasa", RABU:"Rabu", KAMIS:"Kamis", JUMAT:"Jumat", SABTU:"Sabtu" };
+        const todayDay = ["MINGGU","SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU"][now.getDay()];
+        return (
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <h3 className="font-heading font-semibold text-xl text-primary-900 mb-5 flex items-center gap-2">
+              <Calendar size={18} className="text-primary-700" /> Jadwal Mengajar
+            </h3>
+            <div className="space-y-3">
+              {DAYS.filter(d => teachingSchedules.some(s => s.day === d)).map(day => {
+                const ds = teachingSchedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+                const isToday = day === todayDay;
+                return (
+                  <div key={day} className={`rounded-xl overflow-hidden border ${isToday ? "border-primary-300" : "border-gray-100"}`}>
+                    <div className={`px-4 py-2 ${isToday ? "bg-primary-700 text-white" : "bg-gray-50 text-gray-600"} flex items-center gap-2`}>
+                      <span className="font-semibold text-sm">{DAY_LABEL[day]}</span>
+                      {isToday && <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Hari ini</span>}
+                    </div>
+                    <div className="divide-y divide-gray-50">
+                      {ds.map(s => (
+                        <div key={s.id} className="px-4 py-2.5 flex items-center gap-3 text-sm">
+                          <span className="font-mono text-xs text-primary-700 font-bold w-24 shrink-0">{s.startTime}–{s.endTime}</span>
+                          <span className="font-medium text-gray-800 flex-1">{s.subject}</span>
+                          <span className="text-xs bg-primary-50 text-primary-700 px-2.5 py-0.5 rounded-full font-semibold">{s.class.name}</span>
+                          {s.room && <span className="text-xs text-gray-400 hidden sm:block">{s.room}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Nilai Terakhir */}
       {teacher?.grades && teacher.grades.length > 0 && (

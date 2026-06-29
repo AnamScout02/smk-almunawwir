@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle, CalendarDays, UserCircle, Printer, Newspaper, Bell } from "lucide-react";
+import { BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle, CalendarDays, UserCircle, Printer, Newspaper, Bell, Calendar } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 
@@ -17,17 +17,18 @@ export default async function StudentDashboard() {
   const session = await verifyRole(["STUDENT"]);
 
   const now = new Date();
-  const [student, latestNews, announcements] = await Promise.all([
-    prisma.student.findFirst({
-      where: { user: { email: session.email } },
-      include: {
-        grades: { orderBy: { createdAt: "desc" } },
-        attendance: { orderBy: { date: "desc" } },
-        internship: true,
-        class: true,
-        major: true,
-      },
-    }),
+  const student = await prisma.student.findFirst({
+    where: { user: { email: session.email } },
+    include: {
+      grades: { orderBy: { createdAt: "desc" } },
+      attendance: { orderBy: { date: "desc" } },
+      internship: true,
+      class: true,
+      major: true,
+    },
+  });
+
+  const [latestNews, announcements, schedules] = await Promise.all([
     prisma.news.findMany({
       where: { published: true },
       orderBy: { createdAt: "desc" },
@@ -44,6 +45,13 @@ export default async function StudentDashboard() {
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       take: 5,
     }),
+    student?.classId
+      ? prisma.schedule.findMany({
+          where: { classId: student.classId },
+          include: { teacher: { include: { user: { select: { name: true } } } } },
+          orderBy: [{ day: "asc" }, { startTime: "asc" }],
+        })
+      : Promise.resolve([]),
   ]);
 
   const grades = student?.grades ?? [];
@@ -307,6 +315,44 @@ export default async function StudentDashboard() {
             </div>
           </div>
         )}
+
+        {/* Jadwal Pelajaran */}
+        {schedules.length > 0 && (() => {
+          const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
+          const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
+          const todayDay = ["MINGGU","SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU"][now.getDay()];
+          return (
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h3 className="font-heading font-semibold text-xl text-navy mb-5 flex items-center gap-2">
+                <Calendar size={18} className="text-primary-700" /> Jadwal Pelajaran
+              </h3>
+              <div className="space-y-3">
+                {DAYS.filter(d => schedules.some(s => s.day === d)).map(day => {
+                  const daySchedules = schedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+                  const isToday = day === todayDay;
+                  return (
+                    <div key={day} className={`rounded-xl overflow-hidden border ${isToday ? "border-primary-300 ring-1 ring-primary-200" : "border-gray-100"}`}>
+                      <div className={`px-4 py-2 flex items-center gap-2 ${isToday ? "bg-primary-700 text-white" : "bg-gray-50 text-gray-600"}`}>
+                        <span className="font-semibold text-sm">{DAY_LABEL[day]}</span>
+                        {isToday && <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Hari ini</span>}
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {daySchedules.map(s => (
+                          <div key={s.id} className="px-4 py-2.5 flex items-center gap-3 text-sm">
+                            <span className="font-mono text-xs text-primary-700 font-bold w-24 shrink-0">{s.startTime}–{s.endTime}</span>
+                            <span className="font-medium text-gray-800 flex-1">{s.subject}</span>
+                            {s.room && <span className="text-xs text-gray-400 hidden sm:block">{s.room}</span>}
+                            {s.teacher && <span className="text-xs text-gray-400 hidden md:block">{s.teacher.user.name}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* PKL Info */}
         {student?.internship && (
