@@ -36,8 +36,7 @@ if [ -d "$APP_DIR" ]; then
     cd "$APP_DIR" && git pull
 else
     echo "📂 Cloning project..."
-    # Ganti URL ini dengan URL git repo Anda
-    git clone https://github.com/AKUN_ANDA/smk-almunawwir.git "$APP_DIR"
+    git clone https://github.com/AnamScout02/smk-almunawwir.git "$APP_DIR"
     cd "$APP_DIR"
 fi
 
