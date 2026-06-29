@@ -25,6 +25,8 @@ const menuItems = [
   { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" },
   { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, badge: 0 },
   { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, badge: 0 },
+  { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, badge: 0 },
+  { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, badge: 0 },
   { href: "/dashboard/admin/content", label: "Konten Halaman", icon: FileText, badge: 0 },
   { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
   { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },

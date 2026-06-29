@@ -26,15 +26,26 @@ model User {
 }
 
 model Teacher {
-  id         String    @id @default(cuid())
-  userId     String    @unique
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nip        String    @unique
-  subject    String
-  phone      String?
-  grades     Grade[]
-  homeroomOf Class[]
-  schedules  Schedule[]
+  id             String     @id @default(cuid())
+  userId         String     @unique
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nip            String     @unique
+  subject        String
+  phone          String?
+  // Buku Induk fields
+  birthPlace     String?
+  birthDate      DateTime?
+  gender         String?    // L | P
+  religion       String?
+  address        String?
+  education      String?    // S1 | S2 | D3 | dll.
+  position       String?    // Guru Tetap | GTT | PNS | Honorer
+  startDate      DateTime?
+  teacherStatus  String?    @default("AKTIF")  // AKTIF | PENSIUN | KELUAR
+  teacherNotes   String?
+  grades         Grade[]
+  homeroomOf     Class[]
+  schedules      Schedule[]
 }
 
 model Major {
@@ -60,18 +71,35 @@ model Class {
 }
 
 model Student {
-  id          String       @id @default(cuid())
-  userId      String       @unique
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nis         String       @unique
-  nisn        String?      @unique
-  classId     String?
-  class       Class?       @relation(fields: [classId], references: [id])
-  majorId     String
-  major       Major        @relation(fields: [majorId], references: [id])
-  grades      Grade[]
-  attendance  Attendance[]
-  internship  Internship?
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nis            String       @unique
+  nisn           String?      @unique
+  noInduk        String?      @unique
+  classId        String?
+  class          Class?       @relation(fields: [classId], references: [id])
+  majorId        String
+  major          Major        @relation(fields: [majorId], references: [id])
+  // Buku Induk fields (basic - indexed)
+  birthPlace     String?
+  birthDate      DateTime?
+  gender         String?      // L | P
+  religion       String?
+  address        String?
+  parentName     String?
+  parentPhone    String?
+  parentJob      String?
+  previousSchool String?
+  enrollYear     Int?
+  studentStatus  String?      @default("AKTIF")  // AKTIF | LULUS | KELUAR | PINDAH
+  exitDate       DateTime?
+  studentNotes   String?
+  // Buku Induk extended (all sections A-L stored as JSON)
+  bukuIndukData  Json?
+  grades         Grade[]
+  attendance     Attendance[]
+  internship     Internship?
 }
 
 model Grade {

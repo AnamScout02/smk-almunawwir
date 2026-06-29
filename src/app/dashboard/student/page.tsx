@@ -264,7 +264,7 @@ export default async function StudentDashboard() {
                                     {avg.toFixed(1)}
                                   </span>
                                   {avg < 75 && (
-                                    <AlertTriangle size={12} className="inline ml-1 text-amber-500" title="Di bawah KKM" />
+                                    <AlertTriangle size={12} className="inline ml-1 text-amber-500" aria-label="Di bawah KKM" />
                                   )}
                                 </td>
                               </tr>
