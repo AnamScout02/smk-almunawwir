@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useState, useEffect } from "react";
-import { Download, FileSpreadsheet, ClipboardList, Users, CalendarDays, BookOpen, Loader2, Briefcase } from "lucide-react";
+import { Download, FileSpreadsheet, ClipboardList, Users, CalendarDays, BookOpen, Loader2, Briefcase, BarChart2 } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface ClassItem { id: string; name: string; grade: number }
 
@@ -44,15 +45,16 @@ export default function AdminReportsPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-primary-900">Laporan & Ekspor</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Unduh data dalam format CSV untuk diolah di Excel atau Google Sheets</p>
-      </div>
+      <PageHeader
+        icon={<BarChart2 size={22} />}
+        title="Laporan & Ekspor"
+        description="Unduh data dalam format CSV untuk diolah di Excel atau Google Sheets"
+      />
 
       <div className="space-y-4">
         {/* Ekspor Pendaftaran */}
-        <div className="bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
             <ClipboardList size={20} className="text-amber-600" />
           </div>
           <div className="flex-1">
@@ -67,8 +69,8 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Ekspor Siswa */}
-        <div className="bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
             <Users size={20} className="text-emerald-600" />
           </div>
           <div className="flex-1">
@@ -83,8 +85,8 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Ekspor Absensi */}
-        <div className="bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
             <CalendarDays size={20} className="text-blue-600" />
           </div>
           <div className="flex-1">
@@ -92,12 +94,12 @@ export default function AdminReportsPage() {
             <p className="text-gray-400 text-sm mt-0.5">Rekap absensi harian seluruh siswa — tanggal, nama, kelas, dan status kehadiran.</p>
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Filter bulan (opsional):</label>
+                <label className="label-field">Filter bulan (opsional):</label>
                 <input type="month" value={attMonth} onChange={e => setAttMonth(e.target.value)}
-                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-primary-500 outline-none" />
+                  className="input-field w-auto" />
               </div>
               <button onClick={() => { window.location.href = "/api/admin/export/attendance"; }}
-                className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl px-3 py-2 transition">
+                className="text-xs text-gray-500 hover:text-primary-700 border border-gray-200 hover:border-primary-200 rounded-xl px-3 py-2 transition-colors">
                 Semua Bulan
               </button>
             </div>
@@ -110,8 +112,8 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Ekspor Nilai */}
-        <div className="bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
             <BookOpen size={20} className="text-purple-600" />
           </div>
           <div className="flex-1">
@@ -124,17 +126,17 @@ export default function AdminReportsPage() {
             ) : (
               <div className="mt-3 flex flex-wrap gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Filter kelas (opsional):</label>
+                  <label className="label-field">Filter kelas (opsional):</label>
                   <select value={gradeClass} onChange={e => setGradeClass(e.target.value)}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-primary-500 outline-none">
+                    className="input-field w-auto">
                     <option value="">Semua Kelas</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Filter semester (opsional):</label>
+                  <label className="label-field">Filter semester (opsional):</label>
                   <select value={gradeSemester} onChange={e => setGradeSemester(e.target.value)}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-primary-500 outline-none">
+                    className="input-field w-auto">
                     <option value="">Semua Semester</option>
                     {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -150,8 +152,8 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Ekspor PKL */}
-        <div className="bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
             <Briefcase size={20} className="text-rose-600" />
           </div>
           <div className="flex-1">

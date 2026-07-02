@@ -48,7 +48,7 @@ export default function AttendanceSummaryPage() {
   }, [selectedClass]);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
@@ -63,7 +63,7 @@ export default function AttendanceSummaryPage() {
         <div className="mb-4 flex items-center gap-3">
           <label className="text-sm font-semibold text-gray-600">Kelas:</label>
           <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-primary-500 outline-none">
+            className="input-field w-auto">
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
@@ -74,60 +74,61 @@ export default function AttendanceSummaryPage() {
           <Loader2 size={22} className="animate-spin mr-2" /> Memuat data...
         </div>
       ) : !data || data.students.length === 0 ? (
-        <div className="bg-white rounded-2xl border p-12 text-center text-gray-400">
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
           <p>Tidak ada data absensi untuk kelas ini.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-          <div className="px-5 py-3 bg-gray-50 border-b flex items-center justify-between">
-            <p className="text-sm text-gray-500 font-medium">{data.students.length} siswa · total {data.students[0]?.total ?? 0} hari tercatat</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 flex items-center justify-between"
+            style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
+            <p className="text-sm text-white font-semibold">{data.students.length} siswa · {data.students[0]?.total ?? 0} hari tercatat</p>
             <div className="flex gap-3 text-xs font-semibold">
-              <span className="text-emerald-600">Hadir</span>
-              <span className="text-blue-600">Izin</span>
-              <span className="text-amber-600">Sakit</span>
-              <span className="text-red-500">Alpha</span>
+              <span className="text-emerald-300">Hadir</span>
+              <span className="text-blue-300">Izin</span>
+              <span className="text-amber-300">Sakit</span>
+              <span className="text-red-300">Alpha</span>
             </div>
           </div>
-          <table className="w-full text-sm">
-            <thead className="border-b bg-gray-50/50">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium">#</th>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium">Nama Siswa</th>
-                <th className="text-center px-4 py-3 text-emerald-600 font-medium">H</th>
-                <th className="text-center px-4 py-3 text-blue-600 font-medium">I</th>
-                <th className="text-center px-4 py-3 text-amber-600 font-medium">S</th>
-                <th className="text-center px-4 py-3 text-red-500 font-medium">A</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium">%</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium">Status</th>
+                <th>#</th>
+                <th>Nama Siswa</th>
+                <th className="text-center">H</th>
+                <th className="text-center">I</th>
+                <th className="text-center">S</th>
+                <th className="text-center">A</th>
+                <th className="text-center">%</th>
+                <th className="text-center">Status</th>
               </tr>
             </thead>
             <tbody>
               {data.students.map((s, i) => (
-                <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
-                  <td className="px-5 py-3">
+                <tr key={s.id}>
+                  <td className="text-gray-400 text-xs">{i + 1}</td>
+                  <td>
                     <p className="font-semibold text-primary-900">{s.name}</p>
                     <p className="text-gray-400 text-xs font-mono">{s.nis}</p>
                   </td>
-                  <td className="px-4 py-3 text-center font-bold text-emerald-600">{s.HADIR}</td>
-                  <td className="px-4 py-3 text-center font-bold text-blue-600">{s.IZIN}</td>
-                  <td className="px-4 py-3 text-center font-bold text-amber-600">{s.SAKIT}</td>
-                  <td className="px-4 py-3 text-center font-bold text-red-500">{s.ALPHA}</td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="text-center font-bold text-emerald-600">{s.HADIR}</td>
+                  <td className="text-center font-bold text-blue-600">{s.IZIN}</td>
+                  <td className="text-center font-bold text-amber-600">{s.SAKIT}</td>
+                  <td className="text-center font-bold text-red-500">{s.ALPHA}</td>
+                  <td className="text-center">
                     <span className={`font-bold ${s.pct >= 80 ? "text-emerald-600" : s.pct >= 70 ? "text-amber-600" : "text-red-500"}`}>
                       {s.pct}%
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="text-center">
                     {s.pct >= 80 ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-                        <CheckCircle2 size={12} /> Baik
+                      <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
+                        <CheckCircle2 size={11} /> Baik
                       </span>
                     ) : s.pct >= 70 ? (
-                      <span className="text-xs text-amber-600 font-semibold">Perhatikan</span>
+                      <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">Perhatikan</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-red-500 font-semibold">
-                        <AlertTriangle size={12} /> Rendah
+                      <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
+                        <AlertTriangle size={11} /> Rendah
                       </span>
                     )}
                   </td>

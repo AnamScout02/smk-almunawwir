@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ClipboardList, ChevronRight, Users, TrendingUp, AlertTriangle, Download } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 export default async function GradesPage() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -44,19 +45,20 @@ export default async function GradesPage() {
   });
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto">
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Nilai Siswa</h1>
-          <p className="text-gray-500 text-sm mt-1">Pilih kelas untuk input nilai, atau lihat rekap di bawah.</p>
-        </div>
-        {(teacher?.homeroomOf.length ?? 0) > 0 && (
-          <a href="/api/teacher/export/grades"
-            className="shrink-0 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> Export CSV
-          </a>
-        )}
-      </div>
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<ClipboardList size={22} />}
+        title="Nilai Siswa"
+        description="Pilih kelas untuk input nilai, atau lihat rekap di bawah."
+        actions={
+          (teacher?.homeroomOf.length ?? 0) > 0 ? (
+            <a href="/api/teacher/export/grades"
+              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+              <Download size={15} /> Export CSV
+            </a>
+          ) : undefined
+        }
+      />
 
       {/* Kelas wali */}
       <div className="mb-8">
@@ -65,8 +67,8 @@ export default async function GradesPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teacher.homeroomOf.map((cls) => (
               <Link key={cls.id} href={`/dashboard/teacher/grades/${cls.id}`}
-                className="group bg-white rounded-2xl border shadow-sm p-5 hover:border-primary-300 hover:shadow-md transition-all flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
+                className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
                   <ClipboardList size={20} className="text-primary-700" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -91,27 +93,27 @@ export default async function GradesPage() {
       {avgBySubject.length > 0 && (
         <div className="mb-8">
           <h2 className="font-heading font-semibold text-lg text-primary-800 mb-4">Rekap Nilai per Mata Pelajaran</h2>
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Mata Pelajaran</th>
-                  <th className="text-center px-5 py-3 text-gray-500 font-medium">Jumlah Nilai</th>
-                  <th className="text-center px-5 py-3 text-gray-500 font-medium">Rata-rata</th>
-                  <th className="text-center px-5 py-3 text-gray-500 font-medium">Di Bawah KKM</th>
+                  <th>Mata Pelajaran</th>
+                  <th className="text-center">Jumlah Nilai</th>
+                  <th className="text-center">Rata-rata</th>
+                  <th className="text-center">Di Bawah KKM</th>
                 </tr>
               </thead>
               <tbody>
                 {avgBySubject.map(({ subject, avg, count, below }) => (
-                  <tr key={subject} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-primary-900">{subject}</td>
-                    <td className="px-5 py-3 text-center text-gray-600">{count}</td>
-                    <td className="px-5 py-3 text-center">
+                  <tr key={subject}>
+                    <td className="font-medium text-primary-900">{subject}</td>
+                    <td className="text-center text-gray-600">{count}</td>
+                    <td className="text-center">
                       <span className={`font-bold ${Number(avg) >= 75 ? "text-emerald-600" : "text-red-500"}`}>
                         {avg}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="text-center">
                       {below > 0 ? (
                         <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
                           <AlertTriangle size={13} /> {below}
@@ -135,25 +137,25 @@ export default async function GradesPage() {
             <TrendingUp size={18} className="inline mr-2 text-primary-700" />
             Nilai Terakhir Diinput
           </h2>
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Siswa</th>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Kelas</th>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Mapel · Jenis</th>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Semester</th>
-                  <th className="text-right px-5 py-3 text-gray-500 font-medium">Nilai</th>
+                  <th>Siswa</th>
+                  <th>Kelas</th>
+                  <th>Mapel · Jenis</th>
+                  <th>Semester</th>
+                  <th className="text-right">Nilai</th>
                 </tr>
               </thead>
               <tbody>
                 {recentGrades.map((g) => (
-                  <tr key={g.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-primary-900">{g.student.user.name}</td>
-                    <td className="px-5 py-3 text-gray-500 text-xs">{g.student.class?.name ?? "—"}</td>
-                    <td className="px-5 py-3 text-gray-600">{g.subject} <span className="text-gray-400">· {g.type}</span></td>
-                    <td className="px-5 py-3 text-gray-500 text-xs">{g.semester}</td>
-                    <td className="px-5 py-3 text-right">
+                  <tr key={g.id}>
+                    <td className="font-medium text-primary-900">{g.student.user.name}</td>
+                    <td className="text-gray-500 text-xs">{g.student.class?.name ?? "—"}</td>
+                    <td className="text-gray-600">{g.subject} <span className="text-gray-400">· {g.type}</span></td>
+                    <td className="text-gray-500 text-xs">{g.semester}</td>
+                    <td className="text-right">
                       <span className={`font-bold ${g.score >= 75 ? "text-emerald-600" : "text-red-500"}`}>
                         {g.score}
                       </span>

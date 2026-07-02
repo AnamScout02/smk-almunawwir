@@ -18,17 +18,17 @@ export default async function TeacherProfilePage() {
   });
 
   return (
-    <div className="p-6 md:p-8 max-w-2xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-primary-900">Profil Saya</h1>
         <p className="text-gray-400 text-sm mt-0.5">Informasi akun dan data guru</p>
       </div>
 
       {/* Info profil */}
-      <div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <AvatarUpload currentAvatar={teacher?.user.avatar} name={session.name} />
-          <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-1 rounded-full">Guru</span>
+          <span className="text-xs bg-primary-50 text-primary-700 font-semibold px-2.5 py-1 rounded-full border border-primary-100">Guru</span>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 text-sm">
@@ -67,7 +67,7 @@ export default async function TeacherProfilePage() {
             <p className="text-xs text-gray-400 mb-2">Wali Kelas</p>
             <div className="flex flex-wrap gap-2">
               {teacher.homeroomOf.map(cls => (
-                <span key={cls.name} className="bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-xl">
+                <span key={cls.name} className="bg-primary-50 text-primary-700 border border-primary-100 text-xs font-semibold px-3 py-1.5 rounded-xl">
                   Kelas {cls.name}
                 </span>
               ))}
@@ -77,7 +77,7 @@ export default async function TeacherProfilePage() {
       </div>
 
       {/* Ganti password */}
-      <div className="bg-white rounded-2xl border shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
         <ChangePasswordForm />
       </div>

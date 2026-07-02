@@ -7,10 +7,10 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School } from "lucide-react";
 
 const STATUS_COLOR: Record<string, string> = {
-  HADIR: "bg-emerald-100 text-emerald-700",
-  IZIN:  "bg-blue-100 text-blue-700",
-  SAKIT: "bg-amber-100 text-amber-700",
-  ALPHA: "bg-red-100 text-red-600",
+  HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  IZIN:  "bg-blue-50 text-blue-700 border border-blue-200",
+  SAKIT: "bg-amber-50 text-amber-700 border border-amber-200",
+  ALPHA: "bg-red-50 text-red-600 border border-red-200",
 };
 
 export default async function AdminStudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,9 +54,9 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
       </div>
 
       {/* Info profil */}
-      <div className="bg-white rounded-2xl border shadow-sm p-5 mb-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
         <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
             <UserCircle size={28} className="text-primary-700" />
           </div>
           <div>
@@ -91,7 +91,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
       </div>
 
       {/* Rekap absensi */}
-      <div className="bg-white rounded-2xl border shadow-sm p-5 mb-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
         <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
           <CalendarDays size={16} className="text-primary-700" /> Kehadiran
         </h3>
@@ -99,41 +99,43 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
           {attSummary.map(({ status, count }) => (
             <div key={status} className={`rounded-xl p-3 text-center ${STATUS_COLOR[status]}`}>
               <p className="text-xl font-heading font-bold">{count}</p>
-              <p className="text-xs mt-0.5">{status}</p>
+              <p className="text-xs mt-0.5 font-semibold">{status}</p>
             </div>
           ))}
         </div>
         <p className="text-sm text-gray-500">Total: {totalDays} hari · Kehadiran: <strong>{presentPct}%</strong></p>
 
         {attendance.length > 0 && (
-          <div className="mt-4 max-h-48 overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium">Tanggal</th>
-                  <th className="text-center px-3 py-2 text-gray-500 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendance.slice(0, 30).map(a => (
-                  <tr key={a.id} className="border-b border-gray-50 last:border-0">
-                    <td className="px-3 py-2 text-gray-600">
-                      {new Date(a.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[a.status] ?? "bg-gray-100 text-gray-500"}`}>{a.status}</span>
-                    </td>
+          <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
+            <div className="max-h-48 overflow-y-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th className="text-left">Tanggal</th>
+                    <th className="text-center">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {attendance.slice(0, 30).map(a => (
+                    <tr key={a.id}>
+                      <td className="text-gray-600 text-xs">
+                        {new Date(a.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                      </td>
+                      <td className="text-center">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[a.status] ?? "bg-gray-50 text-gray-500 border border-gray-200"}`}>{a.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
       {/* Nilai */}
       {semesters.length > 0 && (
-        <div className="bg-white rounded-2xl border shadow-sm p-5 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
           <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
             <BookOpen size={16} className="text-primary-700" /> Nilai per Semester
           </h3>
@@ -144,16 +146,16 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
               return (
                 <div key={sem}>
                   <p className="font-semibold text-sm text-primary-800 mb-2">{sem}</p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
+                  <div className="overflow-x-auto rounded-xl border border-gray-100 overflow-hidden">
+                    <table className="data-table">
                       <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-3 py-2 text-left text-gray-500 font-medium">Mapel</th>
-                          <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">Tugas</th>
-                          <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">UH</th>
-                          <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">UTS</th>
-                          <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">UAS</th>
-                          <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">Rata-rata</th>
+                        <tr>
+                          <th className="text-left">Mapel</th>
+                          <th className="text-center">Tugas</th>
+                          <th className="text-center">UH</th>
+                          <th className="text-center">UTS</th>
+                          <th className="text-center">UAS</th>
+                          <th className="text-center">Rata-rata</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -166,13 +168,13 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
                             ? <span className={`font-semibold ${val >= 75 ? "text-emerald-700" : "text-red-600"}`}>{val}</span>
                             : <span className="text-gray-300">—</span>;
                           return (
-                            <tr key={subject} className="border-b border-gray-100 last:border-0">
-                              <td className="border border-gray-200 px-3 py-2 font-medium text-primary-900">{subject}</td>
-                              <td className="border border-gray-200 px-3 py-2 text-center">{cell(getScore("Tugas"))}</td>
-                              <td className="border border-gray-200 px-3 py-2 text-center">{cell(getScore("Ulangan Harian"))}</td>
-                              <td className="border border-gray-200 px-3 py-2 text-center">{cell(getScore("UTS"))}</td>
-                              <td className="border border-gray-200 px-3 py-2 text-center">{cell(getScore("UAS"))}</td>
-                              <td className="border border-gray-200 px-3 py-2 text-center">
+                            <tr key={subject}>
+                              <td className="font-medium text-primary-900">{subject}</td>
+                              <td className="text-center">{cell(getScore("Tugas"))}</td>
+                              <td className="text-center">{cell(getScore("Ulangan Harian"))}</td>
+                              <td className="text-center">{cell(getScore("UTS"))}</td>
+                              <td className="text-center">{cell(getScore("UAS"))}</td>
+                              <td className="text-center">
                                 {avg !== null ? <span className={`font-bold ${avg >= 75 ? "text-emerald-700" : "text-red-600"}`}>{avg.toFixed(1)}</span> : <span className="text-gray-300">—</span>}
                               </td>
                             </tr>
@@ -199,7 +201,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
             <div><span className="text-gray-400 text-xs block">Posisi</span><strong>{student.internship.position}</strong></div>
             <div><span className="text-gray-400 text-xs block">Supervisor</span><strong>{student.internship.supervisor}</strong></div>
             <div><span className="text-gray-400 text-xs block">Status</span>
-              <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${student.internship.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              <span className={`inline-flex font-semibold text-xs px-2.5 py-1 rounded-full border ${student.internship.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
                 {student.internship.status === "COMPLETED" ? "Selesai" : "Sedang PKL"}
               </span>
             </div>

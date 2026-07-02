@@ -20,7 +20,7 @@ export default async function StudentProfilePage() {
   });
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-gray-50" style={{ backgroundImage: "radial-gradient(circle, rgba(15,26,69,0.045) 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }}>
       <header className="bg-primary-900 text-white px-6 md:px-8 py-5 flex items-center gap-4">
         <Link href="/dashboard/student"
           className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
@@ -34,10 +34,10 @@ export default async function StudentProfilePage() {
 
       <div className="px-6 md:px-8 py-8 max-w-2xl mx-auto space-y-6">
         {/* Info profil */}
-        <div className="bg-white rounded-2xl border shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <AvatarUpload currentAvatar={student?.user.avatar} name={session.name} />
-            <span className="text-xs bg-primary-100 text-primary-700 font-semibold px-2.5 py-1 rounded-full">Siswa</span>
+            <span className="text-xs bg-primary-50 text-primary-700 font-semibold px-2.5 py-1 rounded-full border border-primary-100">Siswa</span>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4 text-sm">
@@ -82,7 +82,7 @@ export default async function StudentProfilePage() {
         </div>
 
         {/* Ganti password */}
-        <div className="bg-white rounded-2xl border shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
           <ChangePasswordForm />
         </div>

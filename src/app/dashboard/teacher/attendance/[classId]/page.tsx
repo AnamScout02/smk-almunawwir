@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface Student {
   id: string;
@@ -21,10 +22,10 @@ type AttendanceStatus = "HADIR" | "IZIN" | "SAKIT" | "ALPHA";
 const STATUSES: AttendanceStatus[] = ["HADIR", "IZIN", "SAKIT", "ALPHA"];
 
 const STATUS_COLOR: Record<AttendanceStatus, string> = {
-  HADIR: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  IZIN: "bg-blue-100 text-blue-700 border-blue-200",
-  SAKIT: "bg-amber-100 text-amber-700 border-amber-200",
-  ALPHA: "bg-red-100 text-red-600 border-red-200",
+  HADIR: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  IZIN: "bg-blue-50 text-blue-700 border-blue-200",
+  SAKIT: "bg-amber-50 text-amber-700 border-amber-200",
+  ALPHA: "bg-red-50 text-red-600 border-red-200",
 };
 
 export default function AbsensiPage() {
@@ -88,7 +89,7 @@ export default function AbsensiPage() {
   const summary = STATUSES.map(s => ({ label: s, count: Object.values(attendance).filter(v => v === s).length }));
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
@@ -102,10 +103,10 @@ export default function AbsensiPage() {
       </div>
 
       {/* Tanggal + summary */}
-      <div className="bg-white rounded-2xl shadow-sm border p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-field !w-auto" />
+          <DatePicker value={date} onChange={setDate} />
         </div>
         <div className="flex gap-3 text-sm">
           {summary.map(s => (
@@ -117,10 +118,11 @@ export default function AbsensiPage() {
       </div>
 
       {/* Tabel absensi */}
-      <div className="bg-white rounded-2xl shadow-sm border overflow-hidden mb-5">
-        <div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
-          <p className="text-sm font-medium text-gray-600">{students.length} Siswa</p>
-          <button onClick={setAllHadir} className="text-xs text-primary-700 font-semibold hover:text-gold transition">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+        <div className="flex items-center justify-between px-5 py-3"
+          style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
+          <p className="text-sm font-semibold text-white">{students.length} Siswa</p>
+          <button onClick={setAllHadir} className="text-xs text-gold font-semibold hover:text-white transition">
             Tandai Semua Hadir
           </button>
         </div>

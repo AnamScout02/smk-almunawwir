@@ -1,7 +1,8 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, X, Save, Loader2, BookOpen, Phone, Hash, Eye } from "lucide-react";
+import { Search, Edit2, X, Save, Loader2, BookOpen, Phone, Hash, Eye, UserCog } from "lucide-react";
 import Link from "next/link";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface Teacher {
   id: string;
@@ -65,69 +66,70 @@ export default function AdminTeachersPage() {
   });
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-primary-900">Kelola Guru</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Atur NIP, mata pelajaran, dan data profil guru</p>
-      </div>
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<UserCog size={22} />}
+        title="Kelola Guru"
+        description="Atur NIP, mata pelajaran, dan data profil guru"
+      />
 
       <div className="relative mb-5">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Cari nama, NIP, atau mata pelajaran..."
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-primary-500 outline-none" />
+          className="input-field pl-10" />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border p-12 text-center text-gray-400">
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
           <BookOpen size={36} className="mx-auto mb-3 opacity-30" />
           <p className="font-semibold text-navy">Tidak ada guru ditemukan</p>
           <p className="text-sm mt-1">Tambah akun guru melalui menu Akun Pengguna.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">Nama Guru</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium hidden sm:table-cell">NIP</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">Mata Pelajaran</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium hidden md:table-cell">Wali Kelas</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium hidden lg:table-cell">HP</th>
-                <th className="text-right px-6 py-3 text-gray-500 font-medium">Aksi</th>
+                <th>Nama Guru</th>
+                <th className="hidden sm:table-cell">NIP</th>
+                <th>Mata Pelajaran</th>
+                <th className="hidden md:table-cell">Wali Kelas</th>
+                <th className="hidden lg:table-cell">HP</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(t => (
-                <tr key={t.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-6 py-4">
+                <tr key={t.id}>
+                  <td>
                     <p className="font-semibold text-primary-900">{t.user.name}</p>
-                    <p className="text-gray-400 text-xs">{t.user.email}</p>
+                    <p className="text-gray-400 text-xs mt-0.5">{t.user.email}</p>
                   </td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-600 hidden sm:table-cell">{t.nip}</td>
-                  <td className="px-6 py-4">
+                  <td className="font-mono text-xs text-gray-500 hidden sm:table-cell">{t.nip}</td>
+                  <td>
                     <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                      <BookOpen size={13} className="text-primary-400" />
+                      <BookOpen size={13} className="text-primary-400 shrink-0" />
                       {t.subject}
                     </span>
                   </td>
-                  <td className="px-6 py-4 hidden md:table-cell">
+                  <td className="hidden md:table-cell">
                     {t.homeroomOf.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {t.homeroomOf.map(c => (
-                          <span key={c.id} className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">{c.name}</span>
+                          <span key={c.id} className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-semibold border border-primary-100">{c.name}</span>
                         ))}
                       </div>
                     ) : (
                       <span className="text-gray-300 text-xs">—</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-500 text-xs hidden lg:table-cell">
+                  <td className="text-xs text-gray-500 hidden lg:table-cell">
                     {t.phone ?? <span className="text-gray-300">—</span>}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Link href={`/dashboard/admin/teachers/${t.id}`}
                         className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Lihat detail">
@@ -142,7 +144,7 @@ export default function AdminTeachersPage() {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-gray-400 px-6 py-3 border-t">{filtered.length} guru terdaftar</p>
+          <p className="text-xs text-gray-400 px-6 py-3 border-t border-gray-50">{filtered.length} guru terdaftar</p>
         </div>
       )}
 
@@ -150,9 +152,10 @@ export default function AdminTeachersPage() {
       {modal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="font-heading font-semibold text-primary-900">Edit Profil Guru</h2>
-              <button onClick={() => setModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <div className="flex items-center justify-between px-6 py-4"
+              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+              <h2 className="font-heading font-semibold text-white">Edit Profil Guru</h2>
+              <button onClick={() => setModal(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
@@ -176,10 +179,10 @@ export default function AdminTeachersPage() {
                 <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                   className="input-field" placeholder="08..." type="tel" />
               </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+              {error && <p className="error-msg">{error}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="flex-1 btn-outline text-sm">Batal</button>
-                <button type="submit" disabled={isPending} className="flex-1 btn-gold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
                   {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   {isPending ? "Menyimpan..." : "Simpan"}
                 </button>

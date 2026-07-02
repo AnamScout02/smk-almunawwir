@@ -71,9 +71,9 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       </div>
 
       {/* Profil */}
-      <div className="bg-white rounded-2xl border shadow-sm p-5 mb-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
         <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
             <UserCircle size={28} className="text-primary-700" />
           </div>
           <div>
@@ -119,7 +119,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
               {teacher.homeroomOf.length > 0 ? (
                 <div className="flex flex-wrap gap-1 mt-0.5">
                   {teacher.homeroomOf.map(c => (
-                    <span key={c.id} className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">{c.name}</span>
+                    <span key={c.id} className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full font-medium">{c.name}</span>
                   ))}
                 </div>
               ) : (
@@ -132,15 +132,15 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
 
       {/* Statistik nilai */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-white rounded-xl border p-3 text-center">
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
           <p className="text-2xl font-heading font-bold text-primary-700">{totalGrades}</p>
           <p className="text-xs text-gray-400">Total Nilai</p>
         </div>
-        <div className="bg-white rounded-xl border p-3 text-center">
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
           <p className="text-2xl font-heading font-bold text-emerald-600">{uniqueSubjects.length}</p>
           <p className="text-xs text-gray-400">Mata Pelajaran</p>
         </div>
-        <div className="bg-white rounded-xl border p-3 text-center">
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
           <p className="text-2xl font-heading font-bold text-amber-500">{uniqueSemesters.length}</p>
           <p className="text-xs text-gray-400">Semester Aktif</p>
         </div>
@@ -148,7 +148,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
 
       {/* Rekap nilai per semester */}
       {gradesBySemester.length > 0 && (
-        <div className="bg-white rounded-2xl border shadow-sm p-5 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
           <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
             <ClipboardList size={16} className="text-primary-700" /> Rekap Nilai yang Diinput
           </h3>
@@ -156,17 +156,17 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
             {gradesBySemester.map(({ semester, subjects }) => (
               <div key={semester}>
                 <p className="font-semibold text-sm text-primary-800 mb-2 flex items-center gap-2">
-                  <span className="text-xs bg-primary-50 text-primary-600 px-2.5 py-0.5 rounded-full font-medium">{semester}</span>
+                  <span className="text-xs bg-primary-50 text-primary-600 border border-primary-100 px-2.5 py-0.5 rounded-full font-medium">{semester}</span>
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs border-collapse">
+                <div className="rounded-xl overflow-hidden border border-gray-100">
+                  <table className="data-table">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border border-gray-200 px-3 py-2 text-left text-gray-500 font-medium">Mata Pelajaran</th>
-                        <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">Tugas</th>
-                        <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">Ulangan Harian</th>
-                        <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">UTS</th>
-                        <th className="border border-gray-200 px-3 py-2 text-center text-gray-500 font-medium">UAS</th>
+                      <tr>
+                        <th className="text-left">Mata Pelajaran</th>
+                        <th className="text-center">Tugas</th>
+                        <th className="text-center">Ulangan Harian</th>
+                        <th className="text-center">UTS</th>
+                        <th className="text-center">UAS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -176,12 +176,12 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                           ? <span className="font-semibold text-emerald-700">{val} siswa</span>
                           : <span className="text-gray-300">—</span>;
                         return (
-                          <tr key={name} className="border-b border-gray-100 last:border-0">
-                            <td className="border border-gray-200 px-3 py-2 font-medium text-primary-900">{name}</td>
-                            <td className="border border-gray-200 px-3 py-2 text-center">{cell(get("Tugas"))}</td>
-                            <td className="border border-gray-200 px-3 py-2 text-center">{cell(get("Ulangan Harian"))}</td>
-                            <td className="border border-gray-200 px-3 py-2 text-center">{cell(get("UTS"))}</td>
-                            <td className="border border-gray-200 px-3 py-2 text-center">{cell(get("UAS"))}</td>
+                          <tr key={name}>
+                            <td className="font-medium text-primary-900">{name}</td>
+                            <td className="text-center">{cell(get("Tugas"))}</td>
+                            <td className="text-center">{cell(get("Ulangan Harian"))}</td>
+                            <td className="text-center">{cell(get("UTS"))}</td>
+                            <td className="text-center">{cell(get("UAS"))}</td>
                           </tr>
                         );
                       })}
@@ -198,12 +198,12 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       {teacher.homeroomOf.length > 0 && (
         <div className="space-y-4">
           {teacher.homeroomOf.map(cls => (
-            <div key={cls.id} className="bg-white rounded-2xl border shadow-sm p-5">
+            <div key={cls.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
                 <GraduationCap size={16} className="text-primary-700" />
                 Siswa Wali Kelas — {cls.name}
                 <span className="text-xs text-gray-400 font-normal">({cls.major.code})</span>
-                <span className="ml-auto text-xs font-semibold text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="ml-auto text-xs font-semibold text-primary-600 bg-primary-50 border border-primary-100 px-2.5 py-1 rounded-full flex items-center gap-1">
                   <Users size={11} /> {cls.students.length}
                 </span>
               </h3>
@@ -212,7 +212,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
               ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {cls.students.map((s, i) => (
-                    <div key={s.id} className="flex items-center gap-2.5 text-sm bg-gray-50 rounded-xl px-3 py-2">
+                    <div key={s.id} className="flex items-center gap-2.5 text-sm bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
                       <span className="text-xs text-gray-300 w-5 text-center">{i + 1}</span>
                       <div>
                         <p className="font-medium text-primary-900 text-xs">{s.user.name}</p>
@@ -228,7 +228,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       )}
 
       {gradesBySemester.length === 0 && teacher.homeroomOf.length === 0 && (
-        <div className="bg-white rounded-2xl border p-10 text-center text-gray-400">
+        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
           <ClipboardList size={32} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">Belum ada data nilai atau kelas wali yang terhubung</p>
         </div>

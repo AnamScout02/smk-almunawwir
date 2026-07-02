@@ -1,3 +1,4 @@
+import React from "react";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
@@ -8,16 +9,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await verifyRole(["ADMIN", "TAS"]);
 
   const [settings] = await Promise.all([
-    getSettings(["logo.emblem"]),
+    getSettings(["logo.emblem", "logo.full_white"]),
   ]);
 
   const logoEmblem = settings["logo.emblem"];
+  const logoFullWhite = settings["logo.full_white"];
 
   if (session.role === "TAS") {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <TasSidebar logoEmblem={logoEmblem} />
-        <main className="flex-1 overflow-auto lg:pt-0 pt-14">
+      <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
+        <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} />
+        <main className="flex-1 min-h-screen lg:pt-0 pt-14">
           {children}
         </main>
       </div>
@@ -31,13 +33,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
       <AdminSidebar
         unreadMessages={unreadMessages}
         pendingAdmissions={pendingAdmissions}
         logoEmblem={logoEmblem}
+        logoFullWhite={logoFullWhite}
       />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-h-screen">
         {children}
       </main>
     </div>

@@ -119,7 +119,7 @@ export default function InputNilaiPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/teacher/grades" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
@@ -133,7 +133,7 @@ export default function InputNilaiPage() {
       </div>
 
       {/* Form header */}
-      <div className="bg-white rounded-2xl shadow-sm border p-5 mb-5 grid sm:grid-cols-3 gap-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 grid sm:grid-cols-3 gap-4">
         <div>
           <label className="label-field">Mata Pelajaran</label>
           <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Contoh: Matematika" className="input-field" />
@@ -153,7 +153,7 @@ export default function InputNilaiPage() {
       </div>
 
       {/* Tabel nilai */}
-      <div className="bg-white rounded-2xl shadow-sm border overflow-hidden mb-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
         {(loading || loadingGrades) ? (
           <div className="py-16 text-center text-gray-400 text-sm flex items-center justify-center gap-2">
             <Loader2 size={16} className="animate-spin" />
@@ -162,14 +162,14 @@ export default function InputNilaiPage() {
         ) : students.length === 0 ? (
           <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium w-8">#</th>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium">NIS</th>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium">Nama Siswa</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium w-32">Nilai (0-100)</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium w-20">Status</th>
+                <th className="w-8">#</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th className="text-center w-32">Nilai (0-100)</th>
+                <th className="text-center w-20">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -177,11 +177,11 @@ export default function InputNilaiPage() {
                 const row = rows.find(r => r.studentId === s.id);
                 const score = Number(row?.score);
                 return (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-5 py-3 text-gray-400">{i + 1}</td>
-                    <td className="px-5 py-3 text-gray-500 font-mono text-xs">{s.nis}</td>
-                    <td className="px-5 py-3 font-medium text-primary-900">{s.user.name}</td>
-                    <td className="px-5 py-3">
+                  <tr key={s.id}>
+                    <td className="text-gray-400">{i + 1}</td>
+                    <td className="text-gray-500 font-mono text-xs">{s.nis}</td>
+                    <td className="font-medium text-primary-900">{s.user.name}</td>
+                    <td>
                       <input
                         type="number"
                         min={0}
@@ -194,7 +194,7 @@ export default function InputNilaiPage() {
                         }`}
                       />
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="text-center">
                       {row?.saved ? (
                         <span className="text-xs text-emerald-600 font-semibold">✓ Tersimpan</span>
                       ) : row?.score ? (

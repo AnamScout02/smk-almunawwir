@@ -82,7 +82,7 @@ export default async function RaporPage() {
       <div className="max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
         {/* Header rapor */}
         <div className="text-center border-b-2 border-primary-900 pb-4 mb-6">
-          <h2 className="font-heading text-2xl font-bold text-primary-900">SMK Al-Munawwir IIBS</h2>
+          <h2 className="font-heading text-2xl font-bold text-primary-900">SMK Al Munawwir IIBS</h2>
           <p className="text-gray-500 text-sm">Singojuruh, Banyuwangi, Jawa Timur · NPSN 69896523</p>
           <h3 className="font-heading text-lg font-bold text-primary-900 mt-3">LAPORAN HASIL BELAJAR SISWA</h3>
         </div>
@@ -106,7 +106,7 @@ export default async function RaporPage() {
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-heading font-bold text-primary-900">Semester: {sem}</h4>
                 {semAvg !== null && (
-                  <span className={`text-sm font-bold px-3 py-1 rounded-full ${semAvg >= 75 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}>
+                  <span className={`text-sm font-bold px-3 py-1 rounded-full border ${semAvg >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>
                     Rata-rata: {semAvg.toFixed(1)}
                   </span>
                 )}
@@ -154,7 +154,7 @@ export default async function RaporPage() {
             <h4 className="font-heading font-bold text-primary-900 mb-3">Rekap Kehadiran</h4>
             <div className="grid grid-cols-4 gap-3">
               {attSummary.map(({ status, count }) => (
-                <div key={status} className="border rounded-xl p-3 text-center">
+                <div key={status} className="border border-gray-100 rounded-xl p-3 text-center shadow-sm">
                   <p className="font-heading font-bold text-xl text-primary-900">{count}</p>
                   <p className="text-xs text-gray-500">{status}</p>
                 </div>

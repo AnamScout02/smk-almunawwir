@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, Calendar, Loader2, ChevronDown } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface ClassItem { id: string; name: string; grade: number; major: { name: string } }
 interface TeacherItem { id: string; subject: string; user: { name: string } }
@@ -97,18 +98,19 @@ export default function AdminSchedulesPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-primary-900">Jadwal Pelajaran</h1>
-          <p className="text-gray-500 text-sm mt-1">{schedules.length} jam pelajaran terjadwal</p>
-        </div>
-        <button onClick={openNew} className="btn-primary flex items-center gap-2 self-start sm:self-auto">
-          <Plus size={18} /> Tambah Jadwal
-        </button>
-      </div>
+      <PageHeader
+        icon={<Calendar size={22} />}
+        title="Jadwal Pelajaran"
+        description={`${schedules.length} jam pelajaran terjadwal`}
+        actions={
+          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+            <Plus size={18} /> Tambah Jadwal
+          </button>
+        }
+      />
 
       {/* Class Selector */}
-      <div className="bg-white rounded-2xl border shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
         <div className="relative inline-block">
           <select
@@ -171,67 +173,68 @@ export default function AdminSchedulesPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-md my-8 shadow-2xl">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="font-heading font-bold text-primary-900 flex items-center gap-2">
+            <div className="px-6 py-4 flex items-center justify-between"
+              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+              <h2 className="font-heading font-bold text-white flex items-center gap-2">
                 <Calendar size={18} /> {editing ? "Edit Jadwal" : "Tambah Jadwal"}
               </h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              <button onClick={() => setShowForm(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kelas *</label>
+                <label className="label-field">Kelas *</label>
                 <select value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none bg-white">
+                  className="input-field">
                   <option value="">Pilih kelas...</option>
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name} — {c.major.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mata Pelajaran *</label>
+                <label className="label-field">Mata Pelajaran *</label>
                 <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none"
+                  className="input-field"
                   placeholder="Matematika, Bahasa Indonesia, dll." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Guru (opsional)</label>
+                <label className="label-field">Guru (opsional)</label>
                 <select value={form.teacherId} onChange={e => setForm(f => ({ ...f, teacherId: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none bg-white">
+                  className="input-field">
                   <option value="">-- Pilih guru --</option>
                   {teachers.map(t => <option key={t.id} value={t.id}>{t.user.name} ({t.subject})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hari *</label>
+                  <label className="label-field">Hari *</label>
                   <select value={form.day} onChange={e => setForm(f => ({ ...f, day: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none bg-white">
+                    className="input-field">
                     {DAYS.map(d => <option key={d} value={d}>{DAY_LABEL[d]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ruang</label>
+                  <label className="label-field">Ruang</label>
                   <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none"
+                    className="input-field"
                     placeholder="Lab-1, R.12, dll." />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Jam Mulai *</label>
+                  <label className="label-field">Jam Mulai *</label>
                   <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none" />
+                    className="input-field" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Jam Selesai *</label>
+                  <label className="label-field">Jam Selesai *</label>
                   <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 outline-none" />
+                    className="input-field" />
                 </div>
               </div>
-              {msg && <p className="text-red-500 text-sm">{msg}</p>}
+              {msg && <p className="error-msg">{msg}</p>}
             </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="px-5 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
+            <div className="px-6 py-4 border-t border-gray-50 flex justify-end gap-3">
+              <button onClick={() => setShowForm(false)} className="btn-modal-cancel">Batal</button>
+              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2">
                 {saving && <Loader2 size={16} className="animate-spin" />}
                 {saving ? "Menyimpan..." : "Simpan"}
               </button>

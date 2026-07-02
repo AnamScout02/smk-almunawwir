@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, X, Save, Users, BookOpen, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, Users, BookOpen, Loader2, ChevronDown, ChevronUp, School } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface Major { id: string; name: string; code: string }
 interface Teacher { id: string; user: { name: string } }
@@ -104,16 +105,17 @@ export default function AdminClassesPage() {
   })).filter(g => g.items.length > 0);
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Kelola Kelas</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Buat dan atur kelas, jurusan, dan wali kelas</p>
-        </div>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={16} /> Tambah Kelas
-        </button>
-      </div>
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<School size={22} />}
+        title="Kelola Kelas"
+        description="Buat dan atur kelas, jurusan, dan wali kelas"
+        actions={
+          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+            <Plus size={16} /> Tambah Kelas
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
@@ -125,33 +127,40 @@ export default function AdminClassesPage() {
           <button onClick={openCreate} className="btn-gold text-sm">Tambah Kelas Pertama</button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {byGrade.map(({ grade, items }) => (
             <div key={grade}>
-              <h2 className="font-heading font-semibold text-primary-800 text-base mb-3">Kelas {grade}</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-px flex-1" style={{ background: "linear-gradient(to right, rgba(15,26,69,0.15), transparent)" }} />
+                <span className="text-xs font-bold uppercase tracking-widest text-primary-500 px-3 py-1.5 bg-primary-50 border border-primary-100 rounded-full">
+                  Tingkat {grade}
+                </span>
+                <div className="h-px flex-1" style={{ background: "linear-gradient(to left, rgba(15,26,69,0.15), transparent)" }} />
+              </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map(cls => (
-                  <div key={cls.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                  <div key={cls.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <div className="px-5 py-3 flex items-center justify-between"
+                      style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
+                      <h3 className="font-heading font-bold text-white text-sm">{cls.name}</h3>
+                      <span className="text-xs font-bold text-gold bg-white/10 border border-white/20 px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <Users size={10} /> {cls.students.length}
+                      </span>
+                    </div>
                     <div className="p-5">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div>
-                          <h3 className="font-heading font-bold text-primary-900">{cls.name}</h3>
-                          <p className="text-xs text-gray-400 mt-0.5">{cls.major.name}</p>
-                        </div>
-                        <span className="text-xs bg-primary-50 text-primary-700 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1 shrink-0">
-                          <Users size={11} /> {cls.students.length}
-                        </span>
-                      </div>
+                      <p className="text-xs text-gray-400 mb-1">{cls.major.name}</p>
                       <p className="text-xs text-gray-500 mb-4">
-                        Wali Kelas: <span className="font-semibold text-navy">{cls.homeroom?.user.name ?? "Belum ditentukan"}</span>
+                        Wali: <span className={`font-semibold ${cls.homeroom ? "text-primary-700" : "text-amber-500"}`}>
+                          {cls.homeroom?.user.name ?? "Belum ditentukan"}
+                        </span>
                       </p>
                       <div className="flex gap-2">
                         <button onClick={() => openEdit(cls)}
-                          className="flex-1 flex items-center justify-center gap-1.5 border border-gray-200 hover:border-primary-300 text-gray-600 hover:text-primary-700 text-xs font-semibold py-2 rounded-xl transition">
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 hover:border-primary-200 text-xs font-semibold py-2 rounded-xl transition-colors">
                           <Edit2 size={13} /> Edit
                         </button>
                         <button onClick={() => handleDelete(cls.id, cls.name)}
-                          className="flex items-center justify-center gap-1.5 px-3 border border-gray-200 hover:border-red-200 text-gray-400 hover:text-red-500 text-xs font-semibold py-2 rounded-xl transition">
+                          className="flex items-center justify-center gap-1.5 px-3 bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 text-xs font-semibold py-2 rounded-xl transition-colors">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -167,12 +176,13 @@ export default function AdminClassesPage() {
       {/* Modal */}
       {modal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="font-heading font-semibold text-primary-900">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4"
+              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+              <h2 className="font-heading font-semibold text-white">
                 {form.id ? "Edit Kelas" : "Tambah Kelas"}
               </h2>
-              <button onClick={() => setModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
@@ -207,10 +217,10 @@ export default function AdminClassesPage() {
                   {teachers.map(t => <option key={t.id} value={t.id}>{t.user.name}</option>)}
                 </select>
               </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+              {error && <p className="error-msg">{error}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="flex-1 btn-outline text-sm">Batal</button>
-                <button type="submit" disabled={isPending} className="flex-1 btn-gold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
                   {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   {isPending ? "Menyimpan..." : "Simpan"}
                 </button>

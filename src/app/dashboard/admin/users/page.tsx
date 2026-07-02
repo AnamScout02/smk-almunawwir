@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Search, Edit2, Trash2, X, Save, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, Save, Eye, EyeOff, Loader2, UserCog } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface User {
   id: string;
@@ -14,9 +15,9 @@ interface Major { id: string; name: string; code: string }
 interface ClassItem { id: string; name: string; grade: number }
 
 const ROLE_BADGE: Record<string, string> = {
-  ADMIN:   "bg-purple-100 text-purple-700",
-  TEACHER: "bg-blue-100 text-blue-700",
-  STUDENT: "bg-emerald-100 text-emerald-700",
+  ADMIN:   "bg-purple-50 text-purple-700 border border-purple-200",
+  TEACHER: "bg-blue-50 text-blue-700 border border-blue-200",
+  STUDENT: "bg-emerald-50 text-emerald-700 border border-emerald-200",
 };
 const ROLE_LABEL: Record<string, string> = { ADMIN: "Admin", TEACHER: "Guru", STUDENT: "Siswa" };
 
@@ -100,23 +101,24 @@ export default function UsersPage() {
   const counts = { Semua: users.length, ADMIN: users.filter(u => u.role === "ADMIN").length, TEACHER: users.filter(u => u.role === "TEACHER").length, STUDENT: users.filter(u => u.role === "STUDENT").length };
 
   return (
-    <div className="p-6 md:p-8 pt-16 lg:pt-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Akun Pengguna</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Kelola akun login admin, guru, dan siswa</p>
-        </div>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={16} /> Tambah Akun
-        </button>
-      </div>
+    <div className="p-6 md:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<UserCog size={22} />}
+        title="Akun Pengguna"
+        description="Kelola akun login admin, guru, dan siswa"
+        actions={
+          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+            <Plus size={16} /> Tambah Akun
+          </button>
+        }
+      />
 
       {/* Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-primary-500 outline-none" />
+            className="input-field pl-10" />
         </div>
         <div className="flex gap-2 flex-wrap">
           {(["Semua", "ADMIN", "TEACHER", "STUDENT"] as const).map(r => (
@@ -128,37 +130,41 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="py-16 flex justify-center"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center text-gray-400">Tidak ada pengguna ditemukan</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">Nama</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium hidden sm:table-cell">Email</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">Role</th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium hidden md:table-cell">Bergabung</th>
-                <th className="text-right px-6 py-3 text-gray-500 font-medium">Aksi</th>
+                <th>Nama</th>
+                <th className="hidden sm:table-cell">Email</th>
+                <th>Role</th>
+                <th className="hidden md:table-cell">Bergabung</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(u => (
-                <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-6 py-3.5">
+                <tr key={u.id}>
+                  <td>
                     <p className="font-semibold text-primary-900">{u.name}</p>
-                    <p className="text-gray-400 text-xs sm:hidden">{u.email}</p>
+                    <p className="text-gray-400 text-xs sm:hidden mt-0.5">{u.email}</p>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-500 hidden sm:table-cell">{u.email}</td>
-                  <td className="px-6 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${ROLE_BADGE[u.role]}`}>{ROLE_LABEL[u.role]}</span>
+                  <td className="text-gray-500 hidden sm:table-cell">{u.email}</td>
+                  <td>
+                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                      u.role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" :
+                      u.role === "TEACHER" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                      "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}>{ROLE_LABEL[u.role]}</span>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-400 text-xs hidden md:table-cell">
+                  <td className="text-gray-400 text-xs hidden md:table-cell">
                     {new Date(u.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                   </td>
-                  <td className="px-6 py-3.5 text-right">
+                  <td className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition"><Edit2 size={15} /></button>
                       <button onClick={() => handleDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
@@ -176,9 +182,10 @@ export default function UsersPage() {
       {modal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white">
-              <h2 className="font-heading font-semibold text-primary-900">{form.id ? "Edit Akun" : "Tambah Akun"}</h2>
-              <button onClick={() => setModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10"
+              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+              <h2 className="font-heading font-semibold text-white">{form.id ? "Edit Akun" : "Tambah Akun"}</h2>
+              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
@@ -261,10 +268,10 @@ export default function UsersPage() {
                 </div>
               )}
 
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+              {error && <p className="error-msg">{error}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="flex-1 btn-outline text-sm">Batal</button>
-                <button type="submit" disabled={isPending} className="flex-1 btn-gold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
                   {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   {isPending ? "Menyimpan..." : "Simpan"}
                 </button>

@@ -1,8 +1,9 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Loader2, Image as ImageIcon } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface Banner {
   id: string;
@@ -64,15 +65,16 @@ export default function BannersPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-primary-900">Banner / Hero Slider</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola foto dan teks yang tampil di halaman utama website</p>
-        </div>
-        <button onClick={openNew} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Tambah Banner
-        </button>
-      </div>
+      <PageHeader
+        icon={<ImageIcon size={22} />}
+        title="Banner / Hero"
+        description="Kelola foto dan teks yang tampil di halaman utama website"
+        actions={
+          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+            <Plus size={18} /> Tambah Banner
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
@@ -84,7 +86,7 @@ export default function BannersPage() {
       ) : (
         <div className="grid gap-4">
           {banners.map((b) => (
-            <div key={b.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col sm:flex-row ${!b.active ? "opacity-60" : ""}`}>
+            <div key={b.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:shadow-md hover:-translate-y-0.5 transition-all ${!b.active ? "opacity-60" : ""}`}>
               <div className="relative w-full sm:w-48 h-32 sm:h-auto shrink-0 bg-gray-100">
                 {b.imageUrl ? (
                   <Image src={b.imageUrl} alt={b.title} fill sizes="(max-width: 640px) 100vw, 192px" className="object-cover" />
@@ -106,13 +108,13 @@ export default function BannersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-3">
-                  <button onClick={() => toggle(b)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${b.active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                  <button onClick={() => toggle(b)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${b.active ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"}`}>
                     {b.active ? <><Eye size={12} /> Aktif</> : <><EyeOff size={12} /> Nonaktif</>}
                   </button>
-                  <button onClick={() => openEdit(b)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                  <button onClick={() => openEdit(b)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-100 transition-colors">
                     <Pencil size={12} /> Edit
                   </button>
-                  <button onClick={() => remove(b.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                  <button onClick={() => remove(b.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors">
                     <Trash2 size={12} /> Hapus
                   </button>
                 </div>
@@ -126,39 +128,40 @@ export default function BannersPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-lg my-8 shadow-2xl">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="font-heading font-bold text-primary-900">{editing ? "Edit Banner" : "Tambah Banner Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            <div className="px-6 py-4 flex items-center justify-between"
+              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+              <h2 className="font-heading font-bold text-white">{editing ? "Edit Banner" : "Tambah Banner Baru"}</h2>
+              <button onClick={() => setShowForm(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><span className="text-xl leading-none">&times;</span></button>
             </div>
             <div className="p-6 space-y-4">
               <ImageUpload value={form.imageUrl} onChange={(url) => setForm(f => ({ ...f, imageUrl: url }))} folder="banners" label="Foto Banner (opsional)" />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Judul *</label>
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none" placeholder="Cth: Mendidik Generasi Qurani" />
+                <label className="label-field">Judul *</label>
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field" placeholder="Cth: Mendidik Generasi Qurani" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subjudul / Deskripsi *</label>
-                <textarea rows={3} value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none resize-none" placeholder="Deskripsi singkat yang tampil di bawah judul" />
+                <label className="label-field">Subjudul / Deskripsi *</label>
+                <textarea rows={3} value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} className="input-field resize-none" placeholder="Deskripsi singkat yang tampil di bawah judul" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teks Tombol</label>
-                  <input value={form.linkText} onChange={e => setForm(f => ({ ...f, linkText: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none" placeholder="Cth: Daftar Sekarang" />
+                  <label className="label-field">Teks Tombol</label>
+                  <input value={form.linkText} onChange={e => setForm(f => ({ ...f, linkText: e.target.value }))} className="input-field" placeholder="Cth: Daftar Sekarang" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Tombol</label>
-                  <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none" placeholder="/admissions" />
+                  <label className="label-field">Link Tombol</label>
+                  <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} className="input-field" placeholder="/admissions" />
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-primary-600" />
                 <span className="text-sm text-gray-700">Tampilkan banner ini di website</span>
               </label>
-              {msg && <p className="text-red-500 text-sm">{msg}</p>}
+              {msg && <p className="error-msg">{msg}</p>}
             </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="px-5 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
+            <div className="px-6 py-4 border-t border-gray-50 flex justify-end gap-3">
+              <button onClick={() => setShowForm(false)} className="btn-modal-cancel">Batal</button>
+              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2">
                 {saving && <Loader2 size={16} className="animate-spin" />}
                 {saving ? "Menyimpan..." : "Simpan"}
               </button>
