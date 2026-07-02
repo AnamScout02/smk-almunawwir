@@ -25,13 +25,13 @@ const amiri = Amiri({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
-    default: "SMK Al-Munawwir IIBS",
-    template: "%s | SMK Al-Munawwir IIBS",
+    default: "SMK Al Munawwir IIBS",
+    template: "%s | SMK Al Munawwir IIBS",
   },
   description:
-    "SMK Al-Munawwir International Islamic Boarding School — Mendidik Generasi Qurani Terampil Berwawasan Global. Singojuruh, Banyuwangi, Jawa Timur. NPSN 69896523.",
+    "SMK Al Munawwir International Islamic Boarding School — Mendidik Generasi Qurani Terampil Berwawasan Global. Singojuruh, Banyuwangi, Jawa Timur. NPSN 69896523.",
   keywords: [
-    "SMK Al-Munawwir",
+    "SMK Al Munawwir",
     "IIBS",
     "Islamic Boarding School",
     "Sekolah Islam Banyuwangi",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     apple: "/favicon.png",
   },
   openGraph: {
-    title: "SMK Al-Munawwir IIBS",
+    title: "SMK Al Munawwir IIBS",
     description:
       "International Islamic Boarding School — Mendidik Generasi Qurani Terampil",
     type: "website",

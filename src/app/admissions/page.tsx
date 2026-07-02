@@ -27,16 +27,16 @@ export default function AdmissionsPage() {
       <Navbar />
       <main className="pt-20">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white section-padding">
-          <div className="container-custom max-w-3xl">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
+          <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">PPDB 2026/2027</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
               Pendaftaran Peserta Didik Baru
             </h1>
-            <p className="text-white/70 text-lg mb-6">
-              Bergabunglah bersama ribuan siswa berprestasi di SMK Al-Munawwir IIBS. Pendaftaran terbuka — kuota terbatas.
+            <p className="text-white/70 text-lg mb-6 max-w-2xl mx-auto">
+              Bergabunglah bersama ribuan siswa berprestasi di SMK Al Munawwir IIBS. Pendaftaran terbuka — kuota terbatas.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center">
               <div className="bg-white/10 border border-white/20 rounded-xl px-5 py-3 text-sm">
                 <span className="text-gold font-bold">Buka:</span> 1 Juni 2026
               </div>

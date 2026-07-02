@@ -6,8 +6,8 @@ import GalleryGrid from "@/components/sections/GalleryGrid";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Galeri — SMK Al-Munawwir IIBS",
-  description: "Foto kegiatan, fasilitas, dan kehidupan boarding school SMK Al-Munawwir IIBS.",
+  title: "Galeri — SMK Al Munawwir IIBS",
+  description: "Foto kegiatan, fasilitas, dan kehidupan boarding school SMK Al Munawwir IIBS.",
 };
 
 export default async function GalleryPage() {
@@ -26,7 +26,7 @@ export default async function GalleryPage() {
           <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Galeri</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Foto & Kegiatan</h1>
-            <p className="text-white/70 text-lg">Sekilas kehidupan dan fasilitas SMK Al-Munawwir IIBS</p>
+            <p className="text-white/70 text-lg">Sekilas kehidupan dan fasilitas SMK Al Munawwir IIBS</p>
           </div>
         </section>
         <GalleryGrid items={items} />

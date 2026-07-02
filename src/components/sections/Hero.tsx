@@ -46,7 +46,7 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-      {/* Background: foto jika ada, gradien jika tidak */}
+      {/* Background: foto jika ada, gradien animasi jika tidak */}
       {slide.imageUrl ? (
         <>
           <Image
@@ -58,23 +58,77 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
             sizes="100vw"
             className="object-cover transition-opacity duration-700"
           />
-          <div className="absolute inset-0 bg-primary-900/65" />
-          <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-          />
+          <div className="absolute inset-0 bg-primary-900/70" />
         </>
       ) : (
-        <>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500" />
-          <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-          />
-        </>
+        <div className="absolute inset-0"
+          style={{
+            background: "linear-gradient(135deg, #080e25 0%, #0F1A45 25%, #1B2B6B 55%, #0a1535 80%, #0F1A45 100%)",
+            backgroundSize: "400% 400%",
+            animation: "gradientShift 14s ease infinite",
+          }}
+        />
       )}
 
-      {/* Dekorasi cincin emas */}
-      <div className="absolute top-20 right-10 w-72 h-72 rounded-full border-8 border-gold/15 opacity-50 pointer-events-none" />
-      <div className="absolute bottom-20 left-10 w-48 h-48 rounded-full border-4 border-gold/10 opacity-40 pointer-events-none" />
+      {/* Pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+      />
+
+      {/* Animated gradient orbs */}
+      <div className="absolute pointer-events-none overflow-hidden inset-0">
+        <div className="absolute top-10 right-[15%] w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)", animation: "float 10s ease-in-out infinite" }} />
+        <div className="absolute bottom-20 left-[10%] w-80 h-80 rounded-full opacity-15 blur-3xl"
+          style={{ background: "radial-gradient(circle, #3b5bdb 0%, transparent 70%)", animation: "float 14s ease-in-out infinite reverse" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-3xl"
+          style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 60%)", animation: "gradientShift 20s ease infinite" }} />
+      </div>
+
+      {/* Dekorasi cincin emas animasi */}
+      <div className="absolute top-20 right-10 w-80 h-80 rounded-full border border-gold/20 pointer-events-none"
+        style={{ animation: "float 8s ease-in-out infinite" }} />
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full border-2 border-gold/10 pointer-events-none"
+        style={{ animation: "float 8s ease-in-out infinite", animationDelay: "0.5s" }} />
+      <div className="absolute bottom-20 left-10 w-52 h-52 rounded-full border border-gold/15 pointer-events-none"
+        style={{ animation: "float 11s ease-in-out infinite reverse" }} />
+      <div className="absolute bottom-32 left-20 w-36 h-36 rounded-full border border-white/8 pointer-events-none"
+        style={{ animation: "float 9s ease-in-out infinite" }} />
+
+      {/* Floating particles (lebih banyak & lebih vivid) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {([
+          { size: 5,  left: "8%",   delay: "0s",    dur: "11s", gold: true  },
+          { size: 3,  left: "16%",  delay: "3.5s",  dur: "14s", gold: false },
+          { size: 7,  left: "27%",  delay: "1.2s",  dur: "10s", gold: true  },
+          { size: 4,  left: "36%",  delay: "5s",    dur: "16s", gold: false },
+          { size: 6,  left: "48%",  delay: "2.8s",  dur: "9s",  gold: true  },
+          { size: 3,  left: "57%",  delay: "7s",    dur: "13s", gold: false },
+          { size: 8,  left: "65%",  delay: "0.5s",  dur: "12s", gold: true  },
+          { size: 4,  left: "74%",  delay: "4.2s",  dur: "10s", gold: false },
+          { size: 5,  left: "82%",  delay: "6.5s",  dur: "15s", gold: true  },
+          { size: 3,  left: "90%",  delay: "2s",    dur: "11s", gold: false },
+          { size: 6,  left: "22%",  delay: "8s",    dur: "13s", gold: true  },
+          { size: 4,  left: "43%",  delay: "9.5s",  dur: "12s", gold: false },
+          { size: 5,  left: "70%",  delay: "1.8s",  dur: "14s", gold: true  },
+          { size: 3,  left: "95%",  delay: "11s",   dur: "10s", gold: false },
+          { size: 7,  left: "52%",  delay: "4.8s",  dur: "11s", gold: true  },
+        ] as const).map((p, i) => (
+          <div key={i}
+            className="absolute bottom-0 rounded-full"
+            style={{
+              width:  `${p.size}px`,
+              height: `${p.size}px`,
+              left:   p.left,
+              background: p.gold
+                ? `rgba(232,160,32,${0.4 + (i % 3) * 0.15})`
+                : `rgba(255,255,255,${0.15 + (i % 4) * 0.1})`,
+              boxShadow: p.gold ? `0 0 ${p.size * 2}px rgba(232,160,32,0.6)` : "none",
+              animation: `floatParticle ${p.dur} ease-in ${p.delay} infinite`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* Konten */}
       <div className="relative z-10 container-custom text-center pt-24 pb-16 px-4">

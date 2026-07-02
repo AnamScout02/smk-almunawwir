@@ -20,6 +20,7 @@ export default async function proxy(req: NextRequest) {
   if (isPublic && session?.userId && path === "/login") {
     const roleRedirect: Record<string, string> = {
       ADMIN: "/dashboard/admin",
+      TAS: "/dashboard/admin",
       TEACHER: "/dashboard/teacher",
       STUDENT: "/dashboard/student",
     };

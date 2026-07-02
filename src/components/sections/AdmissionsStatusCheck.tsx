@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<string, {
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border-emerald-200",
-    desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al-Munawwir IIBS. Segera lakukan daftar ulang.",
+    desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Segera lakukan daftar ulang.",
   },
   REJECTED: {
     label: "Tidak Diterima",

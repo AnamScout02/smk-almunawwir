@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition, useEffect, useRef } from "react";
 import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
+import DatePicker from "@/components/shared/DatePicker";
 
 const MAJORS = [
   "Teknik Komputer & Jaringan (TKJ)",
@@ -221,7 +222,7 @@ export default function AdmissionsForm() {
           </div>
           <div>
             <label className={labelClass}>Tanggal Lahir {req}</label>
-            <input value={form.birthDate} onChange={e => setField("birthDate", e.target.value)} type="date" required className={inputClass} />
+            <DatePicker value={form.birthDate} onChange={v => setField("birthDate", v)} required />
           </div>
         </div>
 

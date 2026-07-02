@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().includes("@"),
   password: z.string().min(6),
 });
 

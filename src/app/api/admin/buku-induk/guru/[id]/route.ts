@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await verifyRole(["ADMIN", "TAS"]);
@@ -9,7 +10,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const {
     birthPlace, birthDate, gender, religion, address,
     education, position, startDate, teacherStatus, teacherNotes, phone,
+    bukuIndukData, password,
   } = body;
+
+  // Jika ada password baru, update password user
+  if (password && typeof password === "string" && password.trim().length >= 1) {
+    const hashed = await bcrypt.hash(password, 12);
+    const teacherRef = await prisma.teacher.findUnique({ where: { id }, select: { userId: true } });
+    if (teacherRef) {
+      await prisma.user.update({ where: { id: teacherRef.userId }, data: { password: hashed } });
+    }
+  }
 
   const teacher = await prisma.teacher.update({
     where: { id },
@@ -25,6 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       startDate:     startDate ? new Date(startDate) : null,
       teacherStatus: teacherStatus || "AKTIF",
       teacherNotes:  teacherNotes || null,
+      ...(bukuIndukData !== undefined ? { bukuIndukData } : {}),
     },
     include: {
       user: { select: { name: true, email: true } },

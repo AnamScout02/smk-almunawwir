@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const program = programs.find((p) => p.slug === slug);
   if (!program) return { title: "Program tidak ditemukan" };
   return {
-    title: `${program.name} (${program.code}) — SMK Al-Munawwir IIBS`,
+    title: `${program.name} (${program.code}) — SMK Al Munawwir IIBS`,
     description: program.desc,
   };
 }

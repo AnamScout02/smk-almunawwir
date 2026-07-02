@@ -8,8 +8,8 @@ import { MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react";
 import { getSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
-  title: "Kontak — SMK Al-Munawwir IIBS",
-  description: "Hubungi SMK Al-Munawwir IIBS — alamat, telepon, email, dan formulir pesan.",
+  title: "Kontak — SMK Al Munawwir IIBS",
+  description: "Hubungi SMK Al Munawwir IIBS — alamat, telepon, email, dan formulir pesan.",
 };
 
 export default async function ContactPage() {
@@ -40,11 +40,11 @@ export default async function ContactPage() {
     <>
       <Navbar />
       <main className="pt-20">
-        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white section-padding">
-          <div className="container-custom max-w-2xl">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
+          <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Kontak</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Hubungi Kami</h1>
-            <p className="text-white/70 text-lg">
+            <p className="text-white/70 text-lg max-w-2xl mx-auto">
               Kami siap menjawab pertanyaan seputar pendaftaran, program, dan informasi sekolah.
             </p>
           </div>
@@ -89,7 +89,7 @@ export default async function ContactPage() {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    title="Lokasi SMK Al-Munawwir IIBS"
+                    title="Lokasi SMK Al Munawwir IIBS"
                   />
                 </div>
 

@@ -45,6 +45,7 @@ model Teacher {
   startDate      DateTime?
   teacherStatus  String?    @default("AKTIF")  // AKTIF | PENSIUN | KELUAR
   teacherNotes   String?
+  bukuIndukData  Json?
   grades         Grade[]
   homeroomOf     Class[]
   schedules      Schedule[]
@@ -61,15 +62,16 @@ model Major {
 }
 
 model Class {
-  id         String    @id @default(cuid())
-  name       String
-  grade      Int
-  majorId    String
-  major      Major     @relation(fields: [majorId], references: [id])
-  homeroomId String?
-  homeroom   Teacher?   @relation(fields: [homeroomId], references: [id])
-  students   Student[]
-  schedules  Schedule[]
+  id             String                @id @default(cuid())
+  name           String
+  grade          Int
+  majorId        String
+  major          Major                 @relation(fields: [majorId], references: [id])
+  homeroomId     String?
+  homeroom       Teacher?              @relation(fields: [homeroomId], references: [id])
+  students       Student[]
+  schedules      Schedule[]
+  studentHistory StudentClassHistory[]
 }
 
 model Student {
@@ -102,6 +104,7 @@ model Student {
   grades         Grade[]
   attendance     Attendance[]
   internship     Internship?
+  classHistory   StudentClassHistory[]
 }
 
 model Grade {
@@ -238,4 +241,65 @@ model Announcement {
   endDate    DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model MasterData {
+  id        String   @id @default(cuid())
+  category  String   @unique
+  label     String
+  items     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AcademicYear {
+  id             String                @id @default(cuid())
+  name           String                @unique  // "2024/2025"
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean               @default(false)
+  notes          String?
+  createdAt      DateTime              @default(now())
+  studentHistory StudentClassHistory[]
+}
+
+model Surat {
+  id         String   @id @default(cuid())
+  tipe       String   // MASUK | KELUAR
+  nomor      String
+  tanggal    DateTime
+  pihak      String   // "dari siapa" (MASUK) atau "kepada siapa" (KELUAR)
+  perihal    String
+  keterangan String?
+  fileUrl    String?
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Arsip {
+  id         String   @id @default(cuid())
+  judul      String
+  kategori   String
+  nomor      String?
+  tanggal    DateTime
+  keterangan String?
+  fileUrl    String?
+  createdAt  DateTime @default(now())
+}
+
+model StudentClassHistory {
+  id             String        @id @default(cuid())
+  studentId      String
+  student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId        String?
+  class          Class?        @relation(fields: [classId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  status         String        @default("AKTIF")  // AKTIF | LULUS | KELUAR | PINDAH
+  grade          Int?
+  majorName      String?
+  className      String?
+  createdAt      DateTime      @default(now())
+
+  @@unique([studentId, academicYearId])
 }

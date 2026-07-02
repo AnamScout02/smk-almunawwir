@@ -8,8 +8,8 @@ import { Calendar, Search } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Berita & Kegiatan — SMK Al-Munawwir IIBS",
-  description: "Berita terbaru, kegiatan, dan pengumuman dari SMK Al-Munawwir IIBS.",
+  title: "Berita & Kegiatan — SMK Al Munawwir IIBS",
+  description: "Berita terbaru, kegiatan, dan pengumuman dari SMK Al Munawwir IIBS.",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -50,11 +50,11 @@ export default async function NewsPage({
       <Navbar />
       <main className="min-h-screen">
         {/* Header */}
-        <section className="bg-gradient-to-br from-primary-900 via-primary-700 to-primary-600 text-white pt-28 pb-16">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16">
           <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Informasi</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Berita & Kegiatan</h1>
-            <p className="text-white/70 text-lg">Ikuti perkembangan terbaru SMK Al-Munawwir IIBS</p>
+            <p className="text-white/70 text-lg">Ikuti perkembangan terbaru SMK Al Munawwir IIBS</p>
           </div>
         </section>
 

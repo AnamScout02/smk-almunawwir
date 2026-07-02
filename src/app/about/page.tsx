@@ -10,15 +10,15 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Tentang Kami — SMK Al-Munawwir IIBS",
-  description: "Mengenal lebih dekat SMK Al-Munawwir IIBS Banyuwangi — sejarah, visi, misi, dan keunggulan kami.",
+  title: "Tentang Kami — SMK Al Munawwir IIBS",
+  description: "Mengenal lebih dekat SMK Al Munawwir IIBS Banyuwangi — sejarah, visi, misi, dan keunggulan kami.",
 };
 
 const identitas: { label: string; value: string; icon: LucideIcon }[] = [
-  { label: "Nama Sekolah", value: "SMK Al-Munawwir IIBS", icon: School },
+  { label: "Nama Sekolah", value: "SMK Al Munawwir IIBS", icon: School },
   { label: "NPSN", value: "69896523", icon: CreditCard },
   { label: "NIB", value: "2707230280495", icon: CreditCard },
-  { label: "Nama Yayasan", value: "Yayasan Islam Al-Munawwir Makshum", icon: Landmark },
+  { label: "Nama Yayasan", value: "Yayasan Islam Al Munawwir Makshum", icon: Landmark },
   { label: "Alamat", value: "Jl. Kedungliwung No. 36, Ds. Kemiri, Kec. Singojuruh, Banyuwangi, Jawa Timur", icon: MapPin },
   { label: "Telepon / WA", value: "0838-7820-3670", icon: Phone },
   { label: "Email", value: "smkalmunawwir@gmail.com", icon: Mail },
@@ -88,14 +88,14 @@ export default function AboutPage() {
       <Navbar />
       <main className="pt-20">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white section-padding">
-          <div className="container-custom max-w-3xl">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
+          <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Tentang Kami</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
-              Mengenal SMK Al-Munawwir IIBS
+              Mengenal SMK Al <span className="whitespace-nowrap">Munawwir IIBS</span>
             </h1>
-            <p className="text-white/80 text-lg leading-relaxed">
-              Satuan pendidikan menengah kejuruan di bawah naungan Yayasan Islam Al-Munawwir Makshum Banyuwangi —
+            <p className="text-white/80 text-lg leading-relaxed max-w-3xl mx-auto">
+              Satuan pendidikan menengah kejuruan di bawah naungan Yayasan Islam Al Munawwir Makshum Banyuwangi —
               berkomitmen menghasilkan lulusan yang berkarakter Islami, kompeten secara profesional,
               berjiwa kepemimpinan, dan berwawasan global.
             </p>
@@ -110,7 +110,7 @@ export default function AboutPage() {
                 <span className="text-gold font-semibold text-sm uppercase tracking-widest">Identitas</span>
                 <h2 className="font-heading text-3xl font-bold text-navy mt-2 mb-6">Profil Sekolah</h2>
                 <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                  SMK Al-Munawwir International Islamic Boarding School (IIBS) adalah sekolah berbasis
+                  SMK Al Munawwir International Islamic Boarding School (IIBS) adalah sekolah berbasis
                   pesantren dengan orientasi internasional yang memadukan kurikulum nasional, kurikulum
                   internasional, dan nilai-nilai keislaman. Pengelolaan dilaksanakan secara profesional
                   oleh tenaga pendidik dan kependidikan yang berkompeten di bidangnya.
@@ -185,8 +185,8 @@ export default function AboutPage() {
                   },
                   {
                     year: "2023",
-                    title: "Transformasi: Menjadi SMK Al-Munawwir IIBS",
-                    desc: "Sekolah berganti nama menjadi SMK Al-Munawwir International Islamic Boarding School (IIBS) di bawah yayasan baru yang dibentuk secara mandiri, yaitu Yayasan Islam Al-Munawwir Makshum. Di tahun yang sama, Konsentrasi Keahlian Desain Pemodelan & Informasi Bangunan (DPIB) resmi dibuka sebagai program kelima.",
+                    title: "Transformasi: Menjadi SMK Al Munawwir IIBS",
+                    desc: "Sekolah berganti nama menjadi SMK Al Munawwir International Islamic Boarding School (IIBS) di bawah yayasan baru yang dibentuk secara mandiri, yaitu Yayasan Islam Al Munawwir Makshum. Di tahun yang sama, Konsentrasi Keahlian Desain Pemodelan & Informasi Bangunan (DPIB) resmi dibuka sebagai program kelima.",
                   },
                 ].map((item, i) => (
                   <div key={i} className="relative">

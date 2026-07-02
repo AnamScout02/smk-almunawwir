@@ -5,31 +5,55 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Menu, X, Calendar, Bell, BarChart2,
-  UserCircle, ClipboardList,
+  UserCircle, ClipboardList, Repeat, Mail, Archive,
 } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
 
-const menuItems = [
-  { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/admin/admissions", label: "Pendaftaran Siswa", icon: ClipboardList },
-  { href: "/dashboard/admin/classes", label: "Kelas", icon: School },
-  { href: "/dashboard/admin/students", label: "Siswa", icon: Users },
-  { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog },
-  { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase },
-  { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar },
-  { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell },
-  { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen },
-  { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog },
-  { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2 },
-  { href: "/dashboard/admin/profile", label: "Profil Saya", icon: UserCircle },
-] as const;
+const menuGroups = [
+  {
+    label: null,
+    items: [
+      { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+    ],
+  },
+  {
+    label: "Akademik",
+    items: [
+      { href: "/dashboard/admin/admissions", label: "Pendaftaran Siswa", icon: ClipboardList },
+      { href: "/dashboard/admin/students", label: "Siswa", icon: Users },
+      { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog },
+      { href: "/dashboard/admin/classes", label: "Kelas", icon: School },
+      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase },
+      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar },
+      { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell },
+    ],
+  },
+  {
+    label: "Tata Usaha",
+    items: [
+      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen },
+      { href: "/dashboard/admin/buku-induk/guru",  label: "Buku Induk Guru",  icon: UserCog },
+      { href: "/dashboard/admin/buku-mutasi",       label: "Buku Mutasi",      icon: Repeat },
+      { href: "/dashboard/admin/persuratan",        label: "Persuratan",       icon: Mail },
+      { href: "/dashboard/admin/arsip",             label: "Pengarsipan",      icon: Archive },
+    ],
+  },
+  {
+    label: "Lainnya",
+    items: [
+      { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2 },
+      { href: "/dashboard/admin/profile", label: "Profil Saya", icon: UserCircle },
+    ],
+  },
+];
 
 interface TasSidebarProps {
   logoEmblem?: string;
+  logoFullWhite?: string;
 }
 
-export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png" }: TasSidebarProps) {
+export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite }: TasSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -39,35 +63,51 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png" }: T
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
-          <div>
-            <p className="font-heading font-bold text-white text-sm leading-tight">Al-Munawwir</p>
-            <p className="text-white/50 text-xs">Tenaga Administrasi</p>
+      <div className="px-5 py-4 border-b border-white/10">
+        {logoFullWhite ? (
+          <div className="flex flex-col gap-1.5">
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
+            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Tata Usaha</p>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <div>
+              <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
+              <p className="text-white/50 text-xs">Tenaga Administrasi</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
-          const active = isActive(item.href, "exact" in item ? item.exact : false);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                active
-                  ? "bg-gold text-primary-900 shadow-sm"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <item.icon size={18} className="shrink-0" />
-              <span className="flex-1">{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden space-y-4" style={{ scrollbarWidth: "none" }}>
+        {menuGroups.map((group) => (
+          <div key={group.label ?? "__root__"}>
+            {group.label && (
+              <p className="px-3 mb-1 text-[10px] font-bold tracking-widest text-white/30 uppercase">{group.label}</p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href, "exact" in item ? item.exact : false);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      active
+                        ? "bg-gold text-primary-900 shadow-sm"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <item.icon size={18} className="shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div className="px-3 py-4 border-t border-white/10 space-y-1">
@@ -93,7 +133,7 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png" }: T
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 min-h-screen shrink-0 relative overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />

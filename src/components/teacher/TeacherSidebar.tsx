@@ -14,7 +14,7 @@ const menu = [
   { href: "/dashboard/teacher/profile", label: "Profil Saya", icon: UserCircle },
 ];
 
-export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png" }: { logoEmblem?: string }) {
+export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite }: { logoEmblem?: string; logoFullWhite?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -24,16 +24,23 @@ export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png" 
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
-          <div>
-            <p className="font-heading font-bold text-white text-sm">Al-Munawwir</p>
-            <p className="text-white/50 text-xs">Portal Guru</p>
+      <div className="px-5 py-4 border-b border-white/10">
+        {logoFullWhite ? (
+          <div className="flex flex-col gap-1.5">
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
+            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Portal Guru</p>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <div>
+              <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
+              <p className="text-white/50 text-xs">Portal Guru</p>
+            </div>
+          </div>
+        )}
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
         {menu.map(item => {
           const active = isActive(item.href, item.exact);
           return (

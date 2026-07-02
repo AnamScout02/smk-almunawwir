@@ -12,8 +12,8 @@ const testimonials = [
       en: "TKJ Alumni 2022 — IT Supervisor, Bank Syariah Indonesia",
     },
     content: {
-      id: "Ilmu jaringan yang saya dapat di Al-Munawwir sangat solid. Ditambah pengalaman PKL yang terarah, saya langsung bisa bersaing di dunia kerja. Alhamdulillah, sekarang sudah jadi IT Supervisor.",
-      en: "The networking knowledge I gained at Al-Munawwir was incredibly solid. Combined with well-structured internship experience, I was immediately competitive in the job market. Alhamdulillah, I'm now an IT Supervisor.",
+      id: "Ilmu jaringan yang saya dapat di Al Munawwir sangat solid. Ditambah pengalaman PKL yang terarah, saya langsung bisa bersaing di dunia kerja. Alhamdulillah, sekarang sudah jadi IT Supervisor.",
+      en: "The networking knowledge I gained at Al Munawwir was incredibly solid. Combined with well-structured internship experience, I was immediately competitive in the job market. Alhamdulillah, I'm now an IT Supervisor.",
     },
     rating: 5,
   },
@@ -48,8 +48,8 @@ const testimonials = [
       en: "Grade XII TKJ Student — Tahfidz Santri",
     },
     content: {
-      id: "Di Al-Munawwir saya bisa hafal Al-Qur'an sekaligus belajar jaringan komputer. Dua hal yang awalnya saya kira tidak bisa dijalani bersamaan, di sini justru saling menguatkan.",
-      en: "At Al-Munawwir I can memorize the Qur'an while studying computer networking. Two things I once thought couldn't coexist — here they actually reinforce each other.",
+      id: "Di Al Munawwir saya bisa hafal Al-Qur'an sekaligus belajar jaringan komputer. Dua hal yang awalnya saya kira tidak bisa dijalani bersamaan, di sini justru saling menguatkan.",
+      en: "At Al Munawwir I can memorize the Qur'an while studying computer networking. Two things I once thought couldn't coexist — here they actually reinforce each other.",
     },
     rating: 5,
   },

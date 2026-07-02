@@ -38,7 +38,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50" style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(15,26,69,0.07) 0px, rgba(15,26,69,0.07) 1px, transparent 1px, transparent 18px)" }}>
         {/* Foto header */}
         <div className="relative h-72 md:h-96 w-full bg-primary-900">
           {news.thumbnail ? (

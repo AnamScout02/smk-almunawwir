@@ -4,8 +4,8 @@ import Link from "next/link";
 import { GraduationCap, Briefcase, MapPin, Quote } from "lucide-react";
 
 export const metadata = {
-  title: "Alumni — SMK Al-Munawwir IIBS",
-  description: "Kisah sukses alumni SMK Al-Munawwir IIBS yang telah berkarir dan melanjutkan pendidikan di berbagai bidang.",
+  title: "Alumni — SMK Al Munawwir IIBS",
+  description: "Kisah sukses alumni SMK Al Munawwir IIBS yang telah berkarir dan melanjutkan pendidikan di berbagai bidang.",
 };
 
 const testimonials = [
@@ -16,7 +16,7 @@ const testimonials = [
     role: "Network Engineer",
     company: "PT. Telkom Indonesia",
     city: "Surabaya",
-    quote: "SMK Al-Munawwir tidak hanya mengajarkan skill teknis, tapi juga membentuk karakter dan akhlak yang menjadi bekal seumur hidup saya.",
+    quote: "SMK Al Munawwir tidak hanya mengajarkan skill teknis, tapi juga membentuk karakter dan akhlak yang menjadi bekal seumur hidup saya.",
     initial: "AF",
     color: "bg-blue-500",
   },
@@ -38,7 +38,7 @@ const testimonials = [
     role: "Graphic Designer",
     company: "Freelance & Startup",
     city: "Yogyakarta",
-    quote: "Lab DKV di Al-Munawwir sudah setara industri. Saya bisa langsung kerja profesional setelah lulus tanpa perlu kursus tambahan.",
+    quote: "Lab DKV di Al Munawwir sudah setara industri. Saya bisa langsung kerja profesional setelah lulus tanpa perlu kursus tambahan.",
     initial: "RM",
     color: "bg-purple-500",
   },
@@ -71,7 +71,7 @@ const testimonials = [
     role: "Mahasiswi Teknik Informatika",
     company: "Universitas Airlangga",
     city: "Surabaya",
-    quote: "Fondasi TKJ dari Al-Munawwir sangat kuat. Saya lulus SNBP ke UNAIR berkat nilai dan portofolio yang sudah saya bangun sejak SMK.",
+    quote: "Fondasi TKJ dari Al Munawwir sangat kuat. Saya lulus SNBP ke UNAIR berkat nilai dan portofolio yang sudah saya bangun sejak SMK.",
     initial: "NF",
     color: "bg-rose-500",
   },
@@ -104,7 +104,7 @@ export default function AlumniPage() {
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Kebanggaan Kami</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Alumni Berprestasi</h1>
             <p className="text-white/70 text-lg max-w-2xl mx-auto">
-              Kisah nyata lulusan SMK Al-Munawwir IIBS yang telah berhasil berkarir, berwirausaha,
+              Kisah nyata lulusan SMK Al Munawwir IIBS yang telah berhasil berkarir, berwirausaha,
               dan melanjutkan pendidikan — membawa bekal ilmu dan akhlak Islami.
             </p>
           </div>
@@ -194,7 +194,7 @@ export default function AlumniPage() {
         {/* CTA for Alumni */}
         <section className="py-12 bg-primary-50 border-y border-primary-100">
           <div className="container-custom text-center">
-            <h3 className="font-heading font-bold text-2xl text-navy mb-3">Kamu Alumni Al-Munawwir?</h3>
+            <h3 className="font-heading font-bold text-2xl text-navy mb-3">Kamu Alumni Al Munawwir?</h3>
             <p className="text-gray-500 mb-6 max-w-lg mx-auto text-sm">
               Bagikan kisah suksesmu dan jadilah inspirasi bagi adik-adik kelas. Hubungi kami untuk bergabung di komunitas alumni.
             </p>
@@ -214,7 +214,7 @@ export default function AlumniPage() {
             <GraduationCap size={48} className="text-gold mx-auto mb-4" />
             <h2 className="font-heading text-3xl font-bold mb-3">Jadilah Bagian dari Cerita Ini</h2>
             <p className="text-white/70 mb-8 max-w-lg mx-auto">
-              Daftar sekarang dan mulai perjalananmu menuju masa depan yang cerah bersama SMK Al-Munawwir IIBS.
+              Daftar sekarang dan mulai perjalananmu menuju masa depan yang cerah bersama SMK Al Munawwir IIBS.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Link href="/admissions"

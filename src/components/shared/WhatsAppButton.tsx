@@ -3,7 +3,7 @@ import { useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 
 const WA_NUMBER = "6283878203670";
-const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al-Munawwir IIBS.";
+const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir IIBS.";
 
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
@@ -21,7 +21,7 @@ export default function WhatsAppButton() {
                 <MessageCircle size={18} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-navy">SMK Al-Munawwir</p>
+                <p className="font-semibold text-sm text-navy">SMK Al Munawwir</p>
                 <p className="text-xs text-green-500">● Online</p>
               </div>
             </div>

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Users, Music, Globe, BookOpen, Cpu, Trophy, Heart, Sprout, Shield } from "lucide-react";
 
 export const metadata = {
-  title: "Ekstrakurikuler — SMK Al-Munawwir IIBS",
-  description: "Berbagai kegiatan ekstrakurikuler di SMK Al-Munawwir IIBS — dari olahraga, seni, akademik, hingga keislaman.",
+  title: "Ekstrakurikuler — SMK Al Munawwir IIBS",
+  description: "Berbagai kegiatan ekstrakurikuler di SMK Al Munawwir IIBS — dari olahraga, seni, akademik, hingga keislaman.",
 };
 
 const categories = [
@@ -106,7 +106,7 @@ export default function ExtracurricularPage() {
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Kehidupan Kampus</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Ekstrakurikuler</h1>
             <p className="text-white/70 text-lg max-w-2xl mx-auto">
-              Lebih dari sekedar belajar di kelas — SMK Al-Munawwir IIBS menyediakan berbagai kegiatan
+              Lebih dari sekedar belajar di kelas — SMK Al Munawwir IIBS menyediakan berbagai kegiatan
               ekstrakurikuler untuk mengembangkan bakat, minat, dan karakter santri secara menyeluruh.
             </p>
           </div>
@@ -187,7 +187,7 @@ export default function ExtracurricularPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
               {[
-                { step: "01", title: "Daftar Sebagai Siswa", desc: "Selesaikan proses PPDB dan diterima sebagai siswa aktif SMK Al-Munawwir IIBS." },
+                { step: "01", title: "Daftar Sebagai Siswa", desc: "Selesaikan proses PPDB dan diterima sebagai siswa aktif SMK Al Munawwir IIBS." },
                 { step: "02", title: "Pilih Ekskul", desc: "Di awal tahun ajaran, pilih satu atau lebih ekskul yang sesuai minat dan bakat kamu." },
                 { step: "03", title: "Latihan Rutin", desc: "Ikuti latihan dan kegiatan rutin ekskul yang dijadwalkan oleh pembina." },
               ].map(({ step, title, desc }) => (
@@ -220,7 +220,7 @@ export default function ExtracurricularPage() {
             </div>
             <h2 className="font-heading text-3xl font-bold mb-3">Siap Bergabung?</h2>
             <p className="text-white/70 mb-8 max-w-lg mx-auto">
-              Daftarkan diri sebagai siswa SMK Al-Munawwir IIBS dan jadilah bagian dari komunitas belajar islami yang dinamis dan berprestasi.
+              Daftarkan diri sebagai siswa SMK Al Munawwir IIBS dan jadilah bagian dari komunitas belajar islami yang dinamis dan berprestasi.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Link href="/admissions"

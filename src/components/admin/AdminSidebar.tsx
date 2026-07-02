@@ -5,32 +5,63 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, Users, MessageSquare, LogOut, Menu, X,
-  Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar,
+  Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, Database, CalendarDays,
+  Archive, Repeat, Mail,
 } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
 
-const menuItems = [
-  { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, badge: 0 },
-  { href: "/dashboard/admin/banners", label: "Banner / Hero", icon: Image, badge: 0 },
-  { href: "/dashboard/admin/news", label: "Berita", icon: Newspaper, badge: 0 },
-  { href: "/dashboard/admin/gallery", label: "Galeri Foto", icon: GalleryHorizontal, badge: 0 },
-  { href: "/dashboard/admin/admissions", label: "Pendaftaran", icon: ClipboardList, badgeKey: "pendingAdmissions" },
-  { href: "/dashboard/admin/majors", label: "Jurusan", icon: BookOpen, badge: 0 },
-  { href: "/dashboard/admin/classes", label: "Kelas", icon: School, badge: 0 },
-  { href: "/dashboard/admin/students", label: "Siswa", icon: Users, badge: 0 },
-  { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, badge: 0 },
-  { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
-  { href: "/dashboard/admin/users", label: "Akun Pengguna", icon: Settings, badge: 0 },
-  { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" },
-  { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, badge: 0 },
-  { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, badge: 0 },
-  { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, badge: 0 },
-  { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, badge: 0 },
-  { href: "/dashboard/admin/content", label: "Konten Halaman", icon: FileText, badge: 0 },
-  { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
-  { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },
-] as const;
+const menuGroups = [
+  {
+    label: null,
+    items: [
+      { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, badge: 0 },
+    ],
+  },
+  {
+    label: "Website",
+    items: [
+      { href: "/dashboard/admin/banners", label: "Banner / Hero", icon: Image, badge: 0 },
+      { href: "/dashboard/admin/news", label: "Berita", icon: Newspaper, badge: 0 },
+      { href: "/dashboard/admin/gallery", label: "Galeri Foto", icon: GalleryHorizontal, badge: 0 },
+      { href: "/dashboard/admin/content", label: "Konten Halaman", icon: FileText, badge: 0 },
+      { href: "/dashboard/admin/admissions", label: "Pendaftaran", icon: ClipboardList, badgeKey: "pendingAdmissions" as const },
+      { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" as const },
+      { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, badge: 0 },
+    ],
+  },
+  {
+    label: "Akademik",
+    items: [
+      { href: "/dashboard/admin/majors", label: "Jurusan", icon: BookOpen, badge: 0 },
+      { href: "/dashboard/admin/classes", label: "Kelas", icon: School, badge: 0 },
+      { href: "/dashboard/admin/students", label: "Siswa", icon: Users, badge: 0 },
+      { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
+      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, badge: 0 },
+      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, badge: 0 },
+    ],
+  },
+  {
+    label: "Tata Usaha",
+    items: [
+      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, badge: 0 },
+      { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, badge: 0 },
+      { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat, badge: 0 },
+      { href: "/dashboard/admin/persuratan", label: "Persuratan", icon: Mail, badge: 0 },
+      { href: "/dashboard/admin/arsip", label: "Pengarsipan", icon: Archive, badge: 0 },
+    ],
+  },
+  {
+    label: "Sistem",
+    items: [
+      { href: "/dashboard/admin/users", label: "Akun Pengguna", icon: Settings, badge: 0 },
+      { href: "/dashboard/admin/tahun-ajaran", label: "Tahun Ajaran", icon: CalendarDays, badge: 0 },
+      { href: "/dashboard/admin/master-data", label: "Master Data", icon: Database, badge: 0 },
+      { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
+      { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },
+    ],
+  },
+];
 
 type BadgeKey = "pendingAdmissions" | "unreadMessages";
 
@@ -38,16 +69,17 @@ interface AdminSidebarProps {
   unreadMessages?: number;
   pendingAdmissions?: number;
   logoEmblem?: string;
+  logoFullWhite?: string;
 }
 
-export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, logoEmblem = "/images/logo-emblem.png" }: AdminSidebarProps) {
+export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, logoEmblem = "/images/logo-emblem.png", logoFullWhite }: AdminSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions };
 
-  function getBadge(item: typeof menuItems[number]): number {
-    if ("badgeKey" in item) return badges[item.badgeKey as BadgeKey] ?? 0;
+  function getBadge(item: { badge?: number; badgeKey?: BadgeKey }): number {
+    if ("badgeKey" in item && item.badgeKey) return badges[item.badgeKey] ?? 0;
     return 0;
   }
 
@@ -58,44 +90,60 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
-          <div>
-            <p className="font-heading font-bold text-white text-sm leading-tight">Al-Munawwir</p>
-            <p className="text-white/50 text-xs">Panel Admin</p>
+      <div className="px-5 py-4 border-b border-white/10">
+        {logoFullWhite ? (
+          <div className="flex flex-col gap-1.5">
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
+            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Panel Admin</p>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <div>
+              <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
+              <p className="text-white/50 text-xs">Panel Admin</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
-          const active = isActive(item.href, "exact" in item ? item.exact : false);
-          const badgeCount = getBadge(item);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                active
-                  ? "bg-gold text-primary-900 shadow-sm"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <item.icon size={18} className="shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {badgeCount > 0 && (
-                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
-                  active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"
-                }`}>
-                  {badgeCount > 99 ? "99+" : badgeCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden space-y-4" style={{ scrollbarWidth: "none" }}>
+        {menuGroups.map((group) => (
+          <div key={group.label ?? "__root__"}>
+            {group.label && (
+              <p className="px-3 mb-1 text-[10px] font-bold tracking-widest text-white/30 uppercase">{group.label}</p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href, "exact" in item ? (item as { exact?: boolean }).exact ?? false : false);
+                const badgeCount = getBadge(item);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      active
+                        ? "bg-gold text-primary-900 shadow-sm"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <item.icon size={18} className="shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
+                        active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"
+                      }`}>
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom */}
@@ -123,7 +171,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 min-h-screen shrink-0 relative overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Globe } from "lucide-react";
@@ -55,8 +55,7 @@ export default function NavbarClient({
     if (saved === "en") setLang("en");
   }, []);
 
-  // Inisialisasi scroll sebelum paint untuk menghindari flash transparent↔scrolled
-  useLayoutEffect(() => {
+  useEffect(() => {
     setScrolled(window.scrollY > 80);
     const onScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -79,10 +78,14 @@ export default function NavbarClient({
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-400 ${
         scrolled || !transparent
-          ? "bg-white/95 backdrop-blur-md shadow-sm py-3"
+          ? "bg-white/96 backdrop-blur-md shadow-sm py-3 border-b border-gold/20"
           : "bg-gradient-to-b from-black/50 to-transparent py-5"
       }`}
     >
+      {/* Gold top accent line */}
+      {(scrolled || !transparent) && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+      )}
       <nav className="container-custom flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
@@ -90,7 +93,7 @@ export default function NavbarClient({
             logoFullWhite ? (
               <Image
                 src={logoFullWhite}
-                alt="SMK Al-Munawwir IIBS"
+                alt="SMK Al Munawwir IIBS"
                 width={180}
                 height={50}
                 style={{ height: "3rem", width: "auto", objectFit: "contain" }}
@@ -101,7 +104,7 @@ export default function NavbarClient({
               <>
                 <Image
                   src={logoEmblem}
-                  alt="SMK Al-Munawwir IIBS"
+                  alt="SMK Al Munawwir IIBS"
                   width={44}
                   height={44}
                   className="rounded-full object-contain"
@@ -109,7 +112,7 @@ export default function NavbarClient({
                   unoptimized
                 />
                 <div>
-                  <span className="font-heading font-bold text-lg leading-tight block text-white">Al-Munawwir</span>
+                  <span className="font-heading font-bold text-lg leading-tight block text-white">Al Munawwir</span>
                   <span className="text-xs font-medium text-gold/90">IIBS</span>
                 </div>
               </>
@@ -117,7 +120,7 @@ export default function NavbarClient({
           ) : (
             <Image
               src={logoFull}
-              alt="SMK Al-Munawwir IIBS"
+              alt="SMK Al Munawwir IIBS"
               width={180}
               height={50}
               className="object-contain h-12 w-auto"

@@ -29,7 +29,7 @@ export default async function Footer() {
                 <div className="mb-2">
                   <Image
                     src={logoWhite}
-                    alt="SMK Al-Munawwir IIBS"
+                    alt="SMK Al Munawwir IIBS"
                     width={200}
                     height={56}
                     className="object-contain h-14 w-auto"
@@ -40,7 +40,7 @@ export default async function Footer() {
                 <div className="bg-white rounded-xl px-4 py-3 inline-block mb-2">
                   <Image
                     src={logoFull}
-                    alt="SMK Al-Munawwir IIBS"
+                    alt="SMK Al Munawwir IIBS"
                     width={200}
                     height={56}
                     className="object-contain h-14 w-auto"
@@ -140,7 +140,7 @@ export default async function Footer() {
       <div className="border-t border-white/10 relative">
         <div className="container-custom py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-white/50 text-sm">
-            © 2025 SMK Al-Munawwir IIBS. {tr.footer_copyright}
+            © 2025 SMK Al Munawwir IIBS. {tr.footer_copyright}
           </p>
           <p className="text-white/30 text-xs">
             Developed by{" "}

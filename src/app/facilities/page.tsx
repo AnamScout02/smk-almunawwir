@@ -8,8 +8,8 @@ import Link from "next/link";
 import { Monitor, Home, BookOpen, Dumbbell, Wifi, Utensils, Building2, FlaskConical } from "lucide-react";
 
 export const metadata = {
-  title: "Fasilitas — SMK Al-Munawwir IIBS",
-  description: "Fasilitas lengkap SMK Al-Munawwir IIBS: laboratorium komputer, asrama modern, masjid, lapangan olahraga, dan lainnya.",
+  title: "Fasilitas — SMK Al Munawwir IIBS",
+  description: "Fasilitas lengkap SMK Al Munawwir IIBS: laboratorium komputer, asrama modern, masjid, lapangan olahraga, dan lainnya.",
 };
 
 const highlights = [
@@ -29,7 +29,7 @@ const highlights = [
   },
   {
     icon: Building2,
-    title: "Masjid Al-Munawwir",
+    title: "Masjid Al Munawwir",
     desc: "Masjid kampus berkapasitas 1.500 jamaah untuk sholat berjamaah, tahfidz, dan kajian keislaman rutin.",
     color: "text-primary-700",
     bg: "bg-primary-50",
@@ -94,7 +94,7 @@ export default async function FacilitiesPage() {
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Fasilitas Kami</h1>
             <p className="text-white/70 text-lg max-w-2xl mx-auto">
               Fasilitas lengkap dan modern untuk mendukung proses pembelajaran, pengembangan karakter,
-              dan kehidupan santri di SMK Al-Munawwir IIBS.
+              dan kehidupan santri di SMK Al Munawwir IIBS.
             </p>
           </div>
         </section>

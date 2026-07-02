@@ -30,8 +30,8 @@ export default async function NewsPreview() {
 
   const items = news.length > 0 ? news : [
     { id: "1", slug: "ppdb-2026-2027-resmi-dibuka", title: "PPDB 2026/2027 Resmi Dibuka", category: "Pengumuman", createdAt: new Date(), content: "Penerimaan Peserta Didik Baru tahun pelajaran 2026/2027 telah resmi dibuka.", thumbnail: null },
-    { id: "2", slug: "ramadan-camp-1447h", title: "Ramadan Camp 1447H: Menghidupkan Malam dengan Ibadah", category: "Kegiatan", createdAt: new Date(), content: "SMK Al-Munawwir menggelar Ramadan Camp selama 10 hari penuh.", thumbnail: null },
-    { id: "3", slug: "juara-1-lomba-jaringan-nasional", title: "Siswa TKJ Raih Juara 1 Lomba Jaringan Nasional", category: "Prestasi", createdAt: new Date(), content: "Tim siswa TKJ SMK Al-Munawwir meraih juara pertama tingkat nasional.", thumbnail: null },
+    { id: "2", slug: "ramadan-camp-1447h", title: "Ramadan Camp 1447H: Menghidupkan Malam dengan Ibadah", category: "Kegiatan", createdAt: new Date(), content: "SMK Al Munawwir menggelar Ramadan Camp selama 10 hari penuh.", thumbnail: null },
+    { id: "3", slug: "juara-1-lomba-jaringan-nasional", title: "Siswa TKJ Raih Juara 1 Lomba Jaringan Nasional", category: "Prestasi", createdAt: new Date(), content: "Tim siswa TKJ SMK Al Munawwir meraih juara pertama tingkat nasional.", thumbnail: null },
   ];
 
   return (

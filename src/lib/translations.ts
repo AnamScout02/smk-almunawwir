@@ -13,7 +13,7 @@ const translations = {
 
     // Stats
     stats_label: "Dalam Angka",
-    stats_heading: "SMK Al-Munawwir IIBS dalam Angka",
+    stats_heading: "SMK Al Munawwir IIBS dalam Angka",
     stats_sub: "Angka-angka ini mencerminkan kepercayaan masyarakat dan dedikasi kami dalam mendidik generasi terbaik.",
     stat_students: "Siswa Aktif",
     stat_students_desc: "Dari berbagai daerah di Indonesia",
@@ -68,7 +68,7 @@ const translations = {
     testimonials_heading: "Kata Mereka Tentang Kami",
 
     // Footer
-    footer_school_desc: "SMK Al-Munawwir International Islamic Boarding School — Memadukan keunggulan akademik, keahlian vokasional, dan akhlak Islami untuk generasi terbaik.",
+    footer_school_desc: "SMK Al Munawwir International Islamic Boarding School — Memadukan keunggulan akademik, keahlian vokasional, dan akhlak Islami untuk generasi terbaik.",
     footer_nav: "Navigasi",
     footer_majors: "Konsentrasi Keahlian",
     footer_contact: "Kontak",
@@ -107,7 +107,7 @@ const translations = {
 
     // Stats
     stats_label: "In Numbers",
-    stats_heading: "SMK Al-Munawwir IIBS in Numbers",
+    stats_heading: "SMK Al Munawwir IIBS in Numbers",
     stats_sub: "These figures reflect the community's trust and our dedication to educating the best generation.",
     stat_students: "Active Students",
     stat_students_desc: "From various regions across Indonesia",
@@ -162,7 +162,7 @@ const translations = {
     testimonials_heading: "What They Say About Us",
 
     // Footer
-    footer_school_desc: "SMK Al-Munawwir International Islamic Boarding School — Combining academic excellence, vocational skills, and Islamic character to nurture the best generation.",
+    footer_school_desc: "SMK Al Munawwir International Islamic Boarding School — Combining academic excellence, vocational skills, and Islamic character to nurture the best generation.",
     footer_nav: "Navigation",
     footer_majors: "Areas of Expertise",
     footer_contact: "Contact",

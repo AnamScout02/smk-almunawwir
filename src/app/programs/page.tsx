@@ -6,8 +6,8 @@ import { programs } from "@/data/programs";
 import { Network, Palette, Calculator, Leaf, Building2, CheckCircle2, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Konsentrasi Keahlian — SMK Al-Munawwir IIBS",
-  description: "5 konsentrasi keahlian unggulan SMK Al-Munawwir IIBS — TKJ, AK, ATU, DKV, DPIB.",
+  title: "Konsentrasi Keahlian — SMK Al Munawwir IIBS",
+  description: "5 konsentrasi keahlian unggulan SMK Al Munawwir IIBS — TKJ, AK, ATU, DKV, DPIB.",
 };
 
 const icons: Record<string, React.ElementType> = {
@@ -23,13 +23,13 @@ export default function ProgramsPage() {
     <>
       <Navbar />
       <main className="pt-20">
-        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white section-padding">
-          <div className="container-custom max-w-2xl">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
+          <div className="container-custom text-center">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Konsentrasi Keahlian</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
               5 Jurusan Unggulan
             </h1>
-            <p className="text-white/70 text-lg">
+            <p className="text-white/70 text-lg max-w-2xl mx-auto">
               Pilih jurusan sesuai minat dan bakat Anda. Semua program dilengkapi
               praktik industri, sertifikasi nasional, dan pembinaan Islami terintegrasi.
             </p>
