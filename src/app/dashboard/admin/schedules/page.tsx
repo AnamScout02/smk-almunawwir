@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, Calendar, Loader2, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Loader2, ChevronDown, X } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 
 interface ClassItem { id: string; name: string; grade: number; major: { name: string } }
