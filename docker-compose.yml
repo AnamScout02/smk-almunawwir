@@ -39,7 +39,10 @@ services:
       postgres:
         condition: service_healthy
 
-  # ===== MIGRATE + SEED (jalankan sekali) =====
+  # ===== MIGRATE (jalankan sekali per deploy) =====
+  # PENTING: jangan tambahkan seed.ts di sini — script itu menghapus SEMUA data
+  # (user, siswa, guru, dll) dan mengganti dengan data dummy. Hanya jalankan
+  # seed.ts secara manual, dan HANYA di database kosong/fresh.
   migrate:
     build:
       context: .
@@ -48,7 +51,7 @@ services:
     environment:
       DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-smk_secure_password_2026}@postgres:5432/smk_almunawwir
     command: >
-      sh -c "npx prisma migrate deploy && npx ts-node prisma/seed.ts"
+      sh -c "npx prisma migrate deploy"
     depends_on:
       postgres:
         condition: service_healthy

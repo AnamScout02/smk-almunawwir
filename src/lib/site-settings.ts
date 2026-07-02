@@ -19,7 +19,7 @@ export const DEFAULTS: Record<string, string> = {
   // Logo
   "logo.emblem": "/images/logo-emblem.png",
   "logo.full": "/images/logo-full.png",
-  "logo.full_white": "",
+  "logo.full_white": "/images/logo-full-white.png",
   // Statistik
   "stats.students": "1200",
   "stats.achievements": "50",
