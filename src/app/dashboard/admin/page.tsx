@@ -8,6 +8,7 @@ import {
   Sparkles, TrendingUp, CheckCircle2, MessageSquare, MapPin,
 } from "lucide-react";
 import Link from "next/link";
+import DashboardCharts from "@/components/admin/DashboardCharts";
 
 export default async function AdminDashboard() {
   const session = await verifyRole(["ADMIN", "TAS"]);
@@ -28,6 +29,25 @@ export default async function AdminDashboard() {
     prisma.contactMessage.count({ where: { isRead: false } }),
     prisma.news.count({ where: { published: true } }),
   ]);
+
+  const [studentGenderRaw, teacherGenderRaw, majorsWithCount] = await Promise.all([
+    prisma.student.groupBy({ by: ["gender"], _count: { _all: true } }),
+    prisma.teacher.groupBy({ by: ["gender"], _count: { _all: true } }),
+    prisma.major.findMany({
+      select: { code: true, name: true, themeColor: true, _count: { select: { students: true } } },
+      orderBy: { students: { _count: "desc" } },
+    }),
+  ]);
+
+  const genderCount = (rows: { gender: string | null; _count: { _all: number } }[]) => ({
+    L: rows.find(r => r.gender === "L")?._count._all ?? 0,
+    P: rows.find(r => r.gender === "P")?._count._all ?? 0,
+  });
+  const studentGender = genderCount(studentGenderRaw);
+  const teacherGender = genderCount(teacherGenderRaw);
+  const majorStats = majorsWithCount
+    .filter(m => m._count.students > 0)
+    .map(m => ({ code: m.code, name: m.name, count: m._count.students, color: m.themeColor || "#1B2B6B" }));
 
   const [recentAdmissions, recentNews, recentMessages] = await Promise.all([
     prisma.admission.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
@@ -147,6 +167,15 @@ export default async function AdminDashboard() {
               </Link>
             ))}
           </div>
+        </div>
+
+        {/* ── Statistik Siswa & Guru ── */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 size={16} className="text-primary-700" />
+            <h2 className="font-heading font-semibold text-navy text-sm uppercase tracking-widest">Statistik Siswa &amp; Guru</h2>
+          </div>
+          <DashboardCharts studentGender={studentGender} teacherGender={teacherGender} majorStats={majorStats} />
         </div>
 
         {/* ── Alert + Quick Actions Row ── */}
