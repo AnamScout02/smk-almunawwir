@@ -3,13 +3,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import DatePicker from "@/components/shared/DatePicker";
 import {
   Calendar, Plus, Trash2, CheckCircle, AlertTriangle,
-  ChevronDown, X, Save, BarChart2, Users, TrendingUp, CalendarDays,
+  ChevronDown, Save, BarChart2, Users, TrendingUp, CalendarDays,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Alert from "@/components/admin/Alert";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
+import Modal from "@/components/admin/Modal";
 
 interface AcademicYear {
   id: string;
@@ -356,114 +357,92 @@ export default function TahunAjaranPage() {
       </div>
 
       {/* Modal Buat Tahun Ajaran */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-bold text-white">Buat Tahun Ajaran</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              {formError && <p className="error-msg">{formError}</p>}
-              <div>
-                <label className="label-field">Nama Tahun Ajaran <span className="text-red-500">*</span></label>
-                <input className={CLS} placeholder="Contoh: 2024/2025" value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label-field">Tanggal Mulai</label>
-                <DatePicker value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
-              </div>
-              <div>
-                <label className="label-field">Tanggal Selesai</label>
-                <DatePicker value={form.endDate} onChange={v => setForm(p => ({ ...p, endDate: v }))} />
-              </div>
-              <div>
-                <label className="label-field">Catatan</label>
-                <textarea className={`${CLS} resize-none`} rows={3} placeholder="Opsional"
-                  value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
-                  <Save size={15} />
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Buat Tahun Ajaran"
+        footer={
+          <>
+            <button onClick={() => setShowModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <Save size={15} />
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {formError && <p className="error-msg">{formError}</p>}
+          <div>
+            <label className="label-field">Nama Tahun Ajaran <span className="text-red-500">*</span></label>
+            <input className={CLS} placeholder="Contoh: 2024/2025" value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label-field">Tanggal Mulai</label>
+            <DatePicker value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
+          </div>
+          <div>
+            <label className="label-field">Tanggal Selesai</label>
+            <DatePicker value={form.endDate} onChange={v => setForm(p => ({ ...p, endDate: v }))} />
+          </div>
+          <div>
+            <label className="label-field">Catatan</label>
+            <textarea className={`${CLS} resize-none`} rows={3} placeholder="Opsional"
+              value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Konfirmasi Hapus */}
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div className="flex items-center gap-3 px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <div className="w-9 h-9 bg-red-500/20 rounded-full flex items-center justify-center">
-                <Trash2 size={16} className="text-red-300" />
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-white">Hapus Tahun Ajaran</h3>
-                <p className="text-xs text-white/50">{confirmDelete.name}</p>
-              </div>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-5">
-                Apakah Anda yakin ingin menghapus tahun ajaran ini? Semua data riwayat siswa
-                yang terkait juga akan terhapus.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button onClick={() => setConfirmDelete(null)} className="btn-modal-cancel">Batal</button>
-                <button onClick={() => handleDelete(confirmDelete.id)}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 font-semibold transition-colors">
-                  Ya, Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        size="sm"
+        title={<span className="flex items-center gap-3"><span className="w-9 h-9 bg-red-500/20 rounded-full flex items-center justify-center shrink-0"><Trash2 size={16} className="text-red-300" /></span>Hapus Tahun Ajaran</span>}
+        description={confirmDelete?.name ?? ""}
+        footer={
+          <>
+            <button onClick={() => setConfirmDelete(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={() => confirmDelete && handleDelete(confirmDelete.id)}
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 font-semibold transition-colors">
+              Ya, Hapus
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Apakah Anda yakin ingin menghapus tahun ajaran ini? Semua data riwayat siswa
+          yang terkait juga akan terhapus.
+        </p>
+      </Modal>
 
       {/* Konfirmasi Naik Kelas */}
-      {confirmNaik && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center gap-3 px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <div className="w-9 h-9 bg-amber-500/20 rounded-full flex items-center justify-center">
-                <TrendingUp size={16} className="text-amber-300" />
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-white">Konfirmasi Proses Naik Kelas</h3>
-                <p className="text-xs text-white/50">Tindakan ini tidak dapat dibatalkan</p>
-              </div>
-            </div>
-            <div className="p-6">
-              <Alert variant="warning" className="mb-5" title="Yang akan terjadi:">
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Semua siswa AKTIF akan disimpan ke riwayat tahun ajaran aktif</li>
-                  <li>Siswa grade 10 dipindah ke kelas grade 11 (jurusan sama)</li>
-                  <li>Siswa grade 11 dipindah ke kelas grade 12 (jurusan sama)</li>
-                  <li>Siswa grade 12 ditetapkan LULUS dan diberi tanggal kelulusan</li>
-                </ul>
-              </Alert>
-              <div className="flex justify-end gap-3">
-                <button onClick={() => setConfirmNaik(false)} className="btn-modal-cancel">Batal</button>
-                <button onClick={handleNaikKelas} disabled={naikLoading}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-semibold transition-colors disabled:opacity-50">
-                  <TrendingUp size={15} />
-                  {naikLoading ? "Memproses..." : "Ya, Proses Sekarang"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={confirmNaik}
+        onClose={() => setConfirmNaik(false)}
+        title={<span className="flex items-center gap-3"><span className="w-9 h-9 bg-amber-500/20 rounded-full flex items-center justify-center shrink-0"><TrendingUp size={16} className="text-amber-300" /></span>Konfirmasi Proses Naik Kelas</span>}
+        description="Tindakan ini tidak dapat dibatalkan"
+        footer={
+          <>
+            <button onClick={() => setConfirmNaik(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={handleNaikKelas} disabled={naikLoading}
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-semibold transition-colors disabled:opacity-50">
+              <TrendingUp size={15} />
+              {naikLoading ? "Memproses..." : "Ya, Proses Sekarang"}
+            </button>
+          </>
+        }
+      >
+        <Alert variant="warning" title="Yang akan terjadi:">
+          <ul className="list-disc list-inside space-y-1 text-xs">
+            <li>Semua siswa AKTIF akan disimpan ke riwayat tahun ajaran aktif</li>
+            <li>Siswa grade 10 dipindah ke kelas grade 11 (jurusan sama)</li>
+            <li>Siswa grade 11 dipindah ke kelas grade 12 (jurusan sama)</li>
+            <li>Siswa grade 12 ditetapkan LULUS dan diberi tanggal kelulusan</li>
+          </ul>
+        </Alert>
+      </Modal>
     </div>
   );
 }

@@ -1,12 +1,13 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, X, Save, BookOpen, Loader2, Users, School, FileText, Search } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, BookOpen, Loader2, Users, School, FileText, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import Modal from "@/components/admin/Modal";
 import { themeGradient, withAlpha } from "@/lib/color";
 
 interface Major {
@@ -37,7 +38,6 @@ export default function AdminMajorsPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   async function load() {
@@ -83,10 +83,10 @@ export default function AdminMajorsPage() {
   }
 
   async function handleDelete(id: string) {
+    if (!confirm("Hapus jurusan ini? Tindakan ini tidak bisa dibatalkan.")) return;
     startTransition(async () => {
       const res = await fetch(`/api/admin/majors/${id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json(); alert(d.error || "Gagal menghapus"); return; }
-      setDeleteConfirm(null);
       load();
     });
   }
@@ -136,12 +136,12 @@ export default function AdminMajorsPage() {
           <div className="space-y-6">
             {withStudents.length > 0 && (
               <GroupedSection title="Jurusan Aktif" count={withStudents.length} icon={BookOpen}>
-                <MajorTable items={withStudents} onEdit={openEdit} onDelete={setDeleteConfirm} />
+                <MajorTable items={withStudents} onEdit={openEdit} onDelete={handleDelete} />
               </GroupedSection>
             )}
             {withoutStudents.length > 0 && (
               <GroupedSection title="Belum Ada Siswa" count={withoutStudents.length} icon={BookOpen} variant="warning">
-                <MajorTable items={withoutStudents} onEdit={openEdit} onDelete={setDeleteConfirm} />
+                <MajorTable items={withoutStudents} onEdit={openEdit} onDelete={handleDelete} />
               </GroupedSection>
             )}
           </div>
@@ -150,81 +150,52 @@ export default function AdminMajorsPage() {
       )}
 
       {/* Modal Create/Edit */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-bold text-white">
-                {form.id ? "Edit Jurusan" : "Tambah Jurusan"}
-              </h2>
-              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              {error && <p className="error-msg">{error}</p>}
-              <ImageUpload
-                value={form.logoUrl}
-                onChange={(url) => setForm(f => ({ ...f, logoUrl: url }))}
-                folder="majors"
-                label="Logo Jurusan (opsional)"
-              />
-              <div>
-                <label className="label-field">Nama Jurusan *</label>
-                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="cth: Teknik Komputer dan Jaringan"
-                  className="input-field" />
-              </div>
-              <div>
-                <label className="label-field">Kode Jurusan *</label>
-                <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-                  placeholder="cth: TKJ"
-                  maxLength={10}
-                  className="input-field font-mono uppercase" />
-                <p className="text-xs text-gray-400 mt-1">Kode singkat, huruf besar, maks 10 karakter.</p>
-              </div>
-              <div>
-                <label className="label-field">Deskripsi *</label>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  rows={3} placeholder="Deskripsi singkat program keahlian..."
-                  className="input-field resize-none" />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">
-                  Batal
-                </button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {form.id ? "Simpan" : "Tambah"}
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title={form.id ? "Edit Jurusan" : "Tambah Jurusan"}
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">
+              Batal
+            </button>
+            <button type="submit" form="majorForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {form.id ? "Simpan" : "Tambah"}
+            </button>
+          </>
+        }
+      >
+        <form id="majorForm" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && <p className="error-msg">{error}</p>}
+          <ImageUpload
+            value={form.logoUrl}
+            onChange={(url) => setForm(f => ({ ...f, logoUrl: url }))}
+            folder="majors"
+            label="Logo Jurusan (opsional)"
+          />
+          <div>
+            <label className="label-field">Nama Jurusan *</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="cth: Teknik Komputer dan Jaringan"
+              className="input-field" />
           </div>
-        </div>
-      )}
-
-      {/* Konfirmasi hapus */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
-            <Trash2 size={32} className="text-red-500 mx-auto mb-3" />
-            <h3 className="font-heading font-bold text-lg text-navy mb-1">Hapus Jurusan?</h3>
-            <p className="text-gray-500 text-sm mb-5">Tindakan ini tidak bisa dibatalkan.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)}
-                className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition">
-                Batal
-              </button>
-              <button onClick={() => handleDelete(deleteConfirm)} disabled={isPending}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 disabled:opacity-60">
-                {isPending ? <Loader2 size={14} className="animate-spin" /> : null}
-                Hapus
-              </button>
-            </div>
+          <div>
+            <label className="label-field">Kode Jurusan *</label>
+            <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+              placeholder="cth: TKJ"
+              maxLength={10}
+              className="input-field font-mono uppercase" />
+            <p className="text-xs text-gray-400 mt-1">Kode singkat, huruf besar, maks 10 karakter.</p>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="label-field">Deskripsi *</label>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={3} placeholder="Deskripsi singkat program keahlian..."
+              className="input-field resize-none" />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

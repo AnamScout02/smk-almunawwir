@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, Calendar, Loader2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Loader2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
+import Modal from "@/components/admin/Modal";
 
 interface ClassItem { id: string; name: string; grade: number; major: { id: string; name: string } }
 interface TeacherItem { id: string; subject: string; user: { name: string } }
@@ -185,88 +186,83 @@ export default function AdminSchedulesPage() {
       )}
 
       {/* Modal Form */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-md my-8 shadow-2xl">
-            <div className="px-6 py-4 flex items-center justify-between rounded-t-2xl"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-bold text-white flex items-center gap-2">
-                <Calendar size={18} /> {editing ? "Edit Jadwal" : "Tambah Jadwal"}
-              </h2>
-              <button onClick={() => setShowForm(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={<span className="flex items-center gap-2"><Calendar size={18} /> {editing ? "Edit Jadwal" : "Tambah Jadwal"}</span>}
+        footer={
+          <>
+            <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              {saving && <Loader2 size={16} className="animate-spin" />}
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label-field">Kelas *</label>
+            <Select
+              value={form.classId}
+              onChange={v => setForm(f => ({ ...f, classId: v }))}
+              options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))}
+              placeholder="Pilih kelas..."
+            />
+          </div>
+          <div>
+            <label className="label-field">Mata Pelajaran *</label>
+            {form.classId ? (
+              <Select
+                value={form.subject}
+                onChange={v => setForm(f => ({ ...f, subject: v }))}
+                options={subjectOptions}
+                placeholder="Pilih mata pelajaran..."
+              />
+            ) : (
+              <p className="text-xs text-gray-400 italic py-2">Pilih kelas terlebih dahulu untuk melihat daftar mapel</p>
+            )}
+          </div>
+          <div>
+            <label className="label-field">Guru (opsional)</label>
+            <Select
+              value={form.teacherId}
+              onChange={v => setForm(f => ({ ...f, teacherId: v }))}
+              options={teachers.map(t => ({ value: t.id, label: `${t.user.name} (${t.subject})` }))}
+              placeholder="-- Pilih guru --"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-field">Hari *</label>
+              <Select
+                value={form.day}
+                onChange={v => setForm(f => ({ ...f, day: v }))}
+                options={DAYS.map(d => ({ value: d, label: DAY_LABEL[d] }))}
+              />
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="label-field">Kelas *</label>
-                <Select
-                  value={form.classId}
-                  onChange={v => setForm(f => ({ ...f, classId: v }))}
-                  options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))}
-                  placeholder="Pilih kelas..."
-                />
-              </div>
-              <div>
-                <label className="label-field">Mata Pelajaran *</label>
-                {form.classId ? (
-                  <Select
-                    value={form.subject}
-                    onChange={v => setForm(f => ({ ...f, subject: v }))}
-                    options={subjectOptions}
-                    placeholder="Pilih mata pelajaran..."
-                  />
-                ) : (
-                  <p className="text-xs text-gray-400 italic py-2">Pilih kelas terlebih dahulu untuk melihat daftar mapel</p>
-                )}
-              </div>
-              <div>
-                <label className="label-field">Guru (opsional)</label>
-                <Select
-                  value={form.teacherId}
-                  onChange={v => setForm(f => ({ ...f, teacherId: v }))}
-                  options={teachers.map(t => ({ value: t.id, label: `${t.user.name} (${t.subject})` }))}
-                  placeholder="-- Pilih guru --"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label-field">Hari *</label>
-                  <Select
-                    value={form.day}
-                    onChange={v => setForm(f => ({ ...f, day: v }))}
-                    options={DAYS.map(d => ({ value: d, label: DAY_LABEL[d] }))}
-                  />
-                </div>
-                <div>
-                  <label className="label-field">Ruang</label>
-                  <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                    className="input-field"
-                    placeholder="Lab-1, R.12, dll." />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label-field">Jam Mulai *</label>
-                  <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                    className="input-field" />
-                </div>
-                <div>
-                  <label className="label-field">Jam Selesai *</label>
-                  <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                    className="input-field" />
-                </div>
-              </div>
-              {msg && <p className="error-msg">{msg}</p>}
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
-                  {saving && <Loader2 size={16} className="animate-spin" />}
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
+            <div>
+              <label className="label-field">Ruang</label>
+              <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
+                className="input-field"
+                placeholder="Lab-1, R.12, dll." />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-field">Jam Mulai *</label>
+              <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
+                className="input-field" />
+            </div>
+            <div>
+              <label className="label-field">Jam Selesai *</label>
+              <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
+                className="input-field" />
+            </div>
+          </div>
+          {msg && <p className="error-msg">{msg}</p>}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

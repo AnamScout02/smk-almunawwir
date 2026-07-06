@@ -1,10 +1,11 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, X, Save, Users, BookOpen, Loader2, School, Search } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, Users, BookOpen, Loader2, School, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import Modal from "@/components/admin/Modal";
 import { withAlpha } from "@/lib/color";
 
 interface Major { id: string; name: string; code: string; themeColor: string | null }
@@ -175,67 +176,62 @@ export default function AdminClassesPage() {
       )}
 
       {/* Modal */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">
-                {form.id ? "Edit Kelas" : "Tambah Kelas"}
-              </h2>
-              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="label-field">Nama Kelas</label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Contoh: XII TKJ 1"
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label-field">Tingkat</label>
-                  <Select
-                    value={form.grade}
-                    onChange={v => setForm(f => ({ ...f, grade: v }))}
-                    options={GRADE_OPTIONS.map(g => ({ value: g, label: `Kelas ${g}` }))}
-                  />
-                </div>
-                <div>
-                  <label className="label-field">Konsentrasi / Jurusan</label>
-                  <Select
-                    value={form.majorId}
-                    onChange={v => setForm(f => ({ ...f, majorId: v }))}
-                    options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
-                    placeholder="Pilih jurusan"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="label-field">Wali Kelas</label>
-                <Select
-                  value={form.homeroomId}
-                  onChange={v => setForm(f => ({ ...f, homeroomId: v }))}
-                  options={teachers.map(t => ({ value: t.id, label: t.user.name }))}
-                  placeholder="— Belum ditentukan —"
-                />
-              </div>
-              {error && <p className="error-msg">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {isPending ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title={form.id ? "Edit Kelas" : "Tambah Kelas"}
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="submit" form="classForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {isPending ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <form id="classForm" onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="label-field">Nama Kelas</label>
+            <input
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="Contoh: XII TKJ 1"
+              className="input-field"
+              required
+            />
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">Tingkat</label>
+              <Select
+                value={form.grade}
+                onChange={v => setForm(f => ({ ...f, grade: v }))}
+                options={GRADE_OPTIONS.map(g => ({ value: g, label: `Kelas ${g}` }))}
+              />
+            </div>
+            <div>
+              <label className="label-field">Konsentrasi / Jurusan</label>
+              <Select
+                value={form.majorId}
+                onChange={v => setForm(f => ({ ...f, majorId: v }))}
+                options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
+                placeholder="Pilih jurusan"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="label-field">Wali Kelas</label>
+            <Select
+              value={form.homeroomId}
+              onChange={v => setForm(f => ({ ...f, homeroomId: v }))}
+              options={teachers.map(t => ({ value: t.id, label: t.user.name }))}
+              placeholder="— Belum ditentukan —"
+            />
+          </div>
+          {error && <p className="error-msg">{error}</p>}
+        </form>
+      </Modal>
     </div>
   );
 }

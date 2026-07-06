@@ -152,14 +152,15 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                 </p>
                 <div className="rounded-xl overflow-hidden border border-gray-100">
                   <div className="overflow-x-auto">
-                  <table className="data-table">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr>
-                        <th className="text-left">Mata Pelajaran</th>
-                        <th className="text-center">Tugas</th>
-                        <th className="text-center">Ulangan Harian</th>
-                        <th className="text-center">UTS</th>
-                        <th className="text-center">UAS</th>
+                      <tr className="border-b border-primary-100"
+                        style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
+                        <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tugas</th>
+                        <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Ulangan Harian</th>
+                        <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UTS</th>
+                        <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UAS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -169,12 +170,12 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                           ? <span className="font-semibold text-emerald-700">{val} siswa</span>
                           : <span className="text-gray-300">—</span>;
                         return (
-                          <tr key={name}>
-                            <td className="font-medium text-primary-900">{name}</td>
-                            <td className="text-center">{cell(get("Tugas"))}</td>
-                            <td className="text-center">{cell(get("Ulangan Harian"))}</td>
-                            <td className="text-center">{cell(get("UTS"))}</td>
-                            <td className="text-center">{cell(get("UAS"))}</td>
+                          <tr key={name} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                            <td className="px-5 py-3.5 font-medium text-primary-900">{name}</td>
+                            <td className="px-5 py-3.5 text-center">{cell(get("Tugas"))}</td>
+                            <td className="px-5 py-3.5 text-center">{cell(get("Ulangan Harian"))}</td>
+                            <td className="px-5 py-3.5 text-center">{cell(get("UTS"))}</td>
+                            <td className="px-5 py-3.5 text-center">{cell(get("UAS"))}</td>
                           </tr>
                         );
                       })}

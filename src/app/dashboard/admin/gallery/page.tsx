@@ -1,12 +1,13 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, Loader2, GalleryHorizontal, X, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GalleryHorizontal, Search } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import Modal from "@/components/admin/Modal";
 
 interface GalleryItem { id: string; title: string; imageUrl: string; category: string; caption?: string; order: number; }
 
@@ -93,44 +94,41 @@ export default function AdminGalleryPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-md my-8 shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 flex items-center justify-between"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-bold text-white">{editing ? "Edit Foto" : "Upload Foto Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <ImageUpload value={form.imageUrl} onChange={url => setForm(f => ({ ...f, imageUrl: url }))} folder="gallery" label="Foto *" />
-              <div>
-                <label className="label-field">Judul Foto *</label>
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field" placeholder="Judul foto..." />
-              </div>
-              <div>
-                <label className="label-field">Kategori</label>
-                <Select
-                  value={form.category}
-                  onChange={v => setForm(f => ({ ...f, category: v }))}
-                  options={categories.map(c => ({ value: c, label: c }))}
-                />
-              </div>
-              <div>
-                <label className="label-field">Keterangan (opsional)</label>
-                <input value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} className="input-field" placeholder="Keterangan singkat foto..." />
-              </div>
-              {msg && <p className="error-msg">{msg}</p>}
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
-                  {saving && <Loader2 size={14} className="animate-spin" />}
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editing ? "Edit Foto" : "Upload Foto Baru"}
+        footer={
+          <>
+            <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <ImageUpload value={form.imageUrl} onChange={url => setForm(f => ({ ...f, imageUrl: url }))} folder="gallery" label="Foto *" />
+          <div>
+            <label className="label-field">Judul Foto *</label>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field" placeholder="Judul foto..." />
           </div>
+          <div>
+            <label className="label-field">Kategori</label>
+            <Select
+              value={form.category}
+              onChange={v => setForm(f => ({ ...f, category: v }))}
+              options={categories.map(c => ({ value: c, label: c }))}
+            />
+          </div>
+          <div>
+            <label className="label-field">Keterangan (opsional)</label>
+            <input value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} className="input-field" placeholder="Keterangan singkat foto..." />
+          </div>
+          {msg && <p className="error-msg">{msg}</p>}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

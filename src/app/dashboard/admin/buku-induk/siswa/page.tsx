@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Search, Download, Upload, X, Save, Loader2,
+  Search, Download, Upload, Save, Loader2,
   BookOpen, User, Home, GraduationCap, Users, Smile, Plus, KeyRound,
   Heart, Award, Briefcase, LogOut, Trash2, Printer,
 } from "lucide-react";
@@ -16,6 +16,7 @@ import Section from "@/components/admin/BukuIndukSection";
 import Alert from "@/components/admin/Alert";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
+import Modal from "@/components/admin/Modal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -450,31 +451,31 @@ export default function BukuIndukSiswaPage() {
       )}
 
       {/* ── Modal ─────────────────────────────────────────────────────────────── */}
-      {selected !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 shrink-0"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <div>
-                <h2 className="text-base font-bold text-white">
-                  {isNew ? "Tambah Siswa Baru" : "Buku Induk Siswa"}
-                </h2>
-                <p className="text-xs text-white/50 mt-0.5">
-                  {isNew ? "Isi data siswa baru dan akun login" : `${selected.user.name} — NIS ${selected.nis}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {!isNew && selected && (
-                  <button onClick={() => router.push(`/dashboard/admin/buku-induk/siswa/${selected.id}/cetak`)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white/15 hover:bg-white/25 text-white rounded-xl border border-white/20 font-medium transition-colors">
-                    <Printer size={14} /> Cetak
-                  </button>
-                )}
-                <button onClick={() => setSelected(null)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={20} /></button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+      <Modal
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        size="xl"
+        scrollBody
+        title={isNew ? "Tambah Siswa Baru" : "Buku Induk Siswa"}
+        description={isNew ? "Isi data siswa baru dan akun login" : (selected ? `${selected.user.name} — NIS ${selected.nis}` : "")}
+        headerActions={!isNew && selected && (
+          <button onClick={() => router.push(`/dashboard/admin/buku-induk/siswa/${selected.id}/cetak`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white/15 hover:bg-white/25 text-white rounded-xl border border-white/20 font-medium transition-colors">
+            <Printer size={14} /> Cetak
+          </button>
+        )}
+        footer={
+          <>
+            <button onClick={() => setSelected(null)} className="btn-modal-cancel flex-1">
+              Batal
+            </button>
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <Save size={14} />
+              {saving ? "Menyimpan..." : (isNew ? "Buat Siswa" : "Simpan")}
+            </button>
+          </>
+        }
+      >
               {saveError && <Alert variant="error">{saveError}</Alert>}
 
               {/* ── A ─────────────────────────────────────────────────────── */}
@@ -807,21 +808,7 @@ export default function BukuIndukSiswaPage() {
                     onChange={e => setAccountForm(p => ({ ...p, password: e.target.value }))} />
                 </div>
               </Section>
-
-            </div>
-
-            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-              <button onClick={() => setSelected(null)} className="btn-modal-cancel flex-1">
-                Batal
-              </button>
-              <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
-                <Save size={14} />
-                {saving ? "Menyimpan..." : (isNew ? "Buat Siswa" : "Simpan")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

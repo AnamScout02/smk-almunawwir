@@ -108,20 +108,21 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         {attendance.length > 0 && (
           <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
             <div className="max-h-48 overflow-y-auto overflow-x-auto">
-              <table className="data-table">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr>
-                    <th className="text-left">Tanggal</th>
-                    <th className="text-center">Status</th>
+                  <tr className="border-b border-primary-100"
+                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tanggal</th>
+                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendance.slice(0, 30).map(a => (
-                    <tr key={a.id}>
-                      <td className="text-gray-600 text-xs">
+                    <tr key={a.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                      <td className="px-5 py-3.5 text-gray-600 text-xs">
                         {new Date(a.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="text-center">
+                      <td className="px-5 py-3.5 text-center">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[a.status] ?? "bg-gray-50 text-gray-500 border border-gray-200"}`}>{a.status}</span>
                       </td>
                     </tr>
@@ -147,15 +148,16 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
                 <div key={sem}>
                   <p className="font-semibold text-sm text-primary-800 mb-2">{sem}</p>
                   <div className="overflow-x-auto rounded-xl border border-gray-100 overflow-hidden">
-                    <table className="data-table">
+                    <table className="w-full text-sm">
                       <thead>
-                        <tr>
-                          <th className="text-left">Mapel</th>
-                          <th className="text-center">Tugas</th>
-                          <th className="text-center">UH</th>
-                          <th className="text-center">UTS</th>
-                          <th className="text-center">UAS</th>
-                          <th className="text-center">Rata-rata</th>
+                        <tr className="border-b border-primary-100"
+                          style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                          <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mapel</th>
+                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tugas</th>
+                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UH</th>
+                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UTS</th>
+                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UAS</th>
+                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Rata-rata</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -168,13 +170,13 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
                             ? <span className={`font-semibold ${val >= 75 ? "text-emerald-700" : "text-red-600"}`}>{val}</span>
                             : <span className="text-gray-300">—</span>;
                           return (
-                            <tr key={subject}>
-                              <td className="font-medium text-primary-900">{subject}</td>
-                              <td className="text-center">{cell(getScore("Tugas"))}</td>
-                              <td className="text-center">{cell(getScore("Ulangan Harian"))}</td>
-                              <td className="text-center">{cell(getScore("UTS"))}</td>
-                              <td className="text-center">{cell(getScore("UAS"))}</td>
-                              <td className="text-center">
+                            <tr key={subject} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                              <td className="px-5 py-3.5 font-medium text-primary-900">{subject}</td>
+                              <td className="px-5 py-3.5 text-center">{cell(getScore("Tugas"))}</td>
+                              <td className="px-5 py-3.5 text-center">{cell(getScore("Ulangan Harian"))}</td>
+                              <td className="px-5 py-3.5 text-center">{cell(getScore("UTS"))}</td>
+                              <td className="px-5 py-3.5 text-center">{cell(getScore("UAS"))}</td>
+                              <td className="px-5 py-3.5 text-center">
                                 {avg !== null ? <span className={`font-bold ${avg >= 75 ? "text-emerald-700" : "text-red-600"}`}>{avg.toFixed(1)}</span> : <span className="text-gray-300">—</span>}
                               </td>
                             </tr>

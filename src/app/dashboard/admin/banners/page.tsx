@@ -1,10 +1,11 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Loader2, Image as ImageIcon } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import Modal from "@/components/admin/Modal";
 
 interface Banner {
   id: string;
@@ -123,50 +124,47 @@ export default function BannersPage() {
       )}
 
       {/* Modal Form */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-lg my-8 shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 flex items-center justify-between"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-bold text-white">{editing ? "Edit Banner" : "Tambah Banner Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editing ? "Edit Banner" : "Tambah Banner Baru"}
+        footer={
+          <>
+            <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              {saving && <Loader2 size={16} className="animate-spin" />}
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <ImageUpload value={form.imageUrl} onChange={(url) => setForm(f => ({ ...f, imageUrl: url }))} folder="banners" label="Foto Banner (opsional)" />
+          <div>
+            <label className="label-field">Judul *</label>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field" placeholder="Cth: Mendidik Generasi Qurani" />
+          </div>
+          <div>
+            <label className="label-field">Subjudul / Deskripsi *</label>
+            <textarea rows={3} value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} className="input-field resize-none" placeholder="Deskripsi singkat yang tampil di bawah judul" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-field">Teks Tombol</label>
+              <input value={form.linkText} onChange={e => setForm(f => ({ ...f, linkText: e.target.value }))} className="input-field" placeholder="Cth: Daftar Sekarang" />
             </div>
-            <div className="p-6 space-y-4">
-              <ImageUpload value={form.imageUrl} onChange={(url) => setForm(f => ({ ...f, imageUrl: url }))} folder="banners" label="Foto Banner (opsional)" />
-              <div>
-                <label className="label-field">Judul *</label>
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field" placeholder="Cth: Mendidik Generasi Qurani" />
-              </div>
-              <div>
-                <label className="label-field">Subjudul / Deskripsi *</label>
-                <textarea rows={3} value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} className="input-field resize-none" placeholder="Deskripsi singkat yang tampil di bawah judul" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label-field">Teks Tombol</label>
-                  <input value={form.linkText} onChange={e => setForm(f => ({ ...f, linkText: e.target.value }))} className="input-field" placeholder="Cth: Daftar Sekarang" />
-                </div>
-                <div>
-                  <label className="label-field">Link Tombol</label>
-                  <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} className="input-field" placeholder="/admissions" />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-primary-600" />
-                <span className="text-sm text-gray-700">Tampilkan banner ini di website</span>
-              </label>
-              {msg && <p className="error-msg">{msg}</p>}
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
-                  {saving && <Loader2 size={16} className="animate-spin" />}
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
+            <div>
+              <label className="label-field">Link Tombol</label>
+              <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} className="input-field" placeholder="/admissions" />
             </div>
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-primary-600" />
+            <span className="text-sm text-gray-700">Tampilkan banner ini di website</span>
+          </label>
+          {msg && <p className="error-msg">{msg}</p>}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

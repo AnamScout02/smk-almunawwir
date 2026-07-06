@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, X, Save, Trash2, Archive, Search, ExternalLink, Pencil } from "lucide-react";
+import { Plus, Save, Trash2, Archive, Search, ExternalLink, Pencil } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import Modal from "@/components/admin/Modal";
 
 interface Arsip {
   id: string; judul: string; kategori: string; nomor?: string;
@@ -118,64 +119,61 @@ export default function ArsipPage() {
       )}
 
       {/* Modal */}
-      {modal !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">{isNew ? "Tambah Arsip" : "Edit Arsip"}</h2>
-              <button onClick={() => setModal(null)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
+      <Modal
+        open={modal !== null}
+        onClose={() => setModal(null)}
+        title={isNew ? "Tambah Arsip" : "Edit Arsip"}
+        footer={
+          <>
+            <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {err && <p className="error-msg">{err}</p>}
+          <div>
+            <label className="label-field">Judul Arsip <span className="text-red-500">*</span></label>
+            <input className="input-field" value={modal?.judul ?? ""}
+              onChange={e => setModal(p => ({ ...p, judul: e.target.value }))}
+              placeholder="Nama/judul dokumen" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">Kategori <span className="text-red-500">*</span></label>
+              <Select
+                value={modal?.kategori ?? ""}
+                onChange={v => setModal(p => ({ ...p, kategori: v }))}
+                options={KATEGORI.map(k => ({ value: k, label: k }))}
+                placeholder="— Pilih —"
+              />
             </div>
-            <div className="p-6 space-y-4">
-              {err && <p className="error-msg">{err}</p>}
-              <div>
-                <label className="label-field">Judul Arsip <span className="text-red-500">*</span></label>
-                <input className="input-field" value={modal.judul ?? ""}
-                  onChange={e => setModal(p => ({ ...p, judul: e.target.value }))}
-                  placeholder="Nama/judul dokumen" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label-field">Kategori <span className="text-red-500">*</span></label>
-                  <Select
-                    value={modal.kategori ?? ""}
-                    onChange={v => setModal(p => ({ ...p, kategori: v }))}
-                    options={KATEGORI.map(k => ({ value: k, label: k }))}
-                    placeholder="— Pilih —"
-                  />
-                </div>
-                <div>
-                  <label className="label-field">Nomor Dokumen</label>
-                  <input className="input-field" value={modal.nomor ?? ""}
-                    onChange={e => setModal(p => ({ ...p, nomor: e.target.value }))}
-                    placeholder="Opsional" />
-                </div>
-                <div>
-                  <label className="label-field">Tanggal <span className="text-red-500">*</span></label>
-                  <DatePicker value={modal.tanggal ?? ""} onChange={v => setModal(p => ({ ...p, tanggal: v }))} />
-                </div>
-                <div>
-                  <label className="label-field">Link File</label>
-                  <input className="input-field" value={modal.fileUrl ?? ""}
-                    onChange={e => setModal(p => ({ ...p, fileUrl: e.target.value }))}
-                    placeholder="URL dokumen" />
-                </div>
-              </div>
-              <div>
-                <label className="label-field">Keterangan</label>
-                <textarea className="input-field resize-none" rows={3} value={modal.keterangan ?? ""}
-                  onChange={e => setModal(p => ({ ...p, keterangan: e.target.value }))} />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
-                  <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
+            <div>
+              <label className="label-field">Nomor Dokumen</label>
+              <input className="input-field" value={modal?.nomor ?? ""}
+                onChange={e => setModal(p => ({ ...p, nomor: e.target.value }))}
+                placeholder="Opsional" />
+            </div>
+            <div>
+              <label className="label-field">Tanggal <span className="text-red-500">*</span></label>
+              <DatePicker value={modal?.tanggal ?? ""} onChange={v => setModal(p => ({ ...p, tanggal: v }))} />
+            </div>
+            <div>
+              <label className="label-field">Link File</label>
+              <input className="input-field" value={modal?.fileUrl ?? ""}
+                onChange={e => setModal(p => ({ ...p, fileUrl: e.target.value }))}
+                placeholder="URL dokumen" />
             </div>
           </div>
+          <div>
+            <label className="label-field">Keterangan</label>
+            <textarea className="input-field resize-none" rows={3} value={modal?.keterangan ?? ""}
+              onChange={e => setModal(p => ({ ...p, keterangan: e.target.value }))} />
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

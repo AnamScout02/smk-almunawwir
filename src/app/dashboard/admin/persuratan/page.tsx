@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, X, Save, Trash2, Mail, Send, Eye, Search, FileText } from "lucide-react";
+import { Plus, Save, Trash2, Mail, Send, Eye, Search } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Modal from "@/components/admin/Modal";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Surat {
   id: string; tipe: string; nomor: string;
@@ -131,126 +133,122 @@ export default function PersuratanPage() {
       </div>
 
       {/* Tabel */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-        <table className="data-table">
-          <thead>
-            <tr>
-              {["No. Surat", "Tanggal", tab === "MASUK" ? "Dari" : "Kepada", "Perihal", "Status", "Aksi"].map(h => (
-                <th key={h} className={h === "Aksi" ? "text-center" : ""}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="text-center py-10 text-gray-400">Memuat...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-10 text-gray-400">Belum ada surat {tab === "MASUK" ? "masuk" : "keluar"}</td></tr>
-            ) : filtered.map((s) => (
-              <tr key={s.id} className={!s.isRead && tab === "MASUK" ? "!bg-blue-50/50" : ""}>
-                <td className="font-mono text-xs font-semibold text-primary-700">{s.nomor}</td>
-                <td className="text-gray-500 text-xs">{formatTgl(s.tanggal)}</td>
-                <td className="font-semibold text-primary-900">{s.pihak}</td>
-                <td className="text-gray-500 max-w-xs truncate">{s.perihal}</td>
-                <td>
-                  {tab === "MASUK" ? (
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border ${s.isRead ? "bg-gray-50 text-gray-500 border-gray-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                      {s.isRead ? "Dibaca" : "Belum Dibaca"}
-                    </span>
-                  ) : (
-                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">Terkirim</span>
-                  )}
-                </td>
-                <td className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    {tab === "MASUK" && !s.isRead && (
-                      <button onClick={() => markRead(s.id)} title="Tandai Sudah Dibaca"
-                        className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
-                        <Eye size={14} />
-                      </button>
-                    )}
-                    <button onClick={() => openEdit(s)}
-                      className="px-2.5 py-1 text-xs font-semibold bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 transition-colors">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(s.id)}
-                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-        {!loading && (
+      {loading ? (
+        <div className="flex justify-center py-16 text-gray-400">Memuat...</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Mail} title={`Belum ada surat ${tab === "MASUK" ? "masuk" : "keluar"}`} />
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-primary-100"
+                  style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                  {["No. Surat", "Tanggal", tab === "MASUK" ? "Dari" : "Kepada", "Perihal", "Status", "Aksi"].map(h => (
+                    <th key={h} className={`px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 ${h === "Aksi" ? "text-center" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((s) => (
+                  <tr key={s.id} className={`border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors ${!s.isRead && tab === "MASUK" ? "!bg-blue-50/50" : ""}`}>
+                    <td className="px-5 py-3.5 font-mono text-xs font-semibold text-primary-700">{s.nomor}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{formatTgl(s.tanggal)}</td>
+                    <td className="px-5 py-3.5 font-semibold text-primary-900">{s.pihak}</td>
+                    <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{s.perihal}</td>
+                    <td className="px-5 py-3.5">
+                      {tab === "MASUK" ? (
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border ${s.isRead ? "bg-gray-50 text-gray-500 border-gray-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                          {s.isRead ? "Dibaca" : "Belum Dibaca"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">Terkirim</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {tab === "MASUK" && !s.isRead && (
+                          <button onClick={() => markRead(s.id)} title="Tandai Sudah Dibaca"
+                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Eye size={14} />
+                          </button>
+                        )}
+                        <button onClick={() => openEdit(s)}
+                          className="px-2.5 py-1 text-xs font-semibold bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 transition-colors">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(s.id)}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
             {filtered.length} surat {tab === "MASUK" ? "masuk" : "keluar"}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal */}
-      {modal !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">
-                {isNew ? `Tambah Surat ${tab === "MASUK" ? "Masuk" : "Keluar"}` : "Edit Surat"}
-              </h2>
-              <button onClick={() => setModal(null)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
+      <Modal
+        open={modal !== null}
+        onClose={() => setModal(null)}
+        title={isNew ? `Tambah Surat ${tab === "MASUK" ? "Masuk" : "Keluar"}` : "Edit Surat"}
+        footer={
+          <>
+            <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {err && <p className="error-msg">{err}</p>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label-field">Nomor Surat <span className="text-red-500">*</span></label>
+              <input className="input-field" value={modal?.nomor ?? ""}
+                onChange={e => setModal(p => ({ ...p, nomor: e.target.value }))}
+                placeholder="Contoh: 001/SMK/VI/2025" />
             </div>
-            <div className="p-6 space-y-4">
-              {err && <p className="error-msg">{err}</p>}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="label-field">Nomor Surat <span className="text-red-500">*</span></label>
-                  <input className="input-field" value={modal.nomor ?? ""}
-                    onChange={e => setModal(p => ({ ...p, nomor: e.target.value }))}
-                    placeholder="Contoh: 001/SMK/VI/2025" />
-                </div>
-                <div>
-                  <label className="label-field">Tanggal <span className="text-red-500">*</span></label>
-                  <DatePicker value={modal.tanggal ?? ""} onChange={v => setModal(p => ({ ...p, tanggal: v }))} />
-                </div>
-                <div>
-                  <label className="label-field">
-                    {tab === "MASUK" ? "Dari" : "Kepada"} <span className="text-red-500">*</span>
-                  </label>
-                  <input className="input-field" value={modal.pihak ?? ""}
-                    onChange={e => setModal(p => ({ ...p, pihak: e.target.value }))}
-                    placeholder={tab === "MASUK" ? "Nama pengirim/instansi" : "Nama penerima/instansi"} />
-                </div>
-                <div className="col-span-2">
-                  <label className="label-field">Perihal <span className="text-red-500">*</span></label>
-                  <input className="input-field" value={modal.perihal ?? ""}
-                    onChange={e => setModal(p => ({ ...p, perihal: e.target.value }))}
-                    placeholder="Isi perihal surat" />
-                </div>
-                <div className="col-span-2">
-                  <label className="label-field">Keterangan</label>
-                  <textarea className="input-field resize-none" rows={3} value={modal.keterangan ?? ""}
-                    onChange={e => setModal(p => ({ ...p, keterangan: e.target.value }))} />
-                </div>
-                <div className="col-span-2">
-                  <label className="label-field">Link File / Lampiran</label>
-                  <input className="input-field" value={modal.fileUrl ?? ""}
-                    onChange={e => setModal(p => ({ ...p, fileUrl: e.target.value }))}
-                    placeholder="URL file (opsional)" />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
-                <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
-                  <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
+            <div>
+              <label className="label-field">Tanggal <span className="text-red-500">*</span></label>
+              <DatePicker value={modal?.tanggal ?? ""} onChange={v => setModal(p => ({ ...p, tanggal: v }))} />
+            </div>
+            <div>
+              <label className="label-field">
+                {tab === "MASUK" ? "Dari" : "Kepada"} <span className="text-red-500">*</span>
+              </label>
+              <input className="input-field" value={modal?.pihak ?? ""}
+                onChange={e => setModal(p => ({ ...p, pihak: e.target.value }))}
+                placeholder={tab === "MASUK" ? "Nama pengirim/instansi" : "Nama penerima/instansi"} />
+            </div>
+            <div className="col-span-2">
+              <label className="label-field">Perihal <span className="text-red-500">*</span></label>
+              <input className="input-field" value={modal?.perihal ?? ""}
+                onChange={e => setModal(p => ({ ...p, perihal: e.target.value }))}
+                placeholder="Isi perihal surat" />
+            </div>
+            <div className="col-span-2">
+              <label className="label-field">Keterangan</label>
+              <textarea className="input-field resize-none" rows={3} value={modal?.keterangan ?? ""}
+                onChange={e => setModal(p => ({ ...p, keterangan: e.target.value }))} />
+            </div>
+            <div className="col-span-2">
+              <label className="label-field">Link File / Lampiran</label>
+              <input className="input-field" value={modal?.fileUrl ?? ""}
+                onChange={e => setModal(p => ({ ...p, fileUrl: e.target.value }))}
+                placeholder="URL file (opsional)" />
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

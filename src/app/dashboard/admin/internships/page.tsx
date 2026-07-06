@@ -5,6 +5,9 @@ import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
+import Modal from "@/components/admin/Modal";
+import GroupedSection from "@/components/admin/GroupedSection";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Internship {
   id: string;
@@ -51,7 +54,6 @@ export default function AdminInternshipsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("ALL");
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isPending, startTransition] = useTransition();
@@ -111,13 +113,18 @@ export default function AdminInternshipsPage() {
 
   const filtered = students.filter(s => {
     const q = search.toLowerCase();
-    const matchSearch = !q || s.user.name.toLowerCase().includes(q) || s.nis.includes(q) || (s.class?.name ?? "").toLowerCase().includes(q);
-    const matchStatus = filterStatus === "ALL" || (filterStatus === "NONE" && !s.internship) || s.internship?.status === filterStatus;
-    return matchSearch && matchStatus;
+    return !q || s.user.name.toLowerCase().includes(q) || s.nis.includes(q) || (s.class?.name ?? "").toLowerCase().includes(q);
   });
 
   const withPKL = students.filter(s => s.internship).length;
   const noPKL = students.filter(s => !s.internship).length;
+
+  const groups = [
+    { key: "ONGOING", title: "Sedang PKL", items: filtered.filter(s => s.internship?.status === "ONGOING") },
+    { key: "COMPLETED", title: "Selesai", items: filtered.filter(s => s.internship?.status === "COMPLETED") },
+    { key: "CANCELLED", title: "Dibatalkan", items: filtered.filter(s => s.internship?.status === "CANCELLED") },
+  ].filter(g => g.items.length > 0);
+  const noneGroup = filtered.filter(s => !s.internship);
 
   function fmt(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
@@ -138,182 +145,158 @@ export default function AdminInternshipsPage() {
         <StatTile color="amber" value={noPKL} label="Belum Ada PKL" />
       </div>
 
-      {/* Filter & Search */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama, NIS, atau kelas..."
-            className="input-field pl-10" />
-        </div>
-        <Select
-          value={filterStatus}
-          onChange={v => setFilterStatus(v)}
-          className="sm:w-44"
-          options={[
-            { value: "ALL", label: "Semua Status" },
-            { value: "NONE", label: "Belum PKL" },
-            { value: "ONGOING", label: "Sedang PKL" },
-            { value: "COMPLETED", label: "Selesai" },
-            { value: "CANCELLED", label: "Dibatalkan" },
-          ]}
-        />
+      {/* Search */}
+      <div className="relative mb-5">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Cari nama, NIS, atau kelas..."
+          className="input-field pl-10" />
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">
           <Loader2 size={22} className="animate-spin mr-2" /> Memuat data...
         </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Users} title="Tidak ada siswa yang cocok" />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Siswa</th>
-                <th className="hidden md:table-cell">Kelas</th>
-                <th>PKL</th>
-                <th className="text-center">Status</th>
-                <th className="text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center text-gray-400 py-12 text-sm">
-                    <Users size={28} className="mx-auto mb-2 opacity-30" />
-                    Tidak ada siswa yang cocok
-                  </td>
-                </tr>
-              ) : filtered.map((s) => {
-                const pkl = s.internship;
-                const statusCfg = pkl ? PKL_STATUS[pkl.status] : null;
-                return (
-                  <tr key={s.id}>
-                    <td>
-                      <p className="font-semibold text-primary-900">{s.user.name}</p>
-                      <p className="text-gray-400 text-xs font-mono mt-0.5">{s.nis}</p>
-                    </td>
-                    <td className="text-xs hidden md:table-cell">
-                      {s.class?.name
-                        ? <span className="bg-primary-50 text-primary-600 font-semibold px-2 py-0.5 rounded-full border border-primary-100">{s.class.name}</span>
-                        : <span className="text-amber-500">Belum ada kelas</span>}
-                    </td>
-                    <td>
-                      {pkl ? (
-                        <div>
-                          <p className="font-semibold text-gray-800 text-xs">{pkl.company}</p>
-                          <p className="text-gray-400 text-xs mt-0.5">{pkl.position}</p>
-                          <p className="text-gray-300 text-xs mt-0.5">{fmt(pkl.startDate)} — {fmt(pkl.endDate)}</p>
-                        </div>
-                      ) : (
-                        <span className="text-gray-300 text-xs italic">Belum diisi</span>
-                      )}
-                    </td>
-                    <td className="text-center">
-                      {statusCfg ? (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                          pkl?.status === "ONGOING" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                          pkl?.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                          "bg-red-50 text-red-600 border-red-200"
-                        }`}>
-                          <statusCfg.icon size={11} />
-                          {statusCfg.label}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openEdit(s)}
-                          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
-                          <Edit2 size={12} /> {pkl ? "Edit" : "Tambah"}
-                        </button>
-                        {pkl && (
-                          <button onClick={() => handleDelete(s.id)}
-                            className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 border border-red-100 transition-colors">
-                            <X size={12} /> Hapus
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          </div>
+        <div className="space-y-6">
+          {groups.map(({ key, title, items }) => (
+            <GroupedSection key={key} title={title} count={items.length} icon={PKL_STATUS[key].icon}>
+              <InternshipTable items={items} onEdit={openEdit} onDelete={handleDelete} fmt={fmt} />
+            </GroupedSection>
+          ))}
+          {noneGroup.length > 0 && (
+            <GroupedSection title="Belum PKL" count={noneGroup.length} icon={Users} variant="warning">
+              <InternshipTable items={noneGroup} onEdit={openEdit} onDelete={handleDelete} fmt={fmt} />
+            </GroupedSection>
+          )}
         </div>
       )}
 
       {/* Modal */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 flex items-start justify-between"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <div>
-                <h2 className="font-heading font-bold text-white">Data PKL Siswa</h2>
-                <p className="text-xs text-white/50 mt-0.5">{form.studentName}</p>
-              </div>
-              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors mt-0.5">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 flex flex-col gap-4">
-              {error && <p className="error-msg">{error}</p>}
-              <div>
-                <label className="label-field">Perusahaan / Instansi *</label>
-                <input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                  placeholder="cth: PT Telkom Indonesia"
-                  className="input-field" />
-              </div>
-              <div>
-                <label className="label-field">Posisi / Jabatan *</label>
-                <input value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
-                  placeholder="cth: Network Engineer Intern"
-                  className="input-field" />
-              </div>
-              <div>
-                <label className="label-field">Supervisor / Pembimbing</label>
-                <input value={form.supervisor} onChange={e => setForm(f => ({ ...f, supervisor: e.target.value }))}
-                  placeholder="cth: Bapak Ahmad Fauzi"
-                  className="input-field" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label-field">Tanggal Mulai *</label>
-                  <DatePicker value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
-                </div>
-                <div>
-                  <label className="label-field">Tanggal Selesai *</label>
-                  <DatePicker value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} />
-                </div>
-              </div>
-              <div>
-                <label className="label-field">Status</label>
-                <Select
-                  value={form.status}
-                  onChange={v => setForm(f => ({ ...f, status: v }))}
-                  options={[
-                    { value: "ONGOING", label: "Sedang PKL" },
-                    { value: "COMPLETED", label: "Selesai" },
-                    { value: "CANCELLED", label: "Dibatalkan" },
-                  ]}
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  Simpan
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title="Data PKL Siswa"
+        description={form.studentName}
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="submit" form="pklForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Simpan
+            </button>
+          </>
+        }
+      >
+        <form id="pklForm" onSubmit={handleSave} className="flex flex-col gap-4">
+          {error && <p className="error-msg">{error}</p>}
+          <div>
+            <label className="label-field">Perusahaan / Instansi *</label>
+            <input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+              placeholder="cth: PT Telkom Indonesia"
+              className="input-field" />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="label-field">Posisi / Jabatan *</label>
+            <input value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
+              placeholder="cth: Network Engineer Intern"
+              className="input-field" />
+          </div>
+          <div>
+            <label className="label-field">Supervisor / Pembimbing</label>
+            <input value={form.supervisor} onChange={e => setForm(f => ({ ...f, supervisor: e.target.value }))}
+              placeholder="cth: Bapak Ahmad Fauzi"
+              className="input-field" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-field">Tanggal Mulai *</label>
+              <DatePicker value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
+            </div>
+            <div>
+              <label className="label-field">Tanggal Selesai *</label>
+              <DatePicker value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} />
+            </div>
+          </div>
+          <div>
+            <label className="label-field">Status</label>
+            <Select
+              value={form.status}
+              onChange={v => setForm(f => ({ ...f, status: v }))}
+              options={[
+                { value: "ONGOING", label: "Sedang PKL" },
+                { value: "COMPLETED", label: "Selesai" },
+                { value: "CANCELLED", label: "Dibatalkan" },
+              ]}
+            />
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+function InternshipTable({ items, onEdit, onDelete, fmt }: {
+  items: Student[]; onEdit: (s: Student) => void; onDelete: (id: string) => void; fmt: (d: string) => string;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Kelas</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">PKL</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((s) => {
+            const pkl = s.internship;
+            return (
+              <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                <td className="px-5 py-3.5">
+                  <p className="font-semibold text-primary-900">{s.user.name}</p>
+                  <p className="text-gray-400 text-xs font-mono mt-0.5">{s.nis}</p>
+                </td>
+                <td className="px-5 py-3.5 text-xs hidden md:table-cell">
+                  {s.class?.name
+                    ? <span className="bg-primary-50 text-primary-600 font-semibold px-2 py-0.5 rounded-full border border-primary-100">{s.class.name}</span>
+                    : <span className="text-amber-500">Belum ada kelas</span>}
+                </td>
+                <td className="px-5 py-3.5">
+                  {pkl ? (
+                    <div>
+                      <p className="font-semibold text-gray-800 text-xs">{pkl.company}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{pkl.position}</p>
+                      <p className="text-gray-300 text-xs mt-0.5">{fmt(pkl.startDate)} — {fmt(pkl.endDate)}</p>
+                    </div>
+                  ) : (
+                    <span className="text-gray-300 text-xs italic">Belum diisi</span>
+                  )}
+                </td>
+                <td className="px-5 py-3.5 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => onEdit(s)}
+                      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
+                      <Edit2 size={12} /> {pkl ? "Edit" : "Tambah"}
+                    </button>
+                    {pkl && (
+                      <button onClick={() => onDelete(s.id)}
+                        className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 border border-red-100 transition-colors">
+                        <X size={12} /> Hapus
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
