@@ -57,8 +57,40 @@ model Major {
   code        String    @unique
   description String
   icon        String?
+  logoUrl     String?
+  tagline     String?
+  longDesc    String?
+  skills      String[]  @default([])
+  career      String[]  @default([])
+  cert        String?
+  features    String[]  @default([])
+  themeColor  String?
   students    Student[]
   classes     Class[]
+  gallery     MajorGallery[]
+  subjects    Subject[]
+}
+
+model Subject {
+  id         String   @id @default(cuid())
+  code       Int
+  name       String
+  category   String   // Kelompok Mapel Umum | Kelompok Mapel Kejuruan | Mapel Diniyah | Muatan Nasional | Muatan Kewilayahan | C3 Kompetensi Keahlian
+  gradeScope String   // X_XI | XII
+  majorId    String?
+  major      Major?   @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model MajorGallery {
+  id        String   @id @default(cuid())
+  majorId   String
+  major     Major    @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Class {
