@@ -8,6 +8,7 @@ import {
   ArrowLeft, BookOpen, Phone, Mail, Hash, School,
   Users, ClipboardList, GraduationCap, UserCircle,
 } from "lucide-react";
+import StatTile from "@/components/admin/StatTile";
 
 export default async function AdminTeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await verifyRole(["ADMIN", "TAS"]);
@@ -58,7 +59,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
   });
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
@@ -132,18 +133,9 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
 
       {/* Statistik nilai */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
-          <p className="text-2xl font-heading font-bold text-primary-700">{totalGrades}</p>
-          <p className="text-xs text-gray-400">Total Nilai</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
-          <p className="text-2xl font-heading font-bold text-emerald-600">{uniqueSubjects.length}</p>
-          <p className="text-xs text-gray-400">Mata Pelajaran</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center shadow-sm">
-          <p className="text-2xl font-heading font-bold text-amber-500">{uniqueSemesters.length}</p>
-          <p className="text-xs text-gray-400">Semester Aktif</p>
-        </div>
+        <StatTile size="md" color="primary" value={totalGrades} label="Total Nilai" />
+        <StatTile size="md" color="emerald" value={uniqueSubjects.length} label="Mata Pelajaran" />
+        <StatTile size="md" color="amber" value={uniqueSemesters.length} label="Semester Aktif" />
       </div>
 
       {/* Rekap nilai per semester */}
@@ -159,6 +151,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                   <span className="text-xs bg-primary-50 text-primary-600 border border-primary-100 px-2.5 py-0.5 rounded-full font-medium">{semester}</span>
                 </p>
                 <div className="rounded-xl overflow-hidden border border-gray-100">
+                  <div className="overflow-x-auto">
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -187,6 +180,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             ))}

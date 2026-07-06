@@ -6,6 +6,10 @@ import {
   ChevronDown, X, Save, BarChart2, Users, TrendingUp, CalendarDays,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import Alert from "@/components/admin/Alert";
+import StatTile from "@/components/admin/StatTile";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface AcademicYear {
   id: string;
@@ -145,7 +149,7 @@ export default function TahunAjaranPage() {
         actions={
           <button
             onClick={() => { setShowModal(true); setFormError(""); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-900 transition-colors"
+            className="btn-gold flex items-center gap-2 text-sm"
           >
             <Plus size={16} /> Buat Tahun Ajaran
           </button>
@@ -157,7 +161,7 @@ export default function TahunAjaranPage() {
         {loading ? (
           <div className="text-center py-10 text-gray-400">Memuat data...</div>
         ) : years.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">Belum ada tahun ajaran</div>
+          <EmptyState icon={Calendar} description="Belum ada tahun ajaran" />
         ) : years.map((year) => (
           <div key={year.id}
             className={`bg-white rounded-2xl border-2 p-5 flex items-start justify-between gap-4 shadow-sm hover:shadow-md transition-shadow ${
@@ -235,8 +239,7 @@ export default function TahunAjaranPage() {
         </button>
 
         {naikResult && (
-          <div className={`mt-4 p-4 rounded-lg ${naikResult.errors.length > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
-            <p className="font-semibold text-gray-800 mb-2">Hasil Proses Naik Kelas:</p>
+          <Alert variant={naikResult.errors.length > 0 ? "warning" : "success"} className="mt-4" title="Hasil Proses Naik Kelas:">
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-600">{naikResult.promoted}</p>
@@ -260,7 +263,7 @@ export default function TahunAjaranPage() {
                 </ul>
               </div>
             )}
-          </div>
+          </Alert>
         )}
       </div>
 
@@ -274,16 +277,12 @@ export default function TahunAjaranPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-medium">Tahun:</span>
-            <select
-              className="input-field w-auto text-xs"
+            <Select
+              className="w-auto text-xs"
               value={selectedYearId}
-              onChange={e => handleStatYear(e.target.value)}
-            >
-              <option value="">Tahun Berjalan (Live)</option>
-              {years.map(y => (
-                <option key={y.id} value={y.id}>{y.name}</option>
-              ))}
-            </select>
+              onChange={v => handleStatYear(v)}
+              options={[{ value: "", label: "Tahun Berjalan (Live)" }, ...years.map(y => ({ value: y.id, label: y.name }))]}
+            />
           </div>
         </div>
         <div className="p-6">
@@ -295,16 +294,13 @@ export default function TahunAjaranPage() {
             {/* Ringkasan */}
             <div className="grid grid-cols-5 gap-3 mb-6">
               {[
-                { label: "Total", value: statistik.total, color: "text-primary-700", bg: "bg-primary-50 border-primary-100" },
-                { label: "Aktif", value: statistik.aktif, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-                { label: "Lulus", value: statistik.lulus, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
-                { label: "Keluar", value: statistik.keluar, color: "text-red-500", bg: "bg-red-50 border-red-100" },
-                { label: "Pindah", value: statistik.pindah, color: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
+                { label: "Total", value: statistik.total, color: "primary" as const },
+                { label: "Aktif", value: statistik.aktif, color: "emerald" as const },
+                { label: "Lulus", value: statistik.lulus, color: "blue" as const },
+                { label: "Keluar", value: statistik.keluar, color: "red" as const },
+                { label: "Pindah", value: statistik.pindah, color: "amber" as const },
               ].map(item => (
-                <div key={item.label} className={`rounded-xl border p-4 text-center ${item.bg}`}>
-                  <p className={`text-2xl font-heading font-bold ${item.color}`}>{item.value}</p>
-                  <p className="text-xs text-gray-500 mt-1">{item.label}</p>
-                </div>
+                <StatTile key={item.label} size="md" color={item.color} value={item.value} label={item.label} />
               ))}
             </div>
 
@@ -390,13 +386,13 @@ export default function TahunAjaranPage() {
                 <textarea className={`${CLS} resize-none`} rows={3} placeholder="Opsional"
                   value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-50">
-              <button onClick={() => setShowModal(false)} className="btn-modal-cancel">Batal</button>
-              <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex items-center gap-2">
-                <Save size={15} />
-                {saving ? "Menyimpan..." : "Simpan"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+                  <Save size={15} />
+                  {saving ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -448,15 +444,14 @@ export default function TahunAjaranPage() {
               </div>
             </div>
             <div className="p-6">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-800">
-                <p className="font-semibold mb-1">Yang akan terjadi:</p>
+              <Alert variant="warning" className="mb-5" title="Yang akan terjadi:">
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Semua siswa AKTIF akan disimpan ke riwayat tahun ajaran aktif</li>
                   <li>Siswa grade 10 dipindah ke kelas grade 11 (jurusan sama)</li>
                   <li>Siswa grade 11 dipindah ke kelas grade 12 (jurusan sama)</li>
                   <li>Siswa grade 12 ditetapkan LULUS dan diberi tanggal kelulusan</li>
                 </ul>
-              </div>
+              </Alert>
               <div className="flex justify-end gap-3">
                 <button onClick={() => setConfirmNaik(false)} className="btn-modal-cancel">Batal</button>
                 <button onClick={handleNaikKelas} disabled={naikLoading}

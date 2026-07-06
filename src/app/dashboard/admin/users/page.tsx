@@ -1,7 +1,11 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Search, Edit2, Trash2, X, Save, Eye, EyeOff, Loader2, UserCog } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Save, Eye, EyeOff, Loader2, UserCog, ShieldCheck, GraduationCap, Users } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import Modal from "@/components/admin/Modal";
+import EmptyState from "@/components/admin/EmptyState";
+import GroupedSection from "@/components/admin/GroupedSection";
 
 interface User {
   id: string;
@@ -13,13 +17,6 @@ interface User {
 
 interface Major { id: string; name: string; code: string }
 interface ClassItem { id: string; name: string; grade: number }
-
-const ROLE_BADGE: Record<string, string> = {
-  ADMIN:   "bg-purple-50 text-purple-700 border border-purple-200",
-  TEACHER: "bg-blue-50 text-blue-700 border border-blue-200",
-  STUDENT: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-};
-const ROLE_LABEL: Record<string, string> = { ADMIN: "Admin", TEACHER: "Guru", STUDENT: "Siswa" };
 
 interface FormState {
   id?: string;
@@ -42,7 +39,6 @@ export default function UsersPage() {
   const [majors, setMajors] = useState<Major[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("Semua");
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [showPass, setShowPass] = useState(false);
@@ -65,11 +61,9 @@ export default function UsersPage() {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const filtered = users.filter(u => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "Semua" || u.role === roleFilter;
-    return matchSearch && matchRole;
-  });
+  const filtered = users.filter(u =>
+    u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  );
 
   function openCreate() { setForm({ ...emptyForm, majorId: majors[0]?.id ?? "" }); setError(""); setModal(true); }
   function openEdit(u: User) { setForm({ ...emptyForm, id: u.id, name: u.name, email: u.email, role: u.role }); setError(""); setModal(true); }
@@ -98,7 +92,9 @@ export default function UsersPage() {
     fetchUsers();
   }
 
-  const counts = { Semua: users.length, ADMIN: users.filter(u => u.role === "ADMIN").length, TEACHER: users.filter(u => u.role === "TEACHER").length, STUDENT: users.filter(u => u.role === "STUDENT").length };
+  const admins = filtered.filter(u => u.role === "ADMIN");
+  const teachersList = filtered.filter(u => u.role === "TEACHER");
+  const studentsList = filtered.filter(u => u.role === "STUDENT");
 
   return (
     <div className="p-6 md:p-8 pt-16 lg:pt-8">
@@ -113,81 +109,55 @@ export default function UsersPage() {
         }
       />
 
-      {/* Filter */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
-            className="input-field pl-10" />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {(["Semua", "ADMIN", "TEACHER", "STUDENT"] as const).map(r => (
-            <button key={r} onClick={() => setRoleFilter(r)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition border ${roleFilter === r ? "bg-primary-900 text-white border-primary-900" : "bg-white text-gray-600 border-gray-200 hover:border-primary-300"}`}>
-              {r === "Semua" ? `Semua (${counts.Semua})` : `${ROLE_LABEL[r]} (${counts[r]})`}
-            </button>
-          ))}
-        </div>
+      {/* Cari */}
+      <div className="relative mb-5">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
+          className="input-field pl-10" />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="py-16 flex justify-center"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-gray-400">Tidak ada pengguna ditemukan</div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th className="hidden sm:table-cell">Email</th>
-                <th>Role</th>
-                <th className="hidden md:table-cell">Bergabung</th>
-                <th className="text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(u => (
-                <tr key={u.id}>
-                  <td>
-                    <p className="font-semibold text-primary-900">{u.name}</p>
-                    <p className="text-gray-400 text-xs sm:hidden mt-0.5">{u.email}</p>
-                  </td>
-                  <td className="text-gray-500 hidden sm:table-cell">{u.email}</td>
-                  <td>
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                      u.role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" :
-                      u.role === "TEACHER" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                      "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    }`}>{ROLE_LABEL[u.role]}</span>
-                  </td>
-                  <td className="text-gray-400 text-xs hidden md:table-cell">
-                    {new Date(u.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                  </td>
-                  <td className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition"><Edit2 size={15} /></button>
-                      <button onClick={() => handleDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <p className="text-xs text-gray-400 mt-3">Total: {filtered.length} pengguna</p>
+      {loading ? (
+        <div className="py-16 flex justify-center"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Search} title="Tidak ada pengguna ditemukan" />
+      ) : (
+        <div className="space-y-6">
+          {admins.length > 0 && (
+            <GroupedSection title="Admin" count={admins.length} icon={ShieldCheck}>
+              <UserTable items={admins} onEdit={openEdit} onDelete={handleDelete} />
+            </GroupedSection>
+          )}
+          {teachersList.length > 0 && (
+            <GroupedSection title="Guru" count={teachersList.length} icon={GraduationCap}>
+              <UserTable items={teachersList} onEdit={openEdit} onDelete={handleDelete} />
+            </GroupedSection>
+          )}
+          {studentsList.length > 0 && (
+            <GroupedSection title="Siswa" count={studentsList.length} icon={Users}>
+              <UserTable items={studentsList} onEdit={openEdit} onDelete={handleDelete} />
+            </GroupedSection>
+          )}
+          <p className="text-xs text-gray-400">Total: {filtered.length} pengguna</p>
+        </div>
+      )}
 
       {/* Modal */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">{form.id ? "Edit Akun" : "Tambah Akun"}</h2>
-              <button onClick={() => setModal(false)} className="text-white/60 hover:text-white transition-colors"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <Modal
+        open={!!modal}
+        onClose={() => setModal(false)}
+        title={form.id ? "Edit Akun" : "Tambah Akun"}
+        scrollBody
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="submit" form="editAkunForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {isPending ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+            <form id="editAkunForm" onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="label-field">Nama Lengkap</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="input-field" required />
@@ -209,11 +179,15 @@ export default function UsersPage() {
               </div>
               <div>
                 <label className="label-field">Role</label>
-                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as FormState["role"] }))} className="input-field">
-                  <option value="STUDENT">Siswa</option>
-                  <option value="TEACHER">Guru</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
+                <Select
+                  value={form.role}
+                  onChange={v => setForm(f => ({ ...f, role: v as FormState["role"] }))}
+                  options={[
+                    { value: "STUDENT", label: "Siswa" },
+                    { value: "TEACHER", label: "Guru" },
+                    { value: "ADMIN", label: "Admin" },
+                  ]}
+                />
               </div>
 
               {/* Field tambahan Guru */}
@@ -253,33 +227,66 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <label className="label-field">Jurusan</label>
-                    <select value={form.majorId} onChange={e => setForm(f => ({ ...f, majorId: e.target.value }))} className="input-field" required>
-                      <option value="">Pilih jurusan</option>
-                      {majors.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
-                    </select>
+                    <Select
+                      value={form.majorId}
+                      onChange={v => setForm(f => ({ ...f, majorId: v }))}
+                      options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
+                      placeholder="Pilih jurusan"
+                    />
                   </div>
                   <div>
                     <label className="label-field">Kelas</label>
-                    <select value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))} className="input-field">
-                      <option value="">— Belum ditentukan —</option>
-                      {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <Select
+                      value={form.classId}
+                      onChange={v => setForm(f => ({ ...f, classId: v }))}
+                      options={classes.map(c => ({ value: c.id, label: c.name }))}
+                      placeholder="— Belum ditentukan —"
+                    />
                   </div>
                 </div>
               )}
 
               {error && <p className="error-msg">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {isPending ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
+    </div>
+  );
+}
+
+function UserTable({ items, onEdit, onDelete }: { items: User[]; onEdit: (u: User) => void; onDelete: (id: string, name: string) => void }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden sm:table-cell">Email</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Bergabung</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(u => (
+            <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+              <td className="px-5 py-3.5">
+                <p className="font-semibold text-primary-900">{u.name}</p>
+                <p className="text-gray-400 text-xs sm:hidden mt-0.5">{u.email}</p>
+              </td>
+              <td className="px-5 py-3.5 text-gray-500 hidden sm:table-cell">{u.email}</td>
+              <td className="px-5 py-3.5 text-gray-400 text-xs hidden md:table-cell">
+                {new Date(u.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+              </td>
+              <td className="px-5 py-3.5 text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition"><Edit2 size={15} /></button>
+                  <button onClick={() => onDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

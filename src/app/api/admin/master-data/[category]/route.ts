@@ -8,6 +8,11 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ category: string }> }
 ) {
+  try {
+    await verifyRole(["ADMIN", "TAS"]);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { category } = await params;
   const data = await prisma.masterData.findUnique({ where: { category } });
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -18,12 +23,21 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ category: string }> }
 ) {
-  await verifyRole(["ADMIN"]);
-  const { category } = await params;
-  const { items, label } = await req.json();
-  const data = await prisma.masterData.update({
-    where: { category },
-    data: { items, label },
-  });
-  return NextResponse.json(data);
+  try {
+    await verifyRole(["ADMIN"]);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const { category } = await params;
+    const { items, label } = await req.json();
+    const data = await prisma.masterData.update({
+      where: { category },
+      data: { items, label },
+    });
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("[master-data PUT]", err);
+    return NextResponse.json({ error: "Gagal menyimpan master data" }, { status: 500 });
+  }
 }

@@ -1,9 +1,12 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, Loader2, GalleryHorizontal } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GalleryHorizontal, X, Search } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import EmptyState from "@/components/admin/EmptyState";
+import GroupedSection from "@/components/admin/GroupedSection";
 
 interface GalleryItem { id: string; title: string; imageUrl: string; category: string; caption?: string; order: number; }
 
@@ -18,7 +21,7 @@ export default function AdminGalleryPage() {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [filter, setFilter] = useState("Semua");
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,8 +51,10 @@ export default function AdminGalleryPage() {
     load();
   }
 
-  const allCats = ["Semua", ...Array.from(new Set(items.map(i => i.category)))];
-  const filtered = filter === "Semua" ? items : items.filter(i => i.category === filter);
+  const filtered = items
+    .filter(i => !search.trim() || i.title.toLowerCase().includes(search.trim().toLowerCase()));
+  const grouped = Array.from(new Set(filtered.map(i => i.category)))
+    .map(cat => ({ category: cat, items: filtered.filter(i => i.category === cat) }));
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -58,41 +63,32 @@ export default function AdminGalleryPage() {
         title="Galeri Foto"
         description={`${items.length} foto tersimpan`}
         actions={
-          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
             <Plus size={18} /> Upload Foto Baru
           </button>
         }
       />
 
-      <div className="flex gap-2 flex-wrap mb-5">
-        {allCats.map(c => (
-          <button key={c} onClick={() => setFilter(c)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${filter === c ? "bg-primary-700 text-white border-primary-700 shadow-sm" : "bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:text-primary-700"}`}>
-            {c}
-          </button>
-        ))}
+      <div className="relative mb-4">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari judul foto..."
+          className="input-field pl-10"
+        />
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">Belum ada foto di kategori ini</div>
+        <EmptyState icon={GalleryHorizontal} description="Belum ada foto" />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(item => (
-            <div key={item.id} className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <div className="relative aspect-square">
-                <Image src={item.imageUrl} alt={item.title} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                  <button onClick={() => openEdit(item)} className="p-2 bg-white/90 rounded-xl text-primary-700 hover:bg-white shadow-sm"><Pencil size={15} /></button>
-                  <button onClick={() => remove(item.id)} className="p-2 bg-white/90 rounded-xl text-red-600 hover:bg-white shadow-sm"><Trash2 size={15} /></button>
-                </div>
-              </div>
-              <div className="p-3">
-                <p className="text-sm font-medium text-gray-800 truncate">{item.title}</p>
-                <span className="text-xs text-primary-700 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full font-semibold">{item.category}</span>
-              </div>
-            </div>
+        <div className="space-y-6">
+          {grouped.map(({ category, items }) => (
+            <GroupedSection key={category} title={category} count={items.length} icon={GalleryHorizontal}>
+              <GalleryTable items={items} onEdit={openEdit} onDelete={remove} />
+            </GroupedSection>
           ))}
         </div>
       )}
@@ -103,7 +99,7 @@ export default function AdminGalleryPage() {
             <div className="px-6 py-4 flex items-center justify-between"
               style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
               <h2 className="font-heading font-bold text-white">{editing ? "Edit Foto" : "Upload Foto Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors text-xl leading-none">&times;</button>
+              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <ImageUpload value={form.imageUrl} onChange={url => setForm(f => ({ ...f, imageUrl: url }))} folder="gallery" label="Foto *" />
@@ -113,26 +109,71 @@ export default function AdminGalleryPage() {
               </div>
               <div>
                 <label className="label-field">Kategori</label>
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="input-field">
-                  {categories.map(c => <option key={c}>{c}</option>)}
-                </select>
+                <Select
+                  value={form.category}
+                  onChange={v => setForm(f => ({ ...f, category: v }))}
+                  options={categories.map(c => ({ value: c, label: c }))}
+                />
               </div>
               <div>
                 <label className="label-field">Keterangan (opsional)</label>
                 <input value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} className="input-field" placeholder="Keterangan singkat foto..." />
               </div>
               {msg && <p className="error-msg">{msg}</p>}
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="btn-modal-cancel px-5">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2 px-5">
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Menyimpan..." : "Simpan"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {saving ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function GalleryTable({ items, onEdit, onDelete }: {
+  items: GalleryItem[]; onEdit: (item: GalleryItem) => void; onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Foto</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Judul</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Keterangan</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(item => (
+            <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+              <td className="px-5 py-3.5">
+                <div className="w-14 h-14 rounded-lg border border-gray-100 overflow-hidden relative shrink-0">
+                  <Image src={item.imageUrl} alt={item.title} fill sizes="56px" className="object-cover" />
+                </div>
+              </td>
+              <td className="px-5 py-3.5 font-medium text-gray-800">{item.title}</td>
+              <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{item.caption || "-"}</td>
+              <td className="px-5 py-3.5 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <button onClick={() => onEdit(item)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => onDelete(item.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

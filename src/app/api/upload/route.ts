@@ -18,9 +18,16 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Tidak ada file" }, { status: 400 });
     }
 
-    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    const isIdPhotoFolder = folder === "buku-induk/masuk" || folder === "buku-induk/keluar";
+    const allowed = isIdPhotoFolder
+      ? ["image/jpeg", "image/jpg", "image/png"]
+      : ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) {
-      return Response.json({ error: "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP." }, { status: 400 });
+      return Response.json({
+        error: isIdPhotoFolder
+          ? "Format file tidak didukung. Foto masuk/keluar hanya menerima JPG atau PNG."
+          : "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.",
+      }, { status: 400 });
     }
 
     if (file.size > 5 * 1024 * 1024) {
@@ -37,7 +44,7 @@ export async function POST(req: NextRequest) {
     await mkdir(uploadDir, { recursive: true });
     await writeFile(join(uploadDir, filename), buffer);
 
-    const url = `/uploads/${folder}/${filename}`;
+    const url = `/api/uploads/${folder}/${filename}`;
     return Response.json({ url });
   } catch (err) {
     console.error("Upload error:", err);

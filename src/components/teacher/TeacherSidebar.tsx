@@ -67,13 +67,13 @@ export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png",
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col w-56 bg-primary-900 min-h-screen shrink-0 fixed top-0 left-0 bottom-0 overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-56 bg-primary-900 min-h-screen shrink-0 fixed top-0 left-0 bottom-0 overflow-hidden print:hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
         <SidebarContent />
       </aside>
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
+      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
           <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
           <span className="font-heading font-bold text-white text-sm">Portal Guru</span>
@@ -81,7 +81,7 @@ export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png",
         <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white"><Menu size={22} /></button>
       </div>
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden print:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <aside className="relative w-56 bg-primary-900 h-full flex flex-col shadow-2xl overflow-hidden">
             <div className="absolute inset-0 opacity-[0.10] pointer-events-none"

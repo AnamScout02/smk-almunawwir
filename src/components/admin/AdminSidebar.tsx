@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, Users, MessageSquare, LogOut, Menu, X,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, Database, CalendarDays,
-  Archive, Repeat, Mail,
+  Archive, Repeat, Mail, BookMarked,
 } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
@@ -39,6 +39,7 @@ const menuGroups = [
       { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
       { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, badge: 0 },
       { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, badge: 0 },
+      { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked, badge: 0 },
     ],
   },
   {
@@ -171,7 +172,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden print:hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
@@ -179,7 +180,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
       </aside>
 
       {/* Mobile: top bar + drawer */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
+      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
           <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
           <span className="font-heading font-bold text-white text-sm">Admin Panel</span>
@@ -190,7 +191,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
       </div>
 
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden print:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <aside className="relative w-64 bg-primary-900 h-full flex flex-col shadow-2xl overflow-hidden">
             <div className="absolute inset-0 opacity-[0.10] pointer-events-none"

@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, Bell, Loader2, AlertTriangle, Users, UserCog, GraduationCap } from "lucide-react";
+import { Plus, Pencil, Trash2, Bell, Loader2, AlertTriangle, Users, UserCog, GraduationCap, X } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 
 interface Announcement {
   id: string;
@@ -105,7 +106,7 @@ export default function AdminAnnouncementsPage() {
         title="Pengumuman"
         description={`${active.length} aktif · ${inactive.length} nonaktif`}
         actions={
-          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
             <Plus size={18} /> Buat Pengumuman
           </button>
         }
@@ -129,6 +130,7 @@ export default function AdminAnnouncementsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
@@ -186,6 +188,7 @@ export default function AdminAnnouncementsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -196,7 +199,7 @@ export default function AdminAnnouncementsPage() {
             <div className="px-6 py-4 flex items-center justify-between"
               style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
               <h2 className="font-heading font-bold text-white">{editing ? "Edit Pengumuman" : "Buat Pengumuman Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors text-xl leading-none">&times;</button>
+              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -221,27 +224,27 @@ export default function AdminAnnouncementsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label-field">Target Penerima</label>
-                  <select
+                  <Select
                     value={form.targetRole}
-                    onChange={e => setForm(f => ({ ...f, targetRole: e.target.value }))}
-                    className="input-field"
-                  >
-                    <option value="ALL">Semua Pengguna</option>
-                    <option value="STUDENT">Siswa</option>
-                    <option value="TEACHER">Guru</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                    onChange={v => setForm(f => ({ ...f, targetRole: v }))}
+                    options={[
+                      { value: "ALL", label: "Semua Pengguna" },
+                      { value: "STUDENT", label: "Siswa" },
+                      { value: "TEACHER", label: "Guru" },
+                      { value: "ADMIN", label: "Admin" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="label-field">Prioritas</label>
-                  <select
+                  <Select
                     value={form.priority}
-                    onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
-                    className="input-field"
-                  >
-                    <option value="NORMAL">Normal</option>
-                    <option value="URGENT">Mendesak (Urgent)</option>
-                  </select>
+                    onChange={v => setForm(f => ({ ...f, priority: v }))}
+                    options={[
+                      { value: "NORMAL", label: "Normal" },
+                      { value: "URGENT", label: "Mendesak (Urgent)" },
+                    ]}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -264,13 +267,13 @@ export default function AdminAnnouncementsPage() {
                 <span className="text-sm text-gray-700">Tampilkan pengumuman ini sekarang</span>
               </label>
               {msg && <p className="error-msg">{msg}</p>}
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="btn-modal-cancel px-5">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2 px-5">
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Menyimpan..." : "Simpan"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {saving ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

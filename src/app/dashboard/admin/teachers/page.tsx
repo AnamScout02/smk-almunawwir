@@ -1,8 +1,10 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, X, Save, Loader2, BookOpen, Phone, Hash, Eye, UserCog } from "lucide-react";
+import { Search, Edit2, Save, Loader2, BookOpen, Phone, Hash, Eye, UserCog } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import Modal from "@/components/admin/Modal";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Teacher {
   id: string;
@@ -83,13 +85,10 @@ export default function AdminTeachersPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
-          <BookOpen size={36} className="mx-auto mb-3 opacity-30" />
-          <p className="font-semibold text-navy">Tidak ada guru ditemukan</p>
-          <p className="text-sm mt-1">Tambah akun guru melalui menu Akun Pengguna.</p>
-        </div>
+        <EmptyState icon={BookOpen} title="Tidak ada guru ditemukan" description="Tambah akun guru melalui menu Akun Pengguna." />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
@@ -144,53 +143,51 @@ export default function AdminTeachersPage() {
               ))}
             </tbody>
           </table>
+          </div>
           <p className="text-xs text-gray-400 px-6 py-3 border-t border-gray-50">{filtered.length} guru terdaftar</p>
         </div>
       )}
 
       {/* Modal edit */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">Edit Profil Guru</h2>
-              <button onClick={() => setModal(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div>
-                <label className="label-field flex items-center gap-1.5">
-                  <Hash size={13} className="text-gray-400" /> NIP
-                </label>
-                <input value={form.nip} onChange={e => setForm(f => ({ ...f, nip: e.target.value }))}
-                  className="input-field font-mono" required placeholder="18 digit NIP" />
-              </div>
-              <div>
-                <label className="label-field flex items-center gap-1.5">
-                  <BookOpen size={13} className="text-gray-400" /> Mata Pelajaran Utama
-                </label>
-                <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  className="input-field" required placeholder="Contoh: Jaringan Komputer" />
-              </div>
-              <div>
-                <label className="label-field flex items-center gap-1.5">
-                  <Phone size={13} className="text-gray-400" /> Nomor HP
-                </label>
-                <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="input-field" placeholder="08..." type="tel" />
-              </div>
-              {error && <p className="error-msg">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {isPending ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title="Edit Profil Guru"
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="submit" form="editGuruForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {isPending ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <form id="editGuruForm" onSubmit={handleSave} className="space-y-4">
+          <div>
+            <label className="label-field flex items-center gap-1.5">
+              <Hash size={13} className="text-gray-400" /> NIP
+            </label>
+            <input value={form.nip} onChange={e => setForm(f => ({ ...f, nip: e.target.value }))}
+              className="input-field font-mono" required placeholder="18 digit NIP" />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="label-field flex items-center gap-1.5">
+              <BookOpen size={13} className="text-gray-400" /> Mata Pelajaran Utama
+            </label>
+            <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+              className="input-field" required placeholder="Contoh: Jaringan Komputer" />
+          </div>
+          <div>
+            <label className="label-field flex items-center gap-1.5">
+              <Phone size={13} className="text-gray-400" /> Nomor HP
+            </label>
+            <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              className="input-field" placeholder="08..." type="tel" />
+          </div>
+          {error && <p className="error-msg">{error}</p>}
+        </form>
+      </Modal>
     </div>
   );
 }

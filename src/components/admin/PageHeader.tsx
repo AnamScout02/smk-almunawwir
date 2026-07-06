@@ -10,7 +10,7 @@ interface PageHeaderProps {
 export default function PageHeader({ icon, title, description, actions }: PageHeaderProps) {
   return (
     <header
-      className="flex items-center justify-between -mx-6 lg:-mx-8 -mt-16 lg:-mt-8 mb-8 px-6 lg:px-8 pt-[4.5rem] lg:pt-5 pb-5 relative overflow-hidden"
+      className="flex items-center justify-between -mx-6 lg:-mx-8 -mt-16 lg:-mt-8 mb-8 px-6 lg:px-8 pt-[4.5rem] lg:pt-5 pb-5 sticky top-0 z-20 overflow-hidden"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}
     >
       {/* Pattern overlay */}

@@ -3,13 +3,14 @@ import { DEFAULTS, getSettings } from "@/lib/site-settings";
 import ContentEditor from "@/components/admin/ContentEditor";
 import LogoEditor from "@/components/admin/LogoEditor";
 import PageHeader from "@/components/admin/PageHeader";
+import Alert from "@/components/admin/Alert";
 import { FileText, ImageIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContentPage() {
   await verifyRole(["ADMIN"]);
-  const settings = await getSettings([...Object.keys(DEFAULTS), "logo.emblem", "logo.full", "logo.full_white"]);
+  const settings = await getSettings([...Object.keys(DEFAULTS), "logo.emblem", "logo.full", "logo.full_white", "letterhead.bukuInduk"]);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen">
@@ -19,7 +20,7 @@ export default async function ContentPage() {
         description="Edit teks, angka, dan logo yang tampil di website"
       />
 
-      <div className="max-w-4xl mx-auto space-y-10">
+      <div className="space-y-10">
         {/* Logo Section */}
         <section>
           <div className="flex items-center gap-2 mb-5">
@@ -32,6 +33,7 @@ export default async function ContentPage() {
             logoEmblem={settings["logo.emblem"]}
             logoFull={settings["logo.full"]}
             logoFullWhite={settings["logo.full_white"]}
+            letterheadBukuInduk={settings["letterhead.bukuInduk"]}
           />
         </section>
 
@@ -43,9 +45,9 @@ export default async function ContentPage() {
             </div>
             <h2 className="font-heading text-base font-semibold text-navy">Teks & Konten</h2>
           </div>
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-700">
+          <Alert variant="warning" className="mb-4">
             Perubahan akan langsung tampil di website setelah disimpan. Klik <strong>Simpan</strong> per baris untuk menyimpan satu per satu.
-          </div>
+          </Alert>
           <ContentEditor initialSettings={settings} />
         </section>
       </div>

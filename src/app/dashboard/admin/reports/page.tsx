@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { Download, FileSpreadsheet, ClipboardList, Users, CalendarDays, BookOpen, Loader2, Briefcase, BarChart2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import Alert from "@/components/admin/Alert";
 
 interface ClassItem { id: string; name: string; grade: number }
 
@@ -44,7 +46,7 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-3xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<BarChart2 size={22} />}
         title="Laporan & Ekspor"
@@ -58,7 +60,7 @@ export default function AdminReportsPage() {
             <ClipboardList size={20} className="text-amber-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-heading font-bold text-primary-900">Data Pendaftaran (PPDB)</h3>
+            <h3 className="font-heading font-bold text-primary-900">Data Pendaftaran (SPMB)</h3>
             <p className="text-gray-400 text-sm mt-0.5">Semua data formulir pendaftaran calon siswa baru — nama, asal sekolah, jurusan, status, dan catatan admin.</p>
             <p className="text-xs text-gray-300 mt-1">16 kolom · semua status (Menunggu, Wawancara, Diterima, Ditolak)</p>
           </div>
@@ -127,19 +129,21 @@ export default function AdminReportsPage() {
               <div className="mt-3 flex flex-wrap gap-3">
                 <div>
                   <label className="label-field">Filter kelas (opsional):</label>
-                  <select value={gradeClass} onChange={e => setGradeClass(e.target.value)}
-                    className="input-field w-auto">
-                    <option value="">Semua Kelas</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <Select
+                    className="w-auto"
+                    value={gradeClass}
+                    onChange={v => setGradeClass(v)}
+                    options={[{ value: "", label: "Semua Kelas" }, ...classes.map(c => ({ value: c.id, label: c.name }))]}
+                  />
                 </div>
                 <div>
                   <label className="label-field">Filter semester (opsional):</label>
-                  <select value={gradeSemester} onChange={e => setGradeSemester(e.target.value)}
-                    className="input-field w-auto">
-                    <option value="">Semua Semester</option>
-                    {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <Select
+                    className="w-auto"
+                    value={gradeSemester}
+                    onChange={v => setGradeSemester(v)}
+                    options={[{ value: "", label: "Semua Semester" }, ...SEMESTERS.map(s => ({ value: s, label: s }))]}
+                  />
                 </div>
               </div>
             )}
@@ -168,13 +172,9 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Info */}
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3">
-          <FileSpreadsheet size={18} className="text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-sm text-amber-700">
-            <p className="font-semibold mb-0.5">Kompatibel dengan Excel</p>
-            <p className="text-amber-600">Semua file CSV menggunakan format UTF-8 BOM sehingga karakter Indonesia (huruf beraksara) tampil dengan benar saat dibuka di Microsoft Excel atau Google Sheets.</p>
-          </div>
-        </div>
+        <Alert variant="warning" icon={FileSpreadsheet} title="Kompatibel dengan Excel">
+          Semua file CSV menggunakan format UTF-8 BOM sehingga karakter Indonesia (huruf beraksara) tampil dengan benar saat dibuka di Microsoft Excel atau Google Sheets.
+        </Alert>
       </div>
     </div>
   );

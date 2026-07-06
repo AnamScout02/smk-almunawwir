@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, Calendar, Loader2, ChevronDown, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Loader2, X } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 
-interface ClassItem { id: string; name: string; grade: number; major: { name: string } }
+interface ClassItem { id: string; name: string; grade: number; major: { id: string; name: string } }
 interface TeacherItem { id: string; subject: string; user: { name: string } }
+interface SubjectItem { id: string; code: number; name: string; category: string; gradeScope: string; majorId: string | null }
 interface ScheduleItem {
   id: string; classId: string; teacherId: string | null; subject: string;
   day: string; startTime: string; endTime: string; room: string | null;
@@ -31,6 +33,7 @@ const emptyForm = { classId: "", teacherId: "", subject: "", day: "SENIN", start
 export default function AdminSchedulesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,9 +47,11 @@ export default function AdminSchedulesPage() {
     Promise.all([
       fetch("/api/admin/classes").then(r => r.json()),
       fetch("/api/admin/teachers").then(r => r.json()),
-    ]).then(([cls, tch]) => {
+      fetch("/api/admin/subjects").then(r => r.json()),
+    ]).then(([cls, tch, subj]) => {
       setClasses(cls);
       setTeachers(tch);
+      setSubjects(Array.isArray(subj) ? subj : []);
       if (cls.length > 0) setSelectedClass(cls[0].id);
     });
   }, []);
@@ -96,6 +101,14 @@ export default function AdminSchedulesPage() {
 
   const activeClass = classes.find(c => c.id === selectedClass);
 
+  const formClass = classes.find(c => c.id === form.classId);
+  const subjectOptions = formClass
+    ? subjects
+        .filter(s => s.gradeScope === (formClass.grade === 12 ? "XII" : "X_XI"))
+        .filter(s => !s.majorId || s.majorId === formClass.major.id)
+        .map(s => ({ value: s.name, label: `${s.code} — ${s.name}` }))
+    : [];
+
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
@@ -103,7 +116,7 @@ export default function AdminSchedulesPage() {
         title="Jadwal Pelajaran"
         description={`${schedules.length} jam pelajaran terjadwal`}
         actions={
-          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
             <Plus size={18} /> Tambah Jadwal
           </button>
         }
@@ -119,19 +132,12 @@ export default function AdminSchedulesPage() {
           </p>
         ) : (
           <>
-            <div className="relative inline-block">
-              <select
+            <div className="inline-block w-64">
+              <Select
                 value={selectedClass}
-                onChange={e => setSelectedClass(e.target.value)}
-                className="appearance-none bg-primary-50 border border-primary-200 text-primary-900 font-semibold rounded-xl pl-4 pr-10 py-2.5 text-sm focus:border-primary-500 outline-none cursor-pointer"
-              >
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.major.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-700 pointer-events-none" />
+                onChange={v => setSelectedClass(v)}
+                options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))}
+              />
             </div>
             {activeClass && (
               <span className="ml-3 text-xs text-gray-500">
@@ -182,7 +188,7 @@ export default function AdminSchedulesPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-md my-8 shadow-2xl">
-            <div className="px-6 py-4 flex items-center justify-between"
+            <div className="px-6 py-4 flex items-center justify-between rounded-t-2xl"
               style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
               <h2 className="font-heading font-bold text-white flex items-center gap-2">
                 <Calendar size={18} /> {editing ? "Edit Jadwal" : "Tambah Jadwal"}
@@ -192,33 +198,43 @@ export default function AdminSchedulesPage() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="label-field">Kelas *</label>
-                <select value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}
-                  className="input-field">
-                  <option value="">Pilih kelas...</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.name} — {c.major.name}</option>)}
-                </select>
+                <Select
+                  value={form.classId}
+                  onChange={v => setForm(f => ({ ...f, classId: v }))}
+                  options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))}
+                  placeholder="Pilih kelas..."
+                />
               </div>
               <div>
                 <label className="label-field">Mata Pelajaran *</label>
-                <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  className="input-field"
-                  placeholder="Matematika, Bahasa Indonesia, dll." />
+                {form.classId ? (
+                  <Select
+                    value={form.subject}
+                    onChange={v => setForm(f => ({ ...f, subject: v }))}
+                    options={subjectOptions}
+                    placeholder="Pilih mata pelajaran..."
+                  />
+                ) : (
+                  <p className="text-xs text-gray-400 italic py-2">Pilih kelas terlebih dahulu untuk melihat daftar mapel</p>
+                )}
               </div>
               <div>
                 <label className="label-field">Guru (opsional)</label>
-                <select value={form.teacherId} onChange={e => setForm(f => ({ ...f, teacherId: e.target.value }))}
-                  className="input-field">
-                  <option value="">-- Pilih guru --</option>
-                  {teachers.map(t => <option key={t.id} value={t.id}>{t.user.name} ({t.subject})</option>)}
-                </select>
+                <Select
+                  value={form.teacherId}
+                  onChange={v => setForm(f => ({ ...f, teacherId: v }))}
+                  options={teachers.map(t => ({ value: t.id, label: `${t.user.name} (${t.subject})` }))}
+                  placeholder="-- Pilih guru --"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label-field">Hari *</label>
-                  <select value={form.day} onChange={e => setForm(f => ({ ...f, day: e.target.value }))}
-                    className="input-field">
-                    {DAYS.map(d => <option key={d} value={d}>{DAY_LABEL[d]}</option>)}
-                  </select>
+                  <Select
+                    value={form.day}
+                    onChange={v => setForm(f => ({ ...f, day: v }))}
+                    options={DAYS.map(d => ({ value: d, label: DAY_LABEL[d] }))}
+                  />
                 </div>
                 <div>
                   <label className="label-field">Ruang</label>
@@ -240,13 +256,13 @@ export default function AdminSchedulesPage() {
                 </div>
               </div>
               {msg && <p className="error-msg">{msg}</p>}
-            </div>
-            <div className="px-6 py-4 border-t border-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="btn-modal-cancel">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2">
-                {saving && <Loader2 size={16} className="animate-spin" />}
-                {saving ? "Menyimpan..." : "Simpan"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+                  {saving && <Loader2 size={16} className="animate-spin" />}
+                  {saving ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

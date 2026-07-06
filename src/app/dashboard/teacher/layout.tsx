@@ -8,7 +8,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
       <TeacherSidebar logoEmblem={s["logo.emblem"]} logoFullWhite={s["logo.full_white"]} />
-      <main className="flex-1 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
+      <main className="flex-1 min-w-0 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
         {children}
       </main>
     </div>

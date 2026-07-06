@@ -147,6 +147,22 @@
   display: none;
 }
 
+/* Scrollbar disembunyikan di seluruh situs — tetap bisa discroll seperti biasa */
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Arabic text needs extra vertical space for harakat (diacritics) */
 .font-arabic {
   line-height: 2.2;

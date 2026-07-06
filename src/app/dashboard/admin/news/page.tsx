@@ -2,9 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Search, Newspaper } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Search, Newspaper, X } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 
 interface NewsItem {
   id: string;
@@ -18,7 +19,7 @@ interface NewsItem {
 }
 
 const emptyForm = { title: "", slug: "", content: "", thumbnail: "", category: "Umum", published: false };
-const categories = ["Umum", "Prestasi", "Pengumuman", "Kegiatan", "Beasiswa", "PPDB"];
+const categories = ["Umum", "Prestasi", "Pengumuman", "Kegiatan", "Beasiswa", "SPMB"];
 
 export default function AdminNewsPage() {
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -83,7 +84,7 @@ export default function AdminNewsPage() {
         title="Kelola Berita"
         description={`${items.length} berita tersimpan`}
         actions={
-          <button onClick={openNew} className="btn-primary flex items-center gap-2">
+          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
             <Plus size={18} /> Tulis Berita Baru
           </button>
         }
@@ -101,6 +102,7 @@ export default function AdminNewsPage() {
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-400">Tidak ada berita ditemukan</div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
@@ -150,6 +152,7 @@ export default function AdminNewsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
@@ -161,7 +164,7 @@ export default function AdminNewsPage() {
             <div className="px-6 py-4 flex items-center justify-between"
               style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
               <h2 className="font-heading font-bold text-white">{editing ? "Edit Berita" : "Tulis Berita Baru"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors text-xl leading-none">&times;</button>
+              <button onClick={() => setShowForm(false)} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <ImageUpload value={form.thumbnail} onChange={url => setForm(f => ({ ...f, thumbnail: url }))} folder="news" label="Foto Thumbnail" />
@@ -172,9 +175,11 @@ export default function AdminNewsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label-field">Kategori</label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="input-field">
-                    {categories.map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <Select
+                    value={form.category}
+                    onChange={v => setForm(f => ({ ...f, category: v }))}
+                    options={categories.map(c => ({ value: c, label: c }))}
+                  />
                 </div>
                 <div>
                   <label className="label-field">Slug URL</label>
@@ -190,13 +195,13 @@ export default function AdminNewsPage() {
                 <span className="text-sm text-gray-700">Langsung tayangkan berita ini</span>
               </label>
               {msg && <p className="error-msg">{msg}</p>}
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="btn-modal-cancel px-5">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-modal-save flex items-center gap-2 px-5">
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Menyimpan..." : "Simpan Berita"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {saving ? "Menyimpan..." : "Simpan Berita"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

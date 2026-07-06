@@ -1,9 +1,13 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, X, Save, Users, BookOpen, Loader2, ChevronDown, ChevronUp, School } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, Users, BookOpen, Loader2, School, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import EmptyState from "@/components/admin/EmptyState";
+import GroupedSection from "@/components/admin/GroupedSection";
+import { withAlpha } from "@/lib/color";
 
-interface Major { id: string; name: string; code: string }
+interface Major { id: string; name: string; code: string; themeColor: string | null }
 interface Teacher { id: string; user: { name: string } }
 interface ClassItem {
   id: string;
@@ -35,7 +39,8 @@ export default function AdminClassesPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [majorFilter, setMajorFilter] = useState("");
 
   async function load() {
     setLoading(true);
@@ -99,10 +104,16 @@ export default function AdminClassesPage() {
     load();
   }
 
-  const byGrade = GRADE_OPTIONS.map(g => ({
-    grade: g,
-    items: classes.filter(c => String(c.grade) === g),
-  })).filter(g => g.items.length > 0);
+  const filtered = classes
+    .filter(c =>
+      (!search.trim() || c.name.toLowerCase().includes(search.trim().toLowerCase())) &&
+      (!majorFilter || c.major.id === majorFilter)
+    )
+    .sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name));
+
+  const grouped = [10, 11, 12]
+    .map(grade => ({ grade, items: filtered.filter(c => c.grade === grade) }))
+    .filter(g => g.items.length > 0);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -127,50 +138,40 @@ export default function AdminClassesPage() {
           <button onClick={openCreate} className="btn-gold text-sm">Tambah Kelas Pertama</button>
         </div>
       ) : (
-        <div className="space-y-8">
-          {byGrade.map(({ grade, items }) => (
-            <div key={grade}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1" style={{ background: "linear-gradient(to right, rgba(15,26,69,0.15), transparent)" }} />
-                <span className="text-xs font-bold uppercase tracking-widest text-primary-500 px-3 py-1.5 bg-primary-50 border border-primary-100 rounded-full">
-                  Tingkat {grade}
-                </span>
-                <div className="h-px flex-1" style={{ background: "linear-gradient(to left, rgba(15,26,69,0.15), transparent)" }} />
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map(cls => (
-                  <div key={cls.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <div className="px-5 py-3 flex items-center justify-between"
-                      style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-                      <h3 className="font-heading font-bold text-white text-sm">{cls.name}</h3>
-                      <span className="text-xs font-bold text-gold bg-white/10 border border-white/20 px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <Users size={10} /> {cls.students.length}
-                      </span>
-                    </div>
-                    <div className="p-5">
-                      <p className="text-xs text-gray-400 mb-1">{cls.major.name}</p>
-                      <p className="text-xs text-gray-500 mb-4">
-                        Wali: <span className={`font-semibold ${cls.homeroom ? "text-primary-700" : "text-amber-500"}`}>
-                          {cls.homeroom?.user.name ?? "Belum ditentukan"}
-                        </span>
-                      </p>
-                      <div className="flex gap-2">
-                        <button onClick={() => openEdit(cls)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 hover:border-primary-200 text-xs font-semibold py-2 rounded-xl transition-colors">
-                          <Edit2 size={13} /> Edit
-                        </button>
-                        <button onClick={() => handleDelete(cls.id, cls.name)}
-                          className="flex items-center justify-center gap-1.5 px-3 bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 text-xs font-semibold py-2 rounded-xl transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <>
+          {/* Pencarian & Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Cari nama kelas..."
+                className="input-field pl-10"
+              />
             </div>
-          ))}
-        </div>
+            <div className="sm:w-56">
+              <Select
+                value={majorFilter}
+                onChange={setMajorFilter}
+                options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
+                placeholder="Semua Jurusan"
+              />
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState icon={Search} title="Tidak ada kelas ditemukan" />
+          ) : (
+            <div className="space-y-6">
+              {grouped.map(({ grade, items }) => (
+                <GroupedSection key={grade} title={`Kelas ${grade}`} count={items.length} icon={School}>
+                  <ClassTable items={items} onEdit={openEdit} onDelete={handleDelete} />
+                </GroupedSection>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal */}
@@ -198,24 +199,30 @@ export default function AdminClassesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label-field">Tingkat</label>
-                  <select value={form.grade} onChange={e => setForm(f => ({ ...f, grade: e.target.value }))} className="input-field">
-                    {GRADE_OPTIONS.map(g => <option key={g} value={g}>Kelas {g}</option>)}
-                  </select>
+                  <Select
+                    value={form.grade}
+                    onChange={v => setForm(f => ({ ...f, grade: v }))}
+                    options={GRADE_OPTIONS.map(g => ({ value: g, label: `Kelas ${g}` }))}
+                  />
                 </div>
                 <div>
                   <label className="label-field">Konsentrasi / Jurusan</label>
-                  <select value={form.majorId} onChange={e => setForm(f => ({ ...f, majorId: e.target.value }))} className="input-field" required>
-                    <option value="">Pilih jurusan</option>
-                    {majors.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
-                  </select>
+                  <Select
+                    value={form.majorId}
+                    onChange={v => setForm(f => ({ ...f, majorId: v }))}
+                    options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
+                    placeholder="Pilih jurusan"
+                  />
                 </div>
               </div>
               <div>
                 <label className="label-field">Wali Kelas</label>
-                <select value={form.homeroomId} onChange={e => setForm(f => ({ ...f, homeroomId: e.target.value }))} className="input-field">
-                  <option value="">— Belum ditentukan —</option>
-                  {teachers.map(t => <option key={t.id} value={t.id}>{t.user.name}</option>)}
-                </select>
+                <Select
+                  value={form.homeroomId}
+                  onChange={v => setForm(f => ({ ...f, homeroomId: v }))}
+                  options={teachers.map(t => ({ value: t.id, label: t.user.name }))}
+                  placeholder="— Belum ditentukan —"
+                />
               </div>
               {error && <p className="error-msg">{error}</p>}
               <div className="flex gap-3 pt-2">
@@ -229,6 +236,67 @@ export default function AdminClassesPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ClassTable({ items, onEdit, onDelete }: {
+  items: ClassItem[]; onEdit: (c: ClassItem) => void; onDelete: (id: string, name: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Wali Kelas</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(cls => (
+            <tr key={cls.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+              <td className="px-5 py-3.5 font-semibold text-navy">{cls.name}</td>
+              <td className="px-5 py-3.5">
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                    cls.major.themeColor ? "" : "bg-primary-50 text-primary-700 border-primary-200"
+                  }`}
+                  style={cls.major.themeColor
+                    ? { color: cls.major.themeColor, borderColor: withAlpha(cls.major.themeColor, 25), background: withAlpha(cls.major.themeColor, 6) }
+                    : undefined}
+                >
+                  {cls.major.themeColor && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cls.major.themeColor }} />}
+                  {cls.major.code}
+                </span>
+              </td>
+              <td className={`px-5 py-3.5 ${cls.homeroom ? "text-primary-700 font-medium" : "text-amber-500"}`}>
+                {cls.homeroom?.user.name ?? "Belum ditentukan"}
+              </td>
+              <td className="px-5 py-3.5">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700">
+                  <Users size={12} /> {cls.students.length}
+                </span>
+              </td>
+              <td className="px-5 py-3.5 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <button onClick={() => onEdit(cls)}
+                    className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                    <Edit2 size={14} />
+                  </button>
+                  <button onClick={() => onDelete(cls.id, cls.name)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

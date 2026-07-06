@@ -100,7 +100,7 @@ export default function PersuratanPage() {
         description="Manajemen surat masuk dan surat keluar sekolah"
         actions={
           <button onClick={openNew}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-900 transition-colors shrink-0">
+            className="btn-gold flex items-center gap-2 text-sm shrink-0">
             <Plus size={15} /> Tambah Surat {tab === "MASUK" ? "Masuk" : "Keluar"}
           </button>
         }
@@ -132,6 +132,7 @@ export default function PersuratanPage() {
 
       {/* Tabel */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="data-table">
           <thead>
             <tr>
@@ -182,6 +183,7 @@ export default function PersuratanPage() {
             ))}
           </tbody>
         </table>
+        </div>
         {!loading && (
           <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
             {filtered.length} surat {tab === "MASUK" ? "masuk" : "keluar"}
@@ -239,12 +241,12 @@ export default function PersuratanPage() {
                     placeholder="URL file (opsional)" />
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t">
-              <button onClick={() => setModal(null)} className="btn-modal-cancel">Batal</button>
-              <button onClick={handleSave} disabled={saving} className="btn-modal-save">
-                <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
-              </button>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+                <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
+                  <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

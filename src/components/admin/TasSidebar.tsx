@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Menu, X, Calendar, Bell, BarChart2,
-  UserCircle, ClipboardList, Repeat, Mail, Archive,
+  UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked,
 } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
@@ -26,6 +26,7 @@ const menuGroups = [
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School },
       { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase },
       { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar },
+      { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked },
       { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell },
     ],
   },
@@ -133,14 +134,14 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden print:hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
         <SidebarContent />
       </aside>
 
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
+      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
           <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
           <span className="font-heading font-bold text-white text-sm">TAS Panel</span>
@@ -151,7 +152,7 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
       </div>
 
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden print:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <aside className="relative w-64 bg-primary-900 h-full flex flex-col shadow-2xl overflow-hidden">
             <div className="absolute inset-0 opacity-[0.10] pointer-events-none"

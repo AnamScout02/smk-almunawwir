@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return (
       <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
         <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} />
-        <main className="flex-1 min-h-screen lg:pt-0 pt-14">
+        <main className="flex-1 min-w-0 min-h-screen lg:pt-0 pt-14">
           {children}
         </main>
       </div>
@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         logoEmblem={logoEmblem}
         logoFullWhite={logoFullWhite}
       />
-      <main className="flex-1 min-h-screen">
+      <main className="flex-1 min-w-0 min-h-screen">
         {children}
       </main>
     </div>

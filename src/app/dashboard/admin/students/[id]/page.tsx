@@ -42,7 +42,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
   const presentPct = totalDays ? Math.round((attendance.filter(a => a.status === "HADIR").length / totalDays) * 100) : 0;
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
@@ -107,7 +107,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
 
         {attendance.length > 0 && (
           <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
-            <div className="max-h-48 overflow-y-auto">
+            <div className="max-h-48 overflow-y-auto overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>

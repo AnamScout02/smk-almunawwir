@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Mail, MailOpen, Trash2, Loader2, CheckCheck, MessageSquare } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Message { id: string; name: string; email: string; subject: string; message: string; isRead: boolean; createdAt: string; }
 
@@ -60,7 +61,7 @@ export default function AdminMessagesPage() {
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100">Belum ada pesan masuk</div>
+        <EmptyState icon={Mail} description="Belum ada pesan masuk" />
       ) : (
         <div className="space-y-2">
           {items.map(item => (

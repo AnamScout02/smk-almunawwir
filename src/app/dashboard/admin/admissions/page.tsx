@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronUp, CalendarCheck, FileText, ExternalLink, Download, ClipboardList,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Admission {
   id: string;
@@ -168,9 +169,7 @@ export default function AdminAdmissionsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border">
-              {search ? "Tidak ada hasil pencarian" : "Tidak ada data pendaftaran"}
-            </div>
+            <EmptyState icon={ClipboardList} description={search ? "Tidak ada hasil pencarian" : "Tidak ada data pendaftaran"} />
           ) : filtered.map(item => {
             const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.PENDING;
             const isExpanded = expanded === item.id;

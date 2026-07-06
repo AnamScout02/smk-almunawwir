@@ -269,12 +269,12 @@ export default function MasterDataPage() {
                   Perubahan akan langsung tersimpan ke database.
                 </p>
               )}
-              <div className="flex gap-2">
-                <button onClick={closeModal} className="btn-modal-cancel">Batal</button>
+              <div className="flex gap-3 flex-1 max-w-xs">
+                <button onClick={closeModal} className="btn-modal-cancel flex-1">Batal</button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="btn-modal-save flex items-center gap-2"
+                  className="btn-modal-save flex-1 flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                   Simpan

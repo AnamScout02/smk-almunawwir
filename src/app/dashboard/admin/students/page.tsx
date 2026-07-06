@@ -1,8 +1,12 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, X, Save, Users, Loader2, GraduationCap, Download, Eye } from "lucide-react";
+import { Search, Edit2, Save, Users, Loader2, GraduationCap, Download, Eye } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import StatTile from "@/components/admin/StatTile";
+import Modal from "@/components/admin/Modal";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface Major { id: string; name: string; code: string }
 interface ClassItem { id: string; name: string; grade: number; major: { code: string } }
@@ -104,18 +108,9 @@ export default function AdminStudentsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-          <p className="text-3xl font-heading font-bold text-primary-700">{students.length}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Total Siswa</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 text-center">
-          <p className="text-3xl font-heading font-bold text-emerald-600">{students.filter(s => s.class).length}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Sudah Berkelas</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 text-center">
-          <p className="text-3xl font-heading font-bold text-amber-500">{students.filter(s => !s.class).length}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Belum Berkelas</p>
-        </div>
+        <StatTile color="primary" value={students.length} label="Total Siswa" />
+        <StatTile color="emerald" value={students.filter(s => s.class).length} label="Sudah Berkelas" />
+        <StatTile color="amber" value={students.filter(s => !s.class).length} label="Belum Berkelas" />
       </div>
 
       {/* Filter & Search */}
@@ -126,12 +121,16 @@ export default function AdminStudentsPage() {
             placeholder="Cari nama, NIS, atau NISN..."
             className="input-field pl-10" />
         </div>
-        <select value={filterClass} onChange={e => setFilterClass(e.target.value)}
-          className="input-field sm:w-48">
-          <option value="ALL">Semua Kelas</option>
-          {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          <option value="NONE">Belum Ada Kelas</option>
-        </select>
+        <Select
+          className="sm:w-48"
+          value={filterClass}
+          onChange={v => setFilterClass(v)}
+          options={[
+            { value: "ALL", label: "Semua Kelas" },
+            ...classes.map(c => ({ value: c.id, label: c.name })),
+            { value: "NONE", label: "Belum Ada Kelas" },
+          ]}
+        />
       </div>
 
       {loading ? (
@@ -170,70 +169,67 @@ export default function AdminStudentsPage() {
           )}
 
           {filtered.length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
-              <Users size={36} className="mx-auto mb-3 opacity-30" />
-              <p className="font-semibold text-navy">Tidak ada siswa ditemukan</p>
-            </div>
+            <EmptyState icon={Users} title="Tidak ada siswa ditemukan" />
           )}
         </div>
       )}
 
       {/* Modal edit profil siswa */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <h2 className="font-heading font-semibold text-white">Edit Profil Siswa</h2>
-              <button onClick={() => setModal(false)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={18} /></button>
+      <Modal
+        open={!!modal}
+        onClose={() => setModal(false)}
+        title="Edit Profil Siswa"
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="submit" form="editSiswaForm" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {isPending ? "Menyimpan..." : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <form id="editSiswaForm" onSubmit={handleSave} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-field">NIS</label>
+              <input value={form.nis} onChange={e => setForm(f => ({ ...f, nis: e.target.value }))}
+                className="input-field font-mono" required placeholder="Contoh: 2024001" />
             </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label-field">NIS</label>
-                  <input value={form.nis} onChange={e => setForm(f => ({ ...f, nis: e.target.value }))}
-                    className="input-field font-mono" required placeholder="Contoh: 2024001" />
-                </div>
-                <div>
-                  <label className="label-field">NISN</label>
-                  <input value={form.nisn} onChange={e => setForm(f => ({ ...f, nisn: e.target.value }))}
-                    className="input-field font-mono" placeholder="10 digit" maxLength={10} />
-                </div>
-              </div>
-              <div>
-                <label className="label-field">Konsentrasi / Jurusan</label>
-                <select value={form.majorId} onChange={e => setForm(f => ({ ...f, majorId: e.target.value }))}
-                  className="input-field" required>
-                  <option value="">Pilih jurusan</option>
-                  {majors.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label-field">Kelas</label>
-                <select value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}
-                  className="input-field">
-                  <option value="">— Belum ditentukan —</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              {error && <p className="error-msg">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-                <button type="submit" disabled={isPending} className="btn-modal-save flex-1">
-                  {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {isPending ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="label-field">NISN</label>
+              <input value={form.nisn} onChange={e => setForm(f => ({ ...f, nisn: e.target.value }))}
+                className="input-field font-mono" placeholder="10 digit" maxLength={10} />
+            </div>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="label-field">Konsentrasi / Jurusan</label>
+            <Select
+              value={form.majorId}
+              onChange={v => setForm(f => ({ ...f, majorId: v }))}
+              options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
+              placeholder="Pilih jurusan"
+            />
+          </div>
+          <div>
+            <label className="label-field">Kelas</label>
+            <Select
+              value={form.classId}
+              onChange={v => setForm(f => ({ ...f, classId: v }))}
+              options={classes.map(c => ({ value: c.id, label: c.name }))}
+              placeholder="— Belum ditentukan —"
+            />
+          </div>
+          {error && <p className="error-msg">{error}</p>}
+        </form>
+      </Modal>
     </div>
   );
 }
 
 function StudentTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student) => void }) {
   return (
+    <div className="overflow-x-auto">
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-primary-100"
@@ -272,5 +268,6 @@ function StudentTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

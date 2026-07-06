@@ -3,6 +3,8 @@ import React, { useEffect, useState, useTransition } from "react";
 import { Search, Edit2, X, Save, Loader2, Briefcase, Users, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import StatTile from "@/components/admin/StatTile";
 
 interface Internship {
   id: string;
@@ -131,18 +133,9 @@ export default function AdminInternshipsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-heading font-bold text-primary-700">{students.length}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Total Siswa</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-heading font-bold text-emerald-600">{withPKL}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Sudah Ada PKL</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-heading font-bold text-amber-500">{noPKL}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Belum Ada PKL</p>
-        </div>
+        <StatTile color="primary" value={students.length} label="Total Siswa" />
+        <StatTile color="emerald" value={withPKL} label="Sudah Ada PKL" />
+        <StatTile color="amber" value={noPKL} label="Belum Ada PKL" />
       </div>
 
       {/* Filter & Search */}
@@ -153,14 +146,18 @@ export default function AdminInternshipsPage() {
             placeholder="Cari nama, NIS, atau kelas..."
             className="input-field pl-10" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="input-field sm:w-44">
-          <option value="ALL">Semua Status</option>
-          <option value="NONE">Belum PKL</option>
-          <option value="ONGOING">Sedang PKL</option>
-          <option value="COMPLETED">Selesai</option>
-          <option value="CANCELLED">Dibatalkan</option>
-        </select>
+        <Select
+          value={filterStatus}
+          onChange={v => setFilterStatus(v)}
+          className="sm:w-44"
+          options={[
+            { value: "ALL", label: "Semua Status" },
+            { value: "NONE", label: "Belum PKL" },
+            { value: "ONGOING", label: "Sedang PKL" },
+            { value: "COMPLETED", label: "Selesai" },
+            { value: "CANCELLED", label: "Dibatalkan" },
+          ]}
+        />
       </div>
 
       {loading ? (
@@ -169,6 +166,7 @@ export default function AdminInternshipsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
@@ -245,6 +243,7 @@ export default function AdminInternshipsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -294,12 +293,15 @@ export default function AdminInternshipsPage() {
               </div>
               <div>
                 <label className="label-field">Status</label>
-                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                  className="input-field">
-                  <option value="ONGOING">Sedang PKL</option>
-                  <option value="COMPLETED">Selesai</option>
-                  <option value="CANCELLED">Dibatalkan</option>
-                </select>
+                <Select
+                  value={form.status}
+                  onChange={v => setForm(f => ({ ...f, status: v }))}
+                  options={[
+                    { value: "ONGOING", label: "Sedang PKL" },
+                    { value: "COMPLETED", label: "Selesai" },
+                    { value: "CANCELLED", label: "Dibatalkan" },
+                  ]}
+                />
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>

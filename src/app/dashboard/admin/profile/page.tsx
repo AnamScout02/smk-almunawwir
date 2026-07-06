@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { Mail, ShieldCheck } from "lucide-react";
+import { Mail, ShieldCheck, UserCircle } from "lucide-react";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import AvatarUpload from "@/components/shared/AvatarUpload";
+import PageHeader from "@/components/admin/PageHeader";
 
 export default async function AdminProfilePage() {
   const session = await verifyRole(["ADMIN", "TAS"]);
@@ -14,11 +15,12 @@ export default async function AdminProfilePage() {
   });
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-primary-900">Profil Admin</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Informasi akun administrator</p>
-      </div>
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<UserCircle size={22} />}
+        title="Profil Admin"
+        description="Informasi akun administrator"
+      />
 
       {/* Info profil */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">

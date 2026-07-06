@@ -38,7 +38,7 @@ const SECTIONS: Section[] = [
     desc: "Teks di bagian ajakan pendaftaran (Bergabunglah Bersama Kami).",
     fields: [
       { key: "cta.title", label: "Judul CTA", type: "text" },
-      { key: "cta.ppdb_year", label: "Tahun Ajaran PPDB", type: "text", hint: 'Contoh: "2026/2027"' },
+      { key: "cta.ppdb_year", label: "Tahun Ajaran SPMB", type: "text", hint: 'Contoh: "2026/2027"' },
       { key: "cta.subtitle", label: "Teks Keterangan CTA", type: "textarea" },
       { key: "cta.sub_note", label: "Catatan Kecil di Bawah Tombol", type: "text", hint: 'Contoh: "Kuota terbatas · Tersedia beasiswa prestasi & tahfidz"' },
     ],
@@ -129,7 +129,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: "form",
-    label: "Form PPDB",
+    label: "Form SPMB",
     desc: "Atur mana field dan dokumen yang wajib diisi, opsional, atau disembunyikan di formulir pendaftaran.",
     fields: [
       { key: "form.require_nik", label: "NIK (Nomor Induk Keluarga)", type: "toggle3" },
