@@ -35,6 +35,8 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SCHOOL_NAME: SMK Al-Munawwir IIBS
       NODE_ENV: production
+    volumes:
+      - uploads_data:/app/public/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,4 +61,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  uploads_data:
     driver: local

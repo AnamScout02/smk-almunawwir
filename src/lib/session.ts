@@ -32,7 +32,7 @@ export async function createSession(payload: Omit<SessionPayload, "expiresAt">) 
   const cookieStore = await cookies();
   cookieStore.set("session", session, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
     expires: expiresAt,
     sameSite: "lax",
     path: "/",

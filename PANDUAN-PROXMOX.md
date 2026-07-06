@@ -125,6 +125,68 @@ docker compose down
 docker compose down -v
 ```
 
+## Menghubungkan VS Code (Remote-SSH) dari IP Publik ke Proxmox Ini
+
+Server ini sudah expose SSH ke internet lewat port forwarding MikroTik:
+
+| Tujuan | Dari luar (IP publik) | Diteruskan ke |
+|---|---|---|
+| SSH / VS Code | `103.194.175.54:2233` | `172.15.0.3:22` (CT ini) |
+
+Jadi dari laptop mana pun (bukan cuma dari LAN sekolah), VS Code bisa connect langsung ke port **2233** di IP publik **103.194.175.54**.
+
+### Langkah 1 — Install extension Remote-SSH
+
+Di VS Code: buka **Extensions** (Ctrl+Shift+X) → cari **"Remote - SSH"** (by Microsoft) → Install.
+
+### Langkah 2 — Buat/pakai SSH key (kalau belum ada)
+
+Di laptop (PowerShell/Terminal):
+```bash
+ssh-keygen -t ed25519 -C "nama-laptop-anda"
+```
+Tekan Enter di semua prompt (lokasi default `~/.ssh/id_ed25519`, boleh kosongkan passphrase atau isi sesuai selera).
+
+### Langkah 3 — Daftarkan public key ke server
+
+Copy isi public key (`~/.ssh/id_ed25519.pub`) dari laptop, lalu di server ini (Proxmox CT) tambahkan ke `~/.ssh/authorized_keys`:
+```bash
+echo "isi-public-key-anda" >> ~/.ssh/authorized_keys
+```
+Atau lebih gampang, dari laptop langsung pakai `ssh-copy-id` (kalau masih login pakai password):
+```bash
+ssh-copy-id -p 2233 root@103.194.175.54
+```
+
+### Langkah 4 — Buat SSH config di laptop
+
+Edit/tambahkan di `~/.ssh/config` (laptop, buat file kalau belum ada):
+```
+Host smk-almunawwir
+    HostName 103.194.175.54
+    Port 2233
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Tes dulu dari terminal biasa: `ssh smk-almunawwir` — harus langsung masuk tanpa diminta password.
+
+### Langkah 5 — Connect dari VS Code
+
+1. Buka Command Palette (Ctrl+Shift+P) → ketik **"Remote-SSH: Connect to Host..."**
+2. Pilih **smk-almunawwir** (otomatis terbaca dari `~/.ssh/config`)
+3. VS Code buka window baru, tunggu proses install VS Code Server di server (sekali saja, beberapa menit pertama)
+4. Setelah connect, **File → Open Folder** → pilih `/root/smk-almunawwir`
+
+Selesai — bisa edit file, buka terminal terintegrasi (otomatis di server, bukan di laptop), langsung jalankan `docker compose` dll seperti biasa.
+
+### Catatan keamanan
+
+- Port SSH ini sudah terbuka ke internet — pastikan **login password dimatikan** (hanya SSH key) dan lihat catatan keamanan lain di `deploy/CHEATSHEET.md` bagian 10.
+- Jangan share private key (`id_ed25519` tanpa `.pub`) ke siapa pun.
+
+---
+
 ## Nginx Reverse Proxy (Opsional, untuk domain custom)
 
 Jika ingin pakai domain (misal: smk-almunawwir.sch.id):

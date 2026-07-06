@@ -187,7 +187,7 @@ export default function ExtracurricularPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
               {[
-                { step: "01", title: "Daftar Sebagai Siswa", desc: "Selesaikan proses PPDB dan diterima sebagai siswa aktif SMK Al Munawwir IIBS." },
+                { step: "01", title: "Daftar Sebagai Siswa", desc: "Selesaikan proses SPMB dan diterima sebagai siswa aktif SMK Al Munawwir IIBS." },
                 { step: "02", title: "Pilih Ekskul", desc: "Di awal tahun ajaran, pilih satu atau lebih ekskul yang sesuai minat dan bakat kamu." },
                 { step: "03", title: "Latihan Rutin", desc: "Ikuti latihan dan kegiatan rutin ekskul yang dijadwalkan oleh pembina." },
               ].map(({ step, title, desc }) => (

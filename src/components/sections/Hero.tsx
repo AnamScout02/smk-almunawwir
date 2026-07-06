@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { t } from "@/lib/translations";
 import type { Lang } from "@/lib/lang";
 
@@ -70,6 +70,15 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
         />
       )}
 
+      {/* Gradasi kedua bergerak (lapisan kedua, arah & warna berbeda untuk kedalaman) */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(200deg, transparent 10%, rgba(59,91,219,0.18) 35%, transparent 55%, rgba(232,160,32,0.10) 75%, transparent 95%)",
+          backgroundSize: "300% 300%",
+          animation: "gradientShift 22s ease infinite reverse",
+        }}
+      />
+
       {/* Pattern overlay */}
       <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
@@ -87,32 +96,39 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
 
       {/* Dekorasi cincin emas animasi */}
       <div className="absolute top-20 right-10 w-80 h-80 rounded-full border border-gold/20 pointer-events-none"
-        style={{ animation: "float 8s ease-in-out infinite" }} />
+        style={{ animation: "floatRing 8s ease-in-out infinite" }} />
       <div className="absolute top-20 right-10 w-72 h-72 rounded-full border-2 border-gold/10 pointer-events-none"
-        style={{ animation: "float 8s ease-in-out infinite", animationDelay: "0.5s" }} />
+        style={{ animation: "floatRing 8s ease-in-out infinite", animationDelay: "0.5s" }} />
       <div className="absolute bottom-20 left-10 w-52 h-52 rounded-full border border-gold/15 pointer-events-none"
-        style={{ animation: "float 11s ease-in-out infinite reverse" }} />
+        style={{ animation: "floatRing 11s ease-in-out infinite reverse" }} />
       <div className="absolute bottom-32 left-20 w-36 h-36 rounded-full border border-white/8 pointer-events-none"
-        style={{ animation: "float 9s ease-in-out infinite" }} />
+        style={{ animation: "floatRing 9s ease-in-out infinite" }} />
 
       {/* Floating particles (lebih banyak & lebih vivid) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         {([
-          { size: 5,  left: "8%",   delay: "0s",    dur: "11s", gold: true  },
-          { size: 3,  left: "16%",  delay: "3.5s",  dur: "14s", gold: false },
-          { size: 7,  left: "27%",  delay: "1.2s",  dur: "10s", gold: true  },
-          { size: 4,  left: "36%",  delay: "5s",    dur: "16s", gold: false },
-          { size: 6,  left: "48%",  delay: "2.8s",  dur: "9s",  gold: true  },
-          { size: 3,  left: "57%",  delay: "7s",    dur: "13s", gold: false },
-          { size: 8,  left: "65%",  delay: "0.5s",  dur: "12s", gold: true  },
-          { size: 4,  left: "74%",  delay: "4.2s",  dur: "10s", gold: false },
-          { size: 5,  left: "82%",  delay: "6.5s",  dur: "15s", gold: true  },
-          { size: 3,  left: "90%",  delay: "2s",    dur: "11s", gold: false },
-          { size: 6,  left: "22%",  delay: "8s",    dur: "13s", gold: true  },
-          { size: 4,  left: "43%",  delay: "9.5s",  dur: "12s", gold: false },
-          { size: 5,  left: "70%",  delay: "1.8s",  dur: "14s", gold: true  },
-          { size: 3,  left: "95%",  delay: "11s",   dur: "10s", gold: false },
-          { size: 7,  left: "52%",  delay: "4.8s",  dur: "11s", gold: true  },
+          { size: 4,  left: "4%",   delay: "0s",     dur: "7s",  gold: false },
+          { size: 6,  left: "10%",  delay: "1.2s",   dur: "16s", gold: true  },
+          { size: 3,  left: "16%",  delay: "2.5s",   dur: "9s",  gold: false },
+          { size: 7,  left: "22%",  delay: "0.4s",   dur: "20s", gold: true  },
+          { size: 4,  left: "28%",  delay: "3.2s",   dur: "6s",  gold: false },
+          { size: 5,  left: "34%",  delay: "1.8s",   dur: "13s", gold: true  },
+          { size: 3,  left: "40%",  delay: "2.8s",   dur: "8s",  gold: false },
+          { size: 8,  left: "46%",  delay: "0.2s",   dur: "18s", gold: true  },
+          { size: 4,  left: "52%",  delay: "4s",     dur: "10s", gold: false },
+          { size: 6,  left: "58%",  delay: "1.1s",   dur: "15s", gold: true  },
+          { size: 3,  left: "64%",  delay: "3.5s",   dur: "7s",  gold: false },
+          { size: 7,  left: "70%",  delay: "0.8s",   dur: "19s", gold: true  },
+          { size: 4,  left: "76%",  delay: "4.6s",   dur: "11s", gold: false },
+          { size: 5,  left: "82%",  delay: "0.6s",   dur: "14s", gold: true  },
+          { size: 3,  left: "88%",  delay: "2.2s",   dur: "6.5s",gold: false },
+          { size: 6,  left: "94%",  delay: "1.4s",   dur: "17s", gold: true  },
+          { size: 4,  left: "13%",  delay: "5s",     dur: "9.5s",gold: false },
+          { size: 5,  left: "19%",  delay: "3.8s",   dur: "12s", gold: true  },
+          { size: 3,  left: "37%",  delay: "5.5s",   dur: "8.5s",gold: false },
+          { size: 7,  left: "61%",  delay: "2s",     dur: "21s", gold: true  },
+          { size: 4,  left: "85%",  delay: "4.3s",   dur: "10.5s",gold: false },
+          { size: 6,  left: "97%",  delay: "0.3s",   dur: "16.5s",gold: true  },
         ] as const).map((p, i) => (
           <div key={i}
             className="absolute bottom-0 rounded-full"
@@ -133,17 +149,26 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
       {/* Konten */}
       <div className="relative z-10 container-custom text-center pt-24 pb-16 px-4">
         {/* Tagline badge */}
-        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-gold/30 rounded-full px-6 py-2 mb-8">
-          <Star size={14} className="text-gold" />
+        <div className="inline-flex items-center gap-2.5 bg-white/8 backdrop-blur-sm border border-gold/25 rounded-full pl-4 pr-5 py-2 mb-8">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
+          </span>
           <span className="text-gold text-sm font-semibold tracking-wide">Integrated and Character Education</span>
-          <Star size={14} className="text-gold" />
         </div>
 
         {/* Judul slide */}
         <div className="min-h-[100px] md:min-h-[80px] flex flex-col items-center justify-center mb-6">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white leading-tight">
             <span
-              style={{ background: "linear-gradient(135deg, #E8A020, #F5C842)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+              style={{
+                background: "linear-gradient(90deg, #E8A020 0%, #F5C842 25%, #FFF4D6 50%, #F5C842 75%, #E8A020 100%)",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                animation: "shimmer 5s linear infinite",
+              }}
             >
               {slide.title}
             </span>

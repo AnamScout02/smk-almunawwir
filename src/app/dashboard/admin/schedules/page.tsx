@@ -112,24 +112,33 @@ export default function AdminSchedulesPage() {
       {/* Class Selector */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
-        <div className="relative inline-block">
-          <select
-            value={selectedClass}
-            onChange={e => setSelectedClass(e.target.value)}
-            className="appearance-none bg-primary-50 border border-primary-200 text-primary-900 font-semibold rounded-xl pl-4 pr-10 py-2.5 text-sm focus:border-primary-500 outline-none cursor-pointer"
-          >
-            {classes.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name} — {c.major.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-700 pointer-events-none" />
-        </div>
-        {activeClass && (
-          <span className="ml-3 text-xs text-gray-500">
-            Kelas {activeClass.grade} · {activeClass.major.name}
-          </span>
+        {classes.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            Belum ada kelas. Tambahkan kelas dulu di menu{" "}
+            <a href="/dashboard/admin/classes" className="text-primary-700 font-semibold hover:underline">Kelas</a>.
+          </p>
+        ) : (
+          <>
+            <div className="relative inline-block">
+              <select
+                value={selectedClass}
+                onChange={e => setSelectedClass(e.target.value)}
+                className="appearance-none bg-primary-50 border border-primary-200 text-primary-900 font-semibold rounded-xl pl-4 pr-10 py-2.5 text-sm focus:border-primary-500 outline-none cursor-pointer"
+              >
+                {classes.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — {c.major.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-700 pointer-events-none" />
+            </div>
+            {activeClass && (
+              <span className="ml-3 text-xs text-gray-500">
+                Kelas {activeClass.grade} · {activeClass.major.name}
+              </span>
+            )}
+          </>
         )}
       </div>
 

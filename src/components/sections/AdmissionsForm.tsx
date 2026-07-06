@@ -333,7 +333,7 @@ export default function AdmissionsForm() {
         </button>
 
         <p className="text-xs text-gray-400 text-center leading-relaxed">
-          Dengan mendaftar, Anda menyetujui syarat dan ketentuan PPDB yang berlaku.
+          Dengan mendaftar, Anda menyetujui syarat dan ketentuan SPMB yang berlaku.
         </p>
       </form>
     </div>

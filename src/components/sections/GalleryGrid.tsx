@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, ImageOff } from "lucide-react";
 
 interface GalleryItem {
   id: string;
@@ -40,7 +40,7 @@ export default function GalleryGrid({ items }: { items: GalleryItem[] }) {
 
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
-            <p className="text-4xl mb-4">🖼️</p>
+            <ImageOff size={40} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
             <p className="text-lg font-medium">Belum ada foto di kategori ini</p>
           </div>
         ) : (

@@ -88,15 +88,26 @@ export default async function Footer() {
           {/* Quick Links */}
           <div>
             <h4 className="font-heading font-semibold text-gold mb-5">{tr.footer_nav}</h4>
-            <ul className="space-y-2.5">
-              {tr.footer_links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-white/70 hover:text-gold transition-colors text-sm">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div className="flex gap-6">
+              <ul className="space-y-2.5 flex-1">
+                {tr.footer_links.slice(0, Math.ceil(tr.footer_links.length / 2)).map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-white/70 hover:text-gold transition-colors text-sm">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <ul className="space-y-2.5 flex-1 text-right md:text-left">
+                {tr.footer_links.slice(Math.ceil(tr.footer_links.length / 2)).map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-white/70 hover:text-gold transition-colors text-sm">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Programs */}

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Search, Newspaper } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +17,12 @@ const CATEGORY_COLORS: Record<string, string> = {
   Pengumuman: "bg-blue-100 text-blue-700",
   Kegiatan: "bg-emerald-100 text-emerald-700",
   Beasiswa: "bg-purple-100 text-purple-700",
-  PPDB: "bg-red-100 text-red-700",
+  SPMB: "bg-red-100 text-red-700",
   Alumni: "bg-teal-100 text-teal-700",
   Umum: "bg-gray-100 text-gray-600",
 };
 
-const CATEGORIES = ["Semua", "Prestasi", "Pengumuman", "Kegiatan", "PPDB", "Beasiswa", "Alumni", "Umum"];
+const CATEGORIES = ["Semua", "Prestasi", "Pengumuman", "Kegiatan", "SPMB", "Beasiswa", "Alumni", "Umum"];
 
 export default async function NewsPage({
   searchParams,
@@ -50,8 +50,11 @@ export default async function NewsPage({
       <Navbar />
       <main className="min-h-screen">
         {/* Header */}
-        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16">
-          <div className="container-custom text-center">
+        <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          />
+          <div className="container-custom text-center relative">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Informasi</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Berita & Kegiatan</h1>
             <p className="text-white/70 text-lg">Ikuti perkembangan terbaru SMK Al Munawwir IIBS</p>
@@ -95,7 +98,7 @@ export default async function NewsPage({
 
             {news.length === 0 ? (
               <div className="text-center py-20 text-gray-400">
-                <p className="text-4xl mb-4">📰</p>
+                <Newspaper size={40} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
                 <p className="text-lg font-medium">Tidak ada berita ditemukan</p>
                 <p className="text-sm mt-1">
                   <Link href="/news" className="text-primary-600 hover:underline">Tampilkan semua berita</Link>

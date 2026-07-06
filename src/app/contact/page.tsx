@@ -39,9 +39,12 @@ export default async function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-20">
+      <main className="min-h-screen">
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
-          <div className="container-custom text-center">
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          />
+          <div className="container-custom text-center relative">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">Kontak</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Hubungi Kami</h1>
             <p className="text-white/70 text-lg max-w-2xl mx-auto">

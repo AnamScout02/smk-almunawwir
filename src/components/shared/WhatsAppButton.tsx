@@ -31,7 +31,7 @@ export default function WhatsAppButton() {
           </div>
           <div className="bg-gray-50 rounded-xl p-3 mb-3">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Halo! 👋 Ada yang bisa kami bantu seputar PPDB atau informasi sekolah?
+              Halo! 👋 Ada yang bisa kami bantu seputar SPMB atau informasi sekolah?
             </p>
           </div>
           <a

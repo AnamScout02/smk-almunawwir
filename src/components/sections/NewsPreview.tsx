@@ -10,7 +10,7 @@ const categoryColors: Record<string, string> = {
   Pengumuman: "bg-blue-100 text-blue-700",
   Kegiatan: "bg-emerald-100 text-emerald-700",
   Beasiswa: "bg-purple-100 text-purple-700",
-  PPDB: "bg-red-100 text-red-600",
+  SPMB: "bg-red-100 text-red-600",
   Umum: "bg-gray-100 text-gray-600",
 };
 
@@ -29,7 +29,7 @@ export default async function NewsPreview() {
   }
 
   const items = news.length > 0 ? news : [
-    { id: "1", slug: "ppdb-2026-2027-resmi-dibuka", title: "PPDB 2026/2027 Resmi Dibuka", category: "Pengumuman", createdAt: new Date(), content: "Penerimaan Peserta Didik Baru tahun pelajaran 2026/2027 telah resmi dibuka.", thumbnail: null },
+    { id: "1", slug: "spmb-2026-2027-resmi-dibuka", title: "SPMB 2026/2027 Resmi Dibuka", category: "Pengumuman", createdAt: new Date(), content: "Sistem Penerimaan Murid Baru tahun pelajaran 2026/2027 telah resmi dibuka.", thumbnail: null },
     { id: "2", slug: "ramadan-camp-1447h", title: "Ramadan Camp 1447H: Menghidupkan Malam dengan Ibadah", category: "Kegiatan", createdAt: new Date(), content: "SMK Al Munawwir menggelar Ramadan Camp selama 10 hari penuh.", thumbnail: null },
     { id: "3", slug: "juara-1-lomba-jaringan-nasional", title: "Siswa TKJ Raih Juara 1 Lomba Jaringan Nasional", category: "Prestasi", createdAt: new Date(), content: "Tim siswa TKJ SMK Al Munawwir meraih juara pertama tingkat nasional.", thumbnail: null },
   ];
@@ -50,7 +50,7 @@ export default async function NewsPreview() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {items.map((item) => (
             <article key={item.id}
-              className="group rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              className="group rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <div className="h-44 bg-gradient-to-br from-primary-700 to-primary-900 relative overflow-hidden">
                 {item.thumbnail ? (
                   <Image src={item.thumbnail} alt={item.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />

@@ -1,7 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Network, Calculator, Leaf, Palette, Building2, ArrowRight } from "lucide-react";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
+import { prisma } from "@/lib/prisma";
+import { themeGradient, themeGradientRight } from "@/lib/color";
 
 const programsData = [
   {
@@ -54,6 +57,19 @@ const programsData = [
 export default async function Programs() {
   const lang = await getLang();
   const tr = t(lang);
+  let logoByCode: Record<string, string> = {};
+  let colorByCode: Record<string, string> = {};
+  try {
+    const majors = await prisma.major.findMany({ select: { code: true, logoUrl: true, themeColor: true } });
+    logoByCode = Object.fromEntries(
+      majors.filter(m => m.logoUrl).map(m => [m.code.toUpperCase(), m.logoUrl as string])
+    );
+    colorByCode = Object.fromEntries(
+      majors.filter(m => m.themeColor).map(m => [m.code.toUpperCase(), m.themeColor as string])
+    );
+  } catch {
+    // DB unavailable — pakai ikon default di bawah
+  }
   return (
     <section className="section-padding bg-cream">
       <div className="container-custom">
@@ -69,14 +85,22 @@ export default async function Programs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {programsData.map((p) => (
+          {programsData.map((p) => {
+            const customColor = colorByCode[p.code];
+            return (
             <div key={p.code}
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className={`h-1.5 bg-gradient-to-r ${p.color}`} />
+              <div className={`h-1.5 ${customColor ? "" : `bg-gradient-to-r ${p.color}`}`}
+                style={customColor ? { background: themeGradientRight(customColor) } : undefined} />
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${p.color} text-white shrink-0`}>
-                    <p.icon size={22} />
+                  <div className={`w-11 h-11 rounded-xl ${customColor ? "" : `bg-gradient-to-br ${p.color}`} text-white shrink-0 flex items-center justify-center overflow-hidden relative`}
+                    style={customColor ? { background: themeGradient(customColor) } : undefined}>
+                    {logoByCode[p.code] ? (
+                      <Image src={logoByCode[p.code]} alt={p.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                    ) : (
+                      <p.icon size={22} />
+                    )}
                   </div>
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{p.code}</span>
@@ -97,7 +121,8 @@ export default async function Programs() {
                 </Link>
               </div>
             </div>
-          ))}
+            );
+          })}
 
           {/* Islamic programs card */}
           <div className="bg-gradient-to-br from-primary-700 to-primary-900 rounded-2xl p-6 text-white">

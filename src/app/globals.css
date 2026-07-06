@@ -101,6 +101,18 @@
   to   { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
 }
 
+@keyframes floatRing {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-28px) scale(1.05); }
+}
+
+@keyframes navShimmer {
+  0%, 20%  { transform: translateX(-8rem); opacity: 0; }
+  35%      { opacity: 1; }
+  55%      { opacity: 1; }
+  70%, 100% { transform: translateX(110vw); opacity: 0; }
+}
+
 @keyframes slideInUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -234,14 +246,6 @@ section.from-primary-900 > * {
     padding-bottom: 5rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgba(15,26,69,0.07) 0px,
-      rgba(15,26,69,0.07) 1px,
-      transparent 1px,
-      transparent 18px
-    );
-    animation: diagonalDrift 10s linear infinite;
   }
 
   .container-custom {

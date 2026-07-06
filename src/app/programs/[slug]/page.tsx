@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { programs } from "@/data/programs";
+import { prisma } from "@/lib/prisma";
+import { themeGradient, themeGradientRight } from "@/lib/color";
 import {
   CheckCircle2,
   ArrowRight,
@@ -51,13 +54,45 @@ export default async function ProgramDetailPage({ params }: Props) {
   const Icon = icons[program.slug] ?? Network;
   const otherPrograms = programs.filter((p) => p.slug !== slug);
 
+  let logoByCode: Record<string, string> = {};
+  let colorByCode: Record<string, string> = {};
+  let dbMajor: Awaited<ReturnType<typeof prisma.major.findFirst>> & { gallery?: { id: string; imageUrl: string; caption: string | null }[] } | null = null;
+  try {
+    const majors = await prisma.major.findMany({ include: { gallery: { orderBy: { order: "asc" } } } });
+    logoByCode = Object.fromEntries(
+      majors.filter(m => m.logoUrl).map(m => [m.code.toUpperCase(), m.logoUrl as string])
+    );
+    colorByCode = Object.fromEntries(
+      majors.filter(m => m.themeColor).map(m => [m.code.toUpperCase(), m.themeColor as string])
+    );
+    dbMajor = majors.find(m => m.code.toUpperCase() === program.code.toUpperCase()) ?? null;
+  } catch {
+    // DB unavailable — pakai data statis di bawah
+  }
+  const logoUrl = logoByCode[program.code.toUpperCase()];
+  const customColor = dbMajor?.themeColor;
+  const heroStyle = customColor ? { background: themeGradient(customColor) } : undefined;
+  const rightStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
+
+  const tagline = dbMajor?.tagline || program.tagline;
+  const desc = dbMajor?.longDesc || program.desc;
+  const skills = dbMajor?.skills?.length ? dbMajor.skills : program.skills;
+  const career = dbMajor?.career?.length ? dbMajor.career : program.career;
+  const cert = dbMajor?.cert || program.cert;
+  const features = dbMajor?.features?.length ? dbMajor.features : program.features;
+  const gallery = dbMajor?.gallery ?? [];
+
   return (
     <>
       <Navbar />
-      <main className="pt-20">
+      <main className="min-h-screen">
         {/* Hero */}
-        <section className={`relative bg-gradient-to-br ${program.color} text-white section-padding overflow-hidden`}>
+        <section className={`relative ${customColor ? "" : `bg-gradient-to-br ${program.color}`} text-white section-padding overflow-hidden`}
+          style={heroStyle}>
           <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
+            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
           <div className="container-custom relative">
             {/* Breadcrumb */}
@@ -70,8 +105,12 @@ export default async function ProgramDetailPage({ params }: Props) {
             </nav>
 
             <div className="flex items-start gap-5">
-              <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0">
-                <Icon size={36} className="text-white" />
+              <div className="w-16 h-16 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
+                {logoUrl ? (
+                  <Image src={logoUrl} alt={program.name} fill sizes="64px" className="object-contain p-2" unoptimized />
+                ) : (
+                  <Icon size={36} className="text-white" />
+                )}
               </div>
               <div>
                 <span className="text-white/70 text-sm font-semibold uppercase tracking-widest">{program.code}</span>
@@ -79,7 +118,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                   {program.name}
                 </h1>
                 <p className="text-white/80 text-lg max-w-2xl leading-relaxed">
-                  {program.tagline}
+                  {tagline}
                 </p>
               </div>
             </div>
@@ -95,14 +134,14 @@ export default async function ProgramDetailPage({ params }: Props) {
                 {/* Deskripsi */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
                   <h2 className="font-heading text-2xl font-bold text-navy mb-4">Tentang Konsentrasi Ini</h2>
-                  <p className="text-gray-600 leading-relaxed text-base">{program.desc}</p>
+                  <p className="text-gray-600 leading-relaxed text-base">{desc}</p>
                 </div>
 
                 {/* Kompetensi */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
                   <h2 className="font-heading text-2xl font-bold text-navy mb-6">Kompetensi yang Dipelajari</h2>
                   <ul className="grid sm:grid-cols-2 gap-3">
-                    {program.skills.map((skill) => (
+                    {skills.map((skill) => (
                       <li key={skill} className="flex items-start gap-3">
                         <CheckCircle2 size={18} className={`mt-0.5 shrink-0 text-emerald-500`} />
                         <span className="text-gray-700 text-sm">{skill}</span>
@@ -118,27 +157,41 @@ export default async function ProgramDetailPage({ params }: Props) {
                     Peluang Karier
                   </h2>
                   <div className="flex flex-wrap gap-3">
-                    {program.career.map((c) => (
+                    {career.map((c) => (
                       <span key={c}
-                        className={`px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r ${program.color} text-white`}>
+                        className={`px-4 py-2 rounded-full text-sm font-semibold ${customColor ? "" : `bg-gradient-to-r ${program.color}`} text-white`}
+                        style={rightStyle}>
                         {c}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Foto / Galeri placeholder */}
+                {/* Foto / Galeri Kegiatan */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
                   <h2 className="font-heading text-2xl font-bold text-navy mb-6">Galeri Kegiatan</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i}
-                        className={`aspect-video bg-gradient-to-br ${program.color} opacity-20 rounded-xl flex items-center justify-center`}>
-                        <Icon size={28} className="text-gray-400" />
+                  {gallery.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {gallery.map((g) => (
+                        <div key={g.id} className="aspect-video rounded-xl overflow-hidden relative">
+                          <Image src={g.imageUrl} alt={g.caption ?? program.name} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" unoptimized />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i}
+                            className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} opacity-20 rounded-xl flex items-center justify-center`}
+                            style={heroStyle}>
+                            <Icon size={28} className="text-gray-400" />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <p className="text-gray-400 text-sm text-center mt-4">Foto kegiatan akan segera tersedia</p>
+                      <p className="text-gray-400 text-sm text-center mt-4">Foto kegiatan akan segera tersedia</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -148,9 +201,10 @@ export default async function ProgramDetailPage({ params }: Props) {
                 <div className="bg-white rounded-2xl p-6 shadow-sm">
                   <h3 className="font-heading font-bold text-navy mb-4">Keunggulan Program</h3>
                   <ul className="space-y-3">
-                    {program.features.map((f) => (
+                    {features.map((f) => (
                       <li key={f} className="flex items-center gap-3 text-sm">
-                        <div className={`w-2.5 h-2.5 rounded-full bg-gradient-to-r ${program.color} shrink-0`} />
+                        <div className={`w-2.5 h-2.5 rounded-full ${customColor ? "" : `bg-gradient-to-r ${program.color}`} shrink-0`}
+                          style={rightStyle} />
                         <span className="text-gray-700">{f}</span>
                       </li>
                     ))}
@@ -163,7 +217,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <Award className="inline mr-2 text-gold" size={18} />
                     Sertifikasi
                   </h3>
-                  <p className="text-sm text-gray-600">{program.cert}</p>
+                  <p className="text-sm text-gray-600">{cert}</p>
                 </div>
 
                 {/* Program Islami */}
@@ -185,7 +239,8 @@ export default async function ProgramDetailPage({ params }: Props) {
                   <h3 className="font-heading font-bold text-navy mb-2">Tertarik di {program.code}?</h3>
                   <p className="text-sm text-gray-600 mb-4">Daftar sekarang dan bergabunglah bersama ribuan alumni sukses kami.</p>
                   <Link href="/admissions"
-                    className={`flex items-center justify-center gap-2 w-full bg-gradient-to-r ${program.color} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition text-sm`}>
+                    className={`flex items-center justify-center gap-2 w-full ${customColor ? "" : `bg-gradient-to-r ${program.color}`} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition text-sm`}
+                    style={rightStyle}>
                     Daftar Sekarang
                     <ArrowRight size={16} />
                   </Link>
@@ -210,11 +265,18 @@ export default async function ProgramDetailPage({ params }: Props) {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {otherPrograms.map((p) => {
                 const OtherIcon = icons[p.slug] ?? Network;
+                const otherLogo = logoByCode[p.code.toUpperCase()];
+                const otherColor = colorByCode[p.code.toUpperCase()];
                 return (
                   <Link key={p.slug} href={`/programs/${p.slug}`}
                     className="group bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center mb-3`}>
-                      <OtherIcon size={20} className="text-white" />
+                    <div className={`w-11 h-11 rounded-xl ${otherColor ? "" : `bg-gradient-to-br ${p.color}`} flex items-center justify-center mb-3 overflow-hidden relative`}
+                      style={otherColor ? { background: themeGradient(otherColor) } : undefined}>
+                      {otherLogo ? (
+                        <Image src={otherLogo} alt={p.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                      ) : (
+                        <OtherIcon size={20} className="text-white" />
+                      )}
                     </div>
                     <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{p.code}</div>
                     <div className="font-heading font-bold text-navy text-sm mt-0.5 leading-snug">{p.name}</div>

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Globe } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const navLinks = {
   id: [
@@ -43,6 +43,8 @@ export default function NavbarClient({
   initialFullWhite,
 }: NavbarClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<"id" | "en">("id");
@@ -82,9 +84,23 @@ export default function NavbarClient({
           : "bg-gradient-to-b from-black/50 to-transparent py-5"
       }`}
     >
-      {/* Gold top accent line */}
+      {/* Gold top accent line + kilauan tipis */}
       {(scrolled || !transparent) && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold/60 to-transparent overflow-hidden">
+          <div className="absolute top-0 h-full w-24"
+            style={{
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)",
+              animation: "navShimmer 5s ease-in-out infinite",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Pattern Islami tipis agar tidak polos */}
+      {(scrolled || !transparent) && (
+        <div className="absolute inset-0 opacity-[0.035] pointer-events-none"
+          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat" }}
+        />
       )}
       <nav className="container-custom flex items-center justify-between">
         {/* Logo */}
@@ -132,18 +148,24 @@ export default function NavbarClient({
 
         {/* Desktop Menu */}
         <ul className="hidden lg:flex items-center gap-7">
-          {links.map((link) => (
+          {links.map((link) => {
+            const active = isActive(link.href);
+            return (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`font-medium text-sm transition-colors hover:text-gold ${
-                  isDark ? "text-white/90" : "text-navy"
+                className={`relative font-medium text-sm transition-colors hover:text-gold pb-1 ${
+                  active ? "text-gold" : isDark ? "text-white/90" : "text-navy"
                 }`}
               >
                 {link.name}
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 rounded-full bg-gold" />
+                )}
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {/* Desktop CTA */}
@@ -208,16 +230,22 @@ export default function NavbarClient({
         }`}
       >
         <div className="bg-white border-t border-gray-100 px-6 py-4">
-          {links.map((link) => (
+          {links.map((link) => {
+            const active = isActive(link.href);
+            return (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="block py-3 text-navy font-medium border-b border-gray-100 last:border-0 hover:text-gold transition-colors"
+              className={`flex items-center justify-between py-3 font-medium border-b border-gray-100 last:border-0 hover:text-gold transition-colors ${
+                active ? "text-gold" : "text-navy"
+              }`}
             >
               {link.name}
+              {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
             </Link>
-          ))}
+            );
+          })}
           <div className="flex gap-3 mt-4">
             <Link
               href="/login"

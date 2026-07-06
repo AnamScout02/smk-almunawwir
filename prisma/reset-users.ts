@@ -36,31 +36,31 @@ async function main() {
   }> = [
     {
       name: "Super Admin",
-      email: "suadmin@smk-almunawwiriibs",
+      email: "suadmin@smk-almunawwiriibs.sch.id",
       role: "ADMIN",
       jabatan: "Superadmin",
     },
     {
       name: "Admin & Kepala Sekolah",
-      email: "admin@smk-almunawwiriibs",
+      email: "admin@smk-almunawwiriibs.sch.id",
       role: "ADMIN",
       jabatan: "Kepala Sekolah",
     },
     {
       name: "M. Anam",
-      email: "m.anam@smk-almunawwiriibs",
+      email: "m.anam@smk-almunawwiriibs.sch.id",
       role: "TAS",
       jabatan: "Guru / TAS",
     },
     {
       name: "Lutfi Amila",
-      email: "lutfiamila@smk-almunawwiriibs",
+      email: "lutfiamila@smk-almunawwiriibs.sch.id",
       role: "TAS",
       jabatan: "TAS",
     },
     {
       name: "Guru Contoh",
-      email: "guru-contoh@smk-almunawwiriibs",
+      email: "guru-contoh@smk-almunawwiriibs.sch.id",
       role: "TEACHER",
       jabatan: "Guru",
       nip: "199901012023011001",
@@ -68,7 +68,7 @@ async function main() {
     },
     {
       name: "Siswa Contoh",
-      email: "siswa-contoh@smk-almunawwiriibs",
+      email: "siswa-contoh@smk-almunawwiriibs.sch.id",
       role: "STUDENT",
       jabatan: "Siswa",
       nis: "2024001",

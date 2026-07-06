@@ -104,6 +104,13 @@ export default function LoginPage() {
         <div className="absolute top-1/2 -right-12 w-40 h-40 rounded-full border border-gold/10 pointer-events-none"
           style={{ animation: "rotateOrb 20s linear infinite" }} />
 
+        {/* Cincin dekorasi tambahan */}
+        <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full border border-gold/10 pointer-events-none"
+          style={{ animation: "floatRing 13s ease-in-out infinite" }} />
+        <div className="absolute bottom-10 right-0 w-44 h-44 rounded-full border border-white/8 pointer-events-none"
+          style={{ animation: "floatRing 10s ease-in-out infinite reverse" }} />
+
+
         {/* Floating particles */}
         {PARTICLES.map((p, i) => (
           <div key={i} className="absolute bottom-0 pointer-events-none rounded-full"
@@ -125,12 +132,13 @@ export default function LoginPage() {
               <div className="absolute inset-0 rounded-full blur-xl opacity-30"
                 style={{ background: "radial-gradient(circle, rgba(232,160,32,0.8) 0%, transparent 70%)", animation: "pulseGold 3s ease-in-out infinite" }} />
               <Image
-                src="/images/logo-emblem.png"
+                src="/images/logo-full-white.png"
                 alt="SMK Al Munawwir IIBS"
-                width={96}
-                height={96}
-                className="rounded-full object-contain relative z-10 drop-shadow-2xl"
+                width={280}
+                height={66}
+                className="object-contain relative z-10 drop-shadow-2xl h-16 w-auto mx-auto"
                 priority
+                unoptimized
               />
             </div>
           </div>
@@ -318,7 +326,7 @@ export default function LoginPage() {
             <p className="text-gray-400">
               Belum punya akun?{" "}
               <Link href="/admissions" className="text-primary-700 font-semibold hover:text-gold transition-colors">
-                Daftar PPDB
+                Daftar SPMB
               </Link>
             </p>
             <Link href="/" className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-primary-700 transition-colors text-xs">
