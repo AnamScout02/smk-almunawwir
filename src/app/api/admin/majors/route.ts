@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await verifyRole(["ADMIN", "TAS"]);
-    const { name, code, description, icon } = await req.json();
+    const { name, code, description, icon, logoUrl } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
       return Response.json({ error: "Nama, kode, dan deskripsi wajib diisi." }, { status: 400 });
     }
@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         code: code.trim().toUpperCase(),
         description: description.trim(),
         icon: icon?.trim() || null,
+        logoUrl: logoUrl?.trim() || null,
       },
     });
     return Response.json(major, { status: 201 });
