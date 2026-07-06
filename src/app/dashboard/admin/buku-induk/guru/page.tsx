@@ -1,20 +1,29 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Search, Download, Upload, ChevronDown, ChevronUp, X, Save,
-  BookOpen, User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog,
+  Search, Download, Upload, Save, Loader2,
+  User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog, Users,
 } from "lucide-react";
-import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import ImageUpload from "@/components/admin/ImageUpload";
+import WilayahSelect from "@/components/admin/WilayahSelect";
+import Field from "@/components/admin/BukuIndukField";
+import Section from "@/components/admin/BukuIndukSection";
+import Alert from "@/components/admin/Alert";
+import Modal from "@/components/admin/Modal";
+import GroupedSection from "@/components/admin/GroupedSection";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface TeacherExtended {
   nik?: string; nuptk?: string; certNo?: string;
   maritalStatus?: string; spouseName?: string;
-  kecamatan?: string; kabupaten?: string; province?: string;
+  desa?: string; kecamatan?: string; kabupaten?: string; province?: string;
   workUnit?: string; subjectFull?: string;
   workStatus?: string; certStatus?: string;
   entryYear?: string; exitDate?: string; exitReason?: string;
   teacherNotes?: string;
+  fotoMasukUrl?: string; fotoKeluarUrl?: string;
 }
 
 interface Teacher {
@@ -37,62 +46,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const CLS = "input-field";
-
-function Field({ label, value, onChange, type = "text", wide = false, options, min, max, readOnly }: {
-  label: string; value: string; onChange: (v: string) => void;
-  type?: string; wide?: boolean; options?: string[]; min?: number; max?: number; readOnly?: boolean;
-}) {
-  const cls = `${CLS} ${readOnly ? "bg-gray-50 text-gray-500 cursor-default" : ""}`;
-  return (
-    <div className={wide ? "col-span-2" : ""}>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-      {options ? (
-        <select className={cls} value={value} onChange={ev => onChange(ev.target.value)} disabled={readOnly}>
-          <option value="">— Pilih —</option>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea className={`${cls} resize-none`} rows={2} value={value}
-          onChange={ev => onChange(ev.target.value)} readOnly={readOnly} />
-      ) : type === "tel" ? (
-        <input className={cls} type="tel" inputMode="numeric" pattern="[0-9]*"
-          value={value} onChange={ev => onChange(ev.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
-      ) : type === "nik" ? (
-        <input className={cls} type="text" inputMode="numeric" pattern="[0-9]{16}"
-          maxLength={16} placeholder="16 digit" value={value}
-          onChange={ev => onChange(ev.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
-      ) : type === "number" ? (
-        <input className={cls} type="number" min={min} max={max} value={value}
-          onChange={ev => onChange(ev.target.value)} readOnly={readOnly} />
-      ) : type === "date" ? (
-        <DatePicker value={value} onChange={onChange} disabled={readOnly} />
-      ) : (
-        <input className={cls} type={type} value={value}
-          onChange={ev => onChange(ev.target.value)} readOnly={readOnly} />
-      )}
-    </div>
-  );
-}
-
-function Section({ title, icon: Icon, open, onToggle, children, accent }: {
-  title: string; icon: React.ElementType; open: boolean;
-  onToggle: () => void; children: React.ReactNode; accent?: string;
-}) {
-  return (
-    <div className="border border-primary-100 rounded-xl overflow-hidden shadow-sm">
-      <button type="button"
-        className="w-full flex items-center justify-between px-4 py-3 transition-colors"
-        style={{ background: open ? "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" : "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}
-        onClick={onToggle}>
-        <span className={`flex items-center gap-2 font-semibold text-sm ${open ? "text-white" : "text-primary-800"}`}>
-          <Icon size={15} className={open ? "text-gold" : (accent ?? "text-primary-600")} />{title}
-        </span>
-        {open ? <ChevronUp size={15} className="text-white/60" /> : <ChevronDown size={15} className="text-primary-400" />}
-      </button>
-      {open && <div className="p-4 grid grid-cols-2 gap-3 bg-white">{children}</div>}
-    </div>
-  );
-}
+// Field & Section diimpor dari @/components/admin — dipakai bersama dengan Buku Induk Siswa
 
 const EMPTY_FORM: Partial<Teacher> = {
   phone: "", birthPlace: "", birthDate: "", gender: "", religion: "", address: "",
@@ -111,7 +65,7 @@ export default function BukuIndukGuruPage() {
   const [form, setForm] = useState<Partial<Teacher>>({});
   const [ext, setExt] = useState<TeacherExtended>({});
   const [accountForm, setAccountForm] = useState({ ...EMPTY_ACCOUNT });
-  const [sections, setSections] = useState<Record<string, boolean>>({ personal: true });
+  const [sections, setSections] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [importLoading, setImportLoading] = useState(false);
@@ -152,7 +106,7 @@ export default function BukuIndukGuruPage() {
     setForm({ ...EMPTY_FORM });
     setExt({});
     setAccountForm({ ...EMPTY_ACCOUNT });
-    setSections({ personal: true, akun: true });
+    setSections({});
     setSaveError("");
   }
 
@@ -174,7 +128,7 @@ export default function BukuIndukGuruPage() {
     });
     setExt((teacher.bukuIndukData as TeacherExtended) ?? {});
     setAccountForm({ ...EMPTY_ACCOUNT, email: teacher.user.email });
-    setSections({ personal: true });
+    setSections({});
     setSaveError("");
   }
 
@@ -183,7 +137,7 @@ export default function BukuIndukGuruPage() {
     if (isNew) {
       if (!accountForm.name || !accountForm.email || !accountForm.password || !accountForm.nip || !accountForm.subject) {
         setSaveError("Nama, email, password, NIP, dan mata pelajaran wajib diisi di Section Akun & Login");
-        setSections(p => ({ ...p, akun: true }));
+        setSections({ akun: true });
         return;
       }
       setSaving(true);
@@ -209,12 +163,18 @@ export default function BukuIndukGuruPage() {
       setSaving(true);
       const body: Record<string, unknown> = { ...form, bukuIndukData: ext };
       if (accountForm.password) body.password = accountForm.password;
-      await fetch(`/api/admin/buku-induk/guru/${selected.id}`, {
+      const res = await fetch(`/api/admin/buku-induk/guru/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      setSaving(false); setSelected(null); fetchTeachers();
+      setSaving(false);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error ?? "Gagal menyimpan perubahan. Silakan coba lagi.");
+        return;
+      }
+      setSelected(null); fetchTeachers();
     }
   }
 
@@ -229,7 +189,10 @@ export default function BukuIndukGuruPage() {
 
   const e = (key: keyof TeacherExtended) => String(ext[key] ?? "");
   const setE = (key: keyof TeacherExtended) => (v: string) => setExt(p => ({ ...p, [key]: v }));
-  const toggleSection = (k: string) => setSections(p => ({ ...p, [k]: !p[k] }));
+  const toggleSection = (k: string) => setSections(p => (p[k] ? {} : { [k]: true }));
+
+  const waliKelas = filtered.filter(t => t.homeroomOf.length > 0);
+  const bukanWali = filtered.filter(t => t.homeroomOf.length === 0);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -247,13 +210,17 @@ export default function BukuIndukGuruPage() {
             placeholder="Cari nama, NIP, atau mata pelajaran..."
             value={search} onChange={ev => setSearch(ev.target.value)} />
         </div>
-        <select className="input-field w-auto"
-          value={statusFilter} onChange={ev => setStatusFilter(ev.target.value)}>
-          <option value="ALL">Semua Status</option>
-          <option value="AKTIF">Aktif</option>
-          <option value="PENSIUN">Pensiun</option>
-          <option value="KELUAR">Keluar</option>
-        </select>
+        <Select
+          className="w-auto"
+          value={statusFilter}
+          onChange={v => setStatusFilter(v)}
+          options={[
+            { value: "ALL", label: "Semua Status" },
+            { value: "AKTIF", label: "Aktif" },
+            { value: "PENSIUN", label: "Pensiun" },
+            { value: "KELUAR", label: "Keluar" },
+          ]}
+        />
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-900 transition-colors">
           <Plus size={16} /> Tambah Guru
@@ -270,91 +237,57 @@ export default function BukuIndukGuruPage() {
       </div>
 
       {importResult && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${importResult.errors.length > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
-          <p className="font-semibold">Hasil import: {importResult.created} dibuat, {importResult.updated} diperbarui</p>
+        <Alert variant={importResult.errors.length > 0 ? "warning" : "success"} className="mb-4"
+          title={`Hasil import: ${importResult.created} dibuat, ${importResult.updated} diperbarui`}>
           {importResult.errors.length > 0 && (
             <ul className="mt-1 text-red-600 text-xs list-disc list-inside">
               {importResult.errors.slice(0, 5).map((err, i) => <li key={i}>{err}</li>)}
               {importResult.errors.length > 5 && <li>...dan {importResult.errors.length - 5} error lainnya</li>}
             </ul>
           )}
-        </div>
+        </Alert>
       )}
 
       {/* Tabel */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="data-table">
-          <thead>
-            <tr>
-              {["NIP","Nama Guru","Mata Pelajaran","Jabatan","Wali Kelas","Status","Aksi"].map(h => (
-                <th key={h} className={h === "Aksi" ? "text-center" : ""}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Memuat data...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Tidak ada data guru</td></tr>
-            ) : filtered.map((t) => (
-              <tr key={t.id}>
-                <td className="font-mono text-xs text-gray-600">{t.nip}</td>
-                <td className="font-semibold text-primary-900">{t.user.name}</td>
-                <td className="text-gray-600">{t.subject}</td>
-                <td className="text-gray-500 text-xs">{t.position ?? "-"}</td>
-                <td className="text-gray-600">
-                  {t.homeroomOf.length > 0
-                    ? t.homeroomOf.map(c => (
-                        <span key={c.name} className="inline-flex bg-primary-50 text-primary-600 font-semibold px-2 py-0.5 rounded-full text-xs border border-primary-100 mr-1">{c.name}</span>
-                      ))
-                    : <span className="text-gray-300 text-xs">—</span>}
-                </td>
-                <td>
-                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[t.teacherStatus ?? "AKTIF"] ?? "bg-gray-50 text-gray-600 border border-gray-200"}`}>
-                    {t.teacherStatus ?? "AKTIF"}
-                  </span>
-                </td>
-                <td className="text-center">
-                  <button onClick={() => openEdit(t)}
-                    className="px-2.5 py-1 text-xs font-semibold bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 transition-colors">
-                    Lihat/Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!loading && (
-          <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
-            Menampilkan {filtered.length} dari {teachers.length} guru
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={User} title="Tidak ada data guru" />
+      ) : (
+        <div className="space-y-6">
+          {waliKelas.length > 0 && (
+            <GroupedSection title="Wali Kelas" count={waliKelas.length} icon={GraduationCap}>
+              <TeacherTable items={waliKelas} onEdit={openEdit} />
+            </GroupedSection>
+          )}
+          {bukanWali.length > 0 && (
+            <GroupedSection title="Bukan Wali Kelas" count={bukanWali.length} icon={Users}>
+              <TeacherTable items={bukanWali} onEdit={openEdit} />
+            </GroupedSection>
+          )}
+          <p className="text-xs text-gray-400">Menampilkan {filtered.length} dari {teachers.length} guru</p>
+        </div>
+      )}
 
       {/* Modal Edit / Tambah */}
-      {selected !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-              <div>
-                <h2 className="font-heading font-bold text-white">
-                  {isNew ? "Tambah Guru Baru" : "Buku Induk Guru"}
-                </h2>
-                <p className="text-xs text-white/50 mt-0.5">
-                  {isNew ? "Isi data guru baru dan akun login" : `${selected.user.name} — NIP ${selected.nip}`}
-                </p>
-              </div>
-              <button onClick={() => setSelected(null)} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors"><X size={20} /></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-3">
-
-              {saveError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                  {saveError}
-                </div>
-              )}
+      <Modal
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        size="xl"
+        scrollBody
+        title={isNew ? "Tambah Guru Baru" : "Buku Induk Guru"}
+        description={isNew ? "Isi data guru baru dan akun login" : (selected ? `${selected.user.name} — NIP ${selected.nip}` : "")}
+        footer={
+          <>
+            <button onClick={() => setSelected(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <Save size={16} />
+              {saving ? "Menyimpan..." : (isNew ? "Buat Guru" : "Simpan")}
+            </button>
+          </>
+        }
+      >
+              {saveError && <Alert variant="error">{saveError}</Alert>}
 
               {/* A: Data Pribadi */}
               <Section title="A. Data Pribadi" icon={User} open={!!sections.personal} onToggle={() => toggleSection("personal")}>
@@ -374,11 +307,6 @@ export default function BukuIndukGuruPage() {
                   options={["Belum Kawin","Kawin","Cerai Hidup","Cerai Mati"]}
                   onChange={setE("maritalStatus")} />
                 <Field label="Nama Suami/Istri" value={e("spouseName")} onChange={setE("spouseName")} />
-                <Field label="Alamat Lengkap" value={String(form.address ?? "")} type="textarea" wide
-                  onChange={v => setForm(p => ({...p, address: v}))} />
-                <Field label="Kecamatan" value={e("kecamatan")} onChange={setE("kecamatan")} />
-                <Field label="Kabupaten/Kota" value={e("kabupaten")} onChange={setE("kabupaten")} />
-                <Field label="Provinsi" value={e("province")} onChange={setE("province")} />
               </Section>
 
               {/* B: Kepegawaian */}
@@ -398,17 +326,28 @@ export default function BukuIndukGuruPage() {
                   onChange={v => setForm(p => ({...p, startDate: v}))} />
                 <Field label="Tahun Masuk" value={e("entryYear")} type="number" min={1980} max={2050}
                   onChange={setE("entryYear")} />
+                <div className="col-span-2">
+                  <ImageUpload value={e("fotoMasukUrl")} onChange={setE("fotoMasukUrl")} folder="buku-induk/masuk" label="Foto Masuk (saat mulai mengajar)"
+                    accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+                </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                  <select className={CLS} value={String(form.teacherStatus ?? "AKTIF")}
-                    onChange={ev => setForm(p => ({...p, teacherStatus: ev.target.value}))}>
-                    <option value="AKTIF">AKTIF</option>
-                    <option value="PENSIUN">PENSIUN</option>
-                    <option value="KELUAR">KELUAR</option>
-                  </select>
+                  <label className="label-field">Status</label>
+                  <Select
+                    value={String(form.teacherStatus ?? "AKTIF")}
+                    onChange={v => setForm(p => ({...p, teacherStatus: v}))}
+                    options={[
+                      { value: "AKTIF", label: "AKTIF" },
+                      { value: "PENSIUN", label: "PENSIUN" },
+                      { value: "KELUAR", label: "KELUAR" },
+                    ]}
+                  />
                 </div>
                 <Field label="Tanggal Keluar" value={e("exitDate")} type="date" onChange={setE("exitDate")} />
                 <Field label="Alasan Keluar/Pensiun" value={e("exitReason")} wide onChange={setE("exitReason")} />
+                <div className="col-span-2">
+                  <ImageUpload value={e("fotoKeluarUrl")} onChange={setE("fotoKeluarUrl")} folder="buku-induk/keluar" label="Foto Keluar (saat pensiun/keluar)"
+                    accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+                </div>
                 <Field label="Keterangan Tambahan" value={String(form.teacherNotes ?? "")} type="textarea" wide
                   onChange={v => setForm(p => ({...p, teacherNotes: v}))} />
               </Section>
@@ -426,9 +365,11 @@ export default function BukuIndukGuruPage() {
               <Section title="D. Data Tempat Tinggal" icon={Home} open={!!sections.alamat} onToggle={() => toggleSection("alamat")}>
                 <Field label="Alamat Lengkap" value={String(form.address ?? "")} type="textarea" wide
                   onChange={v => setForm(p => ({...p, address: v}))} />
-                <Field label="Kecamatan" value={e("kecamatan")} onChange={setE("kecamatan")} />
-                <Field label="Kabupaten/Kota" value={e("kabupaten")} onChange={setE("kabupaten")} />
-                <Field label="Provinsi" value={e("province")} onChange={setE("province")} />
+                <WilayahSelect
+                  province={e("province")} regency={e("kabupaten")} district={e("kecamatan")} village={e("desa")}
+                  onProvince={setE("province")} onRegency={setE("kabupaten")}
+                  onDistrict={setE("kecamatan")} onVillage={setE("desa")}
+                />
               </Section>
 
               {/* E: Akun & Login */}
@@ -436,35 +377,35 @@ export default function BukuIndukGuruPage() {
                 {isNew ? (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         Nama Lengkap <span className="text-red-500">*</span>
                       </label>
                       <input className={CLS} type="text" placeholder="Nama guru" value={accountForm.name}
                         onChange={ev => setAccountForm(p => ({ ...p, name: ev.target.value }))} />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         NIP <span className="text-red-500">*</span>
                       </label>
                       <input className={CLS} type="text" placeholder="Nomor Induk Pegawai" value={accountForm.nip}
                         onChange={ev => setAccountForm(p => ({ ...p, nip: ev.target.value }))} />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         Email Login <span className="text-red-500">*</span>
                       </label>
                       <input className={CLS} type="email" placeholder="email@contoh.com" value={accountForm.email}
                         onChange={ev => setAccountForm(p => ({ ...p, email: ev.target.value }))} />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         Password <span className="text-red-500">*</span>
                       </label>
                       <input className={CLS} type="password" placeholder="Minimal 8 karakter" value={accountForm.password}
                         onChange={ev => setAccountForm(p => ({ ...p, password: ev.target.value }))} />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         Mata Pelajaran <span className="text-red-500">*</span>
                       </label>
                       <input className={CLS} type="text" placeholder="Contoh: Matematika, Bahasa Indonesia"
@@ -475,12 +416,12 @@ export default function BukuIndukGuruPage() {
                 ) : (
                   <>
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Email Login</label>
+                      <label className="label-field">Email Login</label>
                       <input className={`${CLS} bg-gray-50 text-gray-500`} type="email"
                         value={selected?.user.email ?? ""} readOnly />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <label className="label-field">
                         Password Baru <span className="text-gray-400">(kosongkan jika tidak ingin mengubah)</span>
                       </label>
                       <input className={CLS} type="password" placeholder="Isi untuk reset password"
@@ -490,19 +431,48 @@ export default function BukuIndukGuruPage() {
                   </>
                 )}
               </Section>
+      </Modal>
+    </div>
+  );
+}
 
-            </div>
-
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-50">
-              <button onClick={() => setSelected(null)} className="btn-modal-cancel">Batal</button>
-              <button onClick={handleSave} disabled={saving} className="btn-modal-save flex items-center gap-2">
-                <Save size={16} />
-                {saving ? "Menyimpan..." : (isNew ? "Buat Guru" : "Simpan")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+function TeacherTable({ items, onEdit }: { items: Teacher[]; onEdit: (t: Teacher) => void }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">NIP</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Guru</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jabatan</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((t) => (
+            <tr key={t.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+              <td className="px-5 py-3.5 font-mono text-xs text-gray-600">{t.nip}</td>
+              <td className="px-5 py-3.5 font-semibold text-primary-900">{t.user.name}</td>
+              <td className="px-5 py-3.5 text-gray-600">{t.subject}</td>
+              <td className="px-5 py-3.5 text-gray-500 text-xs">{t.position ?? "-"}</td>
+              <td className="px-5 py-3.5">
+                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[t.teacherStatus ?? "AKTIF"] ?? "bg-gray-50 text-gray-600 border border-gray-200"}`}>
+                  {t.teacherStatus ?? "AKTIF"}
+                </span>
+              </td>
+              <td className="px-5 py-3.5 text-right">
+                <button onClick={() => onEdit(t)}
+                  className="px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 font-semibold transition-colors">
+                  Lihat/Edit
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

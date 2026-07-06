@@ -1,13 +1,21 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Search, Download, Upload, ChevronDown, ChevronUp, X, Save,
+  Search, Download, Upload, X, Save, Loader2,
   BookOpen, User, Home, GraduationCap, Users, Smile, Plus, KeyRound,
   Heart, Award, Briefcase, LogOut, Trash2, Printer,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import ImageUpload from "@/components/admin/ImageUpload";
+import WilayahSelect from "@/components/admin/WilayahSelect";
+import Field from "@/components/admin/BukuIndukField";
+import Section from "@/components/admin/BukuIndukSection";
+import Alert from "@/components/admin/Alert";
+import GroupedSection from "@/components/admin/GroupedSection";
+import EmptyState from "@/components/admin/EmptyState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,12 +25,13 @@ interface Achievement {
 
 interface BukuIndukData {
   // A
+  fotoMasukUrl?: string;
   nik?: string; nickname?: string; citizenship?: string;
   childOrder?: string; siblingsCount?: string; halfSiblings?: string;
   adoptedSiblings?: string; orphanStatus?: string; dailyLanguage?: string;
   // B
   dusun?: string; rt?: string; rw?: string; desa?: string;
-  kecamatan?: string; kabupaten?: string; studentPhone?: string;
+  kecamatan?: string; kabupaten?: string; province?: string; studentPhone?: string;
   livesWith?: string; distanceToSchool?: string;
   // C
   bloodType?: string; diseases?: string; height?: string; weight?: string;
@@ -40,7 +49,7 @@ interface BukuIndukData {
   fatherReligion?: string; fatherCitizenship?: string;
   fatherEducation?: string; fatherJob?: string; fatherIncome?: string;
   fatherDusun?: string; fatherRt?: string; fatherRw?: string;
-  fatherDesa?: string; fatherKecamatan?: string; fatherKabupaten?: string;
+  fatherDesa?: string; fatherKecamatan?: string; fatherKabupaten?: string; fatherProvince?: string;
   fatherAlive?: string;
   // F – Ibu
   motherName?: string; motherNik?: string;
@@ -48,7 +57,7 @@ interface BukuIndukData {
   motherReligion?: string; motherCitizenship?: string;
   motherEducation?: string; motherJob?: string; motherIncome?: string;
   motherDusun?: string; motherRt?: string; motherRw?: string;
-  motherDesa?: string; motherKecamatan?: string; motherKabupaten?: string;
+  motherDesa?: string; motherKecamatan?: string; motherKabupaten?: string; motherProvince?: string;
   motherAlive?: string;
   // G – Wali
   guardianName?: string; guardianNik?: string;
@@ -56,7 +65,7 @@ interface BukuIndukData {
   guardianReligion?: string; guardianCitizenship?: string;
   guardianEducation?: string; guardianJob?: string; guardianIncome?: string;
   guardianDusun?: string; guardianRt?: string; guardianRw?: string;
-  guardianDesa?: string; guardianKecamatan?: string; guardianKabupaten?: string;
+  guardianDesa?: string; guardianKecamatan?: string; guardianKabupaten?: string; guardianProvince?: string;
   guardianPhone?: string;
   // H
   hobbyArt?: string; hobbySport?: string; hobbyOrg?: string; hobbyOther?: string;
@@ -73,6 +82,7 @@ interface BukuIndukData {
   avgReport?: string; avgExam?: string;
   continueStudy?: string; workPlan?: string;
   // L – Pindah/Keluar
+  fotoKeluarUrl?: string;
   pindahDate?: string; transferTo?: string; alasanPindah?: string;
 }
 
@@ -101,64 +111,51 @@ const STATUS_COLOR: Record<string, string> = {
 
 const TINGKAT_PENGHARGAAN = ["Sekolah","Kecamatan","Kabupaten/Kota","Provinsi","Nasional","Internasional"];
 
-// ─── Helper Components ────────────────────────────────────────────────────────
+// Field & Section diimpor dari @/components/admin — dipakai bersama dengan Buku Induk Guru
 
-function Field({ label, value, onChange, type = "text", wide = false, options, min, max, maxLen, readOnly, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void;
-  type?: string; wide?: boolean; options?: string[]; min?: number; max?: number;
-  maxLen?: number; readOnly?: boolean; placeholder?: string;
-}) {
-  const cls = `input-field ${readOnly ? "bg-gray-50 text-gray-500 cursor-default" : ""}`;
-  return (
-    <div className={wide ? "col-span-2" : ""}>
-      <label className="label-field">{label}</label>
-      {options ? (
-        <select className={cls} value={value} onChange={e => onChange(e.target.value)} disabled={readOnly}>
-          <option value="">— Pilih —</option>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea className={`${cls} resize-none`} rows={2} value={value}
-          onChange={e => onChange(e.target.value)} readOnly={readOnly} placeholder={placeholder} />
-      ) : type === "tel" ? (
-        <input className={cls} type="tel" inputMode="numeric" pattern="[0-9]*"
-          placeholder={placeholder} value={value}
-          onChange={e => onChange(e.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
-      ) : type === "nik" ? (
-        <input className={cls} type="text" inputMode="numeric"
-          pattern={`[0-9]{${maxLen ?? 16}}`} maxLength={maxLen ?? 16}
-          placeholder={`${maxLen ?? 16} digit`} value={value}
-          onChange={e => onChange(e.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
-      ) : type === "number" ? (
-        <input className={cls} type="number" min={min} max={max} placeholder={placeholder}
-          value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly} />
-      ) : type === "date" ? (
-        <DatePicker value={value} onChange={onChange} disabled={readOnly} />
-      ) : (
-        <input className={cls} type={type} maxLength={maxLen} placeholder={placeholder}
-          value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly} />
-      )}
-    </div>
-  );
+interface GuardianKeys {
+  name: keyof BukuIndukData; nik: keyof BukuIndukData;
+  birthPlace: keyof BukuIndukData; birthDate: keyof BukuIndukData;
+  religion: keyof BukuIndukData; citizenship: keyof BukuIndukData;
+  education: keyof BukuIndukData; job: keyof BukuIndukData; income: keyof BukuIndukData;
+  province: keyof BukuIndukData; kabupaten: keyof BukuIndukData;
+  kecamatan: keyof BukuIndukData; desa: keyof BukuIndukData;
+  dusun: keyof BukuIndukData; rt: keyof BukuIndukData; rw: keyof BukuIndukData;
 }
 
-function Section({ title, icon: Icon, open, onToggle, children, accent }: {
-  title: string; icon: React.ElementType; open: boolean;
-  onToggle: () => void; children: React.ReactNode; accent?: string;
+/** Section E/F/G (Ayah/Ibu/Wali) berstruktur identik — hanya beda key & field penutup. */
+function GuardianSection({
+  title, accent, roleLabel, open, onToggle, keys, f, setF, md, trailing,
+}: {
+  title: string; accent: string; roleLabel: string;
+  open: boolean; onToggle: () => void; keys: GuardianKeys;
+  f: (key: keyof BukuIndukData) => string;
+  setF: (key: keyof BukuIndukData) => (v: string) => void;
+  md: (cat: string) => string[];
+  trailing: React.ReactNode;
 }) {
   return (
-    <div className="border border-primary-100 rounded-xl overflow-hidden shadow-sm">
-      <button type="button"
-        className="w-full flex items-center justify-between px-4 py-3 transition-colors"
-        style={{ background: open ? "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" : "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}
-        onClick={onToggle}>
-        <span className={`flex items-center gap-2 font-semibold text-sm ${open ? "text-white" : "text-primary-800"}`}>
-          <Icon size={15} className={open ? "text-gold" : (accent ?? "text-primary-600")} />{title}
-        </span>
-        {open ? <ChevronUp size={15} className="text-white/60" /> : <ChevronDown size={15} className="text-primary-400" />}
-      </button>
-      {open && <div className="p-4 grid grid-cols-2 gap-3 bg-white">{children}</div>}
-    </div>
+    <Section title={title} icon={Users} open={open} onToggle={onToggle} accent={accent}>
+      <Field label={`Nama ${roleLabel}${roleLabel === "Ayah" || roleLabel === "Ibu" ? " Kandung" : " Siswa"}`}
+        value={f(keys.name)} wide onChange={setF(keys.name)} />
+      <Field label={`NIK ${roleLabel} (16 digit)`} value={f(keys.nik)} type="nik" onChange={setF(keys.nik)} />
+      <Field label={`Tempat Lahir ${roleLabel}`} value={f(keys.birthPlace)} onChange={setF(keys.birthPlace)} />
+      <Field label={`Tanggal Lahir ${roleLabel}`} value={f(keys.birthDate)} type="date" onChange={setF(keys.birthDate)} />
+      <Field label="Agama" value={f(keys.religion)} options={md("agama")} onChange={setF(keys.religion)} />
+      <Field label="Kewarganegaraan" value={f(keys.citizenship)} options={md("kewarganegaraan")} onChange={setF(keys.citizenship)} />
+      <Field label="Pendidikan Terakhir" value={f(keys.education)} options={md("pendidikan_akhir")} onChange={setF(keys.education)} />
+      <Field label="Pekerjaan" value={f(keys.job)} options={md("pekerjaan")} onChange={setF(keys.job)} />
+      <Field label="Pengeluaran Bulanan" value={f(keys.income)} options={md("pengeluaran")} onChange={setF(keys.income)} />
+      <WilayahSelect
+        province={f(keys.province)} regency={f(keys.kabupaten)} district={f(keys.kecamatan)} village={f(keys.desa)}
+        onProvince={setF(keys.province)} onRegency={setF(keys.kabupaten)}
+        onDistrict={setF(keys.kecamatan)} onVillage={setF(keys.desa)}
+      />
+      <Field label="Dusun/Lingkungan" value={f(keys.dusun)} onChange={setF(keys.dusun)} />
+      <Field label="RT" value={f(keys.rt)} options={md("rt")} onChange={setF(keys.rt)} />
+      <Field label="RW" value={f(keys.rw)} options={md("rw")} onChange={setF(keys.rw)} />
+      {trailing}
+    </Section>
   );
 }
 
@@ -258,21 +255,24 @@ export default function BukuIndukSiswaPage() {
 
   async function handleSave() {
     setSaveError("");
-    const derivedAddress = [bukuForm.dusun, bukuForm.desa, bukuForm.kecamatan, bukuForm.kabupaten]
-      .filter(Boolean).join(", ");
+    const derivedAddress = [
+      bukuForm.dusun,
+      (bukuForm.rt || bukuForm.rw) ? `RT ${bukuForm.rt || "-"}/RW ${bukuForm.rw || "-"}` : "",
+      bukuForm.desa, bukuForm.kecamatan, bukuForm.kabupaten, bukuForm.province,
+    ].filter(Boolean).join(", ");
 
     if (isNew) {
       if (!accountForm.name || !accountForm.nis) {
         setSaveError("Nama Lengkap & NIS wajib diisi (Section A)");
-        setSections(p => ({ ...p, a: true })); return;
+        setSections({ a: true }); return;
       }
       if (!accountForm.majorId) {
         setSaveError("Jurusan wajib dipilih (Section D)");
-        setSections(p => ({ ...p, d: true })); return;
+        setSections({ d: true }); return;
       }
       if (!accountForm.email || !accountForm.password) {
         setSaveError("Email & Password wajib diisi (Section M)");
-        setSections(p => ({ ...p, m: true })); return;
+        setSections({ m: true }); return;
       }
       setSaving(true);
       const res = await fetch("/api/admin/buku-induk/siswa", {
@@ -306,11 +306,17 @@ export default function BukuIndukSiswaPage() {
         bukuIndukData: bukuForm,
       };
       if (accountForm.password) body.password = accountForm.password;
-      await fetch(`/api/admin/buku-induk/siswa/${selected.id}`, {
+      const res = await fetch(`/api/admin/buku-induk/siswa/${selected.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      setSaving(false); setSelected(null); fetchStudents();
+      setSaving(false);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error ?? "Gagal menyimpan perubahan. Silakan coba lagi.");
+        return;
+      }
+      setSelected(null); fetchStudents();
     }
   }
 
@@ -329,7 +335,7 @@ export default function BukuIndukSiswaPage() {
   };
   const setF = (key: keyof BukuIndukData) => (v: string) =>
     setBukuForm(p => ({ ...p, [key]: v } as BukuIndukData));
-  const toggleSection = (key: string) => setSections(p => ({ ...p, [key]: !p[key] }));
+  const toggleSection = (key: string) => setSections(p => (p[key] ? {} : { [key]: true }));
 
   function setAddrField(key: keyof BukuIndukData, fKey: keyof BukuIndukData, mKey: keyof BukuIndukData) {
     return (v: string) => setBukuForm(p => ({ ...p, [key]: v, [fKey]: v, [mKey]: v } as BukuIndukData));
@@ -351,6 +357,15 @@ export default function BukuIndukSiswaPage() {
 
   const SAUDARA_OPTS = ["00 (Nol)","01 (Satu)","02 (Dua)","03 (Tiga)","04 (Empat)","05 (Lima)","06 (Enam)","07 (Tujuh)","08 (Delapan)","09 (Sembilan)","10 (Sepuluh)"];
 
+  const groupedByClass = Array.from(new Set(filtered.filter(s => s.class).map(s => s.class!.name)))
+    .sort()
+    .map(name => ({
+      name,
+      items: filtered.filter(s => s.class?.name === name),
+      classId: classes.find(c => c.name === name)?.id,
+    }));
+  const unclassed = filtered.filter(s => !s.class);
+
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
@@ -367,14 +382,18 @@ export default function BukuIndukSiswaPage() {
             placeholder="Cari nama, NIS, atau No. Induk..." value={search}
             onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input-field sm:w-44"
-          value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="ALL">Semua Status</option>
-          <option value="AKTIF">Aktif</option>
-          <option value="LULUS">Lulus</option>
-          <option value="KELUAR">Keluar</option>
-          <option value="PINDAH">Pindah</option>
-        </select>
+        <Select
+          className="sm:w-44"
+          value={statusFilter}
+          onChange={v => setStatusFilter(v)}
+          options={[
+            { value: "ALL", label: "Semua Status" },
+            { value: "AKTIF", label: "Aktif" },
+            { value: "LULUS", label: "Lulus" },
+            { value: "KELUAR", label: "Keluar" },
+            { value: "PINDAH", label: "Pindah" },
+          ]}
+        />
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
           <Plus size={15} /> Tambah Siswa
@@ -391,73 +410,49 @@ export default function BukuIndukSiswaPage() {
       </div>
 
       {importResult && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${importResult.errors.length > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
-          <p className="font-semibold">Hasil import: {importResult.created} dibuat, {importResult.updated} diperbarui</p>
+        <Alert variant={importResult.errors.length > 0 ? "warning" : "success"} className="mb-4"
+          title={`Hasil import: ${importResult.created} dibuat, ${importResult.updated} diperbarui`}>
           {importResult.errors.length > 0 && (
             <ul className="mt-1 text-red-600 text-xs list-disc list-inside">
               {importResult.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
               {importResult.errors.length > 5 && <li>...dan {importResult.errors.length - 5} error lainnya</li>}
             </ul>
           )}
-        </div>
+        </Alert>
       )}
 
       {/* Tabel */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {["No. Induk","NIS","Nama Siswa","Kelas","Jurusan","Status","Aksi"].map(h => (
-                  <th key={h} className={h === "Aksi" ? "text-center" : ""}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="text-center py-12 text-gray-400">Memuat data...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-gray-400">Tidak ada data siswa</td></tr>
-              ) : filtered.map((s) => (
-                <tr key={s.id}>
-                  <td className="font-mono text-xs text-gray-400">{s.noInduk || "—"}</td>
-                  <td className="font-mono font-semibold text-gray-600">{s.nis}</td>
-                  <td className="font-semibold text-primary-900">{s.user.name}</td>
-                  <td className="text-gray-500 text-xs">
-                    {s.class?.name
-                      ? <span className="bg-primary-50 text-primary-600 font-semibold px-2 py-0.5 rounded-full border border-primary-100">{s.class.name}</span>
-                      : <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="text-xs">
-                    <span className="bg-gray-50 text-gray-600 font-semibold px-2 py-0.5 rounded-full border border-gray-200">{s.major.code}</span>
-                  </td>
-                  <td>
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[s.studentStatus ?? "AKTIF"] ?? "bg-gray-100 text-gray-600 border border-gray-200"}`}>
-                      {s.studentStatus ?? "AKTIF"}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <button onClick={() => openEdit(s)}
-                      className="px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 font-semibold transition-colors">
-                      Lihat/Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={User} title="Tidak ada data siswa" />
+      ) : (
+        <div className="space-y-6">
+          {groupedByClass.map(({ name, items, classId }) => (
+            <GroupedSection key={name} title={name} count={items.length} icon={GraduationCap}
+              headerActions={classId && (
+                <a href={`/dashboard/admin/buku-induk/siswa/cetak-kelas/${classId}`} target="_blank" rel="noopener noreferrer"
+                  title="Cetak Buku Induk Sekelas"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-white/15 hover:bg-white/25 text-white rounded-lg border border-white/20 font-medium transition-colors">
+                  <Printer size={12} /> Cetak Kelas
+                </a>
+              )}>
+              <BukuIndukSiswaTable items={items} onEdit={openEdit} />
+            </GroupedSection>
+          ))}
+          {unclassed.length > 0 && (
+            <GroupedSection title="Belum Ada Kelas" count={unclassed.length} icon={Users} variant="warning">
+              <BukuIndukSiswaTable items={unclassed} onEdit={openEdit} />
+            </GroupedSection>
+          )}
+          <p className="text-xs text-gray-400">Menampilkan {filtered.length} dari {students.length} siswa</p>
         </div>
-        {!loading && (
-          <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
-            Menampilkan {filtered.length} dari {students.length} siswa
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ── Modal ─────────────────────────────────────────────────────────────── */}
       {selected !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 shrink-0"
               style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
               <div>
@@ -480,12 +475,14 @@ export default function BukuIndukSiswaPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-3">
-              {saveError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{saveError}</div>
-              )}
+              {saveError && <Alert variant="error">{saveError}</Alert>}
 
               {/* ── A ─────────────────────────────────────────────────────── */}
               <Section title="A. Keterangan Siswa" icon={User} open={!!sections.a} onToggle={() => toggleSection("a")}>
+                <div className="col-span-2">
+                  <ImageUpload value={f("fotoMasukUrl")} onChange={setF("fotoMasukUrl")} folder="buku-induk/masuk" label="Foto Masuk (saat pendaftaran)"
+                    accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+                </div>
                 {isNew ? (
                   <>
                     <div>
@@ -531,18 +528,19 @@ export default function BukuIndukSiswaPage() {
                 <div className="col-span-2 text-xs text-blue-600 bg-blue-50 rounded px-3 py-1.5">
                   Alamat Dusun s/d Kabupaten otomatis mengisi alamat Ayah &amp; Ibu
                 </div>
+                <WilayahSelect
+                  province={f("province")} regency={f("kabupaten")} district={f("kecamatan")} village={f("desa")}
+                  onProvince={setAddrField("province", "fatherProvince", "motherProvince")}
+                  onRegency={setAddrField("kabupaten", "fatherKabupaten", "motherKabupaten")}
+                  onDistrict={setAddrField("kecamatan", "fatherKecamatan", "motherKecamatan")}
+                  onVillage={setAddrField("desa", "fatherDesa", "motherDesa")}
+                />
                 <Field label="Dusun/Lingkungan" value={f("dusun")}
                   onChange={setAddrField("dusun", "fatherDusun", "motherDusun")} />
-                <Field label="Desa/Kelurahan" value={f("desa")}
-                  onChange={setAddrField("desa", "fatherDesa", "motherDesa")} />
                 <Field label="RT" value={f("rt")} options={md("rt")}
                   onChange={setAddrField("rt", "fatherRt", "motherRt")} />
                 <Field label="RW" value={f("rw")} options={md("rw")}
                   onChange={setAddrField("rw", "fatherRw", "motherRw")} />
-                <Field label="Kecamatan" value={f("kecamatan")}
-                  onChange={setAddrField("kecamatan", "fatherKecamatan", "motherKecamatan")} />
-                <Field label="Kabupaten/Kota" value={f("kabupaten")}
-                  onChange={setAddrField("kabupaten", "fatherKabupaten", "motherKabupaten")} />
                 <Field label="No. HP/Tlp Siswa" value={f("studentPhone")} type="tel" onChange={setF("studentPhone")} />
                 <Field label="No. HP/Tlp Orang Tua" value={String(form.parentPhone ?? "")} type="tel"
                   onChange={v => setForm(p => ({ ...p, parentPhone: v }))} />
@@ -562,29 +560,44 @@ export default function BukuIndukSiswaPage() {
               <Section title="D. Pendidikan Sebelumnya" icon={GraduationCap} open={!!sections.d} onToggle={() => toggleSection("d")}>
                 {isNew && (
                   <>
+                    <div className="col-span-2 text-xs text-blue-600 bg-blue-50 rounded px-3 py-1.5">
+                      Jurusan, Kelas, dan Tahun Masuk otomatis mengisi Kompetensi Keahlian, Diterima di Tingkat, dan Tanggal Diterima di bawah
+                    </div>
                     <div>
                       <label className="label-field">Jurusan <span className="text-red-500">*</span></label>
-                      <select className="input-field" value={accountForm.majorId}
-                        onChange={e => setAccountForm(p => ({ ...p, majorId: e.target.value, classId: "" }))}>
-                        <option value="">— Pilih Jurusan —</option>
-                        {majors.map(m => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
-                      </select>
+                      <Select
+                        value={accountForm.majorId}
+                        onChange={v => {
+                          const major = majors.find(m => m.id === v);
+                          setAccountForm(p => ({ ...p, majorId: v, classId: "" }));
+                          if (major) setBukuForm(p => ({ ...p, kompetensiKeahlian: major.name }));
+                        }}
+                        options={majors.map(m => ({ value: m.id, label: `${m.name} (${m.code})` }))}
+                        placeholder="— Pilih Jurusan —"
+                      />
                     </div>
                     <div>
                       <label className="label-field">Kelas / Rombel</label>
-                      <select className="input-field" value={accountForm.classId}
-                        onChange={e => {
-                          const cls = classes.find(c => c.id === e.target.value);
-                          setAccountForm(p => ({ ...p, classId: e.target.value }));
-                          if (cls) setBukuForm(p => ({ ...p, rombel: cls.name }));
-                        }}>
-                        <option value="">— Pilih Kelas (opsional) —</option>
-                        {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.name} (Grade {c.grade})</option>)}
-                      </select>
+                      <Select
+                        value={accountForm.classId}
+                        onChange={v => {
+                          const cls = classes.find(c => c.id === v);
+                          setAccountForm(p => ({ ...p, classId: v }));
+                          if (cls) {
+                            const tingkat = cls.grade === 10 ? "X (Sepuluh)" : cls.grade === 11 ? "XI (Sebelas)" : cls.grade === 12 ? "XII (Dua Belas)" : "";
+                            setBukuForm(p => ({ ...p, rombel: cls.name, ...(tingkat ? { tingkatMasuk: tingkat } : {}) }));
+                          }
+                        }}
+                        options={filteredClasses.map(c => ({ value: c.id, label: `${c.name} (Grade ${c.grade})` }))}
+                        placeholder="— Pilih Kelas (opsional) —"
+                      />
                     </div>
                     <Field label="Tahun Masuk" value={accountForm.enrollYear} type="number" min={2000} max={2050}
                       placeholder="Contoh: 2024"
-                      onChange={v => { setAccountForm(p => ({ ...p, enrollYear: v })); setF("diterimaDate"); }} />
+                      onChange={v => {
+                        setAccountForm(p => ({ ...p, enrollYear: v }));
+                        if (v) setBukuForm(p => ({ ...p, diterimaDate: `${v}-07-01` }));
+                      }} />
                     <div /> {/* spacer */}
                   </>
                 )}
@@ -601,73 +614,62 @@ export default function BukuIndukSiswaPage() {
                 <Field label="Rombel" value={f("rombel")} onChange={setF("rombel")} />
                 <Field label="Bidang Keahlian" value={f("bidangKeahlian")} options={md("bidang_keahlian")} onChange={setF("bidangKeahlian")} />
                 <Field label="Program Keahlian" value={f("programKeahlian")} options={md("program_keahlian")} onChange={setF("programKeahlian")} />
-                <Field label="Kompetensi Keahlian" value={f("kompetensiKeahlian")} options={md("kompetensi_keahlian")} onChange={setF("kompetensiKeahlian")} />
+                <Field label="Kompetensi Keahlian" value={f("kompetensiKeahlian")}
+                  options={!f("kompetensiKeahlian") || md("kompetensi_keahlian").includes(f("kompetensiKeahlian"))
+                    ? md("kompetensi_keahlian")
+                    : [f("kompetensiKeahlian"), ...md("kompetensi_keahlian")]}
+                  onChange={setF("kompetensiKeahlian")} />
                 <Field label="Tanggal Diterima" value={f("diterimaDate")} type="date" onChange={setF("diterimaDate")} />
                 {!isNew && (
                   <Field label="Tahun Masuk SMK" value={String(form.enrollYear ?? "")} type="number" min={2000} max={2050}
-                    onChange={v => setForm(p => ({ ...p, enrollYear: parseInt(v) || undefined }))} />
+                    onChange={v => {
+                      setForm(p => ({ ...p, enrollYear: parseInt(v) || undefined }));
+                      if (v) setBukuForm(p => ({ ...p, diterimaDate: `${v}-07-01` }));
+                    }} />
                 )}
               </Section>
 
               {/* ── E: Ayah ───────────────────────────────────────────────── */}
-              <Section title="E. Keterangan Ayah" icon={Users} open={!!sections.e} onToggle={() => toggleSection("e")} accent="text-blue-600">
-                <Field label="Nama Ayah Kandung" value={f("fatherName")} wide onChange={setF("fatherName")} />
-                <Field label="NIK Ayah (16 digit)" value={f("fatherNik")} type="nik" onChange={setF("fatherNik")} />
-                <Field label="Tempat Lahir Ayah" value={f("fatherBirthPlace")} onChange={setF("fatherBirthPlace")} />
-                <Field label="Tanggal Lahir Ayah" value={f("fatherBirthDate")} type="date" onChange={setF("fatherBirthDate")} />
-                <Field label="Agama" value={f("fatherReligion")} options={md("agama")} onChange={setF("fatherReligion")} />
-                <Field label="Kewarganegaraan" value={f("fatherCitizenship")} options={md("kewarganegaraan")} onChange={setF("fatherCitizenship")} />
-                <Field label="Pendidikan Terakhir" value={f("fatherEducation")} options={md("pendidikan_akhir")} onChange={setF("fatherEducation")} />
-                <Field label="Pekerjaan" value={f("fatherJob")} options={md("pekerjaan")} onChange={setF("fatherJob")} />
-                <Field label="Pengeluaran Bulanan" value={f("fatherIncome")} options={md("pengeluaran")} onChange={setF("fatherIncome")} />
-                <Field label="Dusun/Lingkungan" value={f("fatherDusun")} onChange={setF("fatherDusun")} />
-                <Field label="Desa/Kelurahan" value={f("fatherDesa")} onChange={setF("fatherDesa")} />
-                <Field label="RT" value={f("fatherRt")} options={md("rt")} onChange={setF("fatherRt")} />
-                <Field label="RW" value={f("fatherRw")} options={md("rw")} onChange={setF("fatherRw")} />
-                <Field label="Kecamatan" value={f("fatherKecamatan")} onChange={setF("fatherKecamatan")} />
-                <Field label="Kabupaten/Kota" value={f("fatherKabupaten")} onChange={setF("fatherKabupaten")} />
-                <Field label="Masih Hidup / Telah Meninggal" value={f("fatherAlive")} options={md("status_ortu")} onChange={setF("fatherAlive")} />
-              </Section>
+              <GuardianSection
+                title="E. Keterangan Ayah" accent="text-blue-600" roleLabel="Ayah"
+                open={!!sections.e} onToggle={() => toggleSection("e")}
+                f={f} setF={setF} md={md}
+                keys={{
+                  name: "fatherName", nik: "fatherNik", birthPlace: "fatherBirthPlace", birthDate: "fatherBirthDate",
+                  religion: "fatherReligion", citizenship: "fatherCitizenship", education: "fatherEducation",
+                  job: "fatherJob", income: "fatherIncome", province: "fatherProvince", kabupaten: "fatherKabupaten",
+                  kecamatan: "fatherKecamatan", desa: "fatherDesa", dusun: "fatherDusun", rt: "fatherRt", rw: "fatherRw",
+                }}
+                trailing={<Field label="Masih Hidup / Telah Meninggal" value={f("fatherAlive")} options={md("status_ortu")} onChange={setF("fatherAlive")} />}
+              />
 
               {/* ── F: Ibu ────────────────────────────────────────────────── */}
-              <Section title="F. Keterangan Ibu" icon={Users} open={!!sections.f} onToggle={() => toggleSection("f")} accent="text-pink-600">
-                <Field label="Nama Ibu Kandung" value={f("motherName")} wide onChange={setF("motherName")} />
-                <Field label="NIK Ibu (16 digit)" value={f("motherNik")} type="nik" onChange={setF("motherNik")} />
-                <Field label="Tempat Lahir Ibu" value={f("motherBirthPlace")} onChange={setF("motherBirthPlace")} />
-                <Field label="Tanggal Lahir Ibu" value={f("motherBirthDate")} type="date" onChange={setF("motherBirthDate")} />
-                <Field label="Agama" value={f("motherReligion")} options={md("agama")} onChange={setF("motherReligion")} />
-                <Field label="Kewarganegaraan" value={f("motherCitizenship")} options={md("kewarganegaraan")} onChange={setF("motherCitizenship")} />
-                <Field label="Pendidikan Terakhir" value={f("motherEducation")} options={md("pendidikan_akhir")} onChange={setF("motherEducation")} />
-                <Field label="Pekerjaan" value={f("motherJob")} options={md("pekerjaan")} onChange={setF("motherJob")} />
-                <Field label="Pengeluaran Bulanan" value={f("motherIncome")} options={md("pengeluaran")} onChange={setF("motherIncome")} />
-                <Field label="Dusun/Lingkungan" value={f("motherDusun")} onChange={setF("motherDusun")} />
-                <Field label="Desa/Kelurahan" value={f("motherDesa")} onChange={setF("motherDesa")} />
-                <Field label="RT" value={f("motherRt")} options={md("rt")} onChange={setF("motherRt")} />
-                <Field label="RW" value={f("motherRw")} options={md("rw")} onChange={setF("motherRw")} />
-                <Field label="Kecamatan" value={f("motherKecamatan")} onChange={setF("motherKecamatan")} />
-                <Field label="Kabupaten/Kota" value={f("motherKabupaten")} onChange={setF("motherKabupaten")} />
-                <Field label="Masih Hidup / Telah Meninggal" value={f("motherAlive")} options={md("status_ortu")} onChange={setF("motherAlive")} />
-              </Section>
+              <GuardianSection
+                title="F. Keterangan Ibu" accent="text-pink-600" roleLabel="Ibu"
+                open={!!sections.f} onToggle={() => toggleSection("f")}
+                f={f} setF={setF} md={md}
+                keys={{
+                  name: "motherName", nik: "motherNik", birthPlace: "motherBirthPlace", birthDate: "motherBirthDate",
+                  religion: "motherReligion", citizenship: "motherCitizenship", education: "motherEducation",
+                  job: "motherJob", income: "motherIncome", province: "motherProvince", kabupaten: "motherKabupaten",
+                  kecamatan: "motherKecamatan", desa: "motherDesa", dusun: "motherDusun", rt: "motherRt", rw: "motherRw",
+                }}
+                trailing={<Field label="Masih Hidup / Telah Meninggal" value={f("motherAlive")} options={md("status_ortu")} onChange={setF("motherAlive")} />}
+              />
 
               {/* ── G: Wali ───────────────────────────────────────────────── */}
-              <Section title="G. Keterangan Wali" icon={Users} open={!!sections.g} onToggle={() => toggleSection("g")} accent="text-violet-600">
-                <Field label="Nama Wali Siswa" value={f("guardianName")} wide onChange={setF("guardianName")} />
-                <Field label="NIK Wali (16 digit)" value={f("guardianNik")} type="nik" onChange={setF("guardianNik")} />
-                <Field label="Tempat Lahir Wali" value={f("guardianBirthPlace")} onChange={setF("guardianBirthPlace")} />
-                <Field label="Tanggal Lahir Wali" value={f("guardianBirthDate")} type="date" onChange={setF("guardianBirthDate")} />
-                <Field label="Agama" value={f("guardianReligion")} options={md("agama")} onChange={setF("guardianReligion")} />
-                <Field label="Kewarganegaraan" value={f("guardianCitizenship")} options={md("kewarganegaraan")} onChange={setF("guardianCitizenship")} />
-                <Field label="Pendidikan Terakhir" value={f("guardianEducation")} options={md("pendidikan_akhir")} onChange={setF("guardianEducation")} />
-                <Field label="Pekerjaan" value={f("guardianJob")} options={md("pekerjaan")} onChange={setF("guardianJob")} />
-                <Field label="Pengeluaran Bulanan" value={f("guardianIncome")} options={md("pengeluaran")} onChange={setF("guardianIncome")} />
-                <Field label="Dusun/Lingkungan" value={f("guardianDusun")} onChange={setF("guardianDusun")} />
-                <Field label="Desa/Kelurahan" value={f("guardianDesa")} onChange={setF("guardianDesa")} />
-                <Field label="RT" value={f("guardianRt")} options={md("rt")} onChange={setF("guardianRt")} />
-                <Field label="RW" value={f("guardianRw")} options={md("rw")} onChange={setF("guardianRw")} />
-                <Field label="Kecamatan" value={f("guardianKecamatan")} onChange={setF("guardianKecamatan")} />
-                <Field label="Kabupaten/Kota" value={f("guardianKabupaten")} onChange={setF("guardianKabupaten")} />
-                <Field label="No. HP/Tlp Wali" value={f("guardianPhone")} type="tel" onChange={setF("guardianPhone")} />
-              </Section>
+              <GuardianSection
+                title="G. Keterangan Wali" accent="text-violet-600" roleLabel="Wali"
+                open={!!sections.g} onToggle={() => toggleSection("g")}
+                f={f} setF={setF} md={md}
+                keys={{
+                  name: "guardianName", nik: "guardianNik", birthPlace: "guardianBirthPlace", birthDate: "guardianBirthDate",
+                  religion: "guardianReligion", citizenship: "guardianCitizenship", education: "guardianEducation",
+                  job: "guardianJob", income: "guardianIncome", province: "guardianProvince", kabupaten: "guardianKabupaten",
+                  kecamatan: "guardianKecamatan", desa: "guardianDesa", dusun: "guardianDusun", rt: "guardianRt", rw: "guardianRw",
+                }}
+                trailing={<Field label="No. HP/Tlp Wali" value={f("guardianPhone")} type="tel" onChange={setF("guardianPhone")} />}
+              />
 
               {/* ── H: Kegemaran ──────────────────────────────────────────── */}
               <Section title="H. Kegemaran Siswa" icon={Smile} open={!!sections.h} onToggle={() => toggleSection("h")} accent="text-amber-600">
@@ -699,11 +701,12 @@ export default function BukuIndukSiswaPage() {
                       </div>
                       <div>
                         <label className="label-field">Tingkat</label>
-                        <select className="input-field" value={a.level}
-                          onChange={e => updateAchievement(idx, "level", e.target.value)}>
-                          <option value="">— Pilih —</option>
-                          {TINGKAT_PENGHARGAAN.map(l => <option key={l} value={l}>{l}</option>)}
-                        </select>
+                        <Select
+                          value={a.level}
+                          onChange={v => updateAchievement(idx, "level", v)}
+                          options={TINGKAT_PENGHARGAAN.map(l => ({ value: l, label: l }))}
+                          placeholder="— Pilih —"
+                        />
                       </div>
                       <div className="col-span-2">
                         <label className="label-field">Diberikan Oleh</label>
@@ -753,15 +756,22 @@ export default function BukuIndukSiswaPage() {
 
               {/* ── L: Pindah/Keluar ──────────────────────────────────────── */}
               <Section title="L. Keterangan Pindah / Keluar" icon={LogOut} open={!!sections.l} onToggle={() => toggleSection("l")} accent="text-red-600">
+                <div className="col-span-2">
+                  <ImageUpload value={f("fotoKeluarUrl")} onChange={setF("fotoKeluarUrl")} folder="buku-induk/keluar" label="Foto Keluar (saat lulus/pindah/keluar)"
+                    accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+                </div>
                 <div>
                   <label className="label-field">Status Siswa</label>
-                  <select className="input-field" value={String(form.studentStatus ?? "AKTIF")}
-                    onChange={e => setForm(p => ({ ...p, studentStatus: e.target.value }))}>
-                    <option value="AKTIF">AKTIF</option>
-                    <option value="LULUS">LULUS</option>
-                    <option value="KELUAR">KELUAR</option>
-                    <option value="PINDAH">PINDAH</option>
-                  </select>
+                  <Select
+                    value={String(form.studentStatus ?? "AKTIF")}
+                    onChange={v => setForm(p => ({ ...p, studentStatus: v }))}
+                    options={[
+                      { value: "AKTIF", label: "AKTIF" },
+                      { value: "LULUS", label: "LULUS" },
+                      { value: "KELUAR", label: "KELUAR" },
+                      { value: "PINDAH", label: "PINDAH" },
+                    ]}
+                  />
                 </div>
                 <Field label="Tanggal Pindah/Keluar" value={f("pindahDate")} type="date" onChange={setF("pindahDate")} />
                 <Field label="Pindah Ke" value={f("transferTo")} wide onChange={setF("transferTo")} />
@@ -800,11 +810,11 @@ export default function BukuIndukSiswaPage() {
 
             </div>
 
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-              <button onClick={() => setSelected(null)} className="btn-modal-cancel">
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
+              <button onClick={() => setSelected(null)} className="btn-modal-cancel flex-1">
                 Batal
               </button>
-              <button onClick={handleSave} disabled={saving} className="btn-modal-save">
+              <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
                 <Save size={14} />
                 {saving ? "Menyimpan..." : (isNew ? "Buat Siswa" : "Simpan")}
               </button>
@@ -812,6 +822,56 @@ export default function BukuIndukSiswaPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BukuIndukSiswaTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student) => void }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-primary-100"
+            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">No. Induk</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">NIS</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((s) => (
+            <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+              <td className="px-5 py-3.5 font-mono text-xs text-gray-400">{s.noInduk || "—"}</td>
+              <td className="px-5 py-3.5 font-mono font-semibold text-gray-600">{s.nis}</td>
+              <td className="px-5 py-3.5 font-semibold text-primary-900">{s.user.name}</td>
+              <td className="px-5 py-3.5 text-xs">
+                <span className="bg-gray-50 text-gray-600 font-semibold px-2 py-0.5 rounded-full border border-gray-200">{s.major.code}</span>
+              </td>
+              <td className="px-5 py-3.5">
+                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[s.studentStatus ?? "AKTIF"] ?? "bg-gray-100 text-gray-600 border border-gray-200"}`}>
+                  {s.studentStatus ?? "AKTIF"}
+                </span>
+              </td>
+              <td className="px-5 py-3.5 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <a href={`/dashboard/admin/buku-induk/siswa/${s.id}/cetak`} target="_blank" rel="noopener noreferrer"
+                    title="Cetak Buku Induk"
+                    className="p-1.5 text-gray-400 hover:text-primary-700 hover:bg-primary-50 rounded-lg border border-transparent hover:border-primary-100 transition-colors">
+                    <Printer size={14} />
+                  </a>
+                  <button onClick={() => onEdit(s)}
+                    className="px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 font-semibold transition-colors">
+                    Lihat/Edit
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

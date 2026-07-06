@@ -142,10 +142,12 @@ export default function LogoEditor({
   logoEmblem,
   logoFull,
   logoFullWhite,
+  letterheadBukuInduk,
 }: {
   logoEmblem: string;
   logoFull: string;
   logoFullWhite: string;
+  letterheadBukuInduk: string;
 }) {
   return (
     <div>
@@ -177,6 +179,14 @@ export default function LogoEditor({
           description="Footer dan area background gelap. Teks logo berwarna putih."
           isSquare={false}
           darkPreview
+        />
+        <LogoCard
+          settingKey="letterhead.bukuInduk"
+          currentUrl={letterheadBukuInduk}
+          label="Kop Surat Buku Induk"
+          description="Header lembar cetak Buku Induk Siswa (logo + nama + alamat sekolah), horizontal lebar penuh."
+          isSquare={false}
+          darkPreview={false}
         />
       </div>
     </div>

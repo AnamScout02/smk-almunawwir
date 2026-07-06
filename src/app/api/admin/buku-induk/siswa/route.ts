@@ -5,9 +5,12 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   await verifyRole(["ADMIN", "TAS"]);
+  const { searchParams } = new URL(req.url);
+  const classId = searchParams.get("classId");
   const students = await prisma.student.findMany({
+    where: classId ? { classId } : undefined,
     include: {
       user: { select: { name: true, email: true } },
       class: { select: { name: true, grade: true } },

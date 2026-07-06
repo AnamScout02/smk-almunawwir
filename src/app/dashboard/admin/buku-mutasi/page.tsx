@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Repeat, Printer, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
+import StatTile from "@/components/admin/StatTile";
 
 interface MutasiMasuk {
   id: string; tipe: "MASUK"; tanggal: string;
@@ -56,12 +58,14 @@ export default function BukuMutasiPage() {
         description="Rekap siswa masuk dan keluar per tahun ajaran"
         actions={
           <div className="flex items-center gap-3 print:hidden">
-            <select className="input-field w-auto"
-              value={tahun} onChange={e => setTahun(e.target.value)}>
-              {yearOpts.map(y => <option key={y} value={y}>{y}/{y+1}</option>)}
-            </select>
+            <Select
+              className="w-auto"
+              value={tahun}
+              onChange={v => setTahun(v)}
+              options={yearOpts.map(y => ({ value: String(y), label: `${y}/${y+1}` }))}
+            />
             <button onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-900 transition-colors">
+              className="btn-gold flex items-center gap-2 text-sm">
               <Printer size={15} /> Cetak
             </button>
           </div>
@@ -78,22 +82,8 @@ export default function BukuMutasiPage() {
       {/* Summary */}
       {!loading && (
         <div className="grid grid-cols-2 gap-4 mb-6 print:hidden">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-4">
-            <ArrowDownCircle size={36} className="text-blue-500" />
-            <div>
-              <p className="text-xs text-blue-600 font-medium">Siswa Masuk</p>
-              <p className="text-3xl font-bold text-blue-700">{masuk.length}</p>
-              <p className="text-xs text-blue-400">Tahun {tahun}</p>
-            </div>
-          </div>
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-4">
-            <ArrowUpCircle size={36} className="text-red-400" />
-            <div>
-              <p className="text-xs text-red-600 font-medium">Siswa Keluar</p>
-              <p className="text-3xl font-bold text-red-600">{keluar.length}</p>
-              <p className="text-xs text-red-400">Tahun {tahun}</p>
-            </div>
-          </div>
+          <StatTile color="blue" value={masuk.length} label="Siswa Masuk" sublabel={`Tahun ${tahun}`} />
+          <StatTile color="red" value={keluar.length} label="Siswa Keluar" sublabel={`Tahun ${tahun}`} />
         </div>
       )}
 
@@ -120,11 +110,13 @@ export default function BukuMutasiPage() {
             <h3 className="font-bold text-base">DATA SISWA MASUK TAHUN {tahun}</h3>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:border-0 print:shadow-none">
-            <table className="data-table print:text-xs">
+            <div className="overflow-x-auto print:overflow-visible">
+            <table className="w-full text-sm print:text-xs">
               <thead className="print:hidden">
-                <tr>
+                <tr className="border-b border-primary-100"
+                  style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
                   {["No","Tanggal","NIS","Nama Siswa","Kelas","Jurusan","Asal Sekolah","Keterangan"].map(h => (
-                    <th key={h} className="whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -132,19 +124,20 @@ export default function BukuMutasiPage() {
                 {masuk.length === 0 ? (
                   <tr><td colSpan={8} className="text-center py-10 text-gray-400">Tidak ada siswa masuk tahun {tahun}</td></tr>
                 ) : masuk.map((s, i) => (
-                  <tr key={s.id}>
-                    <td className="text-gray-400 text-xs">{i+1}</td>
-                    <td className="text-gray-500 text-xs whitespace-nowrap">{formatTgl(s.tanggal)}</td>
-                    <td className="font-mono text-xs font-medium text-gray-600">{s.nis}</td>
-                    <td className="font-semibold text-primary-900">{s.nama}</td>
-                    <td className="text-gray-500 text-xs">{s.kelas}</td>
-                    <td className="text-gray-500 text-xs">{s.jurusan}</td>
-                    <td className="text-gray-500 text-xs">{s.asal}</td>
-                    <td className="text-gray-400 text-xs">{s.keterangan || "—"}</td>
+                  <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                    <td className="px-5 py-3.5 text-gray-400 text-xs">{i+1}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{formatTgl(s.tanggal)}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs font-medium text-gray-600">{s.nis}</td>
+                    <td className="px-5 py-3.5 font-semibold text-primary-900">{s.nama}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.kelas}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.jurusan}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.asal}</td>
+                    <td className="px-5 py-3.5 text-gray-400 text-xs">{s.keterangan || "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
             {masuk.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
                 Total: {masuk.length} siswa masuk
@@ -159,11 +152,13 @@ export default function BukuMutasiPage() {
             <h3 className="font-bold text-base">DATA SISWA KELUAR TAHUN {tahun}</h3>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:border-0 print:shadow-none">
-            <table className="data-table print:text-xs">
+            <div className="overflow-x-auto print:overflow-visible">
+            <table className="w-full text-sm print:text-xs">
               <thead className="print:hidden">
-                <tr>
+                <tr className="border-b border-primary-100"
+                  style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
                   {["No","Tanggal","NIS","Nama Siswa","Kelas","Jurusan","Status","Pindah Ke","Alasan"].map(h => (
-                    <th key={h} className="whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -171,24 +166,25 @@ export default function BukuMutasiPage() {
                 {keluar.length === 0 ? (
                   <tr><td colSpan={9} className="text-center py-10 text-gray-400">Tidak ada siswa keluar tahun {tahun}</td></tr>
                 ) : keluar.map((s, i) => (
-                  <tr key={s.id}>
-                    <td className="text-gray-400 text-xs">{i+1}</td>
-                    <td className="text-gray-500 text-xs whitespace-nowrap">{formatTgl(s.tanggal)}</td>
-                    <td className="font-mono text-xs font-medium text-gray-600">{s.nis}</td>
-                    <td className="font-semibold text-primary-900">{s.nama}</td>
-                    <td className="text-gray-500 text-xs">{s.kelas}</td>
-                    <td className="text-gray-500 text-xs">{s.jurusan}</td>
-                    <td>
+                  <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                    <td className="px-5 py-3.5 text-gray-400 text-xs">{i+1}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{formatTgl(s.tanggal)}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs font-medium text-gray-600">{s.nis}</td>
+                    <td className="px-5 py-3.5 font-semibold text-primary-900">{s.nama}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.kelas}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.jurusan}</td>
+                    <td className="px-5 py-3.5">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[s.tipe] ?? "bg-gray-50 text-gray-600 border border-gray-200"}`}>
                         {STATUS_LABEL[s.tipe] ?? s.tipe}
                       </span>
                     </td>
-                    <td className="text-gray-500 text-xs">{s.tujuan}</td>
-                    <td className="text-gray-400 text-xs">{s.alasan}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{s.tujuan}</td>
+                    <td className="px-5 py-3.5 text-gray-400 text-xs">{s.alasan}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
             {keluar.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400">
                 Total: {keluar.length} siswa keluar

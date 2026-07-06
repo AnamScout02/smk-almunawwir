@@ -20,6 +20,8 @@ export const DEFAULTS: Record<string, string> = {
   "logo.emblem": "/images/logo-emblem.png",
   "logo.full": "/images/logo-full.png",
   "logo.full_white": "/images/logo-full-white.png",
+  // Kop Surat Cetak Buku Induk
+  "letterhead.bukuInduk": "",
   // Statistik
   "stats.students": "1200",
   "stats.achievements": "50",
@@ -30,7 +32,7 @@ export const DEFAULTS: Record<string, string> = {
   // Banner CTA
   "cta.title": "Bergabunglah Bersama Kami",
   "cta.ppdb_year": "2026/2027",
-  "cta.subtitle": "PPDB 2026/2027 kini dibuka. Jadikan anak Anda bagian dari generasi Qurani yang terampil dan berdaya saing global.",
+  "cta.subtitle": "SPMB 2026/2027 kini dibuka. Jadikan anak Anda bagian dari generasi Qurani yang terampil dan berdaya saing global.",
   "cta.sub_note": "Kuota terbatas · Tersedia beasiswa prestasi & tahfidz",
   // Kontak
   "contact.phone": "0838-7820-3670",

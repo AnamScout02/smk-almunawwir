@@ -31,40 +31,45 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     bukuIndukData, password,
   } = body;
 
-  // Jika ada password baru, update password user
-  if (password && typeof password === "string" && password.trim().length >= 1) {
-    const hashed = await bcrypt.hash(password, 12);
-    const studentRef = await prisma.student.findUnique({ where: { id }, select: { userId: true } });
-    if (studentRef) {
-      await prisma.user.update({ where: { id: studentRef.userId }, data: { password: hashed } });
+  try {
+    // Jika ada password baru, update password user
+    if (password && typeof password === "string" && password.trim().length >= 1) {
+      const hashed = await bcrypt.hash(password, 12);
+      const studentRef = await prisma.student.findUnique({ where: { id }, select: { userId: true } });
+      if (studentRef) {
+        await prisma.user.update({ where: { id: studentRef.userId }, data: { password: hashed } });
+      }
     }
-  }
 
-  const student = await prisma.student.update({
-    where: { id },
-    data: {
-      noInduk:        noInduk || null,
-      nisn:           nisn || null,
-      birthPlace:     birthPlace || null,
-      birthDate:      birthDate ? new Date(birthDate) : null,
-      gender:         gender || null,
-      religion:       religion || null,
-      address:        address || null,
-      parentName:     parentName || null,
-      parentPhone:    parentPhone || null,
-      parentJob:      parentJob || null,
-      previousSchool: previousSchool || null,
-      enrollYear:     enrollYear ? parseInt(enrollYear) : null,
-      studentStatus:  studentStatus || "AKTIF",
-      exitDate:       exitDate ? new Date(exitDate) : null,
-      studentNotes:   studentNotes || null,
-      bukuIndukData:  bukuIndukData ?? undefined,
-    },
-    include: {
-      user: { select: { name: true, email: true } },
-      class: { select: { name: true } },
-      major: { select: { name: true, code: true } },
-    },
-  });
-  return NextResponse.json(student);
+    const student = await prisma.student.update({
+      where: { id },
+      data: {
+        noInduk:        noInduk || null,
+        nisn:           nisn || null,
+        birthPlace:     birthPlace || null,
+        birthDate:      birthDate ? new Date(birthDate) : null,
+        gender:         gender || null,
+        religion:       religion || null,
+        address:        address || null,
+        parentName:     parentName || null,
+        parentPhone:    parentPhone || null,
+        parentJob:      parentJob || null,
+        previousSchool: previousSchool || null,
+        enrollYear:     enrollYear ? parseInt(enrollYear) : null,
+        studentStatus:  studentStatus || "AKTIF",
+        exitDate:       exitDate ? new Date(exitDate) : null,
+        studentNotes:   studentNotes || null,
+        bukuIndukData:  bukuIndukData ?? undefined,
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+        class: { select: { name: true } },
+        major: { select: { name: true, code: true } },
+      },
+    });
+    return NextResponse.json(student);
+  } catch (err) {
+    console.error("[buku-induk siswa PUT]", err);
+    return NextResponse.json({ error: "Gagal menyimpan perubahan siswa" }, { status: 500 });
+  }
 }
