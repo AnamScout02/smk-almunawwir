@@ -8,10 +8,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   await verifyRole(["ADMIN", "TAS"]);
   const { id } = await params;
   const body = await req.json();
-  const { code, name, category, gradeScope, majorId, order } = body;
+  const { code, name, category, grade, majorId, order, hoursPerWeek, weekGroup, maxSharedTeacher } = body;
 
-  if (!name || !category || !gradeScope) {
-    return NextResponse.json({ error: "Nama, kategori, dan jenjang wajib diisi" }, { status: 400 });
+  if (!name || !category || !grade) {
+    return NextResponse.json({ error: "Nama, kategori, dan tingkat wajib diisi" }, { status: 400 });
   }
 
   const subject = await prisma.subject.update({
@@ -20,9 +20,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       code: code ? parseInt(String(code)) : 0,
       name,
       category,
-      gradeScope,
+      grade: parseInt(String(grade)),
       majorId: majorId || null,
       order: order ? parseInt(String(order)) : 0,
+      hoursPerWeek: hoursPerWeek ? parseInt(String(hoursPerWeek)) : 2,
+      weekGroup: weekGroup === "PRODUKTIF" ? "PRODUKTIF" : "UMUM",
+      maxSharedTeacher: maxSharedTeacher ? Math.max(1, parseInt(String(maxSharedTeacher))) : 1,
     },
     include: { major: { select: { id: true, name: true, code: true } } },
   });

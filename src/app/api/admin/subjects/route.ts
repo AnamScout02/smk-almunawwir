@@ -8,7 +8,7 @@ export async function GET() {
   await verifyRole(["ADMIN", "TAS"]);
   const subjects = await prisma.subject.findMany({
     include: { major: { select: { id: true, name: true, code: true } } },
-    orderBy: [{ gradeScope: "asc" }, { category: "asc" }, { order: "asc" }, { code: "asc" }],
+    orderBy: [{ grade: "asc" }, { category: "asc" }, { order: "asc" }, { code: "asc" }],
   });
   return NextResponse.json(subjects);
 }
@@ -16,10 +16,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   await verifyRole(["ADMIN", "TAS"]);
   const body = await req.json();
-  const { code, name, category, gradeScope, majorId, order } = body;
+  const { code, name, category, grade, majorId, order, hoursPerWeek, weekGroup, maxSharedTeacher } = body;
 
-  if (!name || !category || !gradeScope) {
-    return NextResponse.json({ error: "Nama, kategori, dan jenjang wajib diisi" }, { status: 400 });
+  if (!name || !category || !grade) {
+    return NextResponse.json({ error: "Nama, kategori, dan tingkat wajib diisi" }, { status: 400 });
   }
 
   const subject = await prisma.subject.create({
@@ -27,9 +27,12 @@ export async function POST(req: NextRequest) {
       code: code ? parseInt(String(code)) : 0,
       name,
       category,
-      gradeScope,
+      grade: parseInt(String(grade)),
       majorId: majorId || null,
       order: order ? parseInt(String(order)) : 0,
+      hoursPerWeek: hoursPerWeek ? parseInt(String(hoursPerWeek)) : 2,
+      weekGroup: weekGroup === "PRODUKTIF" ? "PRODUKTIF" : "UMUM",
+      maxSharedTeacher: maxSharedTeacher ? Math.max(1, parseInt(String(maxSharedTeacher))) : 1,
     },
     include: { major: { select: { id: true, name: true, code: true } } },
   });

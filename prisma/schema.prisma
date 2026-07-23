@@ -34,6 +34,7 @@ model Teacher {
   nip            String     @unique
   subject        String
   phone          String?
+  shortCode      String?    @unique // kode singkat 1-2 huruf untuk tabel jadwal gabungan (A, B, ..., Z, AA, ...)
   // Buku Induk fields
   birthPlace     String?
   birthDate      DateTime?
@@ -49,6 +50,7 @@ model Teacher {
   grades         Grade[]
   homeroomOf     Class[]
   schedules      Schedule[]
+  teachingLoad   TeachingAssignment[]
 }
 
 model Major {
@@ -72,15 +74,19 @@ model Major {
 }
 
 model Subject {
-  id         String   @id @default(cuid())
-  code       Int
-  name       String
-  category   String   // Kelompok Mapel Umum | Kelompok Mapel Kejuruan | Mapel Diniyah | Muatan Nasional | Muatan Kewilayahan | C3 Kompetensi Keahlian
-  gradeScope String   // X_XI | XII
-  majorId    String?
-  major      Major?   @relation(fields: [majorId], references: [id], onDelete: Cascade)
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  code         Int
+  name         String
+  category     String   // Kelompok Mapel Umum | Kelompok Mapel Kejuruan | Mapel Diniyah | Muatan Nasional | Muatan Kewilayahan | C3 Kompetensi Keahlian
+  grade        Int      // 10 | 11 | 12 — tingkat spesifik, tiap tingkat bisa punya mapel & jam berbeda
+  majorId      String?
+  major        Major?   @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  order        Int      @default(0)
+  hoursPerWeek Int      @default(2)
+  weekGroup    String   @default("UMUM") // PRODUKTIF | UMUM — dipakai untuk rotasi jadwal 2 minggu kelas X/XI
+  maxSharedTeacher Int  @default(1) // maksimal kelas berbeda yang boleh dipegang 1 guru di jam sama utk mapel ini (mis. Penjasorkes = 2)
+  createdAt    DateTime @default(now())
+  assignments  TeachingAssignment[]
 }
 
 model MajorGallery {
@@ -94,16 +100,17 @@ model MajorGallery {
 }
 
 model Class {
-  id             String                @id @default(cuid())
-  name           String
-  grade          Int
-  majorId        String
-  major          Major                 @relation(fields: [majorId], references: [id])
-  homeroomId     String?
-  homeroom       Teacher?              @relation(fields: [homeroomId], references: [id])
-  students       Student[]
-  schedules      Schedule[]
-  studentHistory StudentClassHistory[]
+  id                  String                @id @default(cuid())
+  name                String
+  grade               Int
+  majorId             String
+  major               Major                 @relation(fields: [majorId], references: [id])
+  homeroomId          String?
+  homeroom            Teacher?              @relation(fields: [homeroomId], references: [id])
+  students            Student[]
+  schedules           Schedule[]
+  studentHistory      StudentClassHistory[]
+  teachingAssignments TeachingAssignment[]
 }
 
 model Student {
@@ -259,7 +266,51 @@ model Schedule {
   startTime String   // "07:00"
   endTime   String   // "08:30"
   room      String?
+  generated    Boolean  @default(false)
+  weekType     String   @default("SEMUA") // A | B | SEMUA — SEMUA = tiap minggu (kelas XII & non-rotasi)
+  scheduleType String   @default("BLOK") // BLOK = sistem 2 minggu bergantian (dikali 2) | NONBLOK = 1 minggu biasa tanpa kali 2, khusus upload Dapodik
+  createdAt    DateTime @default(now())
+}
+
+model SchoolPeriod {
+  id        String  @id @default(cuid())
+  day       String  // SENIN | SELASA | RABU | KAMIS | JUMAT | SABTU
+  order     Int     // urutan jam ke-N dalam hari itu
+  startTime String  // "07:00"
+  endTime   String  // "07:45"
+  isBreak   Boolean @default(false)
+  label     String? // contoh: "Istirahat"
+
+  @@unique([day, order])
+}
+
+model TeachingAssignment {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  preferences TeachingPreference[]
+
+  @@unique([classId, subjectId])
+}
+
+// Blok preferensi hari/jam untuk Generate Jadwal Otomatis — 1 Penugasan Mengajar boleh
+// punya beberapa blok (mis. jam banyak dipecah ke beberapa hari), dicoba duluan sebelum
+// penempatan otomatis; total jam blok tidak harus pas jumlah jam mapelnya — sisanya
+// akan dilanjutkan otomatis seperti biasa.
+model TeachingPreference {
+  id                   String             @id @default(cuid())
+  teachingAssignmentId String
+  teachingAssignment   TeachingAssignment @relation(fields: [teachingAssignmentId], references: [id], onDelete: Cascade)
+  day                  String             // SENIN..SABTU
+  startTime            String             // "07:15" dst — harus cocok SchoolPeriod
+  hours                Int                // jumlah jam berturut-turut mulai dari startTime
+  weekType             String             @default("SEMUA") // A | B | SEMUA — SEMUA = berlaku di minggu manapun blok ini kebetulan diproses
+  createdAt            DateTime           @default(now())
 }
 
 model Announcement {

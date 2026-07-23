@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { getCurrentWeekType } from "@/lib/schedule-week.server";
 import {
   BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle,
   CalendarDays, UserCircle, Printer, Newspaper, Bell, Calendar,
@@ -35,6 +36,7 @@ export default async function StudentDashboard() {
     },
   });
 
+  const currentWeekType = await getCurrentWeekType();
   const [latestNews, announcements, schedules] = await Promise.all([
     prisma.news.findMany({
       where: { published: true },
@@ -54,7 +56,7 @@ export default async function StudentDashboard() {
     }),
     student?.classId
       ? prisma.schedule.findMany({
-          where: { classId: student.classId },
+          where: { classId: student.classId, weekType: { in: ["SEMUA", currentWeekType] }, scheduleType: "BLOK" },
           include: { teacher: { include: { user: { select: { name: true } } } } },
           orderBy: [{ day: "asc" }, { startTime: "asc" }],
         })

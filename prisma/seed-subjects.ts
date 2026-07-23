@@ -96,25 +96,29 @@ const KONSENTRASI: Record<string, string[]> = {
 async function main() {
   await prisma.subject.deleteMany({});
 
+  const rows: { code: number; name: string; category: string; grade: number; majorId?: string | null; order: number }[] = [];
+
+  // Mapel Umum/Kejuruan/Diniyah dibuat untuk kelas X dan XI masing-masing sebagai baris terpisah,
+  // supaya bisa diedit beda jam/isi per tingkat jika kurikulumnya memang berbeda.
+  for (const grade of [10, 11]) {
+    let code = 1;
+    let order = 0;
+    for (const name of UMUM) rows.push({ code: code++, name, category: "Kelompok Mata Pelajaran Umum", grade, order: order++ });
+    for (const name of KEJURUAN) rows.push({ code: code++, name, category: "Kelompok Mata Pelajaran Kejuruan", grade, order: order++ });
+    for (const name of DINIYAH) rows.push({ code: code++, name, category: "Mapel Diniyah", grade, order: order++ });
+  }
+
   let code = 1;
-  const rows: { code: number; name: string; category: string; gradeScope: string; majorId?: string | null; order: number }[] = [];
-
   let order = 0;
-  for (const name of UMUM) rows.push({ code: code++, name, category: "Kelompok Mata Pelajaran Umum", gradeScope: "X_XI", order: order++ });
-  for (const name of KEJURUAN) rows.push({ code: code++, name, category: "Kelompok Mata Pelajaran Kejuruan", gradeScope: "X_XI", order: order++ });
-  for (const name of DINIYAH) rows.push({ code: code++, name, category: "Mapel Diniyah", gradeScope: "X_XI", order: order++ });
-
-  code = 1;
-  order = 0;
-  for (const name of NASIONAL) rows.push({ code: code++, name, category: "Muatan Nasional", gradeScope: "XII", order: order++ });
-  for (const name of KEWILAYAHAN) rows.push({ code: code++, name, category: "Muatan Kewilayahan", gradeScope: "XII", order: order++ });
+  for (const name of NASIONAL) rows.push({ code: code++, name, category: "Muatan Nasional", grade: 12, order: order++ });
+  for (const name of KEWILAYAHAN) rows.push({ code: code++, name, category: "Muatan Kewilayahan", grade: 12, order: order++ });
 
   const majors = await prisma.major.findMany({ select: { id: true, code: true } });
   for (const [majorCode, subjects] of Object.entries(KONSENTRASI)) {
     const major = majors.find(m => m.code === majorCode);
     if (!major) { console.warn(`Jurusan dengan kode ${majorCode} tidak ditemukan, dilewati.`); continue; }
     for (const name of subjects) {
-      rows.push({ code: code++, name, category: `C3 Kompetensi Keahlian ${majorCode}`, gradeScope: "XII", majorId: major.id, order: order++ });
+      rows.push({ code: code++, name, category: `C3 Kompetensi Keahlian ${majorCode}`, grade: 12, majorId: major.id, order: order++ });
     }
   }
 

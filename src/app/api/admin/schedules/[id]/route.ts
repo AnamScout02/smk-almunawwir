@@ -6,10 +6,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   await verifyRole(["ADMIN", "TAS"]);
   const { id } = await params;
   const body = await req.json();
-  const { classId, teacherId, subject, day, startTime, endTime, room } = body;
+  const { classId, teacherId, subject, day, startTime, endTime, room, weekType } = body;
   const item = await prisma.schedule.update({
     where: { id },
-    data: { classId, teacherId: teacherId || null, subject, day, startTime, endTime, room: room || null },
+    data: { classId, teacherId: teacherId || null, subject, day, startTime, endTime, room: room || null, weekType: weekType || "SEMUA" },
     include: {
       class: { include: { major: true } },
       teacher: { include: { user: { select: { name: true } } } },
