@@ -38,7 +38,7 @@ const masterData = [
   { category: "alasan_pindah", label: "Alasan Pindah", items: ["Permintaan Orang Tua","Kurang Cocok dengan Lingkungan","Jarak Terlalu Jauh","Tidak Mampu Biaya"] },
   { category: "bidang_keahlian", label: "Bidang Keahlian", items: ["Teknologi Informasi dan Komunikasi","Bisnis dan Manajemen","Agribisnis dan Agroteknologi","Seni dan Industri Kreatif","Teknologi Konstruksi dan Bangunan"] },
   { category: "program_keahlian", label: "Program Keahlian", items: ["Teknologi Komputer dan Informatika","Akuntansi dan Keuangan","Agribisnis Ternak","Seni Rupa","Desain Pemodelan dan Informasi Bangunan"] },
-  { category: "kompetensi_keahlian", label: "Kompetensi Keahlian", items: ["Teknik Komputer dan Jaringan","Akuntansi dan Keuangan Lembaga","Agribisnis Ternak Unggas","Desain Komunikasi Visual","Desain Pemodelan dan Informasi Bangunan"] },
+  { category: "kompetensi_keahlian", label: "Konsentrasi Keahlian", items: ["Teknik Komputer dan Jaringan","Akuntansi dan Keuangan Lembaga","Agribisnis Ternak Unggas","Desain Komunikasi Visual","Desain Pemodelan dan Informasi Bangunan"] },
   { category: "pendidikan_guru", label: "Pendidikan (Guru)", items: ["D3","S1","S2","S3","Lainnya"] },
   { category: "status_kepegawaian", label: "Status Kepegawaian (Guru)", items: ["Guru Tetap Yayasan","Guru Tidak Tetap (GTT)","PNS","PPPK","Honorer"] },
 ];

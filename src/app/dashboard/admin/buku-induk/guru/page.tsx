@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Download, Upload, Save, Loader2,
-  User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog, Users,
+  User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog, Users, Table2,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -55,6 +56,8 @@ const EMPTY_FORM: Partial<Teacher> = {
 const EMPTY_ACCOUNT = { name: "", email: "", password: "", nip: "", subject: "" };
 
 export default function BukuIndukGuruPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filtered, setFiltered] = useState<Teacher[]>([]);
   const [search, setSearch] = useState("");
@@ -131,6 +134,16 @@ export default function BukuIndukGuruPage() {
     setSections({});
     setSaveError("");
   }
+
+  // Deep link dari halaman /teachers: buka modal edit guru tertentu otomatis lewat ?edit=<id>
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId || teachers.length === 0) return;
+    const target = teachers.find(t => t.id === editId);
+    if (target) openEdit(target);
+    router.replace("/dashboard/admin/buku-induk/guru");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teachers, searchParams]);
 
   async function handleSave() {
     setSaveError("");
@@ -221,10 +234,13 @@ export default function BukuIndukGuruPage() {
             { value: "KELUAR", label: "Keluar" },
           ]}
         />
-        <button onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-900 transition-colors">
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
           <Plus size={16} /> Tambah Guru
         </button>
+        <a href="/dashboard/admin/buku-induk/guru/tabel"
+          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-sm font-semibold transition-colors">
+          <Table2 size={16} /> Tabel Lengkap
+        </a>
         <a href="/api/admin/buku-induk/guru/template"
           className="flex items-center gap-2 px-4 py-2.5 bg-white text-primary-700 border border-primary-200 rounded-xl text-sm font-semibold hover:bg-primary-50 transition-colors">
           <Download size={16} /> Download Template

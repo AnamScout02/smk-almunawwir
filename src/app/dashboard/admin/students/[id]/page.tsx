@@ -4,7 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School, Printer, Pencil } from "lucide-react";
 
 const STATUS_COLOR: Record<string, string> = {
   HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
@@ -47,10 +47,18 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="font-heading text-2xl font-bold text-primary-900">{student.user.name}</h1>
           <p className="text-gray-400 text-sm">Detail siswa</p>
         </div>
+        <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors">
+          <Printer size={14} /> Lihat Buku Induk
+        </Link>
+        <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-colors">
+          <Pencil size={14} /> Edit Biodata
+        </Link>
       </div>
 
       {/* Info profil */}

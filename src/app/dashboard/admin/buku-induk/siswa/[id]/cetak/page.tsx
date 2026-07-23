@@ -8,7 +8,8 @@ export default function CetakBukuIndukPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [student, setStudent] = useState<PrintStudent | null>(null);
-  const [letterhead, setLetterhead] = useState("");
+  const [logo, setLogo] = useState("");
+  const [principalName, setPrincipalName] = useState("");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -16,7 +17,8 @@ export default function CetakBukuIndukPage() {
     fetch(`/api/admin/buku-induk/siswa/${id}`)
       .then(r => { if (!r.ok) { setNotFound(true); return null; } return r.json(); })
       .then(d => { if (d) setStudent(d); setLoading(false); });
-    fetch("/api/settings/letterhead").then(r => r.json()).then(d => setLetterhead(d.url ?? "")).catch(() => {});
+    fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
+    fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
   }, [id]);
 
   if (loading) return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-100 text-gray-400">Memuat data...</div>;
@@ -29,7 +31,7 @@ export default function CetakBukuIndukPage() {
 
   return (
     <div className="fixed print:static inset-0 print:inset-auto z-[60] bg-gray-100 print:bg-white overflow-y-auto print:overflow-visible print:h-auto">
-      <style>{`@page { size: A4; margin: 12mm; }`}</style>
+      <style>{`@page { size: A4; margin: 0; }`}</style>
 
       {/* Print controls — hidden on print */}
       <div className="print:hidden sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
@@ -44,15 +46,10 @@ export default function CetakBukuIndukPage() {
       </div>
 
       {/* Print container */}
-      <div className="py-8 print:py-0 px-4 print:px-0">
-        <BukuIndukPrintSheet student={student} letterheadUrl={letterhead} />
-      </div>
-
-      {/* Footer berulang — tampil di setiap halaman saat dicetak */}
-      <div className="hidden print:flex fixed bottom-0 left-0 right-0 items-center justify-between px-4 py-1.5 text-[9px] font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #0A1030 0%, #1B2B6B 100%)" }}>
-        <span>BUKU INDUK SISWA</span>
-        <span>{student.noInduk || student.nis} — {student.user.name}</span>
+      <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0">
+        <div className="shadow-lg print:shadow-none">
+          <BukuIndukPrintSheet student={student} logoUrl={logo} principalName={principalName} />
+        </div>
       </div>
     </div>
   );

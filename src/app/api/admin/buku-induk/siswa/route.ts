@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     where: classId ? { classId } : undefined,
     include: {
       user: { select: { name: true, email: true } },
-      class: { select: { name: true, grade: true } },
+      class: { select: { id: true, name: true, grade: true } },
       major: { select: { name: true, code: true } },
     },
     orderBy: [{ enrollYear: "desc" }, { user: { name: "asc" } }],
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    name, email, password, nis, nisn, noInduk,
+    name, email, password, nis, nisn,
     majorId, classId, enrollYear,
     birthPlace, birthDate, gender, religion, address,
     parentName, parentPhone, parentJob, previousSchool,
@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       nis,
       nisn: nisn || null,
-      noInduk: noInduk || null,
       majorId,
       classId: classId || null,
       enrollYear: enrollYear ? parseInt(String(enrollYear)) : null,
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
     },
     include: {
       user: { select: { name: true, email: true } },
-      class: { select: { name: true, grade: true } },
+      class: { select: { id: true, name: true, grade: true } },
       major: { select: { name: true, code: true } },
     },
   });

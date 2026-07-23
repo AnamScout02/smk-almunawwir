@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await req.json();
   const {
-    noInduk, nisn, birthPlace, birthDate, gender, religion, address,
+    nisn, birthPlace, birthDate, gender, religion, address,
     parentName, parentPhone, parentJob, previousSchool, enrollYear,
     studentStatus, exitDate, studentNotes,
     bukuIndukData, password,
@@ -44,7 +44,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const student = await prisma.student.update({
       where: { id },
       data: {
-        noInduk:        noInduk || null,
         nisn:           nisn || null,
         birthPlace:     birthPlace || null,
         birthDate:      birthDate ? new Date(birthDate) : null,

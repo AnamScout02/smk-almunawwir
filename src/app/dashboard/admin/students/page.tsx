@@ -1,11 +1,10 @@
 ﻿"use client";
-import { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, Save, Users, Loader2, GraduationCap, Download, Eye } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Users, Loader2, GraduationCap, Download, Eye, BookOpen } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
-import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
 
 interface Major { id: string; name: string; code: string }
@@ -19,62 +18,25 @@ interface Student {
   major: Major;
 }
 
-interface FormState {
-  id: string;
-  nis: string;
-  nisn: string;
-  majorId: string;
-  classId: string;
-}
-
 export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterClass, setFilterClass] = useState("ALL");
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState<FormState>({ id: "", nis: "", nisn: "", majorId: "", classId: "" });
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState("");
 
   async function load() {
     setLoading(true);
-    const [sRes, optRes] = await Promise.all([
+    const [sRes, clsRes] = await Promise.all([
       fetch("/api/admin/students"),
-      fetch("/api/admin/classes/options"),
+      fetch("/api/admin/classes"),
     ]);
-    const [clsRes] = await Promise.all([fetch("/api/admin/classes")]);
     if (sRes.ok) setStudents(await sRes.json());
-    if (optRes.ok) { const { majors: m } = await optRes.json(); setMajors(m); }
     if (clsRes.ok) setClasses(await clsRes.json());
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
-
-  function openEdit(s: Student) {
-    setForm({ id: s.id, nis: s.nis, nisn: s.nisn ?? "", majorId: s.major.id, classId: s.class?.id ?? "" });
-    setError("");
-    setModal(true);
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.nis || !form.majorId) { setError("NIS dan jurusan wajib diisi."); return; }
-    setError("");
-    startTransition(async () => {
-      const res = await fetch(`/api/admin/students/${form.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) { const d = await res.json(); setError(d.error || "Gagal"); return; }
-      setModal(false);
-      load();
-    });
-  }
 
   const filtered = students.filter(s => {
     const q = search.toLowerCase();
@@ -151,7 +113,7 @@ export default function AdminStudentsPage() {
                   <Users size={10} /> {items.length}
                 </span>
               </div>
-              <StudentTable items={items} onEdit={openEdit} />
+              <StudentTable items={items} />
             </div>
           ))}
 
@@ -164,7 +126,7 @@ export default function AdminStudentsPage() {
                 </span>
                 <span className="text-xs font-bold text-white bg-white/20 px-2.5 py-1 rounded-full">{unclassed.length}</span>
               </div>
-              <StudentTable items={unclassed} onEdit={openEdit} />
+              <StudentTable items={unclassed} />
             </div>
           )}
 
@@ -174,60 +136,11 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      {/* Modal edit profil siswa */}
-      <Modal
-        open={!!modal}
-        onClose={() => setModal(false)}
-        title="Edit Profil Siswa"
-        footer={
-          <>
-            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="submit" form="editSiswaForm" disabled={isPending} className="btn-modal-save flex-1">
-              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {isPending ? "Menyimpan..." : "Simpan"}
-            </button>
-          </>
-        }
-      >
-        <form id="editSiswaForm" onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">NIS</label>
-              <input value={form.nis} onChange={e => setForm(f => ({ ...f, nis: e.target.value }))}
-                className="input-field font-mono" required placeholder="Contoh: 2024001" />
-            </div>
-            <div>
-              <label className="label-field">NISN</label>
-              <input value={form.nisn} onChange={e => setForm(f => ({ ...f, nisn: e.target.value }))}
-                className="input-field font-mono" placeholder="10 digit" maxLength={10} />
-            </div>
-          </div>
-          <div>
-            <label className="label-field">Konsentrasi / Jurusan</label>
-            <Select
-              value={form.majorId}
-              onChange={v => setForm(f => ({ ...f, majorId: v }))}
-              options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
-              placeholder="Pilih jurusan"
-            />
-          </div>
-          <div>
-            <label className="label-field">Kelas</label>
-            <Select
-              value={form.classId}
-              onChange={v => setForm(f => ({ ...f, classId: v }))}
-              options={classes.map(c => ({ value: c.id, label: c.name }))}
-              placeholder="— Belum ditentukan —"
-            />
-          </div>
-          {error && <p className="error-msg">{error}</p>}
-        </form>
-      </Modal>
     </div>
   );
 }
 
-function StudentTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student) => void }) {
+function StudentTable({ items }: { items: Student[] }) {
   return (
     <div className="overflow-x-auto">
     <table className="w-full text-sm">
@@ -258,10 +171,10 @@ function StudentTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student
                   className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Lihat detail">
                   <Eye size={14} />
                 </Link>
-                <button onClick={() => onEdit(s)}
-                  className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition" title="Edit">
-                  <Edit2 size={14} />
-                </button>
+                <Link href={`/dashboard/admin/buku-induk/siswa?edit=${s.id}`}
+                  className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition" title="Edit Biodata di Buku Induk">
+                  <BookOpen size={14} />
+                </Link>
               </div>
             </td>
           </tr>

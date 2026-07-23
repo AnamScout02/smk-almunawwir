@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, BookOpen, Phone, Mail, Hash, School,
-  Users, ClipboardList, GraduationCap, UserCircle,
+  Users, ClipboardList, GraduationCap, UserCircle, Pencil,
 } from "lucide-react";
 import StatTile from "@/components/admin/StatTile";
 
@@ -65,10 +65,14 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
         <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
           <ArrowLeft size={18} />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="font-heading text-2xl font-bold text-primary-900">{teacher.user.name}</h1>
           <p className="text-gray-400 text-sm">Detail guru</p>
         </div>
+        <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-colors">
+          <Pencil size={14} /> Edit Biodata
+        </Link>
       </div>
 
       {/* Profil */}

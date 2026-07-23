@@ -9,7 +9,8 @@ export default function CetakKelasPage() {
   const router = useRouter();
   const [students, setStudents] = useState<PrintStudent[]>([]);
   const [className, setClassName] = useState("");
-  const [letterhead, setLetterhead] = useState("");
+  const [logo, setLogo] = useState("");
+  const [principalName, setPrincipalName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,7 +21,8 @@ export default function CetakKelasPage() {
         if (Array.isArray(d) && d[0]?.class?.name) setClassName(d[0].class.name);
         setLoading(false);
       });
-    fetch("/api/settings/letterhead").then(r => r.json()).then(d => setLetterhead(d.url ?? "")).catch(() => {});
+    fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
+    fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
   }, [classId]);
 
   if (loading) return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-100 text-gray-400">Memuat data...</div>;
@@ -35,7 +37,7 @@ export default function CetakKelasPage() {
 
   return (
     <div className="fixed print:static inset-0 print:inset-auto z-[60] bg-gray-100 print:bg-white overflow-y-auto print:overflow-visible print:h-auto">
-      <style>{`@page { size: A4; margin: 12mm; }`}</style>
+      <style>{`@page { size: A4; margin: 0; }`}</style>
 
       {/* Print controls — hidden on print */}
       <div className="print:hidden sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
@@ -52,9 +54,11 @@ export default function CetakKelasPage() {
       </div>
 
       {/* Print container */}
-      <div className="py-8 print:py-0 px-4 print:px-0 space-y-8 print:space-y-0">
-        {students.map(s => (
-          <BukuIndukPrintSheet key={s.id} student={s} letterheadUrl={letterhead} />
+      <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0 space-y-8 print:space-y-0">
+        {students.map((s, i) => (
+          <div key={s.id} className="shadow-lg print:shadow-none">
+            <BukuIndukPrintSheet student={s} logoUrl={logo} principalName={principalName} isLastInSequence={i === students.length - 1} />
+          </div>
         ))}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { KEAHLIAN_MAP } from "@/lib/keahlian-map";
 import * as XLSX from "xlsx";
 
 function parseDate(val: unknown): Date | null {
@@ -27,6 +28,12 @@ function s(val: unknown): string {
   return String(val ?? "").trim();
 }
 
+/** Format tanggal dari Excel jadi string "YYYY-MM-DD" untuk disimpan di bukuIndukData (JSON) — konsisten dengan format input type="date" di form admin. */
+function dateStr(val: unknown): string | null {
+  const d = parseDate(val);
+  return d ? d.toISOString().slice(0, 10) : null;
+}
+
 export async function POST(req: NextRequest) {
   await verifyRole(["ADMIN", "TAS"]);
 
@@ -46,6 +53,9 @@ export async function POST(req: NextRequest) {
   const majors = await prisma.major.findMany({ select: { id: true, code: true } });
   const majorMap = Object.fromEntries(majors.map(m => [m.code.toUpperCase(), m.id]));
 
+  const classesAll = await prisma.class.findMany({ select: { id: true, name: true, majorId: true } });
+  const classMap = Object.fromEntries(classesAll.map(c => [`${c.majorId}::${c.name.toUpperCase()}`, c.id]));
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const rowNum = i + 2;
@@ -64,17 +74,27 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const kelasNama = s(row["Nama Kelas (contoh: X DPIB 1)"]);
+    let classId: string | undefined;
+    if (kelasNama) {
+      classId = classMap[`${majorId}::${kelasNama.toUpperCase()}`];
+      if (!classId) {
+        results.errors.push(`Baris ${rowNum}: Kelas "${kelasNama}" tidak ditemukan untuk jurusan ${kodeJurusan} — siswa tetap disimpan tanpa kelas`);
+      }
+    }
+
     const enrollYearRaw = s(row["Tahun Masuk"]);
     const enrollYear = enrollYearRaw ? parseInt(enrollYearRaw) : null;
 
     const basicData = {
-      noInduk:        s(row["No. Induk"]) || null,
       nisn:           s(row["NISN"]) || null,
       birthPlace:     s(row["Tempat Lahir"]) || null,
       birthDate:      parseDate(row["Tanggal Lahir (DD/MM/YYYY)"]),
       gender:         s(row["Jenis Kelamin (L/P)"]).toUpperCase() || null,
       religion:       s(row["Agama"]) || null,
-      address:        s(row["Desa/Kelurahan"]) ? [s(row["Dusun/Lingkungan"]), s(row["Desa/Kelurahan"]), s(row["Kecamatan"]), s(row["Kabupaten/Kota"])].filter(Boolean).join(", ") : s(row["Asal Sekolah (SMP/MTs)"]) || null,
+      address:        s(row["Desa/Kelurahan"])
+        ? [s(row["Dusun/Lingkungan"]), s(row["Desa/Kelurahan"]), s(row["Kecamatan"]), s(row["Kabupaten/Kota"]), s(row["Provinsi"])].filter(Boolean).join(", ")
+        : s(row["Asal Sekolah (SMP/MTs)"]) || null,
       parentName:     s(row["Nama Ayah"]) || null,
       parentPhone:    s(row["No. HP Orang Tua"]) || null,
       parentJob:      s(row["Pekerjaan Ayah"]) || null,
@@ -83,6 +103,15 @@ export async function POST(req: NextRequest) {
       studentStatus:  s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"]).toUpperCase() || "AKTIF",
       studentNotes:   s(row["Keterangan"]) || null,
     };
+
+    const dusun = s(row["Dusun/Lingkungan"]) || null;
+    const rt = s(row["RT"]) || null;
+    const rw = s(row["RW"]) || null;
+    const desa = s(row["Desa/Kelurahan"]) || null;
+    const kecamatan = s(row["Kecamatan"]) || null;
+    const kabupaten = s(row["Kabupaten/Kota"]) || null;
+    const province = s(row["Provinsi"]) || null;
+    const keahlian = KEAHLIAN_MAP[kodeJurusan];
 
     const bukuIndukData = {
       nik:              s(row["NIK"]) || null,
@@ -94,12 +123,7 @@ export async function POST(req: NextRequest) {
       adoptedSiblings:  s(row["Jumlah Saudara Angkat"]) || null,
       orphanStatus:     s(row["Yatim/Piatu (Tidak/Yatim/Piatu/Yatim Piatu)"]) || null,
       dailyLanguage:    s(row["Bahasa Sehari-hari"]) || null,
-      dusun:            s(row["Dusun/Lingkungan"]) || null,
-      rt:               s(row["RT"]) || null,
-      rw:               s(row["RW"]) || null,
-      desa:             s(row["Desa/Kelurahan"]) || null,
-      kecamatan:        s(row["Kecamatan"]) || null,
-      kabupaten:        s(row["Kabupaten/Kota"]) || null,
+      dusun, rt, rw, desa, kecamatan, kabupaten, province,
       studentPhone:     s(row["No. HP Siswa"]) || null,
       livesWith:        s(row["Tinggal Dengan"]) || null,
       distanceToSchool: s(row["Jarak ke Sekolah"]) || null,
@@ -108,22 +132,70 @@ export async function POST(req: NextRequest) {
       height:           s(row["Tinggi Badan (cm)"]) || null,
       weight:           s(row["Berat Badan (kg)"]) || null,
       prevSchoolAddress: s(row["Alamat Asal Sekolah"]) || null,
-      ijazahNo:         s(row["Nomor Ijazah"]) || null,
-      enrollDate:       s(row["Tanggal Diterima (DD/MM/YYYY)"]) || null,
+      ijazahDate:       dateStr(row["Tanggal Ijazah SMP (DD/MM/YYYY)"]),
+      ijazahNo:         s(row["Nomor Ijazah SMP"]) || null,
+      skhunDate:        dateStr(row["Tanggal SKHUN SMP (DD/MM/YYYY)"]),
+      lamaBelajar:      s(row["Lama Belajar (tahun)"]) || null,
+      pindahanDari:     s(row["Pindahan Dari"]) || null,
+      alasanPindahKe:   s(row["Alasan Pindah ke Sekolah Ini"]) || null,
+      tingkatMasuk:     s(row["Diterima di Tingkat"]) || null,
+      bidangKeahlian:   keahlian?.bidang ?? null,
+      programKeahlian:  keahlian?.program ?? null,
+      kompetensiKeahlian: keahlian?.kompetensi ?? null,
+      diterimaDate:     dateStr(row["Tanggal Diterima (DD/MM/YYYY)"]),
       fatherName:       s(row["Nama Ayah"]) || null,
       fatherNik:        s(row["NIK Ayah"]) || null,
       fatherBirthPlace: s(row["Tempat Lahir Ayah"]) || null,
-      fatherBirthDate:  s(row["Tanggal Lahir Ayah (DD/MM/YYYY)"]) || null,
+      fatherBirthDate:  dateStr(row["Tanggal Lahir Ayah (DD/MM/YYYY)"]),
+      fatherReligion:   s(row["Agama Ayah"]) || null,
+      fatherCitizenship: s(row["Kewarganegaraan Ayah"]) || null,
       fatherEducation:  s(row["Pendidikan Ayah"]) || null,
       fatherJob:        s(row["Pekerjaan Ayah"]) || null,
+      fatherIncome:     s(row["Penghasilan Ayah"]) || null,
+      fatherAlive:      s(row["Kondisi Ayah (Masih Hidup/Telah Meninggal)"]) || null,
+      // Alamat ayah/ibu disamakan dengan alamat siswa (konsisten dgn setAddrField di form manual)
+      fatherDusun: dusun, fatherRt: rt, fatherRw: rw, fatherDesa: desa, fatherKecamatan: kecamatan, fatherKabupaten: kabupaten, fatherProvince: province,
+      motherDusun: dusun, motherRt: rt, motherRw: rw, motherDesa: desa, motherKecamatan: kecamatan, motherKabupaten: kabupaten, motherProvince: province,
       motherName:       s(row["Nama Ibu"]) || null,
       motherNik:        s(row["NIK Ibu"]) || null,
       motherBirthPlace: s(row["Tempat Lahir Ibu"]) || null,
-      motherBirthDate:  s(row["Tanggal Lahir Ibu (DD/MM/YYYY)"]) || null,
+      motherBirthDate:  dateStr(row["Tanggal Lahir Ibu (DD/MM/YYYY)"]),
+      motherReligion:   s(row["Agama Ibu"]) || null,
+      motherCitizenship: s(row["Kewarganegaraan Ibu"]) || null,
       motherEducation:  s(row["Pendidikan Ibu"]) || null,
       motherJob:        s(row["Pekerjaan Ibu"]) || null,
+      motherIncome:     s(row["Penghasilan Ibu"]) || null,
+      motherAlive:      s(row["Kondisi Ibu (Masih Hidup/Telah Meninggal)"]) || null,
       guardianName:     s(row["Nama Wali"]) || null,
+      guardianNik:      s(row["NIK Wali"]) || null,
+      guardianBirthPlace: s(row["Tempat Lahir Wali"]) || null,
+      guardianBirthDate: dateStr(row["Tanggal Lahir Wali (DD/MM/YYYY)"]),
+      guardianReligion: s(row["Agama Wali"]) || null,
+      guardianCitizenship: s(row["Kewarganegaraan Wali"]) || null,
+      guardianEducation: s(row["Pendidikan Wali"]) || null,
       guardianJob:      s(row["Pekerjaan Wali"]) || null,
+      guardianIncome:   s(row["Penghasilan Wali"]) || null,
+      guardianPhone:    s(row["No. HP Wali"]) || null,
+      hobbyArt:         s(row["Kesenian"]) || null,
+      hobbySport:       s(row["Olahraga"]) || null,
+      hobbyOrg:         s(row["Organisasi"]) || null,
+      hobbyOther:       s(row["Hobi Lainnya"]) || null,
+      pklPlace:         s(row["Tempat PKL"]) || null,
+      pklAddress:       s(row["Alamat PKL"]) || null,
+      pklStartDate:     dateStr(row["Tanggal Mulai PKL (DD/MM/YYYY)"]),
+      pklEndDate:       dateStr(row["Tanggal Selesai PKL (DD/MM/YYYY)"]),
+      pklSupervisor:    s(row["Pembimbing PKL"]) || null,
+      pklScore:         s(row["Nilai PKL"]) || null,
+      graduationDate:   dateStr(row["Tanggal Lulus (DD/MM/YYYY)"]),
+      graduationIjazahNo: s(row["Nomor Ijazah Kelulusan"]) || null,
+      skhunNo:          s(row["Nomor SKHUN Kelulusan"]) || null,
+      avgReport:        s(row["Rata-rata Nilai Rapor"]) || null,
+      avgExam:          s(row["Rata-rata Nilai Ujian"]) || null,
+      continueStudy:    s(row["Melanjutkan Ke"]) || null,
+      workPlan:         s(row["Rencana Kerja"]) || null,
+      pindahDate:       dateStr(row["Tanggal Pindah/Keluar (DD/MM/YYYY)"]),
+      transferTo:       s(row["Pindah/Keluar Ke"]) || null,
+      alasanPindah:     s(row["Alasan Pindah/Keluar"]) || null,
     };
 
     try {
@@ -131,11 +203,14 @@ export async function POST(req: NextRequest) {
       if (existing) {
         await prisma.student.update({
           where: { nis },
-          data: { ...basicData, majorId, bukuIndukData },
+          data: { ...basicData, majorId, bukuIndukData, ...(classId ? { classId } : {}) },
         });
         results.updated++;
       } else {
-        const email = `${nis}@smkalmunawwir.sch.id`;
+        // NIS di sekolah ini sering mengandung "/" dan "." (nomor buku induk), tidak valid untuk email —
+        // pakai NISN (selalu digit) kalau ada, fallback ke NIS yang disaring dari simbol.
+        const emailLocal = s(row["NISN"]) || nis.replace(/[^a-zA-Z0-9]/g, "");
+        const email = `${emailLocal}@smkalmunawwir.sch.id`;
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           const bcrypt = await import("bcryptjs");
@@ -149,7 +224,7 @@ export async function POST(req: NextRequest) {
           });
         }
         await prisma.student.create({
-          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData },
+          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData, ...(classId ? { classId } : {}) },
         });
         results.created++;
       }
