@@ -6,7 +6,7 @@ type FieldDef = {
   key: string;
   label: string;
   hint?: string;
-  type?: "text" | "textarea" | "number" | "toggle3";
+  type?: "text" | "textarea" | "number" | "date" | "toggle3";
   dir?: "rtl";
   fontArabic?: boolean;
 };
@@ -62,6 +62,17 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "school.tagline", label: "Tagline / Slogan Sekolah", type: "text", hint: 'Tampil di hero section beranda' },
       { key: "school.hero_subtitle", label: "Subtitle Hero Beranda", type: "textarea", hint: "Paragraf singkat di bawah tagline hero" },
+      { key: "school.struktur_year", label: "Tahun Ajaran (Struktur Pimpinan)", type: "text", hint: 'Tampil di halaman Tentang Kami. Contoh: "2025/2026"' },
+    ],
+  },
+  {
+    id: "admissions",
+    label: "Pendaftaran (SPMB)",
+    desc: "Tanggal buka/tutup dan kuota pendaftaran yang tampil di halaman Pendaftaran.",
+    fields: [
+      { key: "admissions.open_date", label: "Tanggal Buka Pendaftaran", type: "date" },
+      { key: "admissions.close_date", label: "Tanggal Tutup Pendaftaran", type: "date" },
+      { key: "admissions.quota", label: "Kuota Siswa Baru", type: "number", hint: 'Ditampilkan sebagai "200 Siswa"' },
     ],
   },
   {
@@ -251,17 +262,17 @@ export default function ContentEditor({ initialSettings }: { initialSettings: Re
                       onChange={(e) =>
                         setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                       }
-                      className={`flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none${field.fontArabic ? " font-arabic text-xl leading-loose" : ""}`}
+                      className={`flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none${field.fontArabic ? " font-arabic text-xl leading-loose" : ""}`}
                     />
                   ) : (
                     <input
-                      type={field.type === "number" ? "number" : "text"}
+                      type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
                       dir={field.dir}
                       value={values[field.key] ?? ""}
                       onChange={(e) =>
                         setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                       }
-                      className={`flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary-300${field.fontArabic ? " font-arabic text-xl" : ""}`}
+                      className={`flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary-300${field.fontArabic ? " font-arabic text-xl" : ""}`}
                     />
                   )}
                   <button

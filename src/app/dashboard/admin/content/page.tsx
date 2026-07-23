@@ -2,9 +2,11 @@ import { verifyRole } from "@/lib/dal";
 import { DEFAULTS, getSettings } from "@/lib/site-settings";
 import ContentEditor from "@/components/admin/ContentEditor";
 import LogoEditor from "@/components/admin/LogoEditor";
+import StructureEditor from "@/components/admin/StructureEditor";
+import KaprodiEditor from "@/components/admin/KaprodiEditor";
 import PageHeader from "@/components/admin/PageHeader";
 import Alert from "@/components/admin/Alert";
-import { FileText, ImageIcon } from "lucide-react";
+import { FileText, ImageIcon, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,28 @@ export default async function ContentPage() {
             logoFullWhite={settings["logo.full_white"]}
             letterheadBukuInduk={settings["letterhead.bukuInduk"]}
           />
+        </section>
+
+        {/* Struktur Pimpinan */}
+        <section>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center">
+              <Users size={14} className="text-primary-700" />
+            </div>
+            <h2 className="font-heading text-base font-semibold text-navy">Struktur Pimpinan</h2>
+          </div>
+          <StructureEditor initialValue={settings["school.structure"]} />
+        </section>
+
+        {/* Kepala Kompetensi Keahlian */}
+        <section>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center">
+              <Users size={14} className="text-primary-700" />
+            </div>
+            <h2 className="font-heading text-base font-semibold text-navy">Kepala Kompetensi Keahlian</h2>
+          </div>
+          <KaprodiEditor initialValue={settings["school.kaprodi"]} />
         </section>
 
         {/* Content Section */}

@@ -41,7 +41,7 @@ function ListEditor({ label, items, onChange, placeholder }: {
             <input
               value={item}
               onChange={e => onChange(items.map((it, j) => j === i ? e.target.value : it))}
-              className="input-field flex-1"
+              className="input-field flex-1 min-w-0"
               placeholder={placeholder}
             />
             <button type="button" onClick={() => onChange(items.filter((_, j) => j !== i))}

@@ -160,7 +160,7 @@ export default function LogoEditor({
           settingKey="logo.emblem"
           currentUrl={logoEmblem}
           label="Logo Lambang"
-          description="Sidebar admin & guru, header mobile, halaman login."
+          description="Favicon (ikon tab browser). Cadangan jika Logo Lengkap belum diunggah."
           isSquare
           darkPreview={false}
         />

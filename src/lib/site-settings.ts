@@ -43,6 +43,28 @@ export const DEFAULTS: Record<string, string> = {
   // Info Sekolah
   "school.tagline": "Mendidik Generasi Qurani & Terampil",
   "school.hero_subtitle": "Memadukan kurikulum vokasional nasional dengan pendidikan Islam intensif — menyiapkan generasi berakhlak mulia dan siap dunia kerja global.",
+  "school.struktur_year": "2025/2026",
+  // Pendaftaran (SPMB) — dipakai di halaman Pendaftaran
+  "admissions.open_date": "2026-06-01",
+  "admissions.close_date": "2026-08-31",
+  "admissions.quota": "200",
+  // Struktur Pimpinan — dipakai di halaman Tentang Kami & tanda tangan Kepala Sekolah pada cetak Buku Induk Siswa
+  "school.structure": JSON.stringify([
+    { role: "Kepala Sekolah", name: "Ahmad Azmi Khoirul Umam, S.Pt, M.Pt, M.Sc", highlight: true },
+    { role: "Waka Bid. Kurikulum", name: "Soleh Afandi, S.Pd" },
+    { role: "Waka Bid. Kesiswaan", name: "Miftahul Huda, S.Pd" },
+    { role: "Waka Bid. Humas", name: "Eko Supriyono, S.Sos" },
+    { role: "Waka Bid. Sarpras", name: "Bagus Ramadhan, S.Tr.Pt" },
+    { role: "Waka Bid. Penjamin Mutu", name: "Mohammad Sholeh Mubarok, S.Pd., S.S.Ag" },
+  ]),
+  // Kepala Kompetensi Keahlian — dipakai di halaman Tentang Kami
+  "school.kaprodi": JSON.stringify([
+    { code: "TKJ", name: "Rita Defiana, S.Pd" },
+    { code: "AK", name: "Nur Hidayah, SE" },
+    { code: "DKV", name: "Anggun Ahmad Shodikin, S.Sos" },
+    { code: "ATU", name: "Wahyu Fitri Yani, S.Tr.Pt" },
+    { code: "DPIB", name: "Virga Ahmad Fauzi, S.T" },
+  ]),
   // Konfigurasi form pendaftaran — "1" = wajib, "0" = opsional, "off" = sembunyikan
   "form.require_nik": "1",
   "form.require_nisn": "1",
@@ -53,6 +75,9 @@ export const DEFAULTS: Record<string, string> = {
   "form.require_ktp_wali": "0",
   "form.require_foto": "0",
   "form.require_dokumen_lain": "0",
+  // Jadwal Pelajaran — kunci supaya Generate Otomatis & Hapus Hasil Generate tidak bisa dipakai
+  // tanpa sengaja setelah jadwal dianggap final
+  "schedule.locked": "0",
 };
 
 export async function getSettings(keys?: string[]): Promise<Record<string, string>> {
