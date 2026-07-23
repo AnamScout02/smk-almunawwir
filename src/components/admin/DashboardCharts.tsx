@@ -52,7 +52,7 @@ function GenderDonut({ title, data }: { title: string; data: GenderCount }) {
 function MajorBarChart({ data }: { data: MajorStat[] }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h3 className="font-heading font-semibold text-navy text-sm mb-4">Jumlah Siswa per Kompetensi Keahlian</h3>
+      <h3 className="font-heading font-semibold text-navy text-sm mb-4">Jumlah Siswa per Konsentrasi Keahlian</h3>
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />

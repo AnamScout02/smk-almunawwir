@@ -19,7 +19,7 @@ export default async function AdminDashboard() {
     messageUnread, newsCount,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.student.count(),
+    prisma.student.count({ where: { studentStatus: "AKTIF" } }),
     prisma.teacher.count(),
     prisma.class.count(),
     prisma.admission.count(),
@@ -30,14 +30,24 @@ export default async function AdminDashboard() {
     prisma.news.count({ where: { published: true } }),
   ]);
 
-  const [studentGenderRaw, teacherGenderRaw, majorsWithCount] = await Promise.all([
-    prisma.student.groupBy({ by: ["gender"], _count: { _all: true } }),
+  const [studentGenderRaw, teacherGenderRaw, majorsWithCount, studentsForGradeRecap] = await Promise.all([
+    prisma.student.groupBy({ by: ["gender"], where: { studentStatus: "AKTIF" }, _count: { _all: true } }),
     prisma.teacher.groupBy({ by: ["gender"], _count: { _all: true } }),
     prisma.major.findMany({
-      select: { code: true, name: true, themeColor: true, _count: { select: { students: true } } },
+      select: { code: true, name: true, themeColor: true, _count: { select: { students: { where: { studentStatus: "AKTIF" } } } } },
       orderBy: { students: { _count: "desc" } },
     }),
+    prisma.student.findMany({ where: { studentStatus: "AKTIF" }, select: { gender: true, class: { select: { grade: true } } } }),
   ]);
+
+  const GRADE_LABEL: Record<number, string> = { 10: "X", 11: "XI", 12: "XII" };
+  const gradeRecap = [10, 11, 12].map(grade => {
+    const rows = studentsForGradeRecap.filter(s => s.class?.grade === grade);
+    const l = rows.filter(s => s.gender === "L").length;
+    const p = rows.filter(s => s.gender === "P").length;
+    return { grade, label: GRADE_LABEL[grade], l, p, jml: l + p };
+  });
+  const recapGrandTotal = gradeRecap.reduce((s, g) => s + g.jml, 0);
 
   const genderCount = (rows: { gender: string | null; _count: { _all: number } }[]) => ({
     L: rows.find(r => r.gender === "L")?._count._all ?? 0,
@@ -83,10 +93,10 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-16 lg:pt-0">
 
       {/* ── Top Header Bar ── */}
-      <div className="relative overflow-hidden"
+      <div className="relative overflow-hidden sticky top-16 lg:top-0 z-20"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }}
@@ -176,6 +186,36 @@ export default async function AdminDashboard() {
             <h2 className="font-heading font-semibold text-navy text-sm uppercase tracking-widest">Statistik Siswa &amp; Guru</h2>
           </div>
           <DashboardCharts studentGender={studentGender} teacherGender={teacherGender} majorStats={majorStats} />
+        </div>
+
+        {/* ── Rekapitulasi Jumlah Siswa ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+            <div className="flex items-center gap-2">
+              <GraduationCap size={15} className="text-primary-700" />
+              <h3 className="font-heading font-semibold text-navy text-sm">Rekapitulasi Jumlah Siswa</h3>
+            </div>
+            <Link href="/dashboard/admin/reports/rekap-siswa"
+              className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
+              Lihat detail lengkap <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {gradeRecap.map(g => (
+              <div key={g.grade} className="rounded-xl border border-gray-100 overflow-hidden text-center">
+                <div className="bg-primary-900 text-white font-bold text-sm py-2">{g.label}</div>
+                <p className="font-heading font-bold text-2xl text-primary-900 pt-2">{g.jml}</p>
+                <div className="flex justify-center gap-3 text-xs text-gray-400 pb-2.5 pt-0.5">
+                  <span>L {g.l}</span><span>P {g.p}</span>
+                </div>
+              </div>
+            ))}
+            <div className="rounded-xl overflow-hidden text-center" style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
+              <div className="bg-gold text-primary-900 font-bold text-sm py-2">Total</div>
+              <p className="font-heading font-bold text-2xl text-white pt-2">{recapGrandTotal}</p>
+              <p className="text-white/50 text-xs pb-2.5 pt-0.5">Seluruh Siswa</p>
+            </div>
+          </div>
         </div>
 
         {/* ── Alert + Quick Actions Row ── */}
