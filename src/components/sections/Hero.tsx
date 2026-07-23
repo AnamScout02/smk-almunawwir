@@ -21,7 +21,13 @@ const defaultSlides: Banner[] = [
   { id: "3", title: "Tahfidz Al-Qur'an & Teknologi Modern", subtitle: "Program tahfidz terintegrasi dengan keahlian teknis — lulusan kami hafal Al-Qur'an sekaligus menguasai teknologi masa depan.", linkUrl: "/programs", linkText: "Lihat Program" },
 ];
 
-export default function Hero({ lang = "id" }: { lang?: Lang }) {
+interface HeroStats {
+  students?: string;
+  foundedYear?: string;
+  graduationRate?: string;
+}
+
+export default function Hero({ lang = "id", stats }: { lang?: Lang; stats?: HeroStats }) {
   const tr = t(lang);
   const [slides, setSlides] = useState<Banner[]>(defaultSlides);
   const [current, setCurrent] = useState(0);
@@ -194,10 +200,10 @@ export default function Hero({ lang = "id" }: { lang?: Lang }) {
         {/* Statistik mini */}
         <div className="flex flex-wrap justify-center gap-8 mb-12">
           {[
-            { v: "1.200+", l: tr.hero_active_students },
-            { v: "2014", l: tr.hero_founded },
+            { v: stats?.students ? `${stats.students}+` : "1.200+", l: tr.hero_active_students },
+            { v: stats?.foundedYear || "2014", l: tr.hero_founded },
             { v: "5", l: tr.hero_majors },
-            { v: "98%", l: tr.hero_graduation },
+            { v: stats?.graduationRate ? `${stats.graduationRate}%` : "98%", l: tr.hero_graduation },
           ].map(s => (
             <div key={s.l} className="text-center">
               <div className="text-2xl font-heading font-bold text-gold">{s.v}</div>

@@ -7,6 +7,7 @@ import { programs } from "@/data/programs";
 import { prisma } from "@/lib/prisma";
 import { Network, Palette, Calculator, Leaf, Building2, CheckCircle2, ArrowRight } from "lucide-react";
 import { themeGradientRight } from "@/lib/color";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,28 @@ const icons: Record<string, React.ElementType> = {
   dpib: Building2,
 };
 
+const content = {
+  id: {
+    label: "Konsentrasi Keahlian",
+    title: "5 Jurusan Unggulan",
+    desc: "Pilih jurusan sesuai minat dan bakat Anda. Semua program dilengkapi praktik industri, sertifikasi nasional, dan pembinaan Islami terintegrasi.",
+    skillsTitle: "Kompetensi yang Dipelajari",
+    careerTitle: "Peluang Karier",
+    detailBtn: "Lihat Detail Lengkap",
+  },
+  en: {
+    label: "Areas of Expertise",
+    title: "5 Leading Majors",
+    desc: "Choose a major that fits your interests and talents. All programs include industry practice, national certification, and integrated Islamic development.",
+    skillsTitle: "Competencies Learned",
+    careerTitle: "Career Opportunities",
+    detailBtn: "View Full Details",
+  },
+} as const;
+
 export default async function ProgramsPage() {
+  const lang = await getLang();
+  const c = content[lang];
   let logoByCode: Record<string, string> = {};
   let majorByCode: Record<string, Awaited<ReturnType<typeof prisma.major.findFirst>>> = {};
   try {
@@ -44,13 +66,12 @@ export default async function ProgramsPage() {
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
-            <span className="text-gold text-sm font-semibold uppercase tracking-widest">Konsentrasi Keahlian</span>
+            <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.label}</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
-              5 Jurusan Unggulan
+              {c.title}
             </h1>
             <p className="text-white/70 text-lg max-w-2xl mx-auto">
-              Pilih jurusan sesuai minat dan bakat Anda. Semua program dilengkapi
-              praktik industri, sertifikasi nasional, dan pembinaan Islami terintegrasi.
+              {c.desc}
             </p>
           </div>
         </section>
@@ -93,7 +114,7 @@ export default async function ProgramsPage() {
                       <Link href={`/programs/${p.slug}`}
                         className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${p.color}`} text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition text-sm`}
                         style={gradientStyle}>
-                        Lihat Detail Lengkap
+                        {c.detailBtn}
                         <ArrowRight size={16} />
                       </Link>
                     </div>
@@ -102,7 +123,7 @@ export default async function ProgramsPage() {
                   <div className={i % 2 === 1 ? "lg:order-1" : ""}>
                     <div className="bg-white rounded-3xl p-6 shadow-sm">
                       <div className="mb-5">
-                        <h3 className="font-heading font-bold text-navy mb-3">Kompetensi yang Dipelajari</h3>
+                        <h3 className="font-heading font-bold text-navy mb-3">{c.skillsTitle}</h3>
                         <ul className="space-y-2">
                           {skills.map((s) => (
                             <li key={s} className="flex items-center gap-2.5 text-sm text-gray-600">
@@ -114,7 +135,7 @@ export default async function ProgramsPage() {
                         </ul>
                       </div>
                       <div className="border-t border-gray-100 pt-5">
-                        <h3 className="font-heading font-bold text-navy mb-3">Peluang Karier</h3>
+                        <h3 className="font-heading font-bold text-navy mb-3">{c.careerTitle}</h3>
                         <div className="flex flex-wrap gap-2">
                           {career.map((c) => (
                             <span key={c} className="text-xs bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full font-medium">

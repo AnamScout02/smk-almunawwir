@@ -5,8 +5,14 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
+
+const content = {
+  id: { back: "Kembali ke Berita", related: "Berita Terkait", locale: "id-ID" },
+  en: { back: "Back to News", related: "Related News", locale: "en-US" },
+} as const;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -20,6 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const lang = await getLang();
+  const c = content[lang];
   let news: Awaited<ReturnType<typeof prisma.news.findUnique>> = null;
   try {
     news = await prisma.news.findUnique({ where: { slug, published: true } });
@@ -48,13 +56,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
             <div className="container-custom">
               <Link href="/news" className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-4 transition-colors">
-                <ArrowLeft size={15} /> Kembali ke Berita
+                <ArrowLeft size={15} /> {c.back}
               </Link>
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gold text-primary-900 mb-3 inline-block">{news.category}</span>
               <h1 className="font-heading text-2xl md:text-4xl font-bold text-white leading-tight max-w-3xl">{news.title}</h1>
               <p className="text-white/60 text-sm mt-3 flex items-center gap-1.5">
                 <Calendar size={13} />
-                {new Date(news.createdAt).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {new Date(news.createdAt).toLocaleDateString(c.locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </p>
             </div>
           </div>
@@ -72,10 +80,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             {/* Berita terkait */}
             {related.length > 0 && (
               <div className="mt-10">
-                <h2 className="font-heading text-xl font-bold text-primary-900 mb-5">Berita Terkait</h2>
+                <h2 className="font-heading text-xl font-bold text-primary-900 mb-5">{c.related}</h2>
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {related.map(n => (
-                    <Link href={`/news/${n.slug}`} key={n.id} className="group bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
+                    <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
                       <div className="relative h-36 bg-gray-100">
                         {n.thumbnail ? (
                           <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" />
@@ -87,7 +95,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                       </div>
                       <div className="p-4">
                         <h3 className="font-semibold text-sm text-primary-900 group-hover:text-gold transition-colors line-clamp-2 leading-snug">{n.title}</h3>
-                        <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleDateString(c.locale, { day: "numeric", month: "short", year: "numeric" })}</p>
                       </div>
                     </Link>
                   ))}

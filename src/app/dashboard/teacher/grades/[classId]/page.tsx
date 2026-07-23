@@ -162,54 +162,57 @@ export default function InputNilaiPage() {
         ) : students.length === 0 ? (
           <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th className="w-8">#</th>
-                <th>NIS</th>
-                <th>Nama Siswa</th>
-                <th className="text-center w-32">Nilai (0-100)</th>
-                <th className="text-center w-20">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s, i) => {
-                const row = rows.find(r => r.studentId === s.id);
-                const score = Number(row?.score);
-                return (
-                  <tr key={s.id}>
-                    <td className="text-gray-400">{i + 1}</td>
-                    <td className="text-gray-500 font-mono text-xs">{s.nis}</td>
-                    <td className="font-medium text-primary-900">{s.user.name}</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={row?.score ?? ""}
-                        onChange={e => updateScore(s.id, e.target.value)}
-                        placeholder="—"
-                        className={`w-full text-center border rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-300 ${
-                          row?.score && score < 75 ? "border-red-300 text-red-600" : row?.score ? "border-emerald-300 text-emerald-700" : "border-gray-200"
-                        }`}
-                      />
-                    </td>
-                    <td className="text-center">
-                      {row?.saved ? (
-                        <span className="text-xs text-emerald-600 font-semibold">✓ Tersimpan</span>
-                      ) : row?.score ? (
-                        <span className={`text-xs font-semibold ${score >= 75 ? "text-emerald-500" : "text-red-400"}`}>
-                          {score >= 75 ? "Tuntas" : "Remedial"}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-primary-100"
+                  style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                  <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-8">#</th>
+                  <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">NIS</th>
+                  <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-32">Nilai (0-100)</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-20">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((s, i) => {
+                  const row = rows.find(r => r.studentId === s.id);
+                  const score = Number(row?.score);
+                  return (
+                    <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                      <td className="px-5 py-3.5 text-gray-400">{i + 1}</td>
+                      <td className="px-5 py-3.5 text-gray-500 font-mono text-xs">{s.nis}</td>
+                      <td className="px-5 py-3.5 font-medium text-primary-900">{s.user.name}</td>
+                      <td className="px-5 py-3.5">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={row?.score ?? ""}
+                          onChange={e => updateScore(s.id, e.target.value)}
+                          placeholder="—"
+                          className={`w-full text-center border rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-300 ${
+                            row?.score && score < 75 ? "border-red-300 text-red-600" : row?.score ? "border-emerald-300 text-emerald-700" : "border-gray-200"
+                          }`}
+                        />
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        {row?.saved ? (
+                          <span className="text-xs text-emerald-600 font-semibold">✓ Tersimpan</span>
+                        ) : row?.score ? (
+                          <span className={`text-xs font-semibold ${score >= 75 ? "text-emerald-500" : "text-red-400"}`}>
+                            {score >= 75 ? "Tuntas" : "Remedial"}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

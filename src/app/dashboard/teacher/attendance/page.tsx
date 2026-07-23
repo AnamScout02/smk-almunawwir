@@ -159,30 +159,33 @@ export default function AttendancePage() {
               <p className="text-xs mt-1 text-gray-300">Input absensi melalui halaman kelas di atas.</p>
             </div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th className="w-8">#</th>
-                  <th>Nama Siswa</th>
-                  <th>Kelas</th>
-                  <th className="text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((r, i) => (
-                  <tr key={r.id}>
-                    <td className="text-gray-400 text-xs">{i + 1}</td>
-                    <td className="font-medium text-primary-900">{r.student.user.name}</td>
-                    <td className="text-gray-500 text-xs">{r.student.class?.name ?? "—"}</td>
-                    <td className="text-center">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[r.status] ?? "bg-gray-50 border border-gray-200 text-gray-500"}`}>
-                        {r.status}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-primary-100"
+                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-8">#</th>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
+                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {records.map((r, i) => (
+                    <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                      <td className="px-5 py-3.5 text-gray-400 text-xs">{i + 1}</td>
+                      <td className="px-5 py-3.5 font-medium text-primary-900">{r.student.user.name}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{r.student.class?.name ?? "—"}</td>
+                      <td className="px-5 py-3.5 text-center">
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[r.status] ?? "bg-gray-50 border border-gray-200 text-gray-500"}`}>
+                          {r.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

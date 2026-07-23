@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { X, ImageOff } from "lucide-react";
+import type { Lang } from "@/lib/lang";
 
 interface GalleryItem {
   id: string;
@@ -11,12 +12,18 @@ interface GalleryItem {
   caption?: string | null;
 }
 
-export default function GalleryGrid({ items }: { items: GalleryItem[] }) {
-  const categories = ["Semua", ...Array.from(new Set(items.map(i => i.category)))];
-  const [activeCategory, setActiveCategory] = useState("Semua");
+const ui = {
+  id: { all: "Semua", empty: "Belum ada foto di kategori ini" },
+  en: { all: "All", empty: "No photos in this category yet" },
+};
+
+export default function GalleryGrid({ items, lang = "id" }: { items: GalleryItem[]; lang?: Lang }) {
+  const t = ui[lang];
+  const categories = [t.all, ...Array.from(new Set(items.map(i => i.category)))];
+  const [activeCategory, setActiveCategory] = useState(t.all);
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
 
-  const filtered = activeCategory === "Semua" ? items : items.filter(i => i.category === activeCategory);
+  const filtered = activeCategory === t.all ? items : items.filter(i => i.category === activeCategory);
 
   return (
     <section className="section-padding bg-cream">
@@ -41,7 +48,7 @@ export default function GalleryGrid({ items }: { items: GalleryItem[] }) {
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <ImageOff size={40} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
-            <p className="text-lg font-medium">Belum ada foto di kategori ini</p>
+            <p className="text-lg font-medium">{t.empty}</p>
           </div>
         ) : (
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">

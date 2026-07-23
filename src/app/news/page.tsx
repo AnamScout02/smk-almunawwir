@@ -4,6 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Search, Newspaper } from "lucide-react";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +25,37 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const CATEGORIES = ["Semua", "Prestasi", "Pengumuman", "Kegiatan", "SPMB", "Beasiswa", "Alumni", "Umum"];
 
+const content = {
+  id: {
+    label: "Informasi",
+    title: "Berita & Kegiatan",
+    desc: "Ikuti perkembangan terbaru SMK Al Munawwir IIBS",
+    searchPh: "Cari berita...",
+    emptyTitle: "Tidak ada berita ditemukan",
+    showAll: "Tampilkan semua berita",
+    readMore: "Baca selengkapnya →",
+    locale: "id-ID",
+  },
+  en: {
+    label: "Information",
+    title: "News & Activities",
+    desc: "Follow the latest updates from SMK Al Munawwir IIBS",
+    searchPh: "Search news...",
+    emptyTitle: "No news found",
+    showAll: "Show all news",
+    readMore: "Read more →",
+    locale: "en-US",
+  },
+} as const;
+
 export default async function NewsPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const { category, q } = await searchParams;
+  const lang = await getLang();
+  const c = content[lang];
 
   let news: Awaited<ReturnType<typeof prisma.news.findMany>> = [];
   try {
@@ -55,9 +81,9 @@ export default async function NewsPage({
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
-            <span className="text-gold text-sm font-semibold uppercase tracking-widest">Informasi</span>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">Berita & Kegiatan</h1>
-            <p className="text-white/70 text-lg">Ikuti perkembangan terbaru SMK Al Munawwir IIBS</p>
+            <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.label}</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">{c.title}</h1>
+            <p className="text-white/70 text-lg">{c.desc}</p>
           </div>
         </section>
 
@@ -72,7 +98,7 @@ export default async function NewsPage({
                   type="text"
                   name="q"
                   defaultValue={q}
-                  placeholder="Cari berita..."
+                  placeholder={c.searchPh}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-primary-400"
                 />
                 {category && <input type="hidden" name="category" value={category} />}
@@ -99,9 +125,9 @@ export default async function NewsPage({
             {news.length === 0 ? (
               <div className="text-center py-20 text-gray-400">
                 <Newspaper size={40} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
-                <p className="text-lg font-medium">Tidak ada berita ditemukan</p>
+                <p className="text-lg font-medium">{c.emptyTitle}</p>
                 <p className="text-sm mt-1">
-                  <Link href="/news" className="text-primary-600 hover:underline">Tampilkan semua berita</Link>
+                  <Link href="/news" className="text-primary-600 hover:underline">{c.showAll}</Link>
                 </p>
               </div>
             ) : (
@@ -122,11 +148,11 @@ export default async function NewsPage({
                     <div className="p-8 flex flex-col justify-center">
                       <span className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
                         <Calendar size={12} />
-                        {new Date(news[0].createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                        {new Date(news[0].createdAt).toLocaleDateString(c.locale, { day: "numeric", month: "long", year: "numeric" })}
                       </span>
                       <h2 className="font-heading text-2xl md:text-3xl font-bold text-primary-900 mb-4 group-hover:text-gold transition-colors leading-tight">{news[0].title}</h2>
                       <p className="text-gray-600 leading-relaxed line-clamp-3">{news[0].content.slice(0, 250)}...</p>
-                      <span className="mt-4 inline-flex items-center text-primary-700 font-semibold text-sm gap-1 group-hover:gap-2 transition-all">Baca selengkapnya →</span>
+                      <span className="mt-4 inline-flex items-center text-primary-700 font-semibold text-sm gap-1 group-hover:gap-2 transition-all">{c.readMore}</span>
                     </div>
                   </div>
                 </Link>
@@ -135,7 +161,7 @@ export default async function NewsPage({
                 {news.length > 1 && (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {news.slice(1).map(n => (
-                      <Link href={`/news/${n.slug}`} key={n.id} className="group bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                      <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
                         <div className="relative h-48 bg-gray-100">
                           {n.thumbnail ? (
                             <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -149,7 +175,7 @@ export default async function NewsPage({
                         <div className="p-5">
                           <span className="text-xs text-gray-400 flex items-center gap-1 mb-2">
                             <Calendar size={11} />
-                            {new Date(n.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                            {new Date(n.createdAt).toLocaleDateString(c.locale, { day: "numeric", month: "short", year: "numeric" })}
                           </span>
                           <h3 className="font-heading font-bold text-primary-900 leading-snug mb-2 group-hover:text-gold transition-colors line-clamp-2">{n.title}</h3>
                           <p className="text-gray-500 text-sm line-clamp-2">{n.content.slice(0, 120)}...</p>

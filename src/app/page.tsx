@@ -11,14 +11,20 @@ import CTABanner from "@/components/sections/CTABanner";
 import PrayerTimes from "@/components/shared/PrayerTimes";
 import IslamicQuote from "@/components/shared/IslamicQuote";
 import { getLang } from "@/lib/lang";
+import { getSettings } from "@/lib/site-settings";
 
 export default async function HomePage() {
   const lang = await getLang();
+  const s = await getSettings(["stats.students", "stats.founded_year", "stats.graduation_rate"]);
   return (
     <>
       <Navbar transparent />
       <main>
-        <Hero lang={lang} />
+        <Hero lang={lang} stats={{
+          students: s["stats.students"],
+          foundedYear: s["stats.founded_year"],
+          graduationRate: s["stats.graduation_rate"],
+        }} />
 
         {/* Prayer times bar */}
         <div className="bg-primary-700 py-5">

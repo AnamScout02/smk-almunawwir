@@ -281,7 +281,7 @@ export default function AdminAdmissionsPage() {
                         <input
                           value={notes[item.id] ?? item.notes ?? ""}
                           onChange={e => setNotes(n => ({ ...n, [item.id]: e.target.value }))}
-                          className="input-field flex-1"
+                          className="input-field flex-1 min-w-0"
                           placeholder="Contoh: Harap hadir wawancara Senin 14 Juli jam 09.00 WIB"
                         />
                         <button

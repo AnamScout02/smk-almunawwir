@@ -143,8 +143,14 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
 
       <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
-          <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
-          <span className="font-heading font-bold text-white text-sm">TAS Panel</span>
+          {logoFullWhite ? (
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
+          ) : (
+            <>
+              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
+              <span className="font-heading font-bold text-white text-sm">TAS Panel</span>
+            </>
+          )}
         </div>
         <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white">
           <Menu size={22} />

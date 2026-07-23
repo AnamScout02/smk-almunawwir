@@ -94,38 +94,41 @@ export default async function GradesPage() {
         <div className="mb-8">
           <h2 className="font-heading font-semibold text-lg text-primary-800 mb-4">Rekap Nilai per Mata Pelajaran</h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Mata Pelajaran</th>
-                  <th className="text-center">Jumlah Nilai</th>
-                  <th className="text-center">Rata-rata</th>
-                  <th className="text-center">Di Bawah KKM</th>
-                </tr>
-              </thead>
-              <tbody>
-                {avgBySubject.map(({ subject, avg, count, below }) => (
-                  <tr key={subject}>
-                    <td className="font-medium text-primary-900">{subject}</td>
-                    <td className="text-center text-gray-600">{count}</td>
-                    <td className="text-center">
-                      <span className={`font-bold ${Number(avg) >= 75 ? "text-emerald-600" : "text-red-500"}`}>
-                        {avg}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      {below > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
-                          <AlertTriangle size={13} /> {below}
-                        </span>
-                      ) : (
-                        <span className="text-emerald-500 font-semibold">—</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-primary-100"
+                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
+                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jumlah Nilai</th>
+                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Rata-rata</th>
+                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Di Bawah KKM</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {avgBySubject.map(({ subject, avg, count, below }) => (
+                    <tr key={subject} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                      <td className="px-5 py-3.5 font-medium text-primary-900">{subject}</td>
+                      <td className="px-5 py-3.5 text-center text-gray-600">{count}</td>
+                      <td className="px-5 py-3.5 text-center">
+                        <span className={`font-bold ${Number(avg) >= 75 ? "text-emerald-600" : "text-red-500"}`}>
+                          {avg}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        {below > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
+                            <AlertTriangle size={13} /> {below}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-500 font-semibold">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -138,32 +141,35 @@ export default async function GradesPage() {
             Nilai Terakhir Diinput
           </h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Siswa</th>
-                  <th>Kelas</th>
-                  <th>Mapel · Jenis</th>
-                  <th>Semester</th>
-                  <th className="text-right">Nilai</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentGrades.map((g) => (
-                  <tr key={g.id}>
-                    <td className="font-medium text-primary-900">{g.student.user.name}</td>
-                    <td className="text-gray-500 text-xs">{g.student.class?.name ?? "—"}</td>
-                    <td className="text-gray-600">{g.subject} <span className="text-gray-400">· {g.type}</span></td>
-                    <td className="text-gray-500 text-xs">{g.semester}</td>
-                    <td className="text-right">
-                      <span className={`font-bold ${g.score >= 75 ? "text-emerald-600" : "text-red-500"}`}>
-                        {g.score}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-primary-100"
+                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mapel · Jenis</th>
+                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Semester</th>
+                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nilai</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentGrades.map((g) => (
+                    <tr key={g.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                      <td className="px-5 py-3.5 font-medium text-primary-900">{g.student.user.name}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{g.student.class?.name ?? "—"}</td>
+                      <td className="px-5 py-3.5 text-gray-600">{g.subject} <span className="text-gray-400">· {g.type}</span></td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{g.semester}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className={`font-bold ${g.score >= 75 ? "text-emerald-600" : "text-red-500"}`}>
+                          {g.score}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

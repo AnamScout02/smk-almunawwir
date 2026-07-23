@@ -49,7 +49,7 @@ export const metadata: Metadata = {
       "International Islamic Boarding School — Mendidik Generasi Qurani Terampil",
     type: "website",
     locale: "id_ID",
-    images: [{ url: "/images/logo-emblem.png" }],
+    images: [{ url: "/images/logo-full.png" }],
   },
 };
 

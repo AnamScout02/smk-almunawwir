@@ -19,6 +19,7 @@ import {
   Palette,
   Building2,
 } from "lucide-react";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,47 @@ const icons: Record<string, React.ElementType> = {
   dkv: Palette,
   dpib: Building2,
 };
+
+const content = {
+  id: {
+    home: "Beranda",
+    programsCrumb: "Konsentrasi Keahlian",
+    aboutTitle: "Tentang Konsentrasi Ini",
+    skillsTitle: "Kompetensi yang Dipelajari",
+    careerTitle: "Peluang Karier",
+    galleryTitle: "Galeri Kegiatan",
+    galleryEmpty: "Foto kegiatan akan segera tersedia",
+    featuresTitle: "Keunggulan Program",
+    certTitle: "Sertifikasi",
+    islamicTitle: "Program Islami Terintegrasi",
+    islamicItems: ["Tahfidz Al-Qur'an", "Bahasa Arab Intensif", "Kajian Fiqh & Aqidah", "Tilawah & Tahsin"],
+    interestedTitle: (code: string) => `Tertarik di ${code}?`,
+    interestedDesc: "Daftar sekarang dan bergabunglah bersama ribuan alumni sukses kami.",
+    registerBtn: "Daftar Sekarang",
+    askBtn: "Tanya Informasi",
+    otherProgramsTitle: "Konsentrasi Keahlian Lainnya",
+    viewDetail: "Lihat Detail",
+  },
+  en: {
+    home: "Home",
+    programsCrumb: "Areas of Expertise",
+    aboutTitle: "About This Program",
+    skillsTitle: "Competencies Learned",
+    careerTitle: "Career Opportunities",
+    galleryTitle: "Activity Gallery",
+    galleryEmpty: "Activity photos coming soon",
+    featuresTitle: "Program Advantages",
+    certTitle: "Certification",
+    islamicTitle: "Integrated Islamic Program",
+    islamicItems: ["Qur'an Memorization", "Intensive Arabic", "Fiqh & Aqidah Studies", "Tilawah & Tahsin"],
+    interestedTitle: (code: string) => `Interested in ${code}?`,
+    interestedDesc: "Register now and join thousands of our successful alumni.",
+    registerBtn: "Register Now",
+    askBtn: "Ask for Information",
+    otherProgramsTitle: "Other Areas of Expertise",
+    viewDetail: "View Detail",
+  },
+} as const;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -48,6 +90,8 @@ export function generateStaticParams() {
 
 export default async function ProgramDetailPage({ params }: Props) {
   const { slug } = await params;
+  const lang = await getLang();
+  const c = content[lang];
   const program = programs.find((p) => p.slug === slug);
   if (!program) notFound();
 
@@ -97,19 +141,19 @@ export default async function ProgramDetailPage({ params }: Props) {
           <div className="container-custom relative">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-white/60 text-sm mb-8">
-              <Link href="/" className="hover:text-white transition">Beranda</Link>
+              <Link href="/" className="hover:text-white transition">{c.home}</Link>
               <ChevronRight size={14} />
-              <Link href="/programs" className="hover:text-white transition">Konsentrasi Keahlian</Link>
+              <Link href="/programs" className="hover:text-white transition">{c.programsCrumb}</Link>
               <ChevronRight size={14} />
               <span className="text-white">{program.code}</span>
             </nav>
 
-            <div className="flex items-start gap-5">
-              <div className="w-16 h-16 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
+            <div className="flex items-center gap-6">
+              <div className="w-24 h-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
                 {logoUrl ? (
-                  <Image src={logoUrl} alt={program.name} fill sizes="64px" className="object-contain p-2" unoptimized />
+                  <Image src={logoUrl} alt={program.name} fill sizes="96px" className="object-contain p-3" unoptimized />
                 ) : (
-                  <Icon size={36} className="text-white" />
+                  <Icon size={48} className="text-white" />
                 )}
               </div>
               <div>
@@ -133,13 +177,13 @@ export default async function ProgramDetailPage({ params }: Props) {
               <div className="lg:col-span-2 space-y-8">
                 {/* Deskripsi */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
-                  <h2 className="font-heading text-2xl font-bold text-navy mb-4">Tentang Konsentrasi Ini</h2>
+                  <h2 className="font-heading text-2xl font-bold text-navy mb-4">{c.aboutTitle}</h2>
                   <p className="text-gray-600 leading-relaxed text-base">{desc}</p>
                 </div>
 
                 {/* Kompetensi */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
-                  <h2 className="font-heading text-2xl font-bold text-navy mb-6">Kompetensi yang Dipelajari</h2>
+                  <h2 className="font-heading text-2xl font-bold text-navy mb-6">{c.skillsTitle}</h2>
                   <ul className="grid sm:grid-cols-2 gap-3">
                     {skills.map((skill) => (
                       <li key={skill} className="flex items-start gap-3">
@@ -154,7 +198,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
                   <h2 className="font-heading text-2xl font-bold text-navy mb-6">
                     <Briefcase className="inline mr-2 text-primary-700" size={22} />
-                    Peluang Karier
+                    {c.careerTitle}
                   </h2>
                   <div className="flex flex-wrap gap-3">
                     {career.map((c) => (
@@ -169,7 +213,7 @@ export default async function ProgramDetailPage({ params }: Props) {
 
                 {/* Foto / Galeri Kegiatan */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
-                  <h2 className="font-heading text-2xl font-bold text-navy mb-6">Galeri Kegiatan</h2>
+                  <h2 className="font-heading text-2xl font-bold text-navy mb-6">{c.galleryTitle}</h2>
                   {gallery.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {gallery.map((g) => (
@@ -182,14 +226,25 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i}
-                            className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} opacity-20 rounded-xl flex items-center justify-center`}
-                            style={heroStyle}>
-                            <Icon size={28} className="text-gray-400" />
-                          </div>
+                          logoUrl ? (
+                            <div key={i}
+                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} rounded-xl flex items-center justify-center overflow-hidden relative`}
+                              style={heroStyle}>
+                              <div className="absolute inset-0 opacity-[0.1] pointer-events-none"
+                                style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "60px 60px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                              />
+                              <Image src={logoUrl} alt={program.name} fill sizes="120px" className="object-contain p-6" unoptimized />
+                            </div>
+                          ) : (
+                            <div key={i}
+                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} opacity-20 rounded-xl flex items-center justify-center`}
+                              style={heroStyle}>
+                              <Icon size={28} className="text-gray-400" />
+                            </div>
+                          )
                         ))}
                       </div>
-                      <p className="text-gray-400 text-sm text-center mt-4">Foto kegiatan akan segera tersedia</p>
+                      <p className="text-gray-400 text-sm text-center mt-4">{c.galleryEmpty}</p>
                     </>
                   )}
                 </div>
@@ -199,7 +254,7 @@ export default async function ProgramDetailPage({ params }: Props) {
               <div className="space-y-6">
                 {/* Keunggulan */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-heading font-bold text-navy mb-4">Keunggulan Program</h3>
+                  <h3 className="font-heading font-bold text-navy mb-4">{c.featuresTitle}</h3>
                   <ul className="space-y-3">
                     {features.map((f) => (
                       <li key={f} className="flex items-center gap-3 text-sm">
@@ -215,38 +270,48 @@ export default async function ProgramDetailPage({ params }: Props) {
                 <div className="bg-white rounded-2xl p-6 shadow-sm">
                   <h3 className="font-heading font-bold text-navy mb-3">
                     <Award className="inline mr-2 text-gold" size={18} />
-                    Sertifikasi
+                    {c.certTitle}
                   </h3>
                   <p className="text-sm text-gray-600">{cert}</p>
                 </div>
 
                 {/* Program Islami */}
-                <div className="bg-gradient-to-br from-primary-800 to-primary-900 rounded-2xl p-6 text-white">
-                  <p className="font-arabic text-gold text-xl mb-3">مَنْ طَلَبَ الْعِلْمَ</p>
-                  <h3 className="font-heading font-bold mb-2">Program Islami Terintegrasi</h3>
-                  <ul className="text-sm text-white/70 space-y-1.5 mt-3">
-                    {["Tahfidz Al-Qur'an", "Bahasa Arab Intensif", "Kajian Fiqh & Aqidah", "Tilawah & Tahsin"].map((f) => (
-                      <li key={f} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="relative rounded-2xl overflow-hidden p-6 text-white"
+                  style={{
+                    background: "linear-gradient(160deg, #0F1A45 0%, #1B2B6B 50%, #0A1030 100%)",
+                    boxShadow: "0 8px 40px rgba(15,26,69,0.25), 0 0 0 1px rgba(232,160,32,0.2)"
+                  }}>
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
+                  <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+                  <div className="relative">
+                    <p className="font-arabic text-gold text-xl mb-3">مَنْ طَلَبَ الْعِلْمَ</p>
+                    <h3 className="font-heading font-bold mb-2">{c.islamicTitle}</h3>
+                    <ul className="text-sm text-white/70 space-y-1.5 mt-3">
+                      {c.islamicItems.map((f) => (
+                        <li key={f} className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
                 {/* CTA Daftar */}
                 <div className="bg-primary-50 rounded-2xl p-6">
-                  <h3 className="font-heading font-bold text-navy mb-2">Tertarik di {program.code}?</h3>
-                  <p className="text-sm text-gray-600 mb-4">Daftar sekarang dan bergabunglah bersama ribuan alumni sukses kami.</p>
+                  <h3 className="font-heading font-bold text-navy mb-2">{c.interestedTitle(program.code)}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{c.interestedDesc}</p>
                   <Link href="/admissions"
                     className={`flex items-center justify-center gap-2 w-full ${customColor ? "" : `bg-gradient-to-r ${program.color}`} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition text-sm`}
                     style={rightStyle}>
-                    Daftar Sekarang
+                    {c.registerBtn}
                     <ArrowRight size={16} />
                   </Link>
                   <Link href="/contact"
                     className="flex items-center justify-center gap-2 w-full border border-primary-200 text-primary-700 font-semibold py-3 rounded-xl hover:bg-primary-100 transition text-sm mt-2">
-                    Tanya Informasi
+                    {c.askBtn}
                   </Link>
                 </div>
               </div>
@@ -259,7 +324,7 @@ export default async function ProgramDetailPage({ params }: Props) {
           <div className="container-custom">
             <div className="text-center mb-10">
               <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">
-                Konsentrasi Keahlian Lainnya
+                {c.otherProgramsTitle}
               </h2>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -269,7 +334,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                 const otherColor = colorByCode[p.code.toUpperCase()];
                 return (
                   <Link key={p.slug} href={`/programs/${p.slug}`}
-                    className="group bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                    className="group block bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
                     <div className={`w-11 h-11 rounded-xl ${otherColor ? "" : `bg-gradient-to-br ${p.color}`} flex items-center justify-center mb-3 overflow-hidden relative`}
                       style={otherColor ? { background: themeGradient(otherColor) } : undefined}>
                       {otherLogo ? (
@@ -281,7 +346,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{p.code}</div>
                     <div className="font-heading font-bold text-navy text-sm mt-0.5 leading-snug">{p.name}</div>
                     <div className="flex items-center gap-1 text-primary-700 text-xs font-semibold mt-3 group-hover:gap-2 transition-all">
-                      Lihat Detail <ArrowRight size={12} />
+                      {c.viewDetail} <ArrowRight size={12} />
                     </div>
                   </Link>
                 );

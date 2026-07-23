@@ -11,7 +11,7 @@ export default function WhatsAppButton() {
   const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 print:hidden">
       {/* Popup */}
       {open && (
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-72 animate-fade-in">

@@ -3,61 +3,76 @@ import { useActionState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, BookOpen, GraduationCap, ClipboardList, ArrowRight, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
 
-const roles = [
-  {
-    key: "admin",
-    label: "Admin",
-    subLabel: "Kepsek",
-    icon: ShieldCheck,
-    desc: "Kelola seluruh data",
-    gradient: "from-primary-800 to-primary-900",
-    ring: "ring-primary-500",
-    activeBg: "bg-primary-700",
-    chipColor: "bg-primary-100 text-primary-700",
-  },
-  {
-    key: "tas",
-    label: "TAS",
-    subLabel: "Tata Usaha",
-    icon: ClipboardList,
-    desc: "Administrasi sekolah",
-    gradient: "from-amber-600 to-amber-800",
-    ring: "ring-amber-400",
-    activeBg: "bg-amber-600",
-    chipColor: "bg-amber-100 text-amber-700",
-  },
-  {
-    key: "guru",
-    label: "Guru",
-    subLabel: "Pendidik",
-    icon: BookOpen,
-    desc: "Nilai & absensi",
-    gradient: "from-emerald-600 to-emerald-800",
-    ring: "ring-emerald-400",
-    activeBg: "bg-emerald-700",
-    chipColor: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    key: "siswa",
-    label: "Siswa",
-    subLabel: "Santri",
-    icon: GraduationCap,
-    desc: "Rapor & jadwal",
-    gradient: "from-blue-600 to-blue-800",
-    ring: "ring-blue-400",
-    activeBg: "bg-blue-700",
-    chipColor: "bg-blue-100 text-blue-700",
-  },
-] as const;
+const roles = {
+  id: [
+    { key: "admin", label: "Admin", subLabel: "Kepsek", icon: ShieldCheck, desc: "Kelola seluruh data", gradient: "from-primary-800 to-primary-900", ring: "ring-primary-500", activeBg: "bg-primary-700", chipColor: "bg-primary-100 text-primary-700" },
+    { key: "tas", label: "TAS", subLabel: "Tata Usaha", icon: ClipboardList, desc: "Administrasi sekolah", gradient: "from-amber-600 to-amber-800", ring: "ring-amber-400", activeBg: "bg-amber-600", chipColor: "bg-amber-100 text-amber-700" },
+    { key: "guru", label: "Guru", subLabel: "Pendidik", icon: BookOpen, desc: "Nilai & absensi", gradient: "from-emerald-600 to-emerald-800", ring: "ring-emerald-400", activeBg: "bg-emerald-700", chipColor: "bg-emerald-100 text-emerald-700" },
+    { key: "siswa", label: "Siswa", subLabel: "Santri", icon: GraduationCap, desc: "Rapor & jadwal", gradient: "from-blue-600 to-blue-800", ring: "ring-blue-400", activeBg: "bg-blue-700", chipColor: "bg-blue-100 text-blue-700" },
+  ],
+  en: [
+    { key: "admin", label: "Admin", subLabel: "Principal", icon: ShieldCheck, desc: "Manage all data", gradient: "from-primary-800 to-primary-900", ring: "ring-primary-500", activeBg: "bg-primary-700", chipColor: "bg-primary-100 text-primary-700" },
+    { key: "tas", label: "Staff", subLabel: "Administration", icon: ClipboardList, desc: "School administration", gradient: "from-amber-600 to-amber-800", ring: "ring-amber-400", activeBg: "bg-amber-600", chipColor: "bg-amber-100 text-amber-700" },
+    { key: "guru", label: "Teacher", subLabel: "Educator", icon: BookOpen, desc: "Grades & attendance", gradient: "from-emerald-600 to-emerald-800", ring: "ring-emerald-400", activeBg: "bg-emerald-700", chipColor: "bg-emerald-100 text-emerald-700" },
+    { key: "siswa", label: "Student", subLabel: "Santri", icon: GraduationCap, desc: "Report card & schedule", gradient: "from-blue-600 to-blue-800", ring: "ring-blue-400", activeBg: "bg-blue-700", chipColor: "bg-blue-100 text-blue-700" },
+  ],
+} as const;
 
-const STATS = [
-  { value: "1.200+", label: "Siswa Aktif" },
-  { value: "50+",    label: "Tenaga Pendidik" },
-  { value: "5",      label: "Konsentrasi" },
-];
+const ui = {
+  id: {
+    iqra: "Iqra' Bismi Rabbik",
+    portalLabel: "Portal Akademik",
+    schoolName: "SMK Al Munawwir",
+    tagline: "International Islamic Boarding School — Singojuruh, Banyuwangi",
+    stats: [
+      { value: "1.200+", label: "Siswa Aktif" },
+      { value: "50+", label: "Tenaga Pendidik" },
+      { value: "5", label: "Konsentrasi" },
+    ],
+    accredited: "NPSN 69896523 · Terakreditasi",
+    welcome: "Selamat Datang",
+    signInAs: (label: string, sub: string) => <span>Masuk sebagai <span className="font-semibold text-primary-700">{label} — {sub}</span></span>,
+    choosePrompt: "Pilih peran Anda untuk memulai",
+    email: "Email",
+    password: "Password",
+    processing: "Memproses...",
+    signInAsBtn: (label: string) => `Masuk sebagai ${label}`,
+    signInPortal: "Masuk ke Portal",
+    or: "atau",
+    noAccount: "Belum punya akun?",
+    registerSpmb: "Daftar SPMB",
+    backHome: "← Kembali ke Beranda",
+    footerNote: "Akses portal hanya untuk warga SMK Al Munawwir IIBS. Jika lupa password, hubungi admin sekolah.",
+  },
+  en: {
+    iqra: "Iqra' Bismi Rabbik",
+    portalLabel: "Academic Portal",
+    schoolName: "SMK Al Munawwir",
+    tagline: "International Islamic Boarding School — Singojuruh, Banyuwangi",
+    stats: [
+      { value: "1,200+", label: "Active Students" },
+      { value: "50+", label: "Educators" },
+      { value: "5", label: "Majors" },
+    ],
+    accredited: "NPSN 69896523 · Accredited",
+    welcome: "Welcome",
+    signInAs: (label: string, sub: string) => <span>Signing in as <span className="font-semibold text-primary-700">{label} — {sub}</span></span>,
+    choosePrompt: "Choose your role to get started",
+    email: "Email",
+    password: "Password",
+    processing: "Processing...",
+    signInAsBtn: (label: string) => `Sign In as ${label}`,
+    signInPortal: "Sign In to Portal",
+    or: "or",
+    noAccount: "Don't have an account?",
+    registerSpmb: "Register (SPMB)",
+    backHome: "← Back to Home",
+    footerNote: "Portal access is for SMK Al Munawwir IIBS members only. If you forgot your password, contact the school admin.",
+  },
+} as const;
 
 const PARTICLES = [
   { w: 6,  h: 6,  l: 12, delay: 0,   dur: 14 },
@@ -72,8 +87,22 @@ export default function LoginPage() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, undefined);
   const [showPass, setShowPass] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [lang, setLang] = useState<"id" | "en">("id");
+  const [students, setStudents] = useState<string | null>(null);
 
-  const selectedInfo = roles.find(r => r.key === selectedRole);
+  useEffect(() => {
+    const saved = localStorage.getItem("lang");
+    if (saved === "en") setLang("en");
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings/stats").then(r => r.json()).then(d => { if (d.students) setStudents(d.students); }).catch(() => {});
+  }, []);
+
+  const t = ui[lang];
+  const roleList = roles[lang];
+  const selectedInfo = roleList.find(r => r.key === selectedRole);
+  const stats = students ? [{ ...t.stats[0], value: `${students}+` }, t.stats[1], t.stats[2]] : t.stats;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -145,12 +174,12 @@ export default function LoginPage() {
 
           {/* Arabic */}
           <p className="font-arabic text-gold text-4xl mb-2" style={{ lineHeight: 2 }}>اقْرَأْ بِاسْمِ رَبِّكَ</p>
-          <p className="text-gold/60 text-xs font-medium tracking-widest uppercase mb-6">Iqra' Bismi Rabbik</p>
+          <p className="text-gold/60 text-xs font-medium tracking-widest uppercase mb-6">{t.iqra}</p>
 
           {/* School name */}
           <div className="mb-2">
-            <p className="text-white/50 text-xs tracking-widest uppercase font-semibold mb-1">Portal Akademik</p>
-            <h1 className="font-heading text-2xl font-bold text-white">SMK Al Munawwir</h1>
+            <p className="text-white/50 text-xs tracking-widest uppercase font-semibold mb-1">{t.portalLabel}</p>
+            <h1 className="font-heading text-2xl font-bold text-white">{t.schoolName}</h1>
             <div className="flex items-center justify-center gap-2 mt-1">
               <div className="h-px flex-1 max-w-12 bg-gradient-to-r from-transparent to-gold/50" />
               <span className="text-gold text-xs font-bold tracking-widest">IIBS</span>
@@ -159,12 +188,12 @@ export default function LoginPage() {
           </div>
 
           <p className="text-white/50 text-sm leading-relaxed mb-10 max-w-xs mx-auto">
-            International Islamic Boarding School — Singojuruh, Banyuwangi
+            {t.tagline}
           </p>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
-            {STATS.map(({ value, label }) => (
+            {stats.map(({ value, label }) => (
               <div key={label}
                 className="rounded-2xl py-4 text-center border border-white/10"
                 style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
@@ -177,7 +206,7 @@ export default function LoginPage() {
           {/* Footer note */}
           <div className="mt-10 flex items-center justify-center gap-2 text-white/25 text-xs">
             <Sparkles size={11} />
-            <span>NPSN 69896523 · Terakreditasi</span>
+            <span>{t.accredited}</span>
           </div>
         </div>
       </div>
@@ -192,27 +221,23 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
 
           {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <Image src="/images/logo-emblem.png" alt="Logo" width={40} height={40} className="rounded-full object-contain drop-shadow-md" />
-            <div>
-              <p className="font-heading font-bold text-primary-900 text-lg leading-tight">SMK Al Munawwir</p>
-              <p className="text-gold text-xs font-bold tracking-widest">IIBS</p>
-            </div>
+          <div className="mb-8 lg:hidden">
+            <Image src="/images/logo-full.png" alt="SMK Al Munawwir IIBS" width={200} height={50} className="h-10 w-auto object-contain" />
           </div>
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="font-heading text-3xl font-bold text-navy mb-1">Selamat Datang</h2>
+            <h2 className="font-heading text-3xl font-bold text-navy mb-1">{t.welcome}</h2>
             <p className="text-gray-400 text-sm">
               {selectedInfo
-                ? <span>Masuk sebagai <span className="font-semibold text-primary-700">{selectedInfo.label} — {selectedInfo.subLabel}</span></span>
-                : "Pilih peran Anda untuk memulai"}
+                ? t.signInAs(selectedInfo.label, selectedInfo.subLabel)
+                : t.choosePrompt}
             </p>
           </div>
 
           {/* Role selector */}
           <div className="grid grid-cols-4 gap-2.5 mb-8">
-            {roles.map((role) => {
+            {roleList.map((role) => {
               const Icon = role.icon;
               const isActive = selectedRole === role.key;
               return (
@@ -260,7 +285,7 @@ export default function LoginPage() {
           {/* Form */}
           <form action={action} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-navy mb-2">Email</label>
+              <label className="block text-sm font-semibold text-navy mb-2">{t.email}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center">
                   <Mail size={16} className="text-gray-400" />
@@ -277,7 +302,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-navy mb-2">Password</label>
+              <label className="block text-sm font-semibold text-navy mb-2">{t.password}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center">
                   <Lock size={16} className="text-gray-400" />
@@ -310,35 +335,34 @@ export default function LoginPage() {
               ) : (
                 <ArrowRight size={18} />
               )}
-              {pending ? "Memproses..." : selectedInfo ? `Masuk sebagai ${selectedInfo.label}` : "Masuk ke Portal"}
+              {pending ? t.processing : selectedInfo ? t.signInAsBtn(selectedInfo.label) : t.signInPortal}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-gray-300 text-xs">atau</span>
+            <span className="text-gray-300 text-xs">{t.or}</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
           {/* Links */}
           <div className="space-y-3 text-center text-sm">
             <p className="text-gray-400">
-              Belum punya akun?{" "}
+              {t.noAccount}{" "}
               <Link href="/admissions" className="text-primary-700 font-semibold hover:text-gold transition-colors">
-                Daftar SPMB
+                {t.registerSpmb}
               </Link>
             </p>
             <Link href="/" className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-primary-700 transition-colors text-xs">
-              ← Kembali ke Beranda
+              {t.backHome}
             </Link>
           </div>
 
           {/* Bottom note */}
           <div className="mt-8 p-4 rounded-2xl bg-primary-50 border border-primary-100">
             <p className="text-xs text-primary-700/70 text-center leading-relaxed">
-              Akses portal hanya untuk warga SMK Al Munawwir IIBS.
-              Jika lupa password, hubungi admin sekolah.
+              {t.footerNote}
             </p>
           </div>
         </div>

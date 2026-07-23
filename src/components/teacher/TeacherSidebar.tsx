@@ -2,12 +2,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle, Calendar } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
 
 const menu = [
   { href: "/dashboard/teacher", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/teacher/schedule", label: "Jadwal Saya", icon: Calendar },
   { href: "/dashboard/teacher/students", label: "Daftar Siswa", icon: Users },
   { href: "/dashboard/teacher/grades", label: "Input Nilai", icon: ClipboardList },
   { href: "/dashboard/teacher/attendance", label: "Absensi", icon: CheckSquare },
@@ -75,8 +76,14 @@ export default function TeacherSidebar({ logoEmblem = "/images/logo-emblem.png",
       </aside>
       <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
-          <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
-          <span className="font-heading font-bold text-white text-sm">Portal Guru</span>
+          {logoFullWhite ? (
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
+          ) : (
+            <>
+              <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
+              <span className="font-heading font-bold text-white text-sm">Portal Guru</span>
+            </>
+          )}
         </div>
         <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white"><Menu size={22} /></button>
       </div>

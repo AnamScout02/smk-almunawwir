@@ -89,53 +89,56 @@ export default function AttendanceSummaryPage() {
               <span className="text-red-300">Alpha</span>
             </div>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nama Siswa</th>
-                <th className="text-center">H</th>
-                <th className="text-center">I</th>
-                <th className="text-center">S</th>
-                <th className="text-center">A</th>
-                <th className="text-center">%</th>
-                <th className="text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.students.map((s, i) => (
-                <tr key={s.id}>
-                  <td className="text-gray-400 text-xs">{i + 1}</td>
-                  <td>
-                    <p className="font-semibold text-primary-900">{s.name}</p>
-                    <p className="text-gray-400 text-xs font-mono">{s.nis}</p>
-                  </td>
-                  <td className="text-center font-bold text-emerald-600">{s.HADIR}</td>
-                  <td className="text-center font-bold text-blue-600">{s.IZIN}</td>
-                  <td className="text-center font-bold text-amber-600">{s.SAKIT}</td>
-                  <td className="text-center font-bold text-red-500">{s.ALPHA}</td>
-                  <td className="text-center">
-                    <span className={`font-bold ${s.pct >= 80 ? "text-emerald-600" : s.pct >= 70 ? "text-amber-600" : "text-red-500"}`}>
-                      {s.pct}%
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    {s.pct >= 80 ? (
-                      <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
-                        <CheckCircle2 size={11} /> Baik
-                      </span>
-                    ) : s.pct >= 70 ? (
-                      <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">Perhatikan</span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
-                        <AlertTriangle size={11} /> Rendah
-                      </span>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-primary-100"
+                  style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                  <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">#</th>
+                  <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">H</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">I</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">S</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">A</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">%</th>
+                  <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.students.map((s, i) => (
+                  <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                    <td className="px-5 py-3.5 text-gray-400 text-xs">{i + 1}</td>
+                    <td className="px-5 py-3.5">
+                      <p className="font-semibold text-primary-900">{s.name}</p>
+                      <p className="text-gray-400 text-xs font-mono">{s.nis}</p>
+                    </td>
+                    <td className="px-5 py-3.5 text-center font-bold text-emerald-600">{s.HADIR}</td>
+                    <td className="px-5 py-3.5 text-center font-bold text-blue-600">{s.IZIN}</td>
+                    <td className="px-5 py-3.5 text-center font-bold text-amber-600">{s.SAKIT}</td>
+                    <td className="px-5 py-3.5 text-center font-bold text-red-500">{s.ALPHA}</td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className={`font-bold ${s.pct >= 80 ? "text-emerald-600" : s.pct >= 70 ? "text-amber-600" : "text-red-500"}`}>
+                        {s.pct}%
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      {s.pct >= 80 ? (
+                        <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
+                          <CheckCircle2 size={11} /> Baik
+                        </span>
+                      ) : s.pct >= 70 ? (
+                        <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">Perhatikan</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
+                          <AlertTriangle size={11} /> Rendah
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

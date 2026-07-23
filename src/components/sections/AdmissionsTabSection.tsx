@@ -3,9 +3,16 @@ import { useState } from "react";
 import { FileText, Search } from "lucide-react";
 import AdmissionsForm from "@/components/sections/AdmissionsForm";
 import AdmissionsStatusCheck from "@/components/sections/AdmissionsStatusCheck";
+import type { Lang } from "@/lib/lang";
 
-export default function AdmissionsTabSection() {
+const ui = {
+  id: { form: "Formulir Pendaftaran", status: "Cek Status" },
+  en: { form: "Registration Form", status: "Check Status" },
+};
+
+export default function AdmissionsTabSection({ lang = "id" }: { lang?: Lang }) {
   const [tab, setTab] = useState<"form" | "status">("form");
+  const t = ui[lang];
 
   return (
     <div>
@@ -19,7 +26,7 @@ export default function AdmissionsTabSection() {
           }`}
         >
           <FileText size={15} />
-          Formulir Pendaftaran
+          {t.form}
         </button>
         <button
           onClick={() => setTab("status")}
@@ -30,10 +37,10 @@ export default function AdmissionsTabSection() {
           }`}
         >
           <Search size={15} />
-          Cek Status
+          {t.status}
         </button>
       </div>
-      {tab === "form" ? <AdmissionsForm /> : <AdmissionsStatusCheck />}
+      {tab === "form" ? <AdmissionsForm lang={lang} /> : <AdmissionsStatusCheck lang={lang} />}
     </div>
   );
 }

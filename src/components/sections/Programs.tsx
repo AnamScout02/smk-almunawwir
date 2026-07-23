@@ -125,17 +125,22 @@ export default async function Programs() {
           })}
 
           {/* Islamic programs card */}
-          <div className="bg-gradient-to-br from-primary-700 to-primary-900 rounded-2xl p-6 text-white">
-            <p className="font-arabic text-gold text-2xl mb-3">إِقْرَأْ بِاسْمِ رَبِّكَ</p>
-            <h3 className="font-heading text-xl font-bold mb-2">{tr.islamic_program_title}</h3>
-            <p className="text-white/70 text-sm leading-relaxed mb-5">{tr.islamic_program_desc}</p>
-            <div className="grid grid-cols-2 gap-3">
-              {["Tahfidz Al-Qur'an", "Bahasa Arab", "Fiqh & Aqidah", "Tilawah"].map((f) => (
-                <div key={f} className="flex items-center gap-2 text-sm text-white/80">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-                  {f}
-                </div>
-              ))}
+          <div className="relative rounded-2xl p-6 text-white overflow-hidden bg-gradient-to-br from-primary-700 to-primary-900">
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
+              style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            />
+            <div className="relative">
+              <p className="font-arabic text-gold text-2xl mb-3">إِقْرَأْ بِاسْمِ رَبِّكَ</p>
+              <h3 className="font-heading text-xl font-bold mb-2">{tr.islamic_program_title}</h3>
+              <p className="text-white/70 text-sm leading-relaxed mb-5">{tr.islamic_program_desc}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {["Tahfidz Al-Qur'an", "Bahasa Arab", "Fiqh & Aqidah", "Tilawah"].map((f) => (
+                  <div key={f} className="flex items-center gap-2 text-sm text-white/80">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gold" />
+                    {f}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
