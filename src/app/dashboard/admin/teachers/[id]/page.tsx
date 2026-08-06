@@ -6,9 +6,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, BookOpen, Phone, Mail, Hash, School,
-  Users, ClipboardList, GraduationCap, UserCircle, Pencil,
+  Users, ClipboardList, GraduationCap, UserCircle, Pencil, CalendarDays,
 } from "lucide-react";
 import StatTile from "@/components/admin/StatTile";
+import PageHeader from "@/components/admin/PageHeader";
 
 export default async function AdminTeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await verifyRole(["ADMIN", "TAS"]);
@@ -21,16 +22,22 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       homeroomOf: {
         include: {
           students: {
+            where: { studentStatus: "AKTIF" },
             include: { user: { select: { name: true } } },
             orderBy: { nis: "asc" },
           },
           major: { select: { name: true, code: true } },
         },
       },
+      teachingLoad: { include: { subject: { select: { name: true } } }, distinct: ["subjectId"] },
     },
   });
 
   if (!teacher) notFound();
+
+  const mataPelajaran = teacher.teachingLoad.length
+    ? teacher.teachingLoad.map(t => t.subject.name).join(", ")
+    : (teacher.subject && teacher.subject !== "—" ? teacher.subject : "Belum ada penugasan mengajar");
 
   // Rangkuman nilai: groupBy subject + semester + type
   const gradeGroups = await prisma.grade.groupBy({
@@ -60,20 +67,22 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div className="flex-1">
-          <h1 className="font-heading text-2xl font-bold text-primary-900">{teacher.user.name}</h1>
-          <p className="text-gray-400 text-sm">Detail guru</p>
-        </div>
-        <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-colors">
-          <Pencil size={14} /> Edit Biodata
-        </Link>
-      </div>
+      <PageHeader
+        icon={<UserCircle size={22} />}
+        title={teacher.user.name}
+        description="Detail guru"
+        actions={
+          <>
+            <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+              <ArrowLeft size={18} />
+            </Link>
+            <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
+              <Pencil size={14} /> Edit Biodata
+            </Link>
+          </>
+        }
+      />
 
       {/* Profil */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
@@ -83,7 +92,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
           </div>
           <div>
             <h2 className="font-heading text-lg font-bold text-primary-900">{teacher.user.name}</h2>
-            <p className="text-gray-400 text-sm">{teacher.subject}</p>
+            <p className="text-gray-400 text-sm">{mataPelajaran}</p>
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -105,7 +114,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
             <BookOpen size={15} className="text-gray-400 mt-0.5 shrink-0" />
             <div>
               <p className="text-gray-400 text-xs">Mata Pelajaran</p>
-              <p className="font-medium">{teacher.subject}</p>
+              <p className="font-medium">{mataPelajaran}</p>
             </div>
           </div>
           {teacher.phone && (
@@ -137,9 +146,9 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
 
       {/* Statistik nilai */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatTile size="md" color="primary" value={totalGrades} label="Total Nilai" />
-        <StatTile size="md" color="emerald" value={uniqueSubjects.length} label="Mata Pelajaran" />
-        <StatTile size="md" color="amber" value={uniqueSemesters.length} label="Semester Aktif" />
+        <StatTile size="md" color="primary" icon={ClipboardList} value={totalGrades} label="Total Nilai" />
+        <StatTile size="md" color="emerald" icon={BookOpen} value={uniqueSubjects.length} label="Mata Pelajaran" />
+        <StatTile size="md" color="amber" icon={CalendarDays} value={uniqueSemesters.length} label="Semester Aktif" />
       </div>
 
       {/* Rekap nilai per semester */}

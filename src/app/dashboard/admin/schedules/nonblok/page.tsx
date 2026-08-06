@@ -7,6 +7,8 @@ import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import Alert from "@/components/admin/Alert";
 import { colorForTeacherCode } from "@/lib/teacher-colors";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface ClassItem { id: string; name: string; grade: number; major: { id: string; name: string } }
 interface TeacherItem { id: string; subject: string; user: { name: string } }
@@ -31,6 +33,8 @@ const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RA
 const emptyForm = { classId: "", teacherId: "", subject: "", day: "SENIN", startTime: "07:15", endTime: "07:45" };
 
 export default function NonBlokSchedulePage() {
+  const confirmDialog = useConfirm();
+  const toast = useToast();
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
@@ -100,12 +104,12 @@ export default function NonBlokSchedulePage() {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Gagal generate jadwal non-blok"); return; }
+      if (!res.ok) { toast.error(data.error || "Gagal generate jadwal non-blok"); return; }
       setGenerateReport(data);
       if (selectedClass) loadSchedules(selectedClass);
       loadAll();
     } catch {
-      alert("Gagal generate — periksa koneksi internet Anda dan coba lagi.");
+      toast.error("Gagal generate — periksa koneksi internet Anda dan coba lagi.");
     } finally {
       setGenerating(false);
     }
@@ -137,7 +141,7 @@ export default function NonBlokSchedulePage() {
     }
   }
   async function remove(id: string) {
-    if (!confirm("Hapus jadwal ini?")) return;
+    if (!(await confirmDialog("Hapus jadwal ini?"))) return;
     await fetch(`/api/admin/schedules/${id}`, { method: "DELETE" });
     loadSchedules(selectedClass);
     loadAll();

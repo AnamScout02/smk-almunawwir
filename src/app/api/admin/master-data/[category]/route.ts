@@ -1,4 +1,5 @@
 import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -9,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ category: string }> }
 ) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { searchParams } = new URL(req.url);
     const kategori = searchParams.get("kategori");
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const body = await req.json();
     const { judul, kategori, nomor, tanggal, keterangan, fileUrl } = body;
 

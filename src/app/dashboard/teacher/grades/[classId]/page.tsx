@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, ClipboardList } from "lucide-react";
 import Link from "next/link";
+import PageHeader from "@/components/admin/PageHeader";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface Student {
   id: string;
@@ -23,7 +25,7 @@ interface GradeRow {
   saved: boolean;
 }
 
-const GRADE_TYPES = ["Tugas", "Ulangan Harian", "UTS", "UAS", "Praktik"];
+const GRADE_TYPES = ["Tugas", "Ulangan Harian", "UTS", "UAS", "Praktik", "UKK"];
 
 function generateSemesters(): string[] {
   const now = new Date();
@@ -43,6 +45,7 @@ const SEMESTERS = generateSemesters();
 
 export default function InputNilaiPage() {
   const { classId } = useParams<{ classId: string }>();
+  const toast = useToast();
   const [cls, setCls] = useState<ClassInfo | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [subject, setSubject] = useState("");
@@ -70,7 +73,7 @@ export default function InputNilaiPage() {
         if (found) setCls(found);
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [classId]);
 
   // Load existing grades when subject/type/semester changes (min 3 chars)
@@ -92,7 +95,7 @@ export default function InputNilaiPage() {
           return { studentId: s.id, score: existing ? String(existing.score) : "", saved: !!existing };
         }));
         setLoadingGrades(false);
-      });
+      }).catch(() => setLoadingGrades(false));
   }, [subject, gradeType, semester, studentsBase, classId]);
 
   function updateScore(studentId: string, score: string) {
@@ -100,9 +103,9 @@ export default function InputNilaiPage() {
   }
 
   async function handleSave() {
-    if (!subject.trim()) { alert("Isi nama mata pelajaran terlebih dahulu"); return; }
+    if (!subject.trim()) { toast.warning("Isi nama mata pelajaran terlebih dahulu"); return; }
     const toSave = rows.filter(r => r.score !== "" && !isNaN(Number(r.score)));
-    if (toSave.length === 0) { alert("Belum ada nilai yang diisi"); return; }
+    if (toSave.length === 0) { toast.warning("Belum ada nilai yang diisi"); return; }
 
     startTransition(async () => {
       const res = await fetch("/api/teacher/grades", {
@@ -119,18 +122,17 @@ export default function InputNilaiPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard/teacher/grades" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Input Nilai Siswa</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
-            {cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
-          </p>
-        </div>
-      </div>
+    <div className="p-6 lg:p-8">
+      <PageHeader
+        icon={<ClipboardList size={22} />}
+        title="Input Nilai Siswa"
+        description={cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
+        actions={
+          <Link href="/dashboard/teacher/grades" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+            <ArrowLeft size={18} />
+          </Link>
+        }
+      />
 
       {/* Form header */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 grid sm:grid-cols-3 gap-4">

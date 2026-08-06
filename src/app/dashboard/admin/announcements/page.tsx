@@ -7,6 +7,7 @@ import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Announcement {
   id: string;
@@ -38,6 +39,7 @@ const roleLabels: Record<string, { label: string; color: string; icon: React.Ele
 };
 
 export default function AdminAnnouncementsPage() {
+  const confirmDialog = useConfirm();
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +87,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Hapus pengumuman ini?")) return;
+    if (!(await confirmDialog("Hapus pengumuman ini?"))) return;
     await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
     load();
   }

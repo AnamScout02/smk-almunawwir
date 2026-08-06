@@ -1,21 +1,47 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { logActivity } from "@/lib/activity-log";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
     const body = await req.json();
-    const item = await prisma.admission.update({ where: { id }, data: { status: body.status, notes: body.notes || null } });
+    const before = await prisma.admission.findUnique({ where: { id }, select: { status: true, fullName: true } });
+    const item = await prisma.admission.update({
+      where: { id },
+      data: {
+        ...(body.status !== undefined ? { status: body.status } : {}),
+        ...(body.notes !== undefined ? { notes: body.notes || null } : {}),
+        ...(body.jalur !== undefined ? { jalur: body.jalur } : {}),
+        ...(body.nilaiRapor !== undefined ? { nilaiRapor: body.nilaiRapor === "" ? null : Number(body.nilaiRapor) } : {}),
+        ...(body.nilaiTes !== undefined ? { nilaiTes: body.nilaiTes === "" ? null : Number(body.nilaiTes) } : {}),
+        ...(body.skorAkhir !== undefined ? { skorAkhir: body.skorAkhir === "" ? null : Number(body.skorAkhir) } : {}),
+        ...(body.paymentVerified !== undefined ? { paymentVerified: !!body.paymentVerified } : {}),
+      },
+    });
+
+    if (body.status !== undefined && before && before.status !== body.status) {
+      await logActivity(session, {
+        action: "DECIDE_ADMISSION", entity: "Admission", entityId: id,
+        description: `${session.name} mengubah status pendaftar "${before.fullName}" dari ${before.status} menjadi ${body.status}`,
+        metadata: { before: before.status, after: body.status },
+      });
+    }
+
     return Response.json(item);
   } catch { return Response.json({ error: "Gagal mengupdate" }, { status: 500 }); }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
-    await prisma.admission.delete({ where: { id } });
+    const admission = await prisma.admission.delete({ where: { id } });
+    await logActivity(session, {
+      action: "DELETE_ADMISSION", entity: "Admission", entityId: id,
+      description: `${session.name} menghapus data pendaftar "${admission.fullName}"`,
+    });
     return Response.json({ ok: true });
   } catch { return Response.json({ error: "Gagal menghapus" }, { status: 500 }); }
 }

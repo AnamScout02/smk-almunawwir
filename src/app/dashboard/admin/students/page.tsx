@@ -1,6 +1,6 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
-import { Search, Users, Loader2, GraduationCap, Download, Eye, BookOpen } from "lucide-react";
+import { Search, Users, Loader2, GraduationCap, Download, Eye, BookOpen, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -70,9 +70,9 @@ export default function AdminStudentsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <StatTile color="primary" value={students.length} label="Total Siswa" />
-        <StatTile color="emerald" value={students.filter(s => s.class).length} label="Sudah Berkelas" />
-        <StatTile color="amber" value={students.filter(s => !s.class).length} label="Belum Berkelas" />
+        <StatTile color="primary" icon={Users} value={students.length} label="Total Siswa" />
+        <StatTile color="emerald" icon={CheckCircle2} value={students.filter(s => s.class).length} label="Sudah Berkelas" />
+        <StatTile color="amber" icon={AlertCircle} value={students.filter(s => !s.class).length} label="Belum Berkelas" />
       </div>
 
       {/* Filter & Search */}
@@ -102,14 +102,16 @@ export default function AdminStudentsPage() {
           {/* Per kelas */}
           {grouped.map(({ cls, items }) => (
             <div key={cls.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 flex items-center justify-between"
+              <div className="relative px-5 py-3.5 flex items-center justify-between"
                 style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-                <div className="flex items-center gap-2">
+                <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                  style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+                <div className="relative flex items-center gap-2">
                   <GraduationCap size={15} className="text-gold" />
                   <span className="font-heading font-bold text-white text-sm">{cls.name}</span>
                   <span className="text-white/40 text-xs">· {cls.major.code}</span>
                 </div>
-                <span className="text-xs font-semibold text-gold bg-white/10 border border-white/20 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="relative text-xs font-semibold text-gold bg-white/10 border border-white/20 px-2.5 py-1 rounded-full flex items-center gap-1">
                   <Users size={10} /> {items.length}
                 </span>
               </div>

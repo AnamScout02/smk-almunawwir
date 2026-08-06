@@ -4,6 +4,7 @@ import DatePicker from "@/components/shared/DatePicker";
 import {
   Calendar, Plus, Trash2, CheckCircle, AlertTriangle,
   ChevronDown, Save, BarChart2, Users, TrendingUp, CalendarDays,
+  GraduationCap, MinusCircle, XCircle, Repeat,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -38,6 +39,7 @@ interface NaikKelasResult {
   graduated: number;
   skipped: number;
   errors: string[];
+  pklWarnings?: string[];
 }
 
 const CLS = "input-field";
@@ -242,18 +244,9 @@ export default function TahunAjaranPage() {
         {naikResult && (
           <Alert variant={naikResult.errors.length > 0 ? "warning" : "success"} className="mt-4" title="Hasil Proses Naik Kelas:">
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{naikResult.promoted}</p>
-                <p className="text-xs text-gray-500">Naik Kelas</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{naikResult.graduated}</p>
-                <p className="text-xs text-gray-500">Lulus</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-400">{naikResult.skipped}</p>
-                <p className="text-xs text-gray-500">Dilewati</p>
-              </div>
+              <StatTile size="md" color="blue" icon={TrendingUp} value={naikResult.promoted} label="Naik Kelas" />
+              <StatTile size="md" color="emerald" icon={GraduationCap} value={naikResult.graduated} label="Lulus" />
+              <StatTile size="md" color="gray" icon={MinusCircle} value={naikResult.skipped} label="Dilewati" />
             </div>
             {naikResult.errors.length > 0 && (
               <div>
@@ -261,6 +254,17 @@ export default function TahunAjaranPage() {
                 <ul className="text-xs text-red-600 list-disc list-inside space-y-0.5">
                   {naikResult.errors.slice(0, 5).map((err, i) => <li key={i}>{err}</li>)}
                   {naikResult.errors.length > 5 && <li>...dan {naikResult.errors.length - 5} error lainnya</li>}
+                </ul>
+              </div>
+            )}
+            {naikResult.pklWarnings && naikResult.pklWarnings.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs font-semibold text-amber-700 mb-1">
+                  ⚠ {naikResult.pklWarnings.length} siswa naik ke XII TANPA pendaftaran PKL disetujui (tetap dinaikkan, mohon ditindaklanjuti):
+                </p>
+                <ul className="text-xs text-amber-700 list-disc list-inside space-y-0.5">
+                  {naikResult.pklWarnings.slice(0, 8).map((name, i) => <li key={i}>{name}</li>)}
+                  {naikResult.pklWarnings.length > 8 && <li>...dan {naikResult.pklWarnings.length - 8} siswa lainnya</li>}
                 </ul>
               </div>
             )}
@@ -295,13 +299,13 @@ export default function TahunAjaranPage() {
             {/* Ringkasan */}
             <div className="grid grid-cols-5 gap-3 mb-6">
               {[
-                { label: "Total", value: statistik.total, color: "primary" as const },
-                { label: "Aktif", value: statistik.aktif, color: "emerald" as const },
-                { label: "Lulus", value: statistik.lulus, color: "blue" as const },
-                { label: "Keluar", value: statistik.keluar, color: "red" as const },
-                { label: "Pindah", value: statistik.pindah, color: "amber" as const },
+                { label: "Total", value: statistik.total, color: "primary" as const, icon: Users },
+                { label: "Aktif", value: statistik.aktif, color: "emerald" as const, icon: CheckCircle },
+                { label: "Lulus", value: statistik.lulus, color: "blue" as const, icon: GraduationCap },
+                { label: "Keluar", value: statistik.keluar, color: "red" as const, icon: XCircle },
+                { label: "Pindah", value: statistik.pindah, color: "amber" as const, icon: Repeat },
               ].map(item => (
-                <StatTile key={item.label} size="md" color={item.color} value={item.value} label={item.label} />
+                <StatTile key={item.label} size="md" color={item.color} icon={item.icon} value={item.value} label={item.label} />
               ))}
             </div>
 

@@ -1,75 +1,26 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Network, Calculator, Leaf, Palette, Building2, ArrowRight } from "lucide-react";
+import { Network, Calculator, Leaf, Palette, Building2, GraduationCap, ArrowRight } from "lucide-react";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
 import { prisma } from "@/lib/prisma";
 import { themeGradient, themeGradientRight } from "@/lib/color";
 
-const programsData = [
-  {
-    icon: Network,
-    code: "TKJ",
-    name: "Teknik Komputer & Jaringan",
-    nameEn: "Computer & Network Engineering",
-    descKey: "prog_tkj_desc" as const,
-    color: "from-blue-500 to-blue-700",
-    features: ["Networking", "Cybersecurity", "Cloud Computing", "Server Admin"],
-  },
-  {
-    icon: Calculator,
-    code: "AK",
-    name: "Akuntansi",
-    nameEn: "Accounting",
-    descKey: "prog_ak_desc" as const,
-    color: "from-orange-500 to-orange-700",
-    features: ["Akuntansi / Accounting", "Perpajakan / Taxation", "MYOB/Zahir", "Laporan Keuangan"],
-  },
-  {
-    icon: Leaf,
-    code: "ATU",
-    name: "Agribisnis Ternak Unggas",
-    nameEn: "Poultry Agribusiness",
-    descKey: "prog_atu_desc" as const,
-    color: "from-emerald-500 to-emerald-700",
-    features: ["Farm Management", "Animal Nutrition", "Animal Health", "Agribusiness"],
-  },
-  {
-    icon: Palette,
-    code: "DKV",
-    name: "Desain Komunikasi Visual",
-    nameEn: "Visual Communication Design",
-    descKey: "prog_dkv_desc" as const,
-    color: "from-purple-500 to-purple-700",
-    features: ["Graphic Design", "Branding", "Motion Graphics", "Digital Content"],
-  },
-  {
-    icon: Building2,
-    code: "DPIB",
-    name: "Desain Pemodelan & Informasi Bangunan",
-    nameEn: "Building Modeling & Information Design",
-    descKey: "prog_dpib_desc" as const,
-    color: "from-teal-500 to-teal-700",
-    features: ["AutoCAD", "SketchUp", "BIM/Revit", "Cost Estimation"],
-  },
-];
+const iconByCode: Record<string, React.ElementType> = {
+  TKJ: Network, AK: Calculator, ATU: Leaf, DKV: Palette, DPIB: Building2,
+};
+const colorClassByCode: Record<string, string> = {
+  TKJ: "from-blue-500 to-blue-700",
+  AK: "from-orange-500 to-orange-700",
+  ATU: "from-emerald-500 to-emerald-700",
+  DKV: "from-purple-500 to-purple-700",
+  DPIB: "from-teal-500 to-teal-700",
+};
 
 export default async function Programs() {
   const lang = await getLang();
   const tr = t(lang);
-  let logoByCode: Record<string, string> = {};
-  let colorByCode: Record<string, string> = {};
-  try {
-    const majors = await prisma.major.findMany({ select: { code: true, logoUrl: true, themeColor: true } });
-    logoByCode = Object.fromEntries(
-      majors.filter(m => m.logoUrl).map(m => [m.code.toUpperCase(), m.logoUrl as string])
-    );
-    colorByCode = Object.fromEntries(
-      majors.filter(m => m.themeColor).map(m => [m.code.toUpperCase(), m.themeColor as string])
-    );
-  } catch {
-    // DB unavailable — pakai ikon default di bawah
-  }
+  const majors = await prisma.major.findMany({ orderBy: { name: "asc" } }).catch(() => []);
   return (
     <section className="section-padding bg-cream">
       <div className="container-custom">
@@ -85,37 +36,43 @@ export default async function Programs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {programsData.map((p) => {
-            const customColor = colorByCode[p.code];
+          {majors.map((m) => {
+            const customColor = m.themeColor;
+            const Icon = iconByCode[m.code.toUpperCase()] ?? GraduationCap;
+            const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-600 to-primary-800";
+            const desc = m.tagline || m.description;
+            const features = m.features?.length ? m.features : [];
             return (
-            <div key={p.code}
+            <div key={m.id}
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className={`h-1.5 ${customColor ? "" : `bg-gradient-to-r ${p.color}`}`}
+              <div className={`h-1.5 ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`}`}
                 style={customColor ? { background: themeGradientRight(customColor) } : undefined} />
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-11 h-11 rounded-xl ${customColor ? "" : `bg-gradient-to-br ${p.color}`} text-white shrink-0 flex items-center justify-center overflow-hidden relative`}
+                  <div className={`w-11 h-11 rounded-xl ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white shrink-0 flex items-center justify-center overflow-hidden relative`}
                     style={customColor ? { background: themeGradient(customColor) } : undefined}>
-                    {logoByCode[p.code] ? (
-                      <Image src={logoByCode[p.code]} alt={p.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                    {m.logoUrl ? (
+                      <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
                     ) : (
-                      <p.icon size={22} />
+                      <Icon size={22} />
                     )}
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{p.code}</span>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{m.code}</span>
                     <h3 className="font-heading font-bold text-navy text-base leading-tight">
-                      {lang === "en" ? p.nameEn : p.name}
+                      {m.name}
                     </h3>
                   </div>
                 </div>
-                <p className="text-gray-500 text-sm mb-5 leading-relaxed">{tr[p.descKey]}</p>
-                <div className="flex flex-wrap gap-2 mb-5">
-                  {p.features.map((f) => (
-                    <span key={f} className="text-xs bg-primary-50 text-primary-700 px-2.5 py-1 rounded-full font-medium">{f}</span>
-                  ))}
-                </div>
-                <Link href={`/programs/${p.code.toLowerCase()}`}
+                <p className="text-gray-500 text-sm mb-5 leading-relaxed">{desc}</p>
+                {features.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {features.map((f) => (
+                      <span key={f} className="text-xs bg-primary-50 text-primary-700 px-2.5 py-1 rounded-full font-medium">{f}</span>
+                    ))}
+                  </div>
+                )}
+                <Link href={`/programs/${m.code.toLowerCase()}`}
                   className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:text-gold transition-colors group-hover:gap-2.5">
                   {tr.programs_explore} <ArrowRight size={15} />
                 </Link>

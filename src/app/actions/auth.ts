@@ -36,6 +36,13 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
     return { error: "Email atau password salah." };
   }
 
+  if (user.role === "STUDENT") {
+    const student = await prisma.student.findUnique({ where: { userId: user.id }, select: { studentStatus: true } });
+    if (student && student.studentStatus && student.studentStatus !== "AKTIF") {
+      return { error: "Akun ini sudah tidak aktif (status: " + student.studentStatus + "). Hubungi TU jika ini keliru." };
+    }
+  }
+
   await createSession({
     userId: user.id,
     role: user.role,

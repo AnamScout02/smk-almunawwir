@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Save, Loader2, ArrowLeft, Plus, X, ImagePlus, Trash2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface GalleryPhoto {
   id: string;
@@ -62,6 +63,7 @@ function ListEditor({ label, items, onChange, placeholder }: {
 export default function MajorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const confirmDialog = useConfirm();
   const [major, setMajor] = useState<MajorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -122,7 +124,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   async function deletePhoto(photoId: string) {
-    if (!confirm("Hapus foto ini?")) return;
+    if (!(await confirmDialog("Hapus foto ini?"))) return;
     await fetch(`/api/admin/majors/${id}/gallery/${photoId}`, { method: "DELETE" });
     load();
   }

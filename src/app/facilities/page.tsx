@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Monitor, Home, BookOpen, Dumbbell, Wifi, Utensils, Building2, FlaskConical } from "lucide-react";
 import { getLang } from "@/lib/lang";
+import { getSettings } from "@/lib/site-settings";
 
 export const metadata = {
   title: "Fasilitas — SMK Al Munawwir IIBS",
@@ -38,12 +39,7 @@ const content = {
       { icon: Wifi, title: "Internet Kampus", desc: "Jaringan WiFi fiber optic berkecepatan tinggi di seluruh area — ruang kelas, asrama, perpustakaan, dan masjid.", color: "text-purple-600", bg: "bg-purple-50" },
       { icon: Utensils, title: "Dapur & Kantin", desc: "Dapur modern berstandar higienis, kantin dengan menu bergizi seimbang sesuai standar pesantren.", color: "text-orange-600", bg: "bg-orange-50" },
     ],
-    stats: [
-      { value: "6", label: "Laboratorium" },
-      { value: "800+", label: "Kapasitas Asrama" },
-      { value: "5.000+", label: "Koleksi Buku" },
-      { value: "10 Ha", label: "Luas Kampus" },
-    ],
+    statLabels: ["Laboratorium", "Kapasitas Asrama", "Koleksi Buku", "Luas Kampus"],
   },
   en: {
     heroLabel: "Learning Environment",
@@ -69,12 +65,7 @@ const content = {
       { icon: Wifi, title: "Campus Internet", desc: "High-speed fiber-optic WiFi throughout the campus — classrooms, dormitories, library, and mosque.", color: "text-purple-600", bg: "bg-purple-50" },
       { icon: Utensils, title: "Kitchen & Canteen", desc: "A modern, hygienic kitchen and a canteen offering balanced, nutritious meals per pesantren standards.", color: "text-orange-600", bg: "bg-orange-50" },
     ],
-    stats: [
-      { value: "6", label: "Laboratories" },
-      { value: "800+", label: "Dormitory Capacity" },
-      { value: "5,000+", label: "Book Collection" },
-      { value: "10 Ha", label: "Campus Area" },
-    ],
+    statLabels: ["Laboratories", "Dormitory Capacity", "Book Collection", "Campus Area"],
   },
 } as const;
 
@@ -82,12 +73,25 @@ export default async function FacilitiesPage() {
   const lang = await getLang();
   const c = content[lang];
   let photos: Awaited<ReturnType<typeof prisma.gallery.findMany>> = [];
+  let bookStock = 0;
+  const settings = await getSettings(["facilities.labs", "facilities.dormitory_capacity", "facilities.campus_area"]);
   try {
-    photos = await prisma.gallery.findMany({
-      where: { category: "Fasilitas" },
-      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-    });
+    [photos, bookStock] = await Promise.all([
+      prisma.gallery.findMany({
+        where: { category: "Fasilitas" },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      }),
+      prisma.book.aggregate({ _sum: { stock: true } }).then(r => r._sum.stock ?? 0),
+    ]);
   } catch { /* DB unavailable */ }
+
+  const statValues = [
+    settings["facilities.labs"],
+    `${settings["facilities.dormitory_capacity"]}+`,
+    bookStock > 0 ? `${bookStock}+` : "5.000+",
+    settings["facilities.campus_area"],
+  ];
+  const stats = c.statLabels.map((label, i) => ({ label, value: statValues[i] }));
 
   return (
     <>
@@ -167,7 +171,7 @@ export default async function FacilitiesPage() {
         <section className="py-12 bg-white border-y border-gray-100">
           <div className="container-custom">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              {c.stats.map(({ value, label }) => (
+              {stats.map(({ value, label }) => (
                 <div key={label}>
                   <p className="font-heading font-bold text-3xl text-primary-700 mb-1">{value}</p>
                   <p className="text-gray-500 text-sm">{label}</p>

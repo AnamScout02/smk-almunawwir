@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { weekGroupForClass } from "@/lib/schedule-week";
 import { getSettings } from "@/lib/site-settings";
+import { assertKurikulum } from "@/lib/kurikulum-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ interface UnscheduledEntry {
 const BLOCK_HOURS_THRESHOLD = 2;
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+  await assertKurikulum(session);
   const { "schedule.locked": locked } = await getSettings(["schedule.locked"]);
   if (locked === "1") {
     return NextResponse.json({ error: "Jadwal sedang dikunci — buka kunci dulu di halaman Jadwal Pelajaran sebelum generate ulang." }, { status: 423 });

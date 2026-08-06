@@ -1,6 +1,6 @@
 ﻿"use client";
 import React, { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, X, Save, Loader2, Briefcase, Users, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Search, Edit2, X, Save, Loader2, Briefcase, Users, CheckCircle, Clock, AlertCircle, BookOpen, Calendar, MessageSquare } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -8,6 +8,7 @@ import StatTile from "@/components/admin/StatTile";
 import Modal from "@/components/admin/Modal";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Internship {
   id: string;
@@ -17,7 +18,11 @@ interface Internship {
   startDate: string;
   endDate: string;
   status: string;
+  teacherId: string | null;
+  teacher: { user: { name: string } } | null;
 }
+
+interface TeacherOption { id: string; user: { name: string } }
 
 interface Student {
   id: string;
@@ -37,11 +42,12 @@ interface FormState {
   startDate: string;
   endDate: string;
   status: string;
+  teacherId: string;
 }
 
 const emptyForm: FormState = {
   studentId: "", studentName: "", company: "", position: "",
-  supervisor: "", startDate: "", endDate: "", status: "ONGOING",
+  supervisor: "", startDate: "", endDate: "", status: "ONGOING", teacherId: "",
 };
 
 const PKL_STATUS: Record<string, { label: string; badge: string; icon: React.ElementType }> = {
@@ -51,6 +57,7 @@ const PKL_STATUS: Record<string, { label: string; badge: string; icon: React.Ele
 };
 
 export default function AdminInternshipsPage() {
+  const confirmDialog = useConfirm();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -58,6 +65,8 @@ export default function AdminInternshipsPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [journalStudent, setJournalStudent] = useState<Student | null>(null);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
 
   async function load() {
     setLoading(true);
@@ -66,7 +75,10 @@ export default function AdminInternshipsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    fetch("/api/admin/teachers").then(r => r.json()).then(d => { if (Array.isArray(d)) setTeachers(d); }).catch(() => {});
+  }, []);
 
   function openEdit(s: Student) {
     const pkl = s.internship;
@@ -79,6 +91,7 @@ export default function AdminInternshipsPage() {
       startDate: pkl ? new Date(pkl.startDate).toISOString().split("T")[0] : "",
       endDate: pkl ? new Date(pkl.endDate).toISOString().split("T")[0] : "",
       status: pkl?.status ?? "ONGOING",
+      teacherId: pkl?.teacherId ?? "",
     });
     setError("");
     setModal(true);
@@ -104,7 +117,7 @@ export default function AdminInternshipsPage() {
   }
 
   async function handleDelete(studentId: string) {
-    if (!confirm("Hapus data PKL siswa ini?")) return;
+    if (!await confirmDialog("Hapus data PKL siswa ini?")) return;
     startTransition(async () => {
       await fetch(`/api/admin/internships/${studentId}`, { method: "DELETE" });
       load();
@@ -140,9 +153,9 @@ export default function AdminInternshipsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatTile color="primary" value={students.length} label="Total Siswa" />
-        <StatTile color="emerald" value={withPKL} label="Sudah Ada PKL" />
-        <StatTile color="amber" value={noPKL} label="Belum Ada PKL" />
+        <StatTile color="primary" icon={Users} value={students.length} label="Total Siswa" />
+        <StatTile color="emerald" icon={CheckCircle} value={withPKL} label="Sudah Ada PKL" />
+        <StatTile color="amber" icon={AlertCircle} value={noPKL} label="Belum Ada PKL" />
       </div>
 
       {/* Search */}
@@ -163,12 +176,12 @@ export default function AdminInternshipsPage() {
         <div className="space-y-6">
           {groups.map(({ key, title, items }) => (
             <GroupedSection key={key} title={title} count={items.length} icon={PKL_STATUS[key].icon}>
-              <InternshipTable items={items} onEdit={openEdit} onDelete={handleDelete} fmt={fmt} />
+              <InternshipTable items={items} onEdit={openEdit} onDelete={handleDelete} onJournal={setJournalStudent} fmt={fmt} />
             </GroupedSection>
           ))}
           {noneGroup.length > 0 && (
             <GroupedSection title="Belum PKL" count={noneGroup.length} icon={Users} variant="warning">
-              <InternshipTable items={noneGroup} onEdit={openEdit} onDelete={handleDelete} fmt={fmt} />
+              <InternshipTable items={noneGroup} onEdit={openEdit} onDelete={handleDelete} onJournal={setJournalStudent} fmt={fmt} />
             </GroupedSection>
           )}
         </div>
@@ -232,14 +245,90 @@ export default function AdminInternshipsPage() {
               ]}
             />
           </div>
+          <div>
+            <label className="label-field">Guru Pembimbing (sekolah)</label>
+            <Select
+              value={form.teacherId}
+              onChange={v => setForm(f => ({ ...f, teacherId: v }))}
+              options={[
+                { value: "", label: "— Belum ditentukan —" },
+                ...teachers.map(t => ({ value: t.id, label: t.user.name })),
+              ]}
+            />
+          </div>
         </form>
       </Modal>
+
+      {journalStudent && (
+        <JournalModal student={journalStudent} onClose={() => setJournalStudent(null)} fmt={fmt} />
+      )}
     </div>
   );
 }
 
-function InternshipTable({ items, onEdit, onDelete, fmt }: {
-  items: Student[]; onEdit: (s: Student) => void; onDelete: (id: string) => void; fmt: (d: string) => string;
+function JournalModal({ student, onClose, fmt }: { student: Student; onClose: () => void; fmt: (d: string) => string }) {
+  interface JournalEntry { id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null }
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/internships/${student.id}/journal`).then(r => r.json()).then(d => {
+      const list: JournalEntry[] = d.journal ?? [];
+      setEntries(list);
+      setNotes(Object.fromEntries(list.map(e => [e.id, e.teacherNote ?? ""])));
+      setLoading(false);
+    });
+  }, [student.id]);
+
+  async function saveNote(entryId: string) {
+    setSavingId(entryId);
+    await fetch(`/api/admin/internships/${student.id}/journal/${entryId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teacherNote: notes[entryId] || "" }),
+    });
+    setSavingId(null);
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Jurnal Harian PKL" description={`${student.user.name} — ${student.internship?.company ?? ""}`}>
+      {loading ? (
+        <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-primary-500" /></div>
+      ) : entries.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">Siswa belum mengisi jurnal harian.</p>
+      ) : (
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+          {entries.map(entry => (
+            <div key={entry.id} className="border border-gray-100 rounded-xl p-3 flex gap-3">
+              {entry.photoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={entry.photoUrl} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                  <Calendar size={11} /> {fmt(entry.date)}
+                </div>
+                <p className="text-sm text-gray-700 mb-2">{entry.activity}</p>
+                <div className="flex gap-2">
+                  <input value={notes[entry.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [entry.id]: e.target.value }))}
+                    placeholder="Tulis catatan untuk siswa..." className="input-field text-xs flex-1" />
+                  <button onClick={() => saveNote(entry.id)} disabled={savingId === entry.id}
+                    className="px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold flex items-center gap-1 shrink-0">
+                    {savingId === entry.id ? <Loader2 size={12} className="animate-spin" /> : <MessageSquare size={12} />} Simpan
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
+  items: Student[]; onEdit: (s: Student) => void; onDelete: (id: string) => void; onJournal: (s: Student) => void; fmt: (d: string) => string;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -273,6 +362,11 @@ function InternshipTable({ items, onEdit, onDelete, fmt }: {
                       <p className="font-semibold text-gray-800 text-xs">{pkl.company}</p>
                       <p className="text-gray-400 text-xs mt-0.5">{pkl.position}</p>
                       <p className="text-gray-300 text-xs mt-0.5">{fmt(pkl.startDate)} — {fmt(pkl.endDate)}</p>
+                      <p className="text-xs mt-0.5">
+                        {pkl.teacher
+                          ? <span className="text-primary-600">Pembimbing: {pkl.teacher.user.name}</span>
+                          : <span className="text-amber-500 italic">Belum ada guru pembimbing</span>}
+                      </p>
                     </div>
                   ) : (
                     <span className="text-gray-300 text-xs italic">Belum diisi</span>
@@ -280,6 +374,12 @@ function InternshipTable({ items, onEdit, onDelete, fmt }: {
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    {pkl && (
+                      <button onClick={() => onJournal(s)}
+                        className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-purple-50 border border-purple-100 hover:border-purple-200 transition-colors">
+                        <BookOpen size={12} /> Jurnal
+                      </button>
+                    )}
                     <button onClick={() => onEdit(s)}
                       className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
                       <Edit2 size={12} /> {pkl ? "Edit" : "Tambah"}

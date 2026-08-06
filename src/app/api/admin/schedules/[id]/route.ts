@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { assertKurikulum } from "@/lib/kurikulum-guard";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+  await assertKurikulum(session);
   const { id } = await params;
   const body = await req.json();
   const { classId, teacherId, subject, day, startTime, endTime, room, weekType } = body;
@@ -19,7 +21,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+  await assertKurikulum(session);
   const { id } = await params;
   await prisma.schedule.delete({ where: { id } });
   return NextResponse.json({ ok: true });

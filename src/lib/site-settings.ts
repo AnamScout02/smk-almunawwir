@@ -22,6 +22,7 @@ export const DEFAULTS: Record<string, string> = {
   "logo.full_white": "/images/logo-full-white.png",
   // Kop Surat Cetak Buku Induk
   "letterhead.bukuInduk": "",
+  "letterhead.kopBawah": "", // footer/kop bawah — Notulen Rapat, Surat Keluar, dokumen resmi lain
   // Statistik
   "stats.students": "1200",
   "stats.achievements": "50",
@@ -29,6 +30,19 @@ export const DEFAULTS: Record<string, string> = {
   "stats.years": "12",
   "stats.partners": "30",
   "stats.founded_year": "2014",
+  // Fasilitas (angka yang tidak punya sumber data live di DB — fakta fisik kampus)
+  "facilities.labs": "6",
+  "facilities.dormitory_capacity": "800",
+  "facilities.campus_area": "10 Ha",
+  // Prestasi ekstrakurikuler — dikelola admin lewat Konten Halaman, bukan hardcode kode
+  "ekskul.achievements": JSON.stringify([
+    { event: "Juara 1 LKS TKJ", scope: "Tingkat Kabupaten", year: "2024" },
+    { event: "Juara 2 Kaligrafi", scope: "Tingkat Provinsi", year: "2024" },
+    { event: "Juara 1 Futsal", scope: "Turnamen Pesantren Se-Jatim", year: "2023" },
+    { event: "Best Speaker English Debate", scope: "Tingkat Kabupaten", year: "2023" },
+    { event: "Juara 3 Tahfidz 10 Juz", scope: "MTQ Pelajar Provinsi", year: "2024" },
+    { event: "Juara 1 LKS DKV", scope: "Tingkat Kabupaten", year: "2023" },
+  ]),
   // Banner CTA
   "cta.title": "Bergabunglah Bersama Kami",
   "cta.ppdb_year": "2026/2027",
@@ -44,6 +58,11 @@ export const DEFAULTS: Record<string, string> = {
   "school.tagline": "Mendidik Generasi Qurani & Terampil",
   "school.hero_subtitle": "Memadukan kurikulum vokasional nasional dengan pendidikan Islam intensif — menyiapkan generasi berakhlak mulia dan siap dunia kerja global.",
   "school.struktur_year": "2025/2026",
+  "school.kode": "026", // kode sekolah, dipakai di format nomor surat otomatis
+
+  // SPMB — bobot skor otomatis (persen, total wajar 100 tapi tidak divalidasi ketat)
+  "spmb.bobotRapor": "60",
+  "spmb.bobotTes": "40",
   // Pendaftaran (SPMB) — dipakai di halaman Pendaftaran
   "admissions.open_date": "2026-06-01",
   "admissions.close_date": "2026-08-31",
@@ -78,6 +97,11 @@ export const DEFAULTS: Record<string, string> = {
   // Jadwal Pelajaran — kunci supaya Generate Otomatis & Hapus Hasil Generate tidak bisa dipakai
   // tanpa sengaja setelah jadwal dianggap final
   "schedule.locked": "0",
+  // Perpustakaan — denda keterlambatan per hari (Rupiah), 0 = tidak ada denda
+  "perpustakaan.dendaPerHari": "500",
+  // Cek Kelulusan — jadwal buka/tutup halaman publik, kosong = selalu buka
+  "kelulusan.tanggalBuka": "",
+  "kelulusan.tanggalTutup": "",
 };
 
 export async function getSettings(keys?: string[]): Promise<Record<string, string>> {

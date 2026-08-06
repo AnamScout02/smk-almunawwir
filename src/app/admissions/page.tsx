@@ -5,6 +5,8 @@ import { getLang } from "@/lib/lang";
 import { getSettings } from "@/lib/site-settings";
 import { CheckCircle2, AlertCircle, Calendar, FileText, CreditCard, GraduationCap } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 const content = {
   id: {
     badge: "SPMB 2026/2027",
@@ -89,10 +91,11 @@ function formatDate(iso: string, locale: string): string {
 export default async function AdmissionsPage() {
   const lang = await getLang();
   const c = content[lang];
-  const s = await getSettings(["admissions.open_date", "admissions.close_date", "admissions.quota"]);
+  const s = await getSettings(["admissions.open_date", "admissions.close_date", "admissions.quota", "cta.ppdb_year"]);
   const openDate = formatDate(s["admissions.open_date"], c.locale);
   const closeDate = formatDate(s["admissions.close_date"], c.locale);
   const quotaValue = `${s["admissions.quota"]} ${c.quotaUnit}`;
+  const badge = c.badge.replace(/\d{4}\/\d{4}/, s["cta.ppdb_year"] || "2026/2027");
   return (
     <>
       <Navbar />
@@ -103,7 +106,7 @@ export default async function AdmissionsPage() {
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
-            <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.badge}</span>
+            <span className="text-gold text-sm font-semibold uppercase tracking-widest">{badge}</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
               {c.title}
             </h1>

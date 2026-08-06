@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CheckSquare, ChevronRight, Users, Calendar, Loader2, BarChart2, Download } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import EmptyState from "@/components/admin/EmptyState";
 
 interface ClassInfo {
   id: string;
@@ -41,8 +42,9 @@ export default function AttendancePage() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setClasses(data);
-        setLoadingClasses(false);
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoadingClasses(false));
   }, []);
 
   useEffect(() => {
@@ -53,8 +55,9 @@ export default function AttendancePage() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setRecords(data);
-        setLoadingRecords(false);
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoadingRecords(false));
   }, [date, selectedClass]);
 
   const summary = ["HADIR", "IZIN", "SAKIT", "ALPHA"].map(s => ({
@@ -67,11 +70,17 @@ export default function AttendancePage() {
     : classes.find(c => c.id === selectedClass)?.students.length ?? 0;
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+    <div className="p-6 lg:p-8">
       <PageHeader
         icon={<CheckSquare size={22} />}
         title="Absensi Siswa"
-        description="Rekap dan input absensi harian kelas wali"
+        description="Rekap dan input absensi harian — kelas wali & kelas yang Anda ampu"
+        actions={
+          <Link href="/dashboard/teacher/attendance/summary"
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition">
+            <BarChart2 size={16} /> Ringkasan Absensi
+          </Link>
+        }
       />
 
       {/* Kelas wali — akses cepat input */}
@@ -81,7 +90,7 @@ export default function AttendancePage() {
           <div className="flex items-center justify-center py-10 text-gray-400">
             <Loader2 size={20} className="animate-spin mr-2" /> Memuat kelas...
           </div>
-        ) : classes.length ? (
+        ) : classes.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {classes.map((cls) => (
               <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`}
@@ -101,9 +110,7 @@ export default function AttendancePage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border p-8 text-center text-gray-400 text-sm">
-            Anda belum menjadi wali kelas manapun.
-          </div>
+          <EmptyState icon={Users} title="Belum Ada Kelas" description="Anda belum ditugaskan sebagai wali kelas atau guru mapel di kelas manapun." />
         )}
       </div>
 

@@ -4,6 +4,8 @@ import Footer from "@/components/layout/Footer";
 import IslamicQuote from "@/components/shared/IslamicQuote";
 import { getSettings } from "@/lib/site-settings";
 import { getLang } from "@/lib/lang";
+import { prisma } from "@/lib/prisma";
+import OrgChartDiagram from "@/components/sections/OrgChartDiagram";
 import {
   Eye, Target, Users, BookOpen, MapPin,
   GraduationCap, Briefcase, Lightbulb, Globe, BookMarked, Trophy,
@@ -12,6 +14,14 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+const BIDANG_BY_CODE: Record<string, { id: string; en: string }> = {
+  TKJ: { id: "Teknologi Informasi & Komunikasi", en: "Information & Communication Technology" },
+  AK: { id: "Bisnis & Manajemen", en: "Business & Management" },
+  ATU: { id: "Agribisnis & Agroteknologi", en: "Agribusiness & Agrotechnology" },
+  DKV: { id: "Seni & Industri Kreatif", en: "Arts & Creative Industry" },
+  DPIB: { id: "Teknologi Konstruksi", en: "Construction Technology" },
+};
 
 export const metadata: Metadata = {
   title: "Tentang Kami — SMK Al Munawwir IIBS",
@@ -46,13 +56,6 @@ const content = {
       { icon: Briefcase, title: "Professional Worker", desc: "Menghasilkan lulusan berkompetensi sesuai kebutuhan DUDIKA — dibekali etos kerja, disiplin, integritas, dan daya saing tinggi di tingkat nasional maupun internasional." },
       { icon: BookMarked, title: "Kurikulum Diniyyah", desc: "Menanamkan nilai keimanan, ketakwaan, dan akhlakul karimah melalui pembelajaran kitab, tahfidz Al-Qur'an, pembiasaan ibadah, dan budaya religius pesantren." },
       { icon: Globe, title: "Kurikulum Internasional", desc: "Meningkatkan kemampuan bahasa asing dan wawasan global, membangun budaya belajar adaptif untuk bersaing di era globalisasi dan revolusi industri." },
-    ],
-    bidang: [
-      { code: "TKJ", name: "Teknik Komputer & Jaringan", bidang: "Teknologi Informasi & Komunikasi" },
-      { code: "AK", name: "Akuntansi", bidang: "Bisnis & Manajemen" },
-      { code: "ATU", name: "Agribisnis Ternak Unggas", bidang: "Agribisnis & Agroteknologi" },
-      { code: "DKV", name: "Desain Komunikasi Visual", bidang: "Seni & Industri Kreatif" },
-      { code: "DPIB", name: "Desain Pemodelan & Informasi Bangunan", bidang: "Teknologi Konstruksi" },
     ],
     sejarah: [
       { year: "2014", title: "Berdiri sebagai SMK NU Manbaul Falah", desc: "Sekolah didirikan di bawah naungan Yayasan Pondok Pesantren Manbaul Falah. Dua program keahlian dibuka sejak awal: Teknik Komputer & Jaringan (TKJ) dan Akuntansi (AK). TKJ langsung menerima peserta didik sejak tahun pertama berdiri." },
@@ -109,13 +112,6 @@ const content = {
       { icon: BookMarked, title: "Diniyyah Curriculum", desc: "Instilling faith, piety, and noble character through classical text studies, Qur'an memorization, worship habituation, and the religious culture of a boarding school." },
       { icon: Globe, title: "International Curriculum", desc: "Improving foreign language ability and global outlook, building an adaptive learning culture to compete in the era of globalization and industrial revolution." },
     ],
-    bidang: [
-      { code: "TKJ", name: "Computer & Network Engineering", bidang: "Information & Communication Technology" },
-      { code: "AK", name: "Accounting", bidang: "Business & Management" },
-      { code: "ATU", name: "Poultry Agribusiness", bidang: "Agribusiness & Agrotechnology" },
-      { code: "DKV", name: "Visual Communication Design", bidang: "Arts & Creative Industry" },
-      { code: "DPIB", name: "Building Modeling & Information Design", bidang: "Construction Technology" },
-    ],
     sejarah: [
       { year: "2014", title: "Founded as SMK NU Manbaul Falah", desc: "The school was established under the Manbaul Falah Islamic Boarding School Foundation. Two skill programs opened from the start: Computer & Network Engineering (TKJ) and Accounting (AK). TKJ enrolled students from its very first year." },
       { year: "2018", title: "AK Begins Enrolling Students", desc: "Entering its fifth year, the Accounting (AK) program officially began accepting new students, bringing both registered programs to full operation." },
@@ -152,9 +148,12 @@ export default async function AboutPage() {
   const lang = await getLang();
   const c = content[lang];
   const settings = await getSettings(["school.structure", "school.kaprodi", "school.struktur_year", "contact.address", "contact.phone", "contact.email"]);
+  const majors = await prisma.major.findMany({ orderBy: { name: "asc" }, select: { code: true, name: true } }).catch(() => []);
+  const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true }, select: { name: true } });
+  const strukturYearValue = activeYear?.name ?? settings["school.struktur_year"];
   const strukturYear = lang === "en"
-    ? `${settings["school.struktur_year"]} ${c.strukturYearPrefix}`
-    : `${c.strukturYearPrefix} ${settings["school.struktur_year"]}`;
+    ? `${strukturYearValue} ${c.strukturYearPrefix}`
+    : `${c.strukturYearPrefix} ${strukturYearValue}`;
   let structure: StructureRow[] = [];
   try {
     const parsed = JSON.parse(settings["school.structure"] ?? "[]");
@@ -169,6 +168,28 @@ export default async function AboutPage() {
   } catch {
     kaprodi = [];
   }
+
+  // Struktur organisasi — nama diambil langsung dari penugasan Jabatan (admin > Jabatan / Akun Pengguna),
+  // jadi otomatis update kalau ada pergantian tanpa perlu edit halaman ini.
+  const orgJabatanNames = [
+    "Kepala Sekolah", "Bendahara Sekolah", "Bendahara BOS", "Bendahara BPOPP", "Operator Sekolah",
+    "Kepala Tenaga Administrasi Sekolah", "Wakil Kepala Kurikulum", "Wakil Kepala Kesiswaan",
+    "Wakil Kepala Humas", "Wakil Kepala Sarana Prasarana", "Wakil Kepala Bidang Penjamin Mutu",
+  ];
+  const [teacherJabatanRows, staffJabatanRows] = await Promise.all([
+    prisma.teacherJabatan.findMany({
+      where: { jabatan: { name: { in: orgJabatanNames } } },
+      select: { jabatan: { select: { name: true } }, teacher: { select: { user: { select: { name: true } } } } },
+    }),
+    prisma.staffJabatan.findMany({
+      where: { jabatan: { name: { in: orgJabatanNames } } },
+      select: { jabatan: { select: { name: true } }, user: { select: { name: true } } },
+    }),
+  ]);
+  const orgNameMap = new Map<string, string[]>();
+  for (const r of teacherJabatanRows) orgNameMap.set(r.jabatan.name, [...(orgNameMap.get(r.jabatan.name) ?? []), r.teacher.user.name]);
+  for (const r of staffJabatanRows) orgNameMap.set(r.jabatan.name, [...(orgNameMap.get(r.jabatan.name) ?? []), r.user.name]);
+  const orgName = (jabatan: string) => orgNameMap.get(jabatan)?.join(", ") ?? "";
 
   return (
     <>
@@ -223,12 +244,12 @@ export default async function AboutPage() {
                 <p className="font-arabic text-primary-700 text-2xl mb-4 text-center">المنور</p>
                 <p className="text-center text-gray-500 text-sm mb-6">{c.bidangCaption}</p>
                 <div className="space-y-3">
-                  {c.bidang.map((p) => (
-                    <div key={p.code} className="bg-white rounded-xl p-3.5 flex items-center gap-3">
-                      <span className="text-xs font-bold bg-primary-700 text-white px-2 py-0.5 rounded-md shrink-0">{p.code}</span>
+                  {majors.map((m) => (
+                    <div key={m.code} className="bg-white rounded-xl p-3.5 flex items-center gap-3">
+                      <span className="text-xs font-bold bg-primary-700 text-white px-2 py-0.5 rounded-md shrink-0">{m.code}</span>
                       <div>
-                        <p className="font-semibold text-navy text-sm">{p.name}</p>
-                        <p className="text-gray-400 text-xs">{p.bidang}</p>
+                        <p className="font-semibold text-navy text-sm">{m.name}</p>
+                        <p className="text-gray-400 text-xs">{BIDANG_BY_CODE[m.code.toUpperCase()]?.[lang] ?? (lang === "en" ? "Vocational Skill Program" : "Program Keahlian")}</p>
                       </div>
                     </div>
                   ))}
@@ -341,29 +362,38 @@ export default async function AboutPage() {
 
         {/* Struktur Organisasi */}
         <section className="section-padding bg-cream">
-          <div className="container-custom max-w-3xl mx-auto">
+          <div className="container-custom max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <span className="text-gold font-semibold text-sm uppercase tracking-widest">{c.strukturLabel}</span>
               <h2 className="font-heading text-3xl font-bold text-navy mt-2">{c.strukturTitle}</h2>
               <p className="text-gray-400 text-sm mt-1">{strukturYear}</p>
             </div>
 
-            {/* Kepala & Wakil */}
-            <div className="space-y-2.5 mb-8">
-              {structure.map((s) => (
-                <div key={s.role} className={`flex items-center justify-between p-4 rounded-xl border ${
-                  s.highlight
-                    ? "bg-primary-700 border-primary-600 text-white"
-                    : "bg-white border-gray-100"
-                }`}>
-                  <span className={`text-sm font-medium ${s.highlight ? "text-white/80" : "text-gray-500"}`}>
-                    {s.role}
-                  </span>
-                  <span className={`font-semibold text-sm text-right ${s.highlight ? "text-gold" : "text-navy"}`}>
-                    {s.name}
-                  </span>
-                </div>
-              ))}
+            {/* Bagan Struktur Organisasi */}
+            <div className="mb-10">
+              <OrgChartDiagram
+                kepalaSekolah={{ label: "Kepala Sekolah", name: orgName("Kepala Sekolah") || structure.find(s => s.highlight)?.name }}
+                row2={[
+                  { label: "Bendahara Sekolah", name: orgName("Bendahara Sekolah") },
+                  { label: "Bendahara BOS", name: orgName("Bendahara BOS") },
+                  { label: "Bendahara BPOPP", name: orgName("Bendahara BPOPP") },
+                  { label: "Operator Sekolah", name: orgName("Operator Sekolah") },
+                  { label: "Kepala Tenaga Adm. Sekolah", name: orgName("Kepala Tenaga Administrasi Sekolah") },
+                ]}
+                row3={[
+                  { label: "Wakil Kepala Bidang Kurikulum", name: orgName("Wakil Kepala Kurikulum") },
+                  { label: "Wakil Kepala Bidang Kesiswaan", name: orgName("Wakil Kepala Kesiswaan") },
+                  { label: "Wakil Kepala Bidang Humas", name: orgName("Wakil Kepala Humas") },
+                  { label: "Wakil Kepala Bidang Sarana Prasarana", name: orgName("Wakil Kepala Sarana Prasarana") },
+                  { label: "Wakil Kepala Bidang Penjamin Mutu", name: orgName("Wakil Kepala Bidang Penjamin Mutu") },
+                ]}
+                waliKelas={[
+                  { label: "Wali Kelas X" },
+                  { label: "Wali Kelas XI" },
+                  { label: "Wali Kelas XII" },
+                ]}
+                guruMapel="Seluruh Guru Mata Pelajaran"
+              />
             </div>
 
             {/* Kepala Kompetensi Keahlian */}

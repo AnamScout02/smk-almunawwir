@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter, Amiri } from "next/font/google";
 import "./globals.css";
 import WhatsAppButton from "@/components/shared/WhatsAppButton";
+import Providers from "@/components/shared/Providers";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -70,8 +71,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
-        {children}
-        <WhatsAppButton />
+        <Providers>
+          {children}
+          <WhatsAppButton />
+        </Providers>
       </body>
     </html>
   );

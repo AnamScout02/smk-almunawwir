@@ -1,16 +1,25 @@
 export const dynamic = "force-dynamic";
 
+import React from "react";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School, Printer, Pencil } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School, Printer, Pencil, CheckCircle2, FileText, Stethoscope, XCircle } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 
-const STATUS_COLOR: Record<string, string> = {
-  HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  IZIN:  "bg-blue-50 text-blue-700 border border-blue-200",
-  SAKIT: "bg-amber-50 text-amber-700 border border-amber-200",
-  ALPHA: "bg-red-50 text-red-600 border border-red-200",
+const STATUS_COLOR: Record<string, "emerald" | "blue" | "amber" | "red"> = {
+  HADIR: "emerald",
+  IZIN:  "blue",
+  SAKIT: "amber",
+  ALPHA: "red",
+};
+const STATUS_ICON: Record<string, React.ElementType> = {
+  HADIR: CheckCircle2,
+  IZIN:  FileText,
+  SAKIT: Stethoscope,
+  ALPHA: XCircle,
 };
 
 export default async function AdminStudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,23 +52,26 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div className="flex-1">
-          <h1 className="font-heading text-2xl font-bold text-primary-900">{student.user.name}</h1>
-          <p className="text-gray-400 text-sm">Detail siswa</p>
-        </div>
-        <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors">
-          <Printer size={14} /> Lihat Buku Induk
-        </Link>
-        <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-colors">
-          <Pencil size={14} /> Edit Biodata
-        </Link>
-      </div>
+      <PageHeader
+        icon={<UserCircle size={22} />}
+        title={student.user.name}
+        description="Detail siswa"
+        actions={
+          <>
+            <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+              <ArrowLeft size={18} />
+            </Link>
+            <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors whitespace-nowrap">
+              <Printer size={14} /> Lihat Buku Induk
+            </Link>
+            <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
+              <Pencil size={14} /> Edit Biodata
+            </Link>
+          </>
+        }
+      />
 
       {/* Info profil */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
@@ -105,10 +117,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         </h3>
         <div className="grid grid-cols-4 gap-3 mb-3">
           {attSummary.map(({ status, count }) => (
-            <div key={status} className={`rounded-xl p-3 text-center ${STATUS_COLOR[status]}`}>
-              <p className="text-xl font-heading font-bold">{count}</p>
-              <p className="text-xs mt-0.5 font-semibold">{status}</p>
-            </div>
+            <StatTile key={status} size="md" color={STATUS_COLOR[status]} icon={STATUS_ICON[status]} value={count} label={status} />
           ))}
         </div>
         <p className="text-sm text-gray-500">Total: {totalDays} hari · Kehadiran: <strong>{presentPct}%</strong></p>
@@ -211,7 +220,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
             <div><span className="text-gray-400 text-xs block">Posisi</span><strong>{student.internship.position}</strong></div>
             <div><span className="text-gray-400 text-xs block">Supervisor</span><strong>{student.internship.supervisor}</strong></div>
             <div><span className="text-gray-400 text-xs block">Status</span>
-              <span className={`inline-flex font-semibold text-xs px-2.5 py-1 rounded-full border ${student.internship.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+              <span className={`inline-flex font-semibold text-xs px-2.5 py-1 rounded-full border ${student.internship.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
                 {student.internship.status === "COMPLETED" ? "Selesai" : "Sedang PKL"}
               </span>
             </div>

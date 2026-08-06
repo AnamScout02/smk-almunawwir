@@ -1,9 +1,13 @@
 // Kop surat untuk halaman cetak — banner navy + pattern SMK + judul (kiri) + logo full putih
 // (kanan), gaya sama persis dengan yang dipakai di BukuIndukPrintSheet. Diekstrak jadi komponen
 // bersama supaya halaman cetak lain (jadwal, dll) pakai kop yang konsisten tanpa duplikasi.
-export default function PrintKop({ title, subtitle, logoUrl }: { title: string; subtitle: string; logoUrl?: string }) {
+export default function PrintKop({ title, subtitle, logoUrl, edgeClassName = "-mx-8 print:-mx-2" }: {
+  title: string; subtitle: string; logoUrl?: string;
+  /** Kelas margin negatif untuk bleed penuh ke tepi kertas — sesuaikan kalau halaman punya padding kiri/kanan asimetris (mis. ruang jilid). */
+  edgeClassName?: string;
+}) {
   return (
-    <div className="relative -mx-8 mb-4 px-10 py-6 overflow-hidden flex items-center justify-between gap-4 print:-mx-2"
+    <div className={`print-doc relative ${edgeClassName} mb-4 px-10 py-6 overflow-hidden flex items-center justify-between gap-4`}
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat", filter: "invert(1)" }}

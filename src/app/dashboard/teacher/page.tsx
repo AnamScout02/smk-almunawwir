@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekType } from "@/lib/schedule-week.server";
+import { getWakilKepalaAgenda } from "@/lib/agenda";
+import AgendaCalendar from "@/components/shared/AgendaCalendar";
 import {
   Users, BookOpen, ClipboardList, CheckSquare, Bell, Calendar,
   UserCog, ArrowRight, Sparkles, TrendingUp, GraduationCap,
@@ -14,18 +16,19 @@ export default async function TeacherDashboard() {
 
   const now = new Date();
   const currentWeekType = await getCurrentWeekType();
-  const [teacher, announcements, teachingSchedules] = await Promise.all([
+  const [teacher, announcements, teachingSchedules, agenda] = await Promise.all([
     prisma.teacher.findFirst({
       where: { user: { email: session.email } },
       include: {
         homeroomOf: {
           include: {
-            students: { include: { user: { select: { name: true } } } },
+            students: { where: { studentStatus: "AKTIF" }, include: { user: { select: { name: true } } } },
             major: true,
           },
         },
         grades: { orderBy: { createdAt: "desc" }, take: 6 },
         _count: { select: { grades: true } },
+        teachingLoad: { include: { subject: { select: { name: true } } }, distinct: ["subjectId"] },
       },
     }),
     prisma.announcement.findMany({
@@ -43,10 +46,14 @@ export default async function TeacherDashboard() {
       include: { class: { include: { major: true } } },
       orderBy: [{ day: "asc" }, { startTime: "asc" }],
     }),
+    getWakilKepalaAgenda(),
   ]);
 
   const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
   const totalGradesCount = teacher?._count?.grades ?? 0;
+  const mataPelajaran = teacher?.teachingLoad.length
+    ? teacher.teachingLoad.map(t => t.subject.name).join(", ")
+    : (teacher?.subject && teacher.subject !== "—" ? teacher.subject : "Belum ada penugasan mengajar");
 
   const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
   const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
@@ -71,7 +78,7 @@ export default async function TeacherDashboard() {
             <p className="font-arabic text-gold text-2xl mb-1" style={{ lineHeight: 1.8 }}>اَلسَّلَامُ عَلَيْكُمْ</p>
             <h1 className="font-heading text-2xl font-bold text-white">{session.name}</h1>
             <p className="text-white/50 text-sm mt-0.5">
-              Mata Pelajaran: <span className="text-white/70">{teacher?.subject ?? "—"}</span>
+              Mata Pelajaran: <span className="text-white/70">{mataPelajaran}</span>
               {teacher?.nip && <span> · NIP: {teacher.nip}</span>}
             </p>
           </div>
@@ -116,25 +123,18 @@ export default async function TeacherDashboard() {
         {/* ── Stat Cards ── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            {
-              icon: Users, label: "Siswa Wali Kelas", value: totalStudents,
-              color: "text-primary-700", bg: "bg-primary-50", border: "border-primary-100",
-            },
-            {
-              icon: BookOpen, label: "Kelas Wali", value: teacher?.homeroomOf.length ?? 0,
-              color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100",
-            },
-            {
-              icon: TrendingUp, label: "Nilai Diinput", value: totalGradesCount,
-              color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100",
-            },
-          ].map(({ icon: Icon, label, value, color, bg, border }) => (
-            <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className={`w-10 h-10 rounded-2xl ${bg} border ${border} flex items-center justify-center mb-3`}>
-                <Icon size={18} className={color} />
+            { icon: Users, label: "Siswa Wali Kelas", value: totalStudents, grad: "from-primary-500 to-primary-700", ring: "ring-primary-100" },
+            { icon: BookOpen, label: "Kelas Wali", value: teacher?.homeroomOf.length ?? 0, grad: "from-amber-500 to-amber-600", ring: "ring-amber-100" },
+            { icon: TrendingUp, label: "Nilai Diinput", value: totalGradesCount, grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
+          ].map(({ icon: Icon, label, value, grad, ring }) => (
+            <div key={label} className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${grad} ring-1 ${ring} min-w-0`}>
+              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Icon size={56} className="text-white" />
               </div>
-              <p className="text-gray-400 text-xs font-medium mb-1">{label}</p>
-              <p className={`font-heading font-bold text-3xl ${color}`}>{value}</p>
+              <div className="relative">
+                <p className="text-white/70 text-xs font-medium mb-1">{label}</p>
+                <p className="font-heading font-bold text-3xl text-white">{value}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -148,7 +148,7 @@ export default async function TeacherDashboard() {
           {teacher?.homeroomOf.length ? (
             <div className="p-5 grid md:grid-cols-2 gap-4">
               {teacher.homeroomOf.map((cls) => (
-                <div key={cls.id} className="border border-gray-100 rounded-2xl p-5 hover:border-primary-200 hover:shadow-sm transition-all">
+                <div key={cls.id} className="border border-gray-100 rounded-2xl p-5 min-w-0 hover:border-primary-200 hover:shadow-sm transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h4 className="font-heading font-bold text-navy">{cls.name}</h4>
@@ -203,7 +203,7 @@ export default async function TeacherDashboard() {
                         {ds.map(s => (
                           <div key={s.id} className="px-4 py-2.5 flex items-center gap-3 text-xs">
                             <span className="font-mono text-primary-700 font-bold w-20 shrink-0 text-[10px]">{s.startTime}–{s.endTime}</span>
-                            <span className="font-medium text-gray-800 flex-1 truncate">{s.subject}</span>
+                            <span className="font-medium text-gray-800 flex-1 min-w-0 truncate">{s.subject}</span>
                             <span className="text-[10px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-semibold shrink-0">{s.class.name}</span>
                           </div>
                         ))}
@@ -260,6 +260,11 @@ export default async function TeacherDashboard() {
             </div>
           </div>
 
+        </div>
+
+        {/* ── Agenda Wakil Kepala ── */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <AgendaCalendar agenda={agenda} />
         </div>
 
         {/* ── Akses Cepat ── */}

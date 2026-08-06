@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { GURU_COLUMNS } from "@/lib/buku-induk-guru-columns";
 import * as XLSX from "xlsx";
 
 export async function GET(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const status = req.nextUrl.searchParams.get("status");
 
   const teachers = await prisma.teacher.findMany({

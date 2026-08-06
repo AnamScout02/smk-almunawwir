@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ClipboardList, ChevronRight, Users, TrendingUp, AlertTriangle, Download } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import EmptyState from "@/components/admin/EmptyState";
 
 export default async function GradesPage() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -14,10 +15,20 @@ export default async function GradesPage() {
     include: {
       homeroomOf: {
         include: {
-          students: { select: { id: true } },
+          students: { select: { id: true }, where: { studentStatus: "AKTIF" } },
           major: true,
         },
         orderBy: { grade: "asc" },
+      },
+      teachingLoad: {
+        select: {
+          class: {
+            include: {
+              students: { select: { id: true }, where: { studentStatus: "AKTIF" } },
+              major: true,
+            },
+          },
+        },
       },
       grades: {
         orderBy: { createdAt: "desc" },
@@ -36,6 +47,11 @@ export default async function GradesPage() {
 
   const recentGrades = teacher?.grades ?? [];
 
+  const classesById = new Map<string, NonNullable<typeof teacher>["homeroomOf"][number]>();
+  for (const c of teacher?.homeroomOf ?? []) classesById.set(c.id, c);
+  for (const a of teacher?.teachingLoad ?? []) if (!classesById.has(a.class.id)) classesById.set(a.class.id, a.class);
+  const myClasses = [...classesById.values()].sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name));
+
   const subjects = [...new Set(recentGrades.map((g) => g.subject))];
   const avgBySubject = subjects.map((subject) => {
     const sg = recentGrades.filter((g) => g.subject === subject);
@@ -45,13 +61,13 @@ export default async function GradesPage() {
   });
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+    <div className="p-6 lg:p-8">
       <PageHeader
         icon={<ClipboardList size={22} />}
         title="Nilai Siswa"
-        description="Pilih kelas untuk input nilai, atau lihat rekap di bawah."
+        description="Pilih kelas wali atau kelas yang Anda ampu untuk input nilai, atau lihat rekap di bawah."
         actions={
-          (teacher?.homeroomOf.length ?? 0) > 0 ? (
+          myClasses.length > 0 ? (
             <a href="/api/teacher/export/grades"
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
               <Download size={15} /> Export CSV
@@ -60,12 +76,12 @@ export default async function GradesPage() {
         }
       />
 
-      {/* Kelas wali */}
+      {/* Kelas wali + kelas yang diampu */}
       <div className="mb-8">
-        <h2 className="font-heading font-semibold text-lg text-primary-800 mb-4">Kelas Wali Saya</h2>
-        {teacher?.homeroomOf.length ? (
+        <h2 className="font-heading font-semibold text-lg text-primary-800 mb-4">Kelas Wali & Kelas yang Saya Ampu</h2>
+        {myClasses.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {teacher.homeroomOf.map((cls) => (
+            {myClasses.map((cls) => (
               <Link key={cls.id} href={`/dashboard/teacher/grades/${cls.id}`}
                 className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
@@ -83,9 +99,7 @@ export default async function GradesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border p-8 text-center text-gray-400 text-sm">
-            Anda belum menjadi wali kelas manapun.
-          </div>
+          <EmptyState icon={Users} title="Belum Ada Kelas" description="Anda belum ditugaskan sebagai wali kelas atau guru mapel di kelas manapun." />
         )}
       </div>
 

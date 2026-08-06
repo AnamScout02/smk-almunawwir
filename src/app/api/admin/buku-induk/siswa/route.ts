@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get("classId");
   const students = await prisma.student.findMany({
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const body = await req.json();
   const {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.create({
     data: {
-      name,
+      name: toProperCaseName(name),
       email,
       password: hashedPassword,
       role: "STUDENT",
@@ -77,13 +78,13 @@ export async function POST(req: NextRequest) {
       gender: gender || null,
       religion: religion || null,
       address: address || null,
-      parentName: parentName || null,
+      parentName: parentName ? toProperCaseName(parentName) : null,
       parentPhone: parentPhone || null,
       parentJob: parentJob || null,
-      previousSchool: previousSchool || null,
+      previousSchool: previousSchool ? toProperCase(previousSchool) : null,
       studentStatus: studentStatus || "AKTIF",
       studentNotes: studentNotes || null,
-      bukuIndukData: bukuIndukData || undefined,
+      bukuIndukData: bukuIndukData ? normalizeBukuIndukText(bukuIndukData) : undefined,
     },
     include: {
       user: { select: { name: true, email: true } },

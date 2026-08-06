@@ -17,6 +17,7 @@ export default async function TeacherStudentsPage() {
         include: {
           major: true,
           students: {
+            where: { studentStatus: "AKTIF" },
             include: { user: { select: { name: true, email: true } } },
             orderBy: { user: { name: "asc" } },
           },
@@ -29,7 +30,7 @@ export default async function TeacherStudentsPage() {
   const classes = teacher?.homeroomOf ?? [];
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+    <div className="p-6 lg:p-8">
       <PageHeader
         icon={<Users size={22} />}
         title="Daftar Siswa"

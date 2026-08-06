@@ -9,6 +9,7 @@ const MIME: Record<string, string> = {
   webp: "image/webp",
   gif: "image/gif",
   pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 };
 
 // Melayani file yang di-upload saat runtime secara langsung dari disk.

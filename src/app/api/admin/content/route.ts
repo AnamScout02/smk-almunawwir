@@ -4,13 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 
 export async function GET() {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const settings = await prisma.siteSetting.findMany({ orderBy: { key: "asc" } });
   return NextResponse.json(settings);
 }
 
 export async function PUT(req: Request) {
-  await verifyRole(["ADMIN"]);
+  await verifyRole(["ADMIN", "TAS"]);
   const { key, value } = await req.json() as { key: string; value: string };
   if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });
 

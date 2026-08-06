@@ -2,26 +2,29 @@ import { Users, BookOpen, Award, GraduationCap, Building2, Globe } from "lucide-
 import { getSettings } from "@/lib/site-settings";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
+import { prisma } from "@/lib/prisma";
 import StatCounter from "./StatCounter";
 
 export default async function Stats() {
   const lang = await getLang();
   const tr = t(lang);
-  const s = await getSettings([
-    "stats.students",
-    "stats.achievements",
-    "stats.graduation_rate",
-    "stats.years",
-    "stats.partners",
-    "stats.founded_year",
+  const [s, studentCount, majorCount] = await Promise.all([
+    getSettings([
+      "stats.achievements",
+      "stats.graduation_rate",
+      "stats.partners",
+      "stats.founded_year",
+    ]),
+    prisma.student.count({ where: { studentStatus: "AKTIF" } }).catch(() => 0),
+    prisma.major.count().catch(() => 0),
   ]);
 
   const stats = [
-    { icon: Users, value: parseInt(s["stats.students"]) || 1200, suffix: "+", label: tr.stat_students, desc: tr.stat_students_desc, accent: "text-emerald-400" },
-    { icon: BookOpen, value: 5, suffix: "", label: tr.stat_majors, desc: tr.stat_majors_desc, accent: "text-blue-400" },
+    { icon: Users, value: studentCount, suffix: "+", label: tr.stat_students, desc: tr.stat_students_desc, accent: "text-emerald-400" },
+    { icon: BookOpen, value: majorCount, suffix: "", label: tr.stat_majors, desc: tr.stat_majors_desc, accent: "text-blue-400" },
     { icon: Award, value: parseInt(s["stats.achievements"]) || 50, suffix: "+", label: tr.stat_achievements, desc: tr.stat_achievements_desc, accent: "text-gold" },
     { icon: GraduationCap, value: parseInt(s["stats.graduation_rate"]) || 98, suffix: "%", label: tr.stat_graduation, desc: tr.stat_graduation_desc, accent: "text-purple-400" },
-    { icon: Building2, value: parseInt(s["stats.years"]) || 12, suffix: "", label: tr.stat_years, desc: `${tr.stat_years_desc} ${s["stats.founded_year"] || "2014"}`, accent: "text-amber-400" },
+    { icon: Building2, value: Math.max(new Date().getFullYear() - (parseInt(s["stats.founded_year"]) || 2014), 0), suffix: "", label: tr.stat_years, desc: `${tr.stat_years_desc} ${s["stats.founded_year"] || "2014"}`, accent: "text-amber-400" },
     { icon: Globe, value: parseInt(s["stats.partners"]) || 30, suffix: "+", label: tr.stat_partners, desc: tr.stat_partners_desc, accent: "text-rose-400" },
   ];
 

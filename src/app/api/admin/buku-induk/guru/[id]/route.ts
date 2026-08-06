@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
+import { normalizeBukuIndukText } from "@/lib/text";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyTasAccess();
   const { id } = await params;
   const body = await req.json();
   const {
@@ -17,9 +19,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     // Jika ada password baru, update password user
     if (password && typeof password === "string" && password.trim().length >= 1) {
       const hashed = await bcrypt.hash(password, 12);
-      const teacherRef = await prisma.teacher.findUnique({ where: { id }, select: { userId: true } });
+      const teacherRef = await prisma.teacher.findUnique({ where: { id }, select: { userId: true, user: { select: { name: true, email: true } } } });
       if (teacherRef) {
         await prisma.user.update({ where: { id: teacherRef.userId }, data: { password: hashed } });
+        await logActivity(session, {
+          action: "RESET_PASSWORD", entity: "Teacher", entityId: id,
+          description: `${session.name} mereset password guru/pegawai "${teacherRef.user.name}" (${teacherRef.user.email})`,
+        });
       }
     }
 
@@ -37,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         startDate:     startDate ? new Date(startDate) : null,
         teacherStatus: teacherStatus || "AKTIF",
         teacherNotes:  teacherNotes || null,
-        ...(bukuIndukData !== undefined ? { bukuIndukData } : {}),
+        ...(bukuIndukData !== undefined ? { bukuIndukData: normalizeBukuIndukText(bukuIndukData) } : {}),
       },
       include: {
         user: { select: { name: true, email: true } },

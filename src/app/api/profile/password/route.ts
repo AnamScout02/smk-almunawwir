@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
@@ -24,6 +25,11 @@ export async function POST(req: Request) {
 
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+
+    await logActivity(session, {
+      action: "CHANGE_OWN_PASSWORD", entity: "User", entityId: user.id,
+      description: `${session.name} mengganti password akunnya sendiri`,
+    });
 
     return Response.json({ ok: true });
   } catch {

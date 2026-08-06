@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, Mail, IdCard, BookOpen, School } from "lucide-react";
+import { ArrowLeft, Mail, IdCard, BookOpen, School, UserCircle } from "lucide-react";
 import Link from "next/link";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import AvatarUpload from "@/components/shared/AvatarUpload";
+import PageHeader from "@/components/admin/PageHeader";
 
 export default async function StudentProfilePage() {
   const session = await verifyRole(["STUDENT"]);
@@ -20,19 +21,19 @@ export default async function StudentProfilePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ backgroundImage: "radial-gradient(circle, rgba(15,26,69,0.045) 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }}>
-      <header className="bg-primary-900 text-white px-6 md:px-8 py-5 flex items-center gap-4">
-        <Link href="/dashboard/student"
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h1 className="font-heading text-xl font-bold">Profil Saya</h1>
-          <p className="text-white/60 text-sm">Akun & pengaturan</p>
-        </div>
-      </header>
+    <div className="p-6 lg:p-8">
+      <PageHeader
+        icon={<UserCircle size={22} />}
+        title="Profil Saya"
+        description="Akun & pengaturan"
+        actions={
+          <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+            <ArrowLeft size={18} />
+          </Link>
+        }
+      />
 
-      <div className="px-6 md:px-8 py-8 max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl space-y-6">
         {/* Info profil */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
@@ -85,12 +86,6 @@ export default async function StudentProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
           <ChangePasswordForm />
-        </div>
-
-        <div className="text-center">
-          <Link href="/dashboard/student" className="text-sm text-primary-600 hover:text-primary-800 font-medium">
-            ← Kembali ke Dashboard
-          </Link>
         </div>
       </div>
     </div>

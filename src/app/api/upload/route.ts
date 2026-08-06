@@ -6,27 +6,39 @@ import { verifySession } from "@/lib/dal";
 export async function POST(req: NextRequest) {
   try {
     const session = await verifySession();
-    if (session.role !== "ADMIN") {
-      return Response.json({ error: "Tidak diizinkan" }, { status: 403 });
-    }
-
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const folder = (formData.get("folder") as string) || "misc";
+
+    // Siswa hanya boleh upload foto biodata sendiri, bukti jurnal PKL & jawaban tugas; guru boleh upload materi & tugas; admin bebas semua folder.
+    const isStudentAllowedFolder = folder === "buku-induk/masuk" || folder === "pkl-jurnal" || folder === "tugas-jawaban";
+    const isTeacherAllowedFolder = folder === "materi" || folder === "tugas";
+    const allowed_ =
+      session.role === "ADMIN" ||
+      (session.role === "STUDENT" && isStudentAllowedFolder) ||
+      (session.role === "TEACHER" && isTeacherAllowedFolder);
+    if (!allowed_) {
+      return Response.json({ error: "Tidak diizinkan" }, { status: 403 });
+    }
 
     if (!file) {
       return Response.json({ error: "Tidak ada file" }, { status: 400 });
     }
 
     const isIdPhotoFolder = folder === "buku-induk/masuk" || folder === "buku-induk/keluar";
+    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban";
     const allowed = isIdPhotoFolder
       ? ["image/jpeg", "image/jpg", "image/png"]
-      : ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+      : isDocFolder
+        ? ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"]
+        : ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) {
       return Response.json({
         error: isIdPhotoFolder
           ? "Format file tidak didukung. Foto masuk/keluar hanya menerima JPG atau PNG."
-          : "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.",
+          : isDocFolder
+            ? "Format file tidak didukung. Gunakan PDF, JPG, PNG, atau WEBP."
+            : "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.",
       }, { status: 400 });
     }
 

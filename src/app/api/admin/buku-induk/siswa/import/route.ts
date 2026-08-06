@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { KEAHLIAN_MAP } from "@/lib/keahlian-map";
+import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import * as XLSX from "xlsx";
 
 function parseDate(val: unknown): Date | null {
@@ -35,7 +36,7 @@ function dateStr(val: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -95,10 +96,10 @@ export async function POST(req: NextRequest) {
       address:        s(row["Desa/Kelurahan"])
         ? [s(row["Dusun/Lingkungan"]), s(row["Desa/Kelurahan"]), s(row["Kecamatan"]), s(row["Kabupaten/Kota"]), s(row["Provinsi"])].filter(Boolean).join(", ")
         : s(row["Asal Sekolah (SMP/MTs)"]) || null,
-      parentName:     s(row["Nama Ayah"]) || null,
+      parentName:     s(row["Nama Ayah"]) ? toProperCaseName(s(row["Nama Ayah"])) : null,
       parentPhone:    s(row["No. HP Orang Tua"]) || null,
       parentJob:      s(row["Pekerjaan Ayah"]) || null,
-      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) || null,
+      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) ? toProperCase(s(row["Asal Sekolah (SMP/MTs)"])) : null,
       enrollYear:     enrollYear && !isNaN(enrollYear) ? enrollYear : null,
       studentStatus:  s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"]).toUpperCase() || "AKTIF",
       studentNotes:   s(row["Keterangan"]) || null,
@@ -198,12 +199,13 @@ export async function POST(req: NextRequest) {
       alasanPindah:     s(row["Alasan Pindah/Keluar"]) || null,
     };
 
+    const bukuIndukDataNorm = normalizeBukuIndukText(bukuIndukData);
     try {
       const existing = await prisma.student.findUnique({ where: { nis } });
       if (existing) {
         await prisma.student.update({
           where: { nis },
-          data: { ...basicData, majorId, bukuIndukData, ...(classId ? { classId } : {}) },
+          data: { ...basicData, majorId, bukuIndukData: bukuIndukDataNorm, ...(classId ? { classId } : {}) },
         });
         results.updated++;
       } else {
@@ -216,7 +218,7 @@ export async function POST(req: NextRequest) {
           const bcrypt = await import("bcryptjs");
           user = await prisma.user.create({
             data: {
-              name: nama,
+              name: toProperCaseName(nama),
               email,
               password: await bcrypt.hash(nis, 10),
               role: "STUDENT",
@@ -224,7 +226,7 @@ export async function POST(req: NextRequest) {
           });
         }
         await prisma.student.create({
-          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData, ...(classId ? { classId } : {}) },
+          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData: bukuIndukDataNorm, ...(classId ? { classId } : {}) },
         });
         results.created++;
       }

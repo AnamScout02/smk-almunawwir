@@ -1,19 +1,24 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Search, Edit2, Trash2, Save, Eye, EyeOff, Loader2, UserCog, ShieldCheck, GraduationCap, Users } from "lucide-react";
+import Link from "next/link";
+import { Plus, Search, Edit2, Trash2, Save, Eye, EyeOff, Loader2, UserCog, ShieldCheck, GraduationCap, Users, Award, ClipboardList, Printer } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "TEACHER" | "STUDENT";
+  role: "ADMIN" | "TEACHER" | "STUDENT" | "TAS";
   createdAt: string;
+  staffJabatan: { jabatan: { id: string; name: string } }[];
 }
+
+interface JabatanOption { id: string; name: string }
 
 interface Major { id: string; name: string; code: string }
 interface ClassItem { id: string; name: string; grade: number }
@@ -21,7 +26,7 @@ interface ClassItem { id: string; name: string; grade: number }
 interface FormState {
   id?: string;
   name: string; email: string; password: string;
-  role: "ADMIN" | "TEACHER" | "STUDENT";
+  role: "ADMIN" | "TEACHER" | "STUDENT" | "TAS";
   // guru
   nip: string; subject: string; phone: string;
   // siswa
@@ -35,6 +40,7 @@ const emptyForm: FormState = {
 };
 
 export default function UsersPage() {
+  const confirmDialog = useConfirm();
   const [users, setUsers] = useState<User[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -45,6 +51,10 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([]);
+  const [jabatanModal, setJabatanModal] = useState<User | null>(null);
+  const [selectedJabatanIds, setSelectedJabatanIds] = useState<string[]>([]);
+  const [savingJabatan, setSavingJabatan] = useState(false);
 
   async function fetchUsers() {
     setLoading(true);
@@ -59,7 +69,29 @@ export default function UsersPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+    fetch("/api/admin/jabatan").then(r => r.json()).then(d => { if (Array.isArray(d)) setJabatanOptions(d); }).catch(() => {});
+  }, []);
+
+  function openJabatan(u: User) {
+    setJabatanModal(u);
+    setSelectedJabatanIds(u.staffJabatan.map(j => j.jabatan.id));
+  }
+  function toggleJabatan(id: string) {
+    setSelectedJabatanIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+  async function saveJabatan() {
+    if (!jabatanModal) return;
+    setSavingJabatan(true);
+    await fetch(`/api/admin/users/${jabatanModal.id}/jabatan`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jabatanIds: selectedJabatanIds }),
+    });
+    setSavingJabatan(false);
+    setJabatanModal(null);
+    fetchUsers();
+  }
 
   const filtered = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -87,13 +119,14 @@ export default function UsersPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Hapus pengguna "${name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    if (!await confirmDialog(`Hapus pengguna "${name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
     await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
     fetchUsers();
   }
 
   const admins = filtered.filter(u => u.role === "ADMIN");
   const teachersList = filtered.filter(u => u.role === "TEACHER");
+  const tasList = filtered.filter(u => u.role === "TAS");
   const studentsList = filtered.filter(u => u.role === "STUDENT");
 
   return (
@@ -103,9 +136,15 @@ export default function UsersPage() {
         title="Akun Pengguna"
         description="Kelola akun login admin, guru, dan siswa"
         actions={
-          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={16} /> Tambah Akun
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href="/dashboard/admin/users/cetak-akun"
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition whitespace-nowrap">
+              <Printer size={15} /> Cetak Akun Guru &amp; Pegawai
+            </Link>
+            <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+              <Plus size={16} /> Tambah Akun
+            </button>
+          </div>
         }
       />
 
@@ -130,6 +169,11 @@ export default function UsersPage() {
           {teachersList.length > 0 && (
             <GroupedSection title="Guru" count={teachersList.length} icon={GraduationCap}>
               <UserTable items={teachersList} onEdit={openEdit} onDelete={handleDelete} />
+            </GroupedSection>
+          )}
+          {tasList.length > 0 && (
+            <GroupedSection title="TAS (Tenaga Administrasi Sekolah)" count={tasList.length} icon={ClipboardList}>
+              <UserTable items={tasList} onEdit={openEdit} onDelete={handleDelete} onManageJabatan={openJabatan} />
             </GroupedSection>
           )}
           {studentsList.length > 0 && (
@@ -185,6 +229,7 @@ export default function UsersPage() {
                   options={[
                     { value: "STUDENT", label: "Siswa" },
                     { value: "TEACHER", label: "Guru" },
+                    { value: "TAS", label: "TAS (Tenaga Administrasi Sekolah)" },
                     { value: "ADMIN", label: "Admin" },
                   ]}
                 />
@@ -249,11 +294,42 @@ export default function UsersPage() {
               {error && <p className="error-msg">{error}</p>}
             </form>
       </Modal>
+
+      <Modal
+        open={!!jabatanModal}
+        onClose={() => setJabatanModal(null)}
+        title="Kelola Jabatan"
+        description={jabatanModal?.name}
+        footer={
+          <>
+            <button type="button" onClick={() => setJabatanModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="button" onClick={saveJabatan} disabled={savingJabatan} className="btn-modal-save flex-1">
+              {savingJabatan ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
+            </button>
+          </>
+        }
+      >
+        {jabatanOptions.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
+        ) : (
+          <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+            {jabatanOptions.map(j => (
+              <label key={j.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" checked={selectedJabatanIds.includes(j.id)} onChange={() => toggleJabatan(j.id)}
+                  className="w-4 h-4 rounded accent-primary-700" />
+                <span className="text-sm text-gray-700">{j.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
 
-function UserTable({ items, onEdit, onDelete }: { items: User[]; onEdit: (u: User) => void; onDelete: (id: string, name: string) => void }) {
+function UserTable({ items, onEdit, onDelete, onManageJabatan }: {
+  items: User[]; onEdit: (u: User) => void; onDelete: (id: string, name: string) => void; onManageJabatan?: (u: User) => void;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -263,6 +339,7 @@ function UserTable({ items, onEdit, onDelete }: { items: User[]; onEdit: (u: Use
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden sm:table-cell">Email</th>
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Bergabung</th>
+            {onManageJabatan && <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">Jabatan</th>}
             <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
           </tr>
         </thead>
@@ -277,8 +354,24 @@ function UserTable({ items, onEdit, onDelete }: { items: User[]; onEdit: (u: Use
               <td className="px-5 py-3.5 text-gray-400 text-xs hidden md:table-cell">
                 {new Date(u.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
               </td>
+              {onManageJabatan && (
+                <td className="px-5 py-3.5 hidden lg:table-cell">
+                  {u.staffJabatan.length === 0 ? (
+                    <span className="text-gray-300 text-xs">—</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {u.staffJabatan.map(j => (
+                        <span key={j.jabatan.id} className="text-[10px] font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">{j.jabatan.name}</span>
+                      ))}
+                    </div>
+                  )}
+                </td>
+              )}
               <td className="px-5 py-3.5 text-right">
                 <div className="flex items-center justify-end gap-2">
+                  {onManageJabatan && (
+                    <button onClick={() => onManageJabatan(u)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition" title="Kelola Jabatan"><Award size={15} /></button>
+                  )}
                   <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition"><Edit2 size={15} /></button>
                   <button onClick={() => onDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
                 </div>

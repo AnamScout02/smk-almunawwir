@@ -1,15 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { assertHumas } from "@/lib/humas-guard";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertHumas(session);
     const students = await prisma.student.findMany({
+      where: { studentStatus: "AKTIF" },
       include: {
         user: { select: { name: true, email: true } },
         class: { select: { name: true, grade: true } },
         major: { select: { name: true, code: true } },
-        internship: true,
+        internship: { include: { teacher: { include: { user: { select: { name: true } } } } } },
       },
       orderBy: [{ class: { grade: "asc" } }, { user: { name: "asc" } }],
     });

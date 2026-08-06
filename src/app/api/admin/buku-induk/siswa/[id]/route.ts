@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
+import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { id } = await params;
   const student = await prisma.student.findUnique({
     where: { id },
@@ -21,23 +23,43 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyTasAccess();
   const { id } = await params;
   const body = await req.json();
   const {
-    nisn, birthPlace, birthDate, gender, religion, address,
+    name, nisn, birthPlace, birthDate, gender, religion, address,
     parentName, parentPhone, parentJob, previousSchool, enrollYear,
     studentStatus, exitDate, studentNotes,
     bukuIndukData, password,
   } = body;
 
   try {
-    // Jika ada password baru, update password user
-    if (password && typeof password === "string" && password.trim().length >= 1) {
-      const hashed = await bcrypt.hash(password, 12);
-      const studentRef = await prisma.student.findUnique({ where: { id }, select: { userId: true } });
+    // Jika ada password dan/atau nama baru, update data user terkait
+    if ((password && typeof password === "string" && password.trim().length >= 1) || (name && typeof name === "string" && name.trim().length >= 1)) {
+      const studentRef = await prisma.student.findUnique({ where: { id }, select: { userId: true, user: { select: { name: true, email: true } } } });
       if (studentRef) {
-        await prisma.user.update({ where: { id: studentRef.userId }, data: { password: hashed } });
+        const userData: { password?: string; name?: string } = {};
+        if (password && typeof password === "string" && password.trim().length >= 1) {
+          userData.password = await bcrypt.hash(password, 12);
+        }
+        if (name && typeof name === "string" && name.trim().length >= 1) {
+          userData.name = toProperCaseName(name);
+        }
+        await prisma.user.update({ where: { id: studentRef.userId }, data: userData });
+
+        if (userData.password) {
+          await logActivity(session, {
+            action: "RESET_PASSWORD", entity: "Student", entityId: id,
+            description: `${session.name} mereset password siswa "${studentRef.user.name}" (${studentRef.user.email})`,
+          });
+        }
+        if (userData.name && userData.name !== studentRef.user.name) {
+          await logActivity(session, {
+            action: "UPDATE_STUDENT_NAME", entity: "Student", entityId: id,
+            description: `${session.name} mengubah nama siswa dari "${studentRef.user.name}" menjadi "${userData.name}"`,
+            metadata: { before: studentRef.user.name, after: userData.name },
+          });
+        }
       }
     }
 
@@ -50,15 +72,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         gender:         gender || null,
         religion:       religion || null,
         address:        address || null,
-        parentName:     parentName || null,
+        parentName:     parentName ? toProperCaseName(parentName) : null,
         parentPhone:    parentPhone || null,
         parentJob:      parentJob || null,
-        previousSchool: previousSchool || null,
+        previousSchool: previousSchool ? toProperCase(previousSchool) : null,
         enrollYear:     enrollYear ? parseInt(enrollYear) : null,
         studentStatus:  studentStatus || "AKTIF",
         exitDate:       exitDate ? new Date(exitDate) : null,
         studentNotes:   studentNotes || null,
-        bukuIndukData:  bukuIndukData ?? undefined,
+        bukuIndukData:  bukuIndukData ? normalizeBukuIndukText(bukuIndukData) : undefined,
       },
       include: {
         user: { select: { name: true, email: true } },

@@ -3,6 +3,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Home, ArrowLeft, Search } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function NotFound() {
   return (
     <>

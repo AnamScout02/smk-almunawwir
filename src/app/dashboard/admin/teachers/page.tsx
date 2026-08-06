@@ -1,10 +1,11 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
-import { Search, Loader2, BookOpen, Eye, UserCog, GraduationCap, Users } from "lucide-react";
+import { Search, Loader2, BookOpen, Eye, UserCog, GraduationCap, Users, Award, Save } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
+import Modal from "@/components/admin/Modal";
 
 interface Teacher {
   id: string;
@@ -14,12 +15,19 @@ interface Teacher {
   shortCode: string | null;
   user: { id: string; name: string; email: string };
   homeroomOf: { id: string; name: string }[];
+  jabatan: { jabatan: { id: string; name: string } }[];
 }
+
+interface JabatanOption { id: string; name: string }
 
 export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([]);
+  const [jabatanModal, setJabatanModal] = useState<Teacher | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -28,7 +36,31 @@ export default function AdminTeachersPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    fetch("/api/admin/jabatan").then(r => r.json()).then(d => { if (Array.isArray(d)) setJabatanOptions(d); }).catch(() => {});
+  }, []);
+
+  function openJabatan(t: Teacher) {
+    setJabatanModal(t);
+    setSelectedIds(t.jabatan.map(j => j.jabatan.id));
+  }
+
+  function toggleJabatan(id: string) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  async function saveJabatan() {
+    if (!jabatanModal) return;
+    setSaving(true);
+    await fetch(`/api/admin/teachers/${jabatanModal.id}/jabatan`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jabatanIds: selectedIds }),
+    });
+    setSaving(false);
+    setJabatanModal(null);
+    load();
+  }
 
   const filtered = teachers.filter(t => {
     const q = search.toLowerCase();
@@ -60,22 +92,51 @@ export default function AdminTeachersPage() {
         <div className="space-y-6">
           {waliKelas.length > 0 && (
             <GroupedSection title="Wali Kelas" count={waliKelas.length} icon={GraduationCap}>
-              <TeacherTable items={waliKelas} />
+              <TeacherTable items={waliKelas} onManageJabatan={openJabatan} />
             </GroupedSection>
           )}
           {bukanWali.length > 0 && (
             <GroupedSection title="Bukan Wali Kelas" count={bukanWali.length} icon={Users}>
-              <TeacherTable items={bukanWali} />
+              <TeacherTable items={bukanWali} onManageJabatan={openJabatan} />
             </GroupedSection>
           )}
           <p className="text-xs text-gray-400">{filtered.length} guru terdaftar</p>
         </div>
       )}
+
+      <Modal
+        open={!!jabatanModal}
+        onClose={() => setJabatanModal(null)}
+        title="Kelola Jabatan"
+        description={jabatanModal?.user.name}
+        footer={
+          <>
+            <button type="button" onClick={() => setJabatanModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="button" onClick={saveJabatan} disabled={saving} className="btn-modal-save flex-1">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
+            </button>
+          </>
+        }
+      >
+        {jabatanOptions.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
+        ) : (
+          <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+            {jabatanOptions.map(j => (
+              <label key={j.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" checked={selectedIds.includes(j.id)} onChange={() => toggleJabatan(j.id)}
+                  className="w-4 h-4 rounded accent-primary-700" />
+                <span className="text-sm text-gray-700">{j.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
 
-function TeacherTable({ items }: { items: Teacher[] }) {
+function TeacherTable({ items, onManageJabatan }: { items: Teacher[]; onManageJabatan: (t: Teacher) => void }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -86,6 +147,7 @@ function TeacherTable({ items }: { items: Teacher[] }) {
             <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kode</th>
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden sm:table-cell">NIP</th>
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
+            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Jabatan</th>
             <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">HP</th>
             <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
           </tr>
@@ -109,11 +171,28 @@ function TeacherTable({ items }: { items: Teacher[] }) {
                   {t.subject}
                 </span>
               </td>
+              <td className="px-5 py-3.5 hidden md:table-cell">
+                {t.jabatan.length === 0 ? (
+                  <span className="text-gray-300 text-xs">—</span>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {t.jabatan.map(j => (
+                      <span key={j.jabatan.id} className="text-[10px] font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">
+                        {j.jabatan.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </td>
               <td className="px-5 py-3.5 text-xs text-gray-500 hidden lg:table-cell">
                 {t.phone ?? <span className="text-gray-300">—</span>}
               </td>
               <td className="px-5 py-3.5 text-right">
                 <div className="flex items-center justify-end gap-1">
+                  <button onClick={() => onManageJabatan(t)}
+                    className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition" title="Kelola Jabatan">
+                    <Award size={14} />
+                  </button>
                   <Link href={`/dashboard/admin/teachers/${t.id}`}
                     className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Lihat detail">
                     <Eye size={14} />

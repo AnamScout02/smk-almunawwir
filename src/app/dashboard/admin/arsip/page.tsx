@@ -7,6 +7,7 @@ import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Arsip {
   id: string; judul: string; kategori: string; nomor?: string;
@@ -24,6 +25,7 @@ function formatTgl(d: string) {
 }
 
 export default function ArsipPage() {
+  const confirmDialog = useConfirm();
   const [data, setData] = useState<Arsip[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -78,7 +80,7 @@ export default function ArsipPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Hapus arsip ini?")) return;
+    if (!await confirmDialog("Hapus arsip ini?")) return;
     await fetch(`/api/admin/arsip/${id}`, { method: "DELETE" });
     fetchData();
   }

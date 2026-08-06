@@ -24,9 +24,11 @@ const tgl = (v?: string | Date | null): string => {
   if (!v) return "";
   const d = typeof v === "string" ? new Date(v) : v;
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 };
 const genderLabel = (v?: string | null) => v === "L" ? "Laki-laki" : v === "P" ? "Perempuan" : "";
+/** Nama kabupaten/kota tanpa kata "Kabupaten"/"Kota" di depan — labelnya sudah menyebut "Kabupaten/Kota". */
+const kabupatenName = (v: string) => v.replace(/^(Kabupaten|Kota)\s+/i, "");
 
 export interface ColDef { key: string; label: string; group: string; get: (s: StudentRow) => string }
 
@@ -55,7 +57,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "rw", label: "RW", group: "B. Tempat Tinggal Siswa", get: s => b(s, "rw") },
   { key: "desa", label: "Desa/Kelurahan", group: "B. Tempat Tinggal Siswa", get: s => b(s, "desa") },
   { key: "kecamatan", label: "Kecamatan", group: "B. Tempat Tinggal Siswa", get: s => b(s, "kecamatan") },
-  { key: "kabupaten", label: "Kabupaten/Kota", group: "B. Tempat Tinggal Siswa", get: s => b(s, "kabupaten") },
+  { key: "kabupaten", label: "Kabupaten/Kota", group: "B. Tempat Tinggal Siswa", get: s => kabupatenName(b(s, "kabupaten")) },
   { key: "province", label: "Provinsi", group: "B. Tempat Tinggal Siswa", get: s => b(s, "province") },
   { key: "studentPhone", label: "No. HP/Tlp Siswa", group: "B. Tempat Tinggal Siswa", get: s => b(s, "studentPhone") },
   { key: "parentPhone", label: "No. HP/Tlp Orang Tua", group: "B. Tempat Tinggal Siswa", get: s => s.parentPhone ?? "" },
@@ -79,6 +81,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "alasanPindahKe", label: "Alasan Pindah ke SMK Ini", group: "D. Pendidikan Sebelumnya", get: s => b(s, "alasanPindahKe") },
   { key: "tingkatMasuk", label: "Diterima di Tingkat", group: "D. Pendidikan Sebelumnya", get: s => b(s, "tingkatMasuk") },
   { key: "rombel", label: "Rombel", group: "D. Pendidikan Sebelumnya", get: s => b(s, "rombel") },
+  { key: "class", label: "Kelas Saat Ini", group: "D. Pendidikan Sebelumnya", get: s => s.class?.name ?? "" },
   { key: "bidangKeahlian", label: "Bidang Keahlian", group: "D. Pendidikan Sebelumnya", get: s => b(s, "bidangKeahlian") },
   { key: "programKeahlian", label: "Program Keahlian", group: "D. Pendidikan Sebelumnya", get: s => b(s, "programKeahlian") },
   { key: "kompetensiKeahlian", label: "Konsentrasi Keahlian", group: "D. Pendidikan Sebelumnya", get: s => b(s, "kompetensiKeahlian") },
@@ -100,7 +103,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "fatherRw", label: "RW Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherRw") },
   { key: "fatherDesa", label: "Desa Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherDesa") },
   { key: "fatherKecamatan", label: "Kecamatan Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherKecamatan") },
-  { key: "fatherKabupaten", label: "Kabupaten Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherKabupaten") },
+  { key: "fatherKabupaten", label: "Kabupaten Ayah", group: "E. Keterangan Ayah", get: s => kabupatenName(b(s, "fatherKabupaten")) },
   { key: "fatherProvince", label: "Provinsi Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherProvince") },
   { key: "fatherAlive", label: "Kondisi Ayah", group: "E. Keterangan Ayah", get: s => b(s, "fatherAlive") },
 
@@ -119,7 +122,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "motherRw", label: "RW Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherRw") },
   { key: "motherDesa", label: "Desa Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherDesa") },
   { key: "motherKecamatan", label: "Kecamatan Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherKecamatan") },
-  { key: "motherKabupaten", label: "Kabupaten Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherKabupaten") },
+  { key: "motherKabupaten", label: "Kabupaten Ibu", group: "F. Keterangan Ibu", get: s => kabupatenName(b(s, "motherKabupaten")) },
   { key: "motherProvince", label: "Provinsi Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherProvince") },
   { key: "motherAlive", label: "Kondisi Ibu", group: "F. Keterangan Ibu", get: s => b(s, "motherAlive") },
 
@@ -138,7 +141,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "guardianRw", label: "RW Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianRw") },
   { key: "guardianDesa", label: "Desa Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianDesa") },
   { key: "guardianKecamatan", label: "Kecamatan Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianKecamatan") },
-  { key: "guardianKabupaten", label: "Kabupaten Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianKabupaten") },
+  { key: "guardianKabupaten", label: "Kabupaten Wali", group: "G. Keterangan Wali", get: s => kabupatenName(b(s, "guardianKabupaten")) },
   { key: "guardianProvince", label: "Provinsi Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianProvince") },
   { key: "guardianPhone", label: "No. HP/Tlp Wali", group: "G. Keterangan Wali", get: s => b(s, "guardianPhone") },
 
@@ -179,8 +182,4 @@ export const SISWA_COLUMNS: ColDef[] = [
 
   // M. Akun & Login
   { key: "email", label: "Email Login", group: "M. Akun & Login", get: s => s.user.email },
-
-  // Info tambahan kelas (di luar A-M, untuk memudahkan filter/rekap)
-  { key: "class", label: "Kelas", group: "Sekolah", get: s => s.class?.name ?? "" },
-  { key: "major", label: "Jurusan", group: "Sekolah", get: s => s.major.name },
 ];

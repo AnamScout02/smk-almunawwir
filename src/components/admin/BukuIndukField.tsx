@@ -1,6 +1,7 @@
 "use client";
 import DatePicker from "@/components/shared/DatePicker";
 import Select from "@/components/admin/Select";
+import { toProperCase } from "@/lib/text";
 
 interface FieldProps {
   label: string;
@@ -8,7 +9,7 @@ interface FieldProps {
   onChange: (v: string) => void;
   type?: string;
   wide?: boolean;
-  options?: string[];
+  options?: string[] | { value: string; label: string }[];
   min?: number;
   max?: number;
   maxLen?: number;
@@ -28,7 +29,7 @@ export default function Field({
         <Select
           value={value}
           onChange={onChange}
-          options={options.map(o => ({ value: o, label: o }))}
+          options={options.map(o => typeof o === "string" ? { value: o, label: o } : o)}
           placeholder={placeholder ?? "— Pilih —"}
           disabled={readOnly}
         />
@@ -40,10 +41,15 @@ export default function Field({
           placeholder={placeholder} value={value}
           onChange={e => onChange(e.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
       ) : type === "nik" ? (
-        <input className={cls} type="text" inputMode="numeric"
-          pattern={`[0-9]{${maxLen ?? 16}}`} maxLength={maxLen ?? 16}
-          placeholder={`${maxLen ?? 16} digit`} value={value}
-          onChange={e => onChange(e.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
+        <>
+          <input className={cls} type="text" inputMode="numeric"
+            pattern={`[0-9]{${maxLen ?? 16}}`} maxLength={maxLen ?? 16}
+            placeholder={`${maxLen ?? 16} digit`} value={value}
+            onChange={e => onChange(e.target.value.replace(/\D/g, ""))} readOnly={readOnly} />
+          {!readOnly && value.length > 0 && value.length !== (maxLen ?? 16) && (
+            <p className="text-xs text-amber-600 mt-1">Harus {maxLen ?? 16} digit (baru {value.length})</p>
+          )}
+        </>
       ) : type === "number" ? (
         <input className={cls} type="number" min={min} max={max} placeholder={placeholder}
           value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly} />
@@ -51,7 +57,8 @@ export default function Field({
         <DatePicker value={value} onChange={onChange} disabled={readOnly} />
       ) : (
         <input className={cls} type={type} maxLength={maxLen} placeholder={placeholder}
-          value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly} />
+          value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly}
+          onBlur={e => { if (!readOnly && e.target.value) onChange(toProperCase(e.target.value)); }} />
       )}
     </div>
   );

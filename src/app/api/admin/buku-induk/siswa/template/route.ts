@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import * as XLSX from "xlsx";
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const headers = [
     // Identitas utama

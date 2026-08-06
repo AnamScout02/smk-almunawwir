@@ -9,6 +9,8 @@ import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
 import { themeGradient, withAlpha } from "@/lib/color";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface Major {
   id: string;
@@ -32,6 +34,8 @@ interface FormState {
 const emptyForm: FormState = { name: "", code: "", description: "", logoUrl: "" };
 
 export default function AdminMajorsPage() {
+  const confirmDialog = useConfirm();
+  const toast = useToast();
   const [majors, setMajors] = useState<Major[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
@@ -83,10 +87,10 @@ export default function AdminMajorsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Hapus jurusan ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!(await confirmDialog("Hapus jurusan ini? Tindakan ini tidak bisa dibatalkan."))) return;
     startTransition(async () => {
       const res = await fetch(`/api/admin/majors/${id}`, { method: "DELETE" });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Gagal menghapus"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Gagal menghapus"); return; }
       load();
     });
   }

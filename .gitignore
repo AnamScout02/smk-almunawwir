@@ -42,3 +42,4 @@ next-env.d.ts
 
 # user uploads (handled separately on server)
 /public/uploads/
+.claude/

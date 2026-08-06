@@ -4,12 +4,14 @@ import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Image, Newspaper, GalleryHorizontal,
-  ClipboardList, Users, MessageSquare, LogOut, Menu, X,
+  ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut, Menu, X,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, Database, CalendarDays,
-  Archive, Repeat, Mail, BookMarked, Clock, Users2,
+  Archive, Repeat, Mail, BookMarked, Clock, Users2, ShieldCheck, Award, Building2, ListChecks, Boxes,
+  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 const COLLAPSE_KEY = "admin-sidebar-collapsed";
 
@@ -39,11 +41,30 @@ const menuGroups = [
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, badge: 0 },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, badge: 0 },
       { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
+      { href: "/dashboard/admin/jabatan", label: "Jabatan", icon: Award, badge: 0 },
+      { href: "/dashboard/admin/program-kerja", label: "Program Kerja", icon: ListChecks, badge: 0 },
+      { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, badge: 0 },
+      { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, badge: 0 },
+      { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, badge: 0 },
+      { href: "/dashboard/admin/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag, badge: 0 },
+      { href: "/dashboard/admin/perpustakaan", label: "Perpustakaan", icon: Library, badge: 0 },
+      { href: "/dashboard/admin/jaringan", label: "Jaringan Sekolah", icon: Network, badge: 0 },
       { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, badge: 0 },
+      { href: "/dashboard/admin/pkl-pendaftaran", label: "Pendaftaran PKL", icon: FileCheck2, badge: 0 },
+      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, badge: 0 },
       { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, badge: 0 },
       { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked, badge: 0 },
       { href: "/dashboard/admin/teaching-assignments", label: "Penugasan Mengajar", icon: Users2, badge: 0 },
       { href: "/dashboard/admin/school-periods", label: "Kerangka Jam Pelajaran", icon: Clock, badge: 0 },
+      { href: "/dashboard/admin/absensi-jurnal", label: "Absensi & Jurnal Kelas", icon: ClipboardCheck, badge: 0 },
+      { href: "/dashboard/admin/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare, badge: 0 },
+      { href: "/dashboard/admin/jurnal-guru", label: "Jurnal Mengajar Guru", icon: NotebookPen, badge: 0 },
+      { href: "/dashboard/admin/rpp", label: "Bank RPP", icon: BookMarked, badge: 0 },
+      { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion, badge: 0 },
+      { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck, badge: 0 },
+      { href: "/dashboard/admin/kedisiplinan-leaderboard", label: "Kedisiplinan & Kinerja", icon: Trophy, badge: 0 },
+      { href: "/dashboard/admin/kpi-indikator", label: "Pengaturan KPI", icon: Sliders, badge: 0 },
+      { href: "/dashboard/admin/jadwal-piket", label: "Jadwal Piket", icon: CalendarClock, badge: 0 },
     ],
   },
   {
@@ -54,6 +75,8 @@ const menuGroups = [
       { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat, badge: 0 },
       { href: "/dashboard/admin/persuratan", label: "Persuratan", icon: Mail, badge: 0 },
       { href: "/dashboard/admin/arsip", label: "Pengarsipan", icon: Archive, badge: 0 },
+      { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen, badge: 0 },
+      { href: "/dashboard/admin/verifikasi-data", label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const },
     ],
   },
   {
@@ -62,22 +85,26 @@ const menuGroups = [
       { href: "/dashboard/admin/users", label: "Akun Pengguna", icon: Settings, badge: 0 },
       { href: "/dashboard/admin/tahun-ajaran", label: "Tahun Ajaran", icon: CalendarDays, badge: 0 },
       { href: "/dashboard/admin/master-data", label: "Master Data", icon: Database, badge: 0 },
+      { href: "/dashboard/admin/cek-kelulusan", label: "Cek Kelulusan", icon: GraduationCap, badge: 0 },
       { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
+      { href: "/dashboard/admin/performa-server", label: "Performa Server", icon: Activity, badge: 0 },
+      { href: "/dashboard/admin/log-aktivitas", label: "Log Aktivitas", icon: History, badge: 0 },
       { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },
     ],
   },
 ];
 
-type BadgeKey = "pendingAdmissions" | "unreadMessages";
+type BadgeKey = "pendingAdmissions" | "unreadMessages" | "pendingProfileEdits";
 
 interface AdminSidebarProps {
   unreadMessages?: number;
   pendingAdmissions?: number;
+  pendingProfileEdits?: number;
   logoEmblem?: string;
   logoFullWhite?: string;
 }
 
-export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, logoEmblem = "/images/logo-emblem.png", logoFullWhite }: AdminSidebarProps) {
+export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, pendingProfileEdits = 0, logoEmblem = "/images/logo-emblem.png", logoFullWhite }: AdminSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -94,7 +121,12 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
     });
   }
 
-  const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions };
+  const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions, pendingProfileEdits };
+  const notifications = [
+    { label: "Pesan masuk belum dibaca", count: unreadMessages, href: "/dashboard/admin/messages" },
+    { label: "Pendaftaran PPDB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
+    { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
+  ];
 
   function getBadge(item: { badge?: number; badgeKey?: BadgeKey }): number {
     if ("badgeKey" in item && item.badgeKey) return badges[item.badgeKey] ?? 0;
@@ -108,34 +140,36 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   const SidebarContent = ({ collapsed: c = false, onToggle }: { collapsed?: boolean; onToggle?: () => void } = {}) => (
     <div className="flex flex-col h-full">
       {/* Logo — klik untuk buka/tutup sidebar (desktop) */}
-      <button
-        type="button"
-        onClick={onToggle}
-        title={onToggle ? (c ? "Buka sidebar" : "Tutup sidebar") : undefined}
-        className={`px-5 py-4 border-b border-white/10 text-left w-full ${onToggle ? "hover:bg-white/5 cursor-pointer" : "cursor-default"} transition-colors`}
-      >
-        {c ? (
-          <div className="flex justify-center">
-            <NextImage src={logoEmblem} alt="Logo" width={32} height={32} className="rounded-full object-contain shrink-0" unoptimized />
-          </div>
-        ) : logoFullWhite ? (
-          <div className="flex flex-col gap-1.5">
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
-            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Panel Admin</p>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
-            <div>
-              <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
-              <p className="text-white/50 text-xs">Panel Admin</p>
+      <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          title={onToggle ? (c ? "Buka sidebar" : "Tutup sidebar") : undefined}
+          className={`text-left min-w-0 flex-1 ${onToggle ? "hover:opacity-80 cursor-pointer" : "cursor-default"} transition-opacity`}
+        >
+          {c ? (
+            <div className="flex justify-center">
+              <NextImage src={logoEmblem} alt="Logo" width={32} height={32} className="rounded-full object-contain shrink-0" unoptimized />
             </div>
-          </div>
-        )}
-      </button>
+          ) : logoFullWhite ? (
+            <div className="flex flex-col gap-1.5">
+              <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
+              <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Panel Admin</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+              <div>
+                <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
+                <p className="text-white/50 text-xs">Panel Admin</p>
+              </div>
+            </div>
+          )}
+        </button>
+      </div>
 
       {/* Menu */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden space-y-4" style={{ scrollbarWidth: "none" }}>
+      <nav className="flex-1 px-3 py-4 overflow-y-auto sidebar-scroll space-y-4">
         {menuGroups.map((group) => (
           <div key={group.label ?? "__root__"}>
             {group.label && !c && (
@@ -223,9 +257,12 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
             </>
           )}
         </div>
-        <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white">
-          <Menu size={22} />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell items={notifications} variant="dark" />
+          <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white p-2">
+            <Menu size={22} />
+          </button>
+        </div>
       </div>
 
       {open && (

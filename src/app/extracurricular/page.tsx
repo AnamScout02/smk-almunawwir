@@ -3,6 +3,9 @@ import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { Users, Music, Globe, BookOpen, Cpu, Trophy, Heart, Sprout, Shield } from "lucide-react";
 import { getLang } from "@/lib/lang";
+import { getSettings } from "@/lib/site-settings";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Ekstrakurikuler — SMK Al Munawwir IIBS",
@@ -76,14 +79,6 @@ const content = {
         ],
       },
     ],
-    achievements: [
-      { event: "Juara 1 LKS TKJ", scope: "Tingkat Kabupaten", year: "2024" },
-      { event: "Juara 2 Kaligrafi", scope: "Tingkat Provinsi", year: "2024" },
-      { event: "Juara 1 Futsal", scope: "Turnamen Pesantren Se-Jatim", year: "2023" },
-      { event: "Best Speaker English Debate", scope: "Tingkat Kabupaten", year: "2023" },
-      { event: "Juara 3 Tahfidz 10 Juz", scope: "MTQ Pelajar Provinsi", year: "2024" },
-      { event: "Juara 1 LKS DKV", scope: "Tingkat Kabupaten", year: "2023" },
-    ],
     joinSteps: [
       { step: "01", title: "Daftar Sebagai Siswa", desc: "Selesaikan proses SPMB dan diterima sebagai siswa aktif SMK Al Munawwir IIBS." },
       { step: "02", title: "Pilih Ekskul", desc: "Di awal tahun ajaran, pilih satu atau lebih ekskul yang sesuai minat dan bakat kamu." },
@@ -156,14 +151,6 @@ const content = {
         ],
       },
     ],
-    achievements: [
-      { event: "1st Place LKS TKJ", scope: "Regency Level", year: "2024" },
-      { event: "2nd Place Calligraphy", scope: "Provincial Level", year: "2024" },
-      { event: "1st Place Futsal", scope: "East Java Pesantren Tournament", year: "2023" },
-      { event: "Best Speaker English Debate", scope: "Regency Level", year: "2023" },
-      { event: "3rd Place Tahfidz 10 Juz", scope: "Provincial Student MTQ", year: "2024" },
-      { event: "1st Place LKS DKV", scope: "Regency Level", year: "2023" },
-    ],
     joinSteps: [
       { step: "01", title: "Register as a Student", desc: "Complete the SPMB process and be accepted as an active student at SMK Al Munawwir IIBS." },
       { step: "02", title: "Choose an Activity", desc: "At the start of the school year, choose one or more activities that match your interests and talents." },
@@ -172,9 +159,17 @@ const content = {
   },
 } as const;
 
+interface AchievementRow { event: string; scope: string; year: string }
+
 export default async function ExtracurricularPage() {
   const lang = await getLang();
   const c = content[lang];
+  const s = await getSettings(["ekskul.achievements"]);
+  let achievements: AchievementRow[] = [];
+  try {
+    const parsed = JSON.parse(s["ekskul.achievements"] || "[]");
+    if (Array.isArray(parsed)) achievements = parsed;
+  } catch { /* ignore */ }
   return (
     <>
       <Navbar />
@@ -243,7 +238,7 @@ export default async function ExtracurricularPage() {
               <h2 className="font-heading text-3xl font-bold text-navy mt-2">{c.achievementsTitle}</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-              {c.achievements.map(({ event, scope, year }) => (
+              {achievements.map(({ event, scope, year }) => (
                 <div key={event} className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-primary-50 to-white border border-primary-100">
                   <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
                     <Trophy size={18} className="text-gold" />

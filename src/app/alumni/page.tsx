@@ -1,8 +1,11 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
-import { GraduationCap, Briefcase, MapPin, Quote } from "lucide-react";
+import { GraduationCap, Quote } from "lucide-react";
 import { getLang } from "@/lib/lang";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Alumni — SMK Al Munawwir IIBS",
@@ -25,25 +28,10 @@ const content = {
     ctaRegDesc: "Daftar sekarang dan mulai perjalananmu menuju masa depan yang cerah bersama SMK Al Munawwir IIBS.",
     ctaRegBtn: "Daftar Sekarang",
     ctaProgramsBtn: "Lihat Program Studi",
-    stats: [
-      { value: "92%", label: "Terserap Kerja / Kuliah", sub: "Dalam 6 bulan setelah lulus" },
-      { value: "500+", label: "Alumni Aktif", sub: "Tersebar di seluruh Indonesia" },
-      { value: "3", label: "Angkatan Lulusan", sub: "2021, 2022, 2023" },
-      { value: "15+", label: "Perusahaan Mitra", sub: "Tempat alumni bekerja" },
-    ],
-    testimonials: [
-      { name: "Ahmad Fauzan Hidayat", year: "Lulus 2022", major: "TKJ", role: "Network Engineer", company: "PT. Telkom Indonesia", city: "Surabaya", quote: "SMK Al Munawwir tidak hanya mengajarkan skill teknis, tapi juga membentuk karakter dan akhlak yang menjadi bekal seumur hidup saya.", initial: "AF", color: "bg-blue-500" },
-      { name: "Siti Rahma Aulia", year: "Lulus 2021", major: "AK", role: "Staff Akuntansi", company: "Bank Syariah Indonesia", city: "Jakarta", quote: "Pengalaman tahfidz dan pesantren di sini membuat saya lebih disiplin dan fokus. Sertifikasi akuntansi yang saya dapat sangat membantu karir.", initial: "SR", color: "bg-emerald-500" },
-      { name: "Rizky Maulana Putra", year: "Lulus 2023", major: "DKV", role: "Graphic Designer", company: "Freelance & Startup", city: "Yogyakarta", quote: "Lab DKV di Al Munawwir sudah setara industri. Saya bisa langsung kerja profesional setelah lulus tanpa perlu kursus tambahan.", initial: "RM", color: "bg-purple-500" },
-      { name: "Dewi Nur Halimah", year: "Lulus 2022", major: "ATU", role: "Pemilik Farm Unggas", company: "CV. Berkah Ternak Mandiri", city: "Malang", quote: "Bekal ilmu agribisnis dan semangat wirausaha yang ditanamkan di sekolah ini mendorong saya membuka usaha sendiri setelah lulus.", initial: "DN", color: "bg-lime-600" },
-      { name: "Muhammad Ilham Saputra", year: "Lulus 2021", major: "DPIB", role: "Drafter / Junior Arsitek", company: "Konsultan Arsitektur Nusantara", city: "Bandung", quote: "Kemampuan AutoCAD dan BIM yang saya kuasai dari sekolah ini langsung diakui oleh perusahaan. Hafalan Quran yang saya bawa jadi kebanggaan tersendiri.", initial: "MI", color: "bg-amber-500" },
-      { name: "Nur Fitriani Rahmawati", year: "Lulus 2023", major: "TKJ", role: "Mahasiswi Teknik Informatika", company: "Universitas Airlangga", city: "Surabaya", quote: "Fondasi TKJ dari Al Munawwir sangat kuat. Saya lulus SNBP ke UNAIR berkat nilai dan portofolio yang sudah saya bangun sejak SMK.", initial: "NF", color: "bg-rose-500" },
-    ],
-    destinations: [
-      { category: "Bekerja", icon: "💼", places: ["PT. Telkom Indonesia", "Bank Syariah Indonesia", "Perusahaan Manufaktur", "UMKM & Wirausaha Mandiri", "Startup Digital"] },
-      { category: "Melanjutkan Kuliah", icon: "🎓", places: ["Universitas Airlangga", "UPN Veteran Jawa Timur", "Politeknik Elektronika Negeri Surabaya", "Universitas Islam Negeri Sunan Ampel", "Politeknik Negeri Malang"] },
-      { category: "Program Vokasi", icon: "🏫", places: ["Diploma 3 Akuntansi", "Diploma 3 Teknik Komputer", "Diploma 3 Desain Grafis", "Sekolah Kedinasan", "PPKD & Kemnaker"] },
-    ],
+    testimonialsEmpty: "Testimoni alumni akan tampil di sini setelah alumni mengisi Tracer Study.",
+    destinationsEmpty: "Data tujuan alumni akan tampil di sini setelah data Tracer Study terkumpul.",
+    noDataYet: "Segera hadir",
+    respondentSub: "Alumni mengisi Tracer Study",
   },
   en: {
     heroLabel: "Our Pride",
@@ -60,31 +48,72 @@ const content = {
     ctaRegDesc: "Register now and start your journey toward a bright future with SMK Al Munawwir IIBS.",
     ctaRegBtn: "Register Now",
     ctaProgramsBtn: "View Study Programs",
-    stats: [
-      { value: "92%", label: "Employed / Enrolled in College", sub: "Within 6 months of graduating" },
-      { value: "500+", label: "Active Alumni", sub: "Spread across Indonesia" },
-      { value: "3", label: "Graduating Classes", sub: "2021, 2022, 2023" },
-      { value: "15+", label: "Partner Companies", sub: "Where alumni work" },
-    ],
-    testimonials: [
-      { name: "Ahmad Fauzan Hidayat", year: "Class of 2022", major: "TKJ", role: "Network Engineer", company: "PT. Telkom Indonesia", city: "Surabaya", quote: "SMK Al Munawwir didn't just teach me technical skills, but also shaped the character and akhlaq that became a lifelong foundation for me.", initial: "AF", color: "bg-blue-500" },
-      { name: "Siti Rahma Aulia", year: "Class of 2021", major: "AK", role: "Accounting Staff", company: "Bank Syariah Indonesia", city: "Jakarta", quote: "The tahfidz and boarding school experience here made me more disciplined and focused. The accounting certification I earned has really helped my career.", initial: "SR", color: "bg-emerald-500" },
-      { name: "Rizky Maulana Putra", year: "Class of 2023", major: "DKV", role: "Graphic Designer", company: "Freelance & Startup", city: "Yogyakarta", quote: "The DKV lab at Al Munawwir is industry-grade. I could work professionally right after graduating without needing extra courses.", initial: "RM", color: "bg-purple-500" },
-      { name: "Dewi Nur Halimah", year: "Class of 2022", major: "ATU", role: "Poultry Farm Owner", company: "CV. Berkah Ternak Mandiri", city: "Malang", quote: "The agribusiness knowledge and entrepreneurial spirit instilled at this school pushed me to open my own business after graduating.", initial: "DN", color: "bg-lime-600" },
-      { name: "Muhammad Ilham Saputra", year: "Class of 2021", major: "DPIB", role: "Drafter / Junior Architect", company: "Konsultan Arsitektur Nusantara", city: "Bandung", quote: "The AutoCAD and BIM skills I mastered at this school were immediately recognized by the company. The Qur'an memorization I carry with me is a special source of pride.", initial: "MI", color: "bg-amber-500" },
-      { name: "Nur Fitriani Rahmawati", year: "Class of 2023", major: "TKJ", role: "Information Technology Student", company: "Universitas Airlangga", city: "Surabaya", quote: "The TKJ foundation from Al Munawwir is very strong. I got into UNAIR through SNBP thanks to the grades and portfolio I built since vocational school.", initial: "NF", color: "bg-rose-500" },
-    ],
-    destinations: [
-      { category: "Employed", icon: "💼", places: ["PT. Telkom Indonesia", "Bank Syariah Indonesia", "Manufacturing Companies", "SMEs & Independent Entrepreneurship", "Digital Startups"] },
-      { category: "Continuing to College", icon: "🎓", places: ["Universitas Airlangga", "UPN Veteran Jawa Timur", "Politeknik Elektronika Negeri Surabaya", "Universitas Islam Negeri Sunan Ampel", "Politeknik Negeri Malang"] },
-      { category: "Vocational Programs", icon: "🏫", places: ["Diploma 3 Accounting", "Diploma 3 Computer Engineering", "Diploma 3 Graphic Design", "Civil Service Schools", "PPKD & Ministry of Manpower"] },
-    ],
+    testimonialsEmpty: "Alumni testimonials will appear here once alumni fill out the Tracer Study.",
+    destinationsEmpty: "Alumni destination data will appear here once Tracer Study data is collected.",
+    noDataYet: "Coming soon",
+    respondentSub: "Alumni who completed the Tracer Study",
   },
 } as const;
+
+const TESTIMONIAL_COLORS = ["bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-lime-600", "bg-amber-500", "bg-rose-500"];
+
+const STATUS_LABEL: Record<string, { id: { title: string; icon: string }; en: { title: string; icon: string } }> = {
+  BEKERJA: { id: { title: "Bekerja", icon: "💼" }, en: { title: "Employed", icon: "💼" } },
+  KULIAH: { id: { title: "Melanjutkan Kuliah", icon: "🎓" }, en: { title: "Continuing to College", icon: "🎓" } },
+  WIRAUSAHA: { id: { title: "Wirausaha", icon: "🏪" }, en: { title: "Entrepreneurship", icon: "🏪" } },
+  BELUM_BEKERJA: { id: { title: "Belum Bekerja", icon: "⏳" }, en: { title: "Not Yet Employed", icon: "⏳" } },
+  LAINNYA: { id: { title: "Lainnya", icon: "📌" }, en: { title: "Other", icon: "📌" } },
+};
 
 export default async function AlumniPage() {
   const lang = await getLang();
   const c = content[lang];
+
+  const [totalLulusan, tracers] = await Promise.all([
+    prisma.student.count({ where: { studentStatus: "LULUS" } }).catch(() => 0),
+    prisma.alumniTracer.findMany({
+      include: { student: { include: { user: { select: { name: true } }, major: { select: { code: true } }, class: { select: { grade: true } } } } },
+      orderBy: { surveyDate: "desc" },
+    }).catch(() => []),
+  ]);
+
+  const totalResponses = tracers.length;
+  const employedCount = tracers.filter(tr => ["BEKERJA", "KULIAH", "WIRAUSAHA"].includes(tr.status)).length;
+  const employedRate = totalResponses > 0 ? Math.round((employedCount / totalResponses) * 100) : null;
+  const partnerCount = new Set(tracers.filter(tr => tr.institutionName).map(tr => tr.institutionName)).size;
+  const angkatanCount = new Set(tracers.map(tr => tr.surveyDate.getFullYear())).size;
+
+  const stats = [
+    { value: employedRate !== null ? `${employedRate}%` : c.noDataYet, label: lang === "en" ? "Employed / Enrolled" : "Terserap Kerja / Kuliah", sub: c.respondentSub },
+    { value: totalResponses > 0 ? `${totalResponses}` : c.noDataYet, label: lang === "en" ? "Tracer Study Respondents" : "Alumni Mengisi Tracer Study", sub: `${totalLulusan} ${lang === "en" ? "total graduates" : "total lulusan"}` },
+    { value: angkatanCount > 0 ? `${angkatanCount}` : c.noDataYet, label: lang === "en" ? "Graduating Classes" : "Angkatan Terdata", sub: c.respondentSub },
+    { value: partnerCount > 0 ? `${partnerCount}+` : c.noDataYet, label: lang === "en" ? "Partner Institutions" : "Institusi Mitra", sub: lang === "en" ? "Where alumni work/study" : "Tempat alumni bekerja/kuliah" },
+  ];
+
+  const testimonials = tracers
+    .filter(tr => tr.notes && tr.notes.trim().length > 0)
+    .slice(0, 6)
+    .map(tr => ({
+      name: tr.student.user.name,
+      major: tr.student.major.code,
+      role: tr.position || "",
+      company: tr.institutionName || "",
+      quote: tr.notes as string,
+      initial: tr.student.user.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
+    }));
+
+  const destinations = Object.entries(
+    tracers.reduce<Record<string, string[]>>((acc, tr) => {
+      if (!tr.institutionName) return acc;
+      (acc[tr.status] ??= []).push(tr.institutionName);
+      return acc;
+    }, {})
+  ).map(([status, places]) => ({
+    category: STATUS_LABEL[status]?.[lang]?.title ?? status,
+    icon: STATUS_LABEL[status]?.[lang]?.icon ?? "📌",
+    places: [...new Set(places)].slice(0, 5),
+  }));
+
   return (
     <>
       <Navbar />
@@ -107,7 +136,7 @@ export default async function AlumniPage() {
         <section className="py-12 bg-white border-b border-gray-100">
           <div className="container-custom">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              {c.stats.map(({ value, label, sub }) => (
+              {stats.map(({ value, label, sub }) => (
                 <div key={label}>
                   <p className="font-heading font-bold text-3xl text-primary-700 mb-1">{value}</p>
                   <p className="font-semibold text-sm text-navy">{label}</p>
@@ -125,32 +154,32 @@ export default async function AlumniPage() {
               <span className="text-primary-700 text-sm font-semibold uppercase tracking-widest">{c.testimonialsLabel}</span>
               <h2 className="font-heading text-3xl font-bold text-navy mt-2">{c.testimonialsTitle}</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {c.testimonials.map((alum) => (
-                <div key={alum.name} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                  <Quote size={24} className="text-gold/40 mb-3" />
-                  <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-6 italic">
-                    &ldquo;{alum.quote}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                    <div className={`w-10 h-10 rounded-full ${alum.color} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-                      {alum.initial}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-navy truncate">{alum.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{alum.role} · {alum.company}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-semibold">{alum.major}</span>
-                        <span className="text-xs text-gray-400">{alum.year}</span>
-                        <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                          <MapPin size={10} />{alum.city}
-                        </span>
+            {testimonials.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {testimonials.map((alum, i) => (
+                  <div key={i} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                    <Quote size={24} className="text-gold/40 mb-3" />
+                    <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-6 italic">
+                      &ldquo;{alum.quote}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                      <div className={`w-10 h-10 rounded-full ${TESTIMONIAL_COLORS[i % TESTIMONIAL_COLORS.length]} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                        {alum.initial}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-navy truncate">{alum.name}</p>
+                        {(alum.role || alum.company) && (
+                          <p className="text-xs text-gray-400 truncate">{[alum.role, alum.company].filter(Boolean).join(" · ")}</p>
+                        )}
+                        <span className="inline-block text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-semibold mt-0.5">{alum.major}</span>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-400 text-sm py-10">{c.testimonialsEmpty}</p>
+            )}
           </div>
         </section>
 
@@ -161,26 +190,28 @@ export default async function AlumniPage() {
               <span className="text-primary-700 text-sm font-semibold uppercase tracking-widest">{c.destinationsLabel}</span>
               <h2 className="font-heading text-3xl font-bold text-navy mt-2">{c.destinationsTitle}</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {c.destinations.map(({ category, icon, places }) => (
-                <div key={category} className="bg-gray-50 rounded-2xl p-6">
-                  <div className="text-3xl mb-3">{icon}</div>
-                  <h3 className="font-heading font-bold text-navy text-lg mb-4 flex items-center gap-2">
-                    {(category === "Bekerja" || category === "Employed") && <Briefcase size={16} className="text-primary-700" />}
-                    {(category === "Melanjutkan Kuliah" || category === "Continuing to College") && <GraduationCap size={16} className="text-primary-700" />}
-                    {category}
-                  </h3>
-                  <ul className="space-y-2">
-                    {places.map(p => (
-                      <li key={p} className="flex items-start gap-2 text-sm text-gray-600">
-                        <span className="text-gold mt-0.5">·</span>
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {destinations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                {destinations.map(({ category, icon, places }) => (
+                  <div key={category} className="bg-gray-50 rounded-2xl p-6">
+                    <div className="text-3xl mb-3">{icon}</div>
+                    <h3 className="font-heading font-bold text-navy text-lg mb-4 flex items-center gap-2">
+                      {category}
+                    </h3>
+                    <ul className="space-y-2">
+                      {places.map(p => (
+                        <li key={p} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-gold mt-0.5">·</span>
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-400 text-sm py-10 max-w-md mx-auto">{c.destinationsEmpty}</p>
+            )}
           </div>
         </section>
 
@@ -191,10 +222,16 @@ export default async function AlumniPage() {
             <p className="text-gray-500 mb-6 max-w-lg mx-auto text-sm">
               {c.ctaAlumniDesc}
             </p>
-            <Link href="/contact"
-              className="inline-flex px-8 py-3 rounded-full bg-primary-700 hover:bg-primary-800 text-white font-semibold transition">
-              {c.ctaAlumniBtn}
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link href="/contact"
+                className="inline-flex px-8 py-3 rounded-full bg-primary-700 hover:bg-primary-800 text-white font-semibold transition">
+                {c.ctaAlumniBtn}
+              </Link>
+              <Link href="/tracer-study"
+                className="inline-flex px-8 py-3 rounded-full border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white font-semibold transition">
+                Isi Tracer Study
+              </Link>
+            </div>
           </div>
         </section>
 

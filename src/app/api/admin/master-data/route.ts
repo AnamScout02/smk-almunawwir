@@ -1,4 +1,4 @@
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

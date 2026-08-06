@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { assertHumas } from "@/lib/humas-guard";
 import { NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertHumas(session);
     const { studentId } = await params;
-    const { company, position, supervisor, startDate, endDate, status } = await req.json();
+    const { company, position, supervisor, startDate, endDate, status, teacherId } = await req.json();
 
     if (!company?.trim() || !position?.trim() || !startDate || !endDate) {
       return Response.json({ error: "Perusahaan, posisi, dan tanggal wajib diisi." }, { status: 400 });
@@ -22,6 +24,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         status: status || "ONGOING",
+        teacherId: teacherId || null,
       },
       update: {
         company: company.trim(),
@@ -30,6 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         status: status || "ONGOING",
+        teacherId: teacherId || null,
       },
     });
 
@@ -41,7 +45,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertHumas(session);
     const { studentId } = await params;
     await prisma.internship.delete({ where: { studentId } });
     return Response.json({ ok: true });

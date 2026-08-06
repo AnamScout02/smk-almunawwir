@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { SISWA_COLUMNS } from "@/lib/buku-induk-siswa-columns";
 import * as XLSX from "xlsx";
 
 export async function GET(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const classId = req.nextUrl.searchParams.get("classId");
   const enrollYear = req.nextUrl.searchParams.get("enrollYear");
+  const status = req.nextUrl.searchParams.get("status");
 
   const students = await prisma.student.findMany({
     where: {
       ...(classId ? { classId } : {}),
       ...(enrollYear ? { enrollYear: parseInt(enrollYear) } : {}),
+      ...(status ? { studentStatus: status } : {}),
     },
     include: {
       user: { select: { name: true, email: true } },

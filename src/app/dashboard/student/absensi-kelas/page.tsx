@@ -1,0 +1,166 @@
+"use client";
+import { useEffect, useState, useTransition } from "react";
+import { CheckSquare } from "lucide-react";
+import DatePicker from "@/components/shared/DatePicker";
+import PageHeader from "@/components/admin/PageHeader";
+import { PageSkeleton } from "@/components/shared/Skeleton";
+
+interface Student {
+  id: string;
+  nis: string;
+  user: { name: string };
+}
+interface AttendanceRecord { studentId: string; status: string }
+
+type AttendanceStatus = "HADIR" | "IZIN" | "SAKIT" | "ALPHA";
+const STATUSES: AttendanceStatus[] = ["HADIR", "IZIN", "SAKIT", "ALPHA"];
+
+const STATUS_COLOR: Record<AttendanceStatus, string> = {
+  HADIR: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  IZIN: "bg-blue-50 text-blue-700 border-blue-200",
+  SAKIT: "bg-amber-50 text-amber-700 border-amber-200",
+  ALPHA: "bg-red-50 text-red-600 border-red-200",
+};
+
+export default function AbsensiKelasPage() {
+  const today = new Date().toISOString().split("T")[0];
+  const [date, setDate] = useState(today);
+  const [className, setClassName] = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
+  const [loading, setLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    fetch(`/api/student/attendance?date=${date}`).then(async r => {
+      if (!r.ok) { const d = await r.json(); setError(d.error || "Gagal memuat data"); setLoading(false); return; }
+      const d = await r.json();
+      setClassName(d.className);
+      setStudents(d.students ?? []);
+      const init: Record<string, AttendanceStatus> = {};
+      (d.students ?? []).forEach((s: Student) => { init[s.id] = "HADIR"; });
+      (d.existing ?? []).forEach((r: AttendanceRecord) => { init[r.studentId] = r.status as AttendanceStatus; });
+      setAttendance(init);
+      setLoading(false);
+    }).catch(() => { setError("Gagal memuat data"); setLoading(false); });
+  }, [date]);
+
+  function setStatus(studentId: string, status: AttendanceStatus) {
+    setAttendance(prev => ({ ...prev, [studentId]: status }));
+    setSaved(false);
+  }
+
+  function setAllHadir() {
+    const all: Record<string, AttendanceStatus> = {};
+    students.forEach(s => { all[s.id] = "HADIR"; });
+    setAttendance(all);
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    startTransition(async () => {
+      const records = students.map(s => ({ studentId: s.id, status: attendance[s.id] ?? "HADIR" }));
+      const res = await fetch("/api/student/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, records }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        const d = await res.json();
+        setError(d.error || "Gagal menyimpan absensi");
+      }
+    });
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+        <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-sm">{error}</div>
+      </div>
+    );
+  }
+
+  const summary = STATUSES.map(s => ({ label: s, count: Object.values(attendance).filter(v => v === s).length }));
+
+  return (
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<CheckSquare size={22} />}
+        title="Absensi Kelas"
+        description={className ? `${className} — diinput oleh Ketua Kelas/Sekretaris` : "Memuat..."}
+      />
+
+      {loading ? (
+        <PageSkeleton />
+      ) : (
+        <>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
+              <DatePicker value={date} onChange={setDate} />
+            </div>
+            <div className="flex gap-3 text-sm">
+              {summary.map(s => (
+                <div key={s.label} className={`px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_COLOR[s.label as AttendanceStatus]}`}>
+                  {s.label}: {s.count}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+            <div className="flex items-center justify-between px-5 py-3"
+              style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
+              <p className="text-sm font-semibold text-white">{students.length} Siswa</p>
+              <button onClick={setAllHadir} className="text-xs text-gold font-semibold hover:text-white transition">
+                Tandai Semua Hadir
+              </button>
+            </div>
+            {students.length === 0 ? (
+              <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
+            ) : (
+              <div className="divide-y">
+                {students.map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-4 px-5 py-3">
+                    <span className="text-gray-300 text-sm w-6 shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-primary-900 text-sm">{s.user.name}</p>
+                      <p className="text-gray-400 text-xs font-mono">{s.nis}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      {STATUSES.map(status => (
+                        <button
+                          key={status}
+                          onClick={() => setStatus(s.id, status)}
+                          className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition ${
+                            attendance[s.id] === status ? STATUS_COLOR[status] + " shadow-sm" : "bg-white border-gray-200 text-gray-400 hover:border-gray-300"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-4">
+            {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absensi berhasil disimpan!</p>}
+            <button onClick={handleSave} disabled={isPending} className="btn-gold flex items-center gap-2 text-sm">
+              <CheckSquare size={16} /> {isPending ? "Menyimpan..." : "Simpan Absensi"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

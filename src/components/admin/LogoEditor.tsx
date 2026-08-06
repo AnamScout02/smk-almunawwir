@@ -143,11 +143,15 @@ export default function LogoEditor({
   logoFull,
   logoFullWhite,
   letterheadBukuInduk,
+  letterheadKopBawah,
+  letterheadTtd,
 }: {
   logoEmblem: string;
   logoFull: string;
   logoFullWhite: string;
   letterheadBukuInduk: string;
+  letterheadKopBawah: string;
+  letterheadTtd: string;
 }) {
   return (
     <div>
@@ -183,9 +187,25 @@ export default function LogoEditor({
         <LogoCard
           settingKey="letterhead.bukuInduk"
           currentUrl={letterheadBukuInduk}
-          label="Kop Surat Buku Induk"
-          description="Header lembar cetak Buku Induk Siswa (logo + nama + alamat sekolah), horizontal lebar penuh."
+          label="Kop Atas (Kop Surat)"
+          description="Header lembar cetak/dokumen resmi (Buku Induk, Notulen Rapat, Surat Keluar, dll), horizontal lebar penuh."
           isSquare={false}
+          darkPreview={false}
+        />
+        <LogoCard
+          settingKey="letterhead.kopBawah"
+          currentUrl={letterheadKopBawah}
+          label="Kop Bawah (Footer)"
+          description="Footer lembar cetak/dokumen resmi (Notulen Rapat, Surat Keluar, dll), horizontal lebar penuh."
+          isSquare={false}
+          darkPreview={false}
+        />
+        <LogoCard
+          settingKey="letterhead.ttdKepalaSekolah"
+          currentUrl={letterheadTtd}
+          label="Tanda Tangan Kepala Sekolah"
+          description="Muncul di atas nama kepala sekolah saat surat dibuka/dicetak. Bisa berupa scan tanda tangan asli atau QR code digital, PNG transparan."
+          isSquare
           darkPreview={false}
         />
       </div>

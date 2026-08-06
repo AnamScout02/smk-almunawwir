@@ -16,6 +16,7 @@ const admissionSchema = z.object({
   email: z.string().email(),
   guardianName: z.string().optional(),
   chosenMajor: z.string().optional(),
+  jalur: z.string().optional(),
   // Dokumen
   ijazah: z.string().url().optional().or(z.literal("")),
   kk: z.string().url().optional().or(z.literal("")),
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
         email: d.email,
         guardianName: d.guardianName ?? null,
         chosenMajor: d.chosenMajor ?? "",
+        jalur: d.jalur || "REGULER",
         ijazahUrl: d.ijazah || null,
         kkUrl: d.kk || null,
         ktpWaliUrl: d.ktp_wali || null,

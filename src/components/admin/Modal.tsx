@@ -41,18 +41,20 @@ export default function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-backdrop-in" onClick={onClose}>
       <div
-        className={`bg-white rounded-2xl shadow-2xl w-full ${SIZE_CLASS[size]} ${scrollBody ? "max-h-[90vh] flex flex-col" : ""}`}
+        className={`bg-white rounded-2xl shadow-2xl w-full modal-panel-in ${SIZE_CLASS[size]} ${scrollBody ? "max-h-[90vh] flex flex-col" : ""}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 rounded-t-2xl shrink-0"
+        <div className="relative overflow-hidden flex items-center justify-between px-6 py-4 rounded-t-2xl shrink-0"
           style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-          <div className="min-w-0">
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+          <div className="relative min-w-0">
             <h2 className="font-heading font-semibold text-white truncate">{title}</h2>
             {description && <p className="text-xs text-white/50 mt-0.5 truncate">{description}</p>}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="relative flex items-center gap-2 shrink-0">
             {headerActions}
             <button type="button" onClick={onClose} className="p-2 text-white/60 hover:text-white rounded-lg transition-colors">
               <X size={20} />

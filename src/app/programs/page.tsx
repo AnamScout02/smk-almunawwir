@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { programs } from "@/data/programs";
 import { prisma } from "@/lib/prisma";
-import { Network, Palette, Calculator, Leaf, Building2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Network, Palette, Calculator, Leaf, Building2, GraduationCap, CheckCircle2, ArrowRight } from "lucide-react";
 import { themeGradientRight } from "@/lib/color";
 import { getLang } from "@/lib/lang";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Konsentrasi Keahlian — SMK Al Munawwir IIBS",
-  description: "5 konsentrasi keahlian unggulan SMK Al Munawwir IIBS — TKJ, AK, ATU, DKV, DPIB.",
+  description: "Konsentrasi keahlian unggulan SMK Al Munawwir IIBS.",
 };
 
 const icons: Record<string, React.ElementType> = {
@@ -24,10 +24,12 @@ const icons: Record<string, React.ElementType> = {
   dpib: Building2,
 };
 
+const staticByCode = Object.fromEntries(programs.map(p => [p.code.toUpperCase(), p]));
+
 const content = {
   id: {
     label: "Konsentrasi Keahlian",
-    title: "5 Jurusan Unggulan",
+    title: "Jurusan Unggulan",
     desc: "Pilih jurusan sesuai minat dan bakat Anda. Semua program dilengkapi praktik industri, sertifikasi nasional, dan pembinaan Islami terintegrasi.",
     skillsTitle: "Kompetensi yang Dipelajari",
     careerTitle: "Peluang Karier",
@@ -35,7 +37,7 @@ const content = {
   },
   en: {
     label: "Areas of Expertise",
-    title: "5 Leading Majors",
+    title: "Leading Majors",
     desc: "Choose a major that fits your interests and talents. All programs include industry practice, national certification, and integrated Islamic development.",
     skillsTitle: "Competencies Learned",
     careerTitle: "Career Opportunities",
@@ -46,17 +48,7 @@ const content = {
 export default async function ProgramsPage() {
   const lang = await getLang();
   const c = content[lang];
-  let logoByCode: Record<string, string> = {};
-  let majorByCode: Record<string, Awaited<ReturnType<typeof prisma.major.findFirst>>> = {};
-  try {
-    const majors = await prisma.major.findMany();
-    logoByCode = Object.fromEntries(
-      majors.filter(m => m.logoUrl).map(m => [m.code.toUpperCase(), m.logoUrl as string])
-    );
-    majorByCode = Object.fromEntries(majors.map(m => [m.code.toUpperCase(), m]));
-  } catch {
-    // DB unavailable — pakai data statis di bawah
-  }
+  const majors = await prisma.major.findMany({ orderBy: { name: "asc" } }).catch(() => []);
   return (
     <>
       <Navbar />
@@ -78,41 +70,45 @@ export default async function ProgramsPage() {
 
         <div className="section-padding bg-cream">
           <div className="container-custom space-y-12">
-            {programs.map((p, i) => {
-              const Icon = icons[p.slug] ?? Network;
-              const db = majorByCode[p.code.toUpperCase()];
-              const tagline = db?.tagline || p.tagline;
-              const desc = db?.longDesc || p.desc;
-              const cert = db?.cert || p.cert;
-              const skills = db?.skills?.length ? db.skills : p.skills;
-              const career = db?.career?.length ? db.career : p.career;
-              const customColor = db?.themeColor;
+            {majors.map((m, i) => {
+              const slug = m.code.toLowerCase();
+              const p = staticByCode[m.code.toUpperCase()];
+              const Icon = icons[slug] ?? GraduationCap;
+              const tagline = m.tagline || p?.tagline || "";
+              const desc = m.longDesc || p?.desc || m.description;
+              const cert = m.cert || p?.cert || "";
+              const skills = m.skills?.length ? m.skills : p?.skills ?? [];
+              const career = m.career?.length ? m.career : p?.career ?? [];
+              const customColor = m.themeColor;
               const gradientStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
+              const fallbackClass = p?.color ?? "from-primary-600 to-primary-800";
               return (
-                <div key={p.slug} id={p.slug}
+                <div key={m.id} id={slug}
                   className="grid lg:grid-cols-2 gap-8 items-center">
                   <div className={i % 2 === 1 ? "lg:order-2" : ""}>
-                    <div className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${p.color}`} text-white px-4 py-2 rounded-full text-sm font-bold mb-4`}
+                    <div className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} text-white px-4 py-2 rounded-full text-sm font-bold mb-4`}
                       style={gradientStyle}>
-                      {logoByCode[p.code] ? (
+                      {m.logoUrl ? (
                         <span className="relative w-4 h-4 shrink-0">
-                          <Image src={logoByCode[p.code]} alt={p.name} fill sizes="16px" className="object-contain rounded-full" unoptimized />
+                          <Image src={m.logoUrl} alt={m.name} fill sizes="16px" className="object-contain rounded-full" unoptimized />
                         </span>
                       ) : (
                         <Icon size={16} />
                       )}
-                      {p.code}
+                      {m.code}
                     </div>
-                    <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy mb-2">{p.name}</h2>
-                    <p className="text-gold font-medium mb-4">{tagline}</p>
+                    <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy mb-2">{m.name}</h2>
+                    {tagline && <p className="text-gold font-medium mb-4">{tagline}</p>}
                     <p className="text-gray-600 leading-relaxed mb-5">{desc}</p>
-                    <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-xl text-sm font-semibold mb-5">
-                      <CheckCircle2 size={16} />
-                      {cert}
-                    </div>
+                    {cert && (
+                      <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-xl text-sm font-semibold mb-5">
+                        <CheckCircle2 size={16} />
+                        {cert}
+                      </div>
+                    )}
                     <div>
-                      <Link href={`/programs/${p.slug}`}
-                        className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${p.color}`} text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition text-sm`}
+                      <Link href={`/programs/${slug}`}
+                        className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition text-sm`}
                         style={gradientStyle}>
                         {c.detailBtn}
                         <ArrowRight size={16} />
@@ -122,28 +118,32 @@ export default async function ProgramsPage() {
 
                   <div className={i % 2 === 1 ? "lg:order-1" : ""}>
                     <div className="bg-white rounded-3xl p-6 shadow-sm">
-                      <div className="mb-5">
-                        <h3 className="font-heading font-bold text-navy mb-3">{c.skillsTitle}</h3>
-                        <ul className="space-y-2">
-                          {skills.map((s) => (
-                            <li key={s} className="flex items-center gap-2.5 text-sm text-gray-600">
-                              <div className={`w-2 h-2 rounded-full ${customColor ? "" : `bg-gradient-to-r ${p.color}`} shrink-0`}
-                                style={gradientStyle} />
-                              {s}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="border-t border-gray-100 pt-5">
-                        <h3 className="font-heading font-bold text-navy mb-3">{c.careerTitle}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {career.map((c) => (
-                            <span key={c} className="text-xs bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full font-medium">
-                              {c}
-                            </span>
-                          ))}
+                      {skills.length > 0 && (
+                        <div className="mb-5">
+                          <h3 className="font-heading font-bold text-navy mb-3">{c.skillsTitle}</h3>
+                          <ul className="space-y-2">
+                            {skills.map((s) => (
+                              <li key={s} className="flex items-center gap-2.5 text-sm text-gray-600">
+                                <div className={`w-2 h-2 rounded-full ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} shrink-0`}
+                                  style={gradientStyle} />
+                                {s}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </div>
+                      )}
+                      {career.length > 0 && (
+                        <div className="border-t border-gray-100 pt-5">
+                          <h3 className="font-heading font-bold text-navy mb-3">{c.careerTitle}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {career.map((cr) => (
+                              <span key={cr} className="text-xs bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full font-medium">
+                                {cr}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

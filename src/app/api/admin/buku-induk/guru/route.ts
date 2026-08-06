@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const teachers = await prisma.teacher.findMany({
     include: {
       user: { select: { name: true, email: true } },
@@ -18,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const body = await req.json();
   const {
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.create({
     data: {
-      name,
+      name: toProperCaseName(name),
       email,
       password: hashedPassword,
       role: "TEACHER",
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       startDate: startDate ? new Date(startDate) : null,
       teacherStatus: teacherStatus || "AKTIF",
       teacherNotes: teacherNotes || null,
-      bukuIndukData: bukuIndukData || undefined,
+      bukuIndukData: bukuIndukData ? normalizeBukuIndukText(bukuIndukData) : undefined,
     },
     include: {
       user: { select: { name: true, email: true } },

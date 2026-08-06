@@ -35,11 +35,42 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SCHOOL_NAME: SMK Al-Munawwir IIBS
       NODE_ENV: production
+      MIKROTIK_HOST: ${MIKROTIK_HOST:-}
+      MIKROTIK_PORT: ${MIKROTIK_PORT:-8728}
+      MIKROTIK_USER: ${MIKROTIK_USER:-}
+      MIKROTIK_PASSWORD: ${MIKROTIK_PASSWORD:-}
+      ONLYOFFICE_JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:-}
+      NEXT_PUBLIC_ONLYOFFICE_URL: ${NEXT_PUBLIC_ONLYOFFICE_URL:-}
+      ONLYOFFICE_INTERNAL_URL: ${ONLYOFFICE_INTERNAL_URL:-http://onlyoffice}
+      APP_INTERNAL_URL: ${APP_INTERNAL_URL:-http://app:3000}
     volumes:
       - uploads_data:/app/public/uploads
+      # Read-only — supaya /api/admin/system/stats baca RAM asli LXC (lewat lxcfs, sudah
+      # dijatah Proxmox) bukan RAM fisik host mesin Proxmox-nya. Lihat komentar di route.ts.
+      - /proc:/host/proc:ro
     depends_on:
       postgres:
         condition: service_healthy
+      onlyoffice:
+        condition: service_started
+
+  # ===== ONLYOFFICE DOCUMENT SERVER (editor dokumen mirip Word asli) =====
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: smk_almunawwir_onlyoffice
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:-2faf6f8c01cc8affe742848e4384e82916f83322ffff1b71}
+      JWT_HEADER: "Authorization"
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+      # Alias font "Arial Narrow" -> "Liberation Sans Narrow" (lihat komentar di file itu sendiri)
+      - ./docker/fontconfig/arial-narrow-alias.conf:/etc/fonts/conf.d/00-arial-narrow-alias.conf:ro
+    shm_size: 1g
 
   # ===== MIGRATE (jalankan sekali per deploy) =====
   # PENTING: jangan tambahkan seed.ts di sini — script itu menghapus SEMUA data
@@ -63,4 +94,8 @@ volumes:
   postgres_data:
     driver: local
   uploads_data:
+    driver: local
+  onlyoffice_data:
+    driver: local
+  onlyoffice_log:
     driver: local

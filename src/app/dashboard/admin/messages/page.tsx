@@ -3,10 +3,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Mail, MailOpen, Trash2, Loader2, CheckCheck, MessageSquare } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Message { id: string; name: string; email: string; subject: string; message: string; isRead: boolean; createdAt: string; }
 
 export default function AdminMessagesPage() {
+  const confirmDialog = useConfirm();
   const [items, setItems] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -26,7 +28,7 @@ export default function AdminMessagesPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Hapus pesan ini?")) return;
+    if (!await confirmDialog("Hapus pesan ini?")) return;
     await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
     load();
   }

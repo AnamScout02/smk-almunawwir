@@ -5,22 +5,13 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Search, Newspaper } from "lucide-react";
 import { getLang } from "@/lib/lang";
+import { NEWS_CATEGORY_COLORS as CATEGORY_COLORS } from "@/lib/news-categories";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Berita & Kegiatan — SMK Al Munawwir IIBS",
   description: "Berita terbaru, kegiatan, dan pengumuman dari SMK Al Munawwir IIBS.",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Prestasi: "bg-amber-100 text-amber-700",
-  Pengumuman: "bg-blue-100 text-blue-700",
-  Kegiatan: "bg-emerald-100 text-emerald-700",
-  Beasiswa: "bg-purple-100 text-purple-700",
-  SPMB: "bg-red-100 text-red-700",
-  Alumni: "bg-teal-100 text-teal-700",
-  Umum: "bg-gray-100 text-gray-600",
 };
 
 const CATEGORIES = ["Semua", "Prestasi", "Pengumuman", "Kegiatan", "SPMB", "Beasiswa", "Alumni", "Umum"];

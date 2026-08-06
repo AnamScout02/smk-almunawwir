@@ -1,4 +1,5 @@
 import React from "react";
+import PrintKop from "@/components/shared/PrintKop";
 
 export interface PrintAchievement { name: string; date: string; level: string; givenBy: string; }
 
@@ -131,7 +132,7 @@ function addressRows({ dusun, rt, rw, desa, kecamatan, kabupaten, province, fall
 
 function Section({ title, letter, children, aside }: { title: string; letter: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
-    <div className="mb-1 break-inside-avoid border-2 border-primary-900 rounded overflow-hidden">
+    <div className="mb-4 break-inside-avoid border-2 border-primary-900 rounded overflow-hidden">
       <h3 className="px-6 py-1 text-sm font-bold text-white uppercase tracking-wide"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
         {letter}.&nbsp;&nbsp;{title}
@@ -164,7 +165,7 @@ function PrintPage({ pageNum, first, last, nis, name, children }: {
   pageNum: number; first?: boolean; last?: boolean; nis: string; name: string; children: React.ReactNode;
 }) {
   return (
-    <div data-print-page={pageNum} className={`relative w-full min-h-[297mm] flex flex-col bg-white overflow-hidden ${last ? "" : "break-after-page"}`}>
+    <div data-print-page={pageNum} className={`print-doc relative w-full min-h-[297mm] flex flex-col bg-white overflow-hidden ${last ? "" : "break-after-page"}`}>
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat" }}
       />
@@ -179,7 +180,7 @@ function PrintPage({ pageNum, first, last, nis, name, children }: {
 /** Lembar cetak Buku Induk Siswa — A4, tanpa margin browser, 4 halaman tetap dengan footer bernomor.
  * `isLastInSequence` (default true): set false saat dipakai dalam cetak massal dan bukan siswa terakhir,
  * supaya halaman ke-4 tetap diberi jeda halaman sebelum siswa berikutnya. */
-export default function BukuIndukPrintSheet({ student, logoUrl, principalName, isLastInSequence = true }: { student: PrintStudent; letterheadUrl?: string; logoUrl?: string; principalName?: string; isLastInSequence?: boolean }) {
+export default function BukuIndukPrintSheet({ student, logoUrl, principalName, qrDataUrl, isLastInSequence = true }: { student: PrintStudent; letterheadUrl?: string; logoUrl?: string; principalName?: string; qrDataUrl?: string; isLastInSequence?: boolean }) {
   const b = (student.bukuIndukData ?? {}) as PrintBukuIndukData;
   const birth = tglParts(student.birthDate);
   const fatherBirth = tglParts(b.fatherBirthDate);
@@ -193,47 +194,7 @@ export default function BukuIndukPrintSheet({ student, logoUrl, principalName, i
       <style>{`* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }`}</style>
       {/* ── Halaman 1 ── */}
       <PrintPage pageNum={1} first nis={nis} name={name}>
-        {/* Kop — banner navy + pattern SMK + judul (kiri) + logo full putih (kanan), bleed penuh tanpa margin */}
-        <div className="relative -ml-16 -mr-8 mb-4 px-10 py-6 overflow-hidden flex items-center justify-between gap-4"
-          style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-          <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-          />
-          {/* Dekorasi ala hero landing: glow, cincin emas, partikel — versi statis untuk cetak */}
-          <div className="absolute -top-10 -right-6 w-44 h-44 rounded-full opacity-25 blur-2xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />
-          <div className="absolute -bottom-12 left-1/3 w-36 h-36 rounded-full opacity-15 blur-2xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #3b5bdb 0%, transparent 70%)" }} />
-          <div className="absolute top-1/2 -translate-y-1/2 right-28 w-20 h-20 rounded-full border border-gold/25 pointer-events-none" />
-          <div className="absolute top-1/2 -translate-y-1/2 right-28 w-14 h-14 rounded-full border border-gold/15 pointer-events-none" />
-          <div className="absolute bottom-2 left-24 w-10 h-10 rounded-full border border-white/10 pointer-events-none" />
-          {[
-            { top: "18%", left: "38%", size: 5, gold: true },
-            { top: "70%", left: "44%", size: 3, gold: false },
-            { top: "30%", left: "48%", size: 4, gold: true },
-            { top: "60%", left: "52%", size: 3, gold: false },
-            { top: "20%", left: "58%", size: 4, gold: false },
-            { top: "75%", left: "62%", size: 5, gold: true },
-            { top: "40%", left: "67%", size: 3, gold: false },
-            { top: "15%", left: "72%", size: 4, gold: true },
-          ].map((p, i) => (
-            <div key={i} className="absolute rounded-full pointer-events-none"
-              style={{
-                top: p.top, left: p.left, width: p.size, height: p.size,
-                background: p.gold ? "rgba(232,160,32,0.65)" : "rgba(255,255,255,0.35)",
-                boxShadow: p.gold ? `0 0 ${p.size * 2}px rgba(232,160,32,0.5)` : "none",
-              }}
-            />
-          ))}
-          <div className="relative">
-            <p className="font-bold text-lg uppercase tracking-wide text-white">Buku Induk Siswa</p>
-            <p className="font-bold text-sm uppercase text-gold">SMK Al Munawwir IIBS</p>
-          </div>
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="Logo SMK Al Munawwir IIBS" className="relative h-12 w-auto object-contain shrink-0" />
-          )}
-        </div>
+        <PrintKop title="Buku Induk Siswa" subtitle="SMK Al Munawwir IIBS" logoUrl={logoUrl} edgeClassName="-ml-16 -mr-8" />
 
         <Section
           letter="A"
@@ -293,24 +254,28 @@ export default function BukuIndukPrintSheet({ student, logoUrl, principalName, i
         </Section>
 
         <Section letter="D" title="Pendidikan Sebelumnya & Penerimaan">
-          <FieldGrid>
+          <div className="flex flex-col gap-2">
             <Row label="Asal Sekolah" value={student.previousSchool} labelWidth="w-36" />
             <Row label="Alamat Sekolah Asal" value={b.prevSchoolAddress} labelWidth="w-36" />
-            <Row label="Tgl Ijazah" value={tgl(b.ijazahDate)} labelWidth="w-36" />
-            <Row label="No. Ijazah" value={b.ijazahNo} labelWidth="w-36" />
-            <Row label="Tgl SKHUN" value={tgl(b.skhunDate)} labelWidth="w-36" />
-            <Row label="Lama Belajar" value={b.lamaBelajar} labelWidth="w-36" />
-            <Row label="Pindahan Dari" value={b.pindahanDari} labelWidth="w-36" />
-            <Row label="Alasan Pindah Ke Sini" value={b.alasanPindahKe} labelWidth="w-36" />
-            <Row label="Tingkat Masuk" value={b.tingkatMasuk} labelWidth="w-36" />
-            <Row label="Rombel" value={b.rombel} labelWidth="w-36" />
-            <Row label="Bidang Keahlian" value={b.bidangKeahlian} labelWidth="w-36" />
-            <Row label="Program Keahlian" value={b.programKeahlian} labelWidth="w-36" />
-            <Row label="Konsentrasi Keahlian" value={b.kompetensiKeahlian || student.major.name} labelWidth="w-36" />
-            <Row label="Tahun Masuk" value={student.enrollYear?.toString()} labelWidth="w-36" />
-            <Row label="Tanggal Diterima" value={tgl(b.diterimaDate)} labelWidth="w-36" />
-            <Row label="Kelas Sekarang" value={student.class?.name} labelWidth="w-36" />
-          </FieldGrid>
+            <div className="grid grid-cols-[17rem_1fr] gap-x-8 gap-y-1.5">
+              <div className="flex flex-col gap-2">
+                <Row label="Tgl Ijazah" value={tgl(b.ijazahDate)} labelWidth="w-36" />
+                <Row label="No. Ijazah" value={b.ijazahNo} labelWidth="w-36" />
+                <Row label="Tgl SKHUN" value={tgl(b.skhunDate)} labelWidth="w-36" />
+                <Row label="Lama Belajar" value={b.lamaBelajar} labelWidth="w-36" />
+                <Row label="Pindahan Dari" value={b.pindahanDari} labelWidth="w-36" />
+                <Row label="Alasan Pindah Ke Sini" value={b.alasanPindahKe} labelWidth="w-36" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Row label="Tingkat Masuk" value={b.tingkatMasuk} labelWidth="w-36" />
+                <Row label="Rombel" value={b.rombel} labelWidth="w-36" />
+                <Row label="Bidang Keahlian" value={b.bidangKeahlian} labelWidth="w-36" />
+                <Row label="Program Keahlian" value={b.programKeahlian} labelWidth="w-36" />
+                <Row label="Konsentrasi Keahlian" value={b.kompetensiKeahlian || student.major.name} labelWidth="w-36" />
+                <Row label="Tanggal Diterima" value={tgl(b.diterimaDate)} labelWidth="w-36" />
+              </div>
+            </div>
+          </div>
         </Section>
       </PrintPage>
 
@@ -394,7 +359,7 @@ export default function BukuIndukPrintSheet({ student, logoUrl, principalName, i
           </FieldGrid>
         </Section>
 
-        <div className="mb-1 break-inside-avoid border-2 border-primary-900 rounded overflow-hidden">
+        <div className="mb-4 break-inside-avoid border-2 border-primary-900 rounded overflow-hidden">
           <h3 className="px-6 py-1 text-sm font-bold text-white uppercase tracking-wide"
             style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>J.&nbsp;&nbsp;Prestasi</h3>
           <div className="px-6 pt-1.5 pb-1.5">
@@ -466,9 +431,16 @@ export default function BukuIndukPrintSheet({ student, logoUrl, principalName, i
           <Row label="Email Login" value={student.user.email} />
         </Section>
 
-        {/* Tanda tangan Kepala Sekolah */}
-        <div className="mt-10 mr-16 flex justify-end">
-          <div className="text-center text-xs w-56">
+        {/* QR verifikasi + Tanda tangan Kepala Sekolah */}
+        <div className="mt-10 mr-16 flex items-end justify-between">
+          {qrDataUrl && (
+            <div className="text-center text-[8px] text-gray-400 w-24">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrDataUrl} alt="QR verifikasi dokumen" className="w-20 h-20 mx-auto" />
+              <p className="mt-1">Scan untuk verifikasi keaslian dokumen</p>
+            </div>
+          )}
+          <div className="text-center text-xs w-56 ml-auto">
             <p className="mb-16 text-primary-700">Kepala SMK Al Munawwir IIBS</p>
             <div className="pt-1">
               <p className="font-bold underline text-primary-900">( {principalName || "__________________"} )</p>

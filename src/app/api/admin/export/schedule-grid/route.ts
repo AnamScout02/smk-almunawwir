@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { colorForTeacherCode } from "@/lib/teacher-colors";
+import { assertKurikulum } from "@/lib/kurikulum-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,8 @@ function toArgb(hex: string): string {
 }
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+  await assertKurikulum(session);
 
   const [periods, classes, schedules, assignments] = await Promise.all([
     prisma.schoolPeriod.findMany({ orderBy: [{ day: "asc" }, { order: "asc" }] }),

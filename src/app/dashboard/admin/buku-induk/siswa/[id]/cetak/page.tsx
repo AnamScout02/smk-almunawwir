@@ -10,6 +10,7 @@ export default function CetakBukuIndukPage() {
   const [student, setStudent] = useState<PrintStudent | null>(null);
   const [logo, setLogo] = useState("");
   const [principalName, setPrincipalName] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -19,22 +20,23 @@ export default function CetakBukuIndukPage() {
       .then(d => { if (d) setStudent(d); setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
+    fetch(`/api/admin/buku-induk/siswa/${id}/qr`).then(r => r.json()).then(d => setQrDataUrl(d.qrDataUrl ?? "")).catch(() => {});
   }, [id]);
 
-  if (loading) return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-100 text-gray-400">Memuat data...</div>;
+  if (loading) return <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex items-center justify-center min-h-[60vh] text-gray-400">Memuat data...</div>;
   if (notFound || !student) return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-gray-100 text-gray-400">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex flex-col items-center justify-center gap-3 min-h-[60vh] text-gray-400">
       <p>Data tidak ditemukan</p>
       <button onClick={() => router.back()} className="text-primary-600 hover:underline text-sm">Kembali</button>
     </div>
   );
 
   return (
-    <div className="fixed print:static inset-0 print:inset-auto z-[60] bg-gray-100 print:bg-white overflow-y-auto print:overflow-visible print:h-auto">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 print:pt-0">
       <style>{`@page { size: A4; margin: 0; }`}</style>
 
       {/* Print controls — hidden on print */}
-      <div className="print:hidden sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
+      <div className="print:hidden sticky top-0 z-10 bg-white border border-gray-200 rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm mb-6">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
           <ArrowLeft size={16} /> Kembali
         </button>
@@ -46,9 +48,9 @@ export default function CetakBukuIndukPage() {
       </div>
 
       {/* Print container */}
-      <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0">
+      <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0 overflow-x-auto print:overflow-visible">
         <div className="shadow-lg print:shadow-none">
-          <BukuIndukPrintSheet student={student} logoUrl={logo} principalName={principalName} />
+          <BukuIndukPrintSheet student={student} logoUrl={logo} principalName={principalName} qrDataUrl={qrDataUrl} />
         </div>
       </div>
     </div>

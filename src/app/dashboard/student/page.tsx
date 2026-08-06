@@ -3,13 +3,15 @@ export const dynamic = "force-dynamic";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekType } from "@/lib/schedule-week.server";
+import { getWakilKepalaAgenda } from "@/lib/agenda";
+import AgendaCalendar from "@/components/shared/AgendaCalendar";
 import {
-  BookOpen, CheckCircle, Briefcase, Award, LogOut, AlertTriangle,
-  CalendarDays, UserCircle, Printer, Newspaper, Bell, Calendar,
+  BookOpen, CheckCircle, Briefcase, Award, AlertTriangle,
+  CalendarDays, Printer, Newspaper, Bell, Calendar,
   TrendingUp, Star, ArrowRight, Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { logout } from "@/app/actions/auth";
+import EmptyState from "@/components/admin/EmptyState";
 
 const STATUS_COLOR: Record<string, string> = {
   HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
@@ -36,8 +38,13 @@ export default async function StudentDashboard() {
     },
   });
 
+  // Sapaan pakai Nama Panggilan dari Buku Induk kalau sudah diisi admin — lebih akrab daripada
+  // asal ambil kata pertama nama lengkap (mis. "Moh" dari "Moh Iqbal Marsuto").
+  const nicknameRaw = (student?.bukuIndukData as Record<string, unknown> | null)?.nickname;
+  const greetingName = (typeof nicknameRaw === "string" && nicknameRaw.trim()) || session.name.split(" ")[0];
+
   const currentWeekType = await getCurrentWeekType();
-  const [latestNews, announcements, schedules] = await Promise.all([
+  const [latestNews, announcements, schedules, agenda] = await Promise.all([
     prisma.news.findMany({
       where: { published: true },
       orderBy: { createdAt: "desc" },
@@ -61,6 +68,7 @@ export default async function StudentDashboard() {
           orderBy: [{ day: "asc" }, { startTime: "asc" }],
         })
       : Promise.resolve([]),
+    getWakilKepalaAgenda(),
   ]);
 
   const grades = student?.grades ?? [];
@@ -98,6 +106,19 @@ export default async function StudentDashboard() {
   const scoreColor = (s: number) => s >= 85 ? "text-emerald-600" : s >= 75 ? "text-blue-600" : "text-red-500";
   const scoreBg = (s: number) => s >= 85 ? "bg-emerald-50" : s >= 75 ? "bg-blue-50" : "bg-red-50";
 
+  function mergeConsecutive(slots: typeof schedules) {
+    const merged: { id: string; startTime: string; endTime: string; subject: string }[] = [];
+    for (const s of slots) {
+      const last = merged[merged.length - 1];
+      if (last && last.subject === s.subject && last.endTime === s.startTime) {
+        last.endTime = s.endTime;
+      } else {
+        merged.push({ id: s.id, startTime: s.startTime, endTime: s.endTime, subject: s.subject });
+      }
+    }
+    return merged;
+  }
+
   const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
   const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
   const todayDay = ["MINGGU","SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU"][now.getDay()];
@@ -123,22 +144,6 @@ export default async function StudentDashboard() {
               {student?.class?.name ?? "—"}{student?.major?.code ? ` · ${student.major.code}` : ""} · NIS: {student?.nis ?? "—"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard/student/rapor" title="Cetak Rapor"
-              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition border border-white/10">
-              <Printer size={16} className="text-white/80" />
-            </Link>
-            <Link href="/dashboard/student/profile" title="Profil"
-              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition border border-white/10">
-              <UserCircle size={18} className="text-white/80" />
-            </Link>
-            <form action={logout}>
-              <button type="submit" title="Keluar"
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-red-500/30 flex items-center justify-center transition border border-white/10">
-                <LogOut size={16} className="text-white/80" />
-              </button>
-            </form>
-          </div>
         </div>
       </div>
 
@@ -149,7 +154,7 @@ export default async function StudentDashboard() {
           <div>
             <p className="font-arabic text-primary-700 text-2xl">اَلسَّلَامُ عَلَيْكُمْ</p>
             <h2 className="font-heading text-2xl font-bold text-navy mt-1">
-              Halo, {session.name.split(" ")[0]}! 👋
+              Halo, {greetingName}! 👋
             </h2>
             <p className="text-gray-400 text-sm mt-0.5">
               {now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -194,45 +199,43 @@ export default async function StudentDashboard() {
           {[
             {
               icon: Award, label: "Rata-rata Nilai", value: avgScore || "—",
-              color: "text-gold", bg: "bg-gold/10", border: "border-gold/20",
+              grad: "from-gold to-gold-dark", ring: "ring-amber-100",
               sub: avgScore >= 80 ? "Di atas rata-rata" : avgScore >= 75 ? "Memenuhi KKM" : "Perlu ditingkatkan",
-              subColor: avgScore >= 80 ? "text-emerald-600" : avgScore >= 75 ? "text-blue-600" : "text-red-500",
             },
             {
               icon: CheckCircle, label: "Kehadiran", value: `${attendancePct}%`,
-              color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100",
+              grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100",
               sub: `${presentCount} dari ${attendance.length} hari`,
-              subColor: "text-gray-400",
             },
             {
               icon: BookOpen, label: "Total Nilai", value: grades.length,
-              color: "text-primary-700", bg: "bg-primary-50", border: "border-primary-100",
+              grad: "from-primary-500 to-primary-700", ring: "ring-primary-100",
               sub: `${[...new Set(grades.map(g => g.semester))].length} semester`,
-              subColor: "text-gray-400",
             },
             {
               icon: Briefcase, label: "Status PKL", value: student?.internship?.status ?? "Belum",
-              color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100",
+              grad: "from-purple-500 to-purple-600", ring: "ring-purple-100",
               sub: student?.internship?.company ?? "Belum ada data",
-              subColor: "text-gray-400",
             },
-          ].map(({ icon: Icon, label, value, color, bg, border, sub, subColor }) => (
-            <div key={label} className="stat-card">
-              <div className={`w-10 h-10 rounded-2xl ${bg} border ${border} flex items-center justify-center mb-3`}>
-                <Icon size={18} className={color} />
+          ].map(({ icon: Icon, label, value, grad, ring, sub }) => (
+            <div key={label} className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${grad} ring-1 ${ring} min-w-0`}>
+              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Icon size={56} className="text-white" />
               </div>
-              <p className="text-gray-400 text-xs font-medium mb-1">{label}</p>
-              <p className={`font-heading font-bold text-2xl ${color}`}>{value}</p>
-              <p className={`text-xs mt-1 ${subColor}`}>{sub}</p>
+              <div className="relative">
+                <p className="text-white/70 text-xs font-medium mb-1">{label}</p>
+                <p className="font-heading font-bold text-2xl text-white">{value}</p>
+                <p className="text-xs mt-1 text-white/80">{sub}</p>
+              </div>
             </div>
           ))}
         </div>
 
         {/* ── Attendance + Schedule Row ── */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 gap-5 items-start">
 
           {/* Absensi bulan ini */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
             <div className="flex items-center gap-2 mb-4">
               <CalendarDays size={16} className="text-primary-700" />
               <h3 className="font-heading font-semibold text-navy">
@@ -257,7 +260,7 @@ export default async function StudentDashboard() {
                   <span className="font-heading font-bold text-sm text-navy">{thisMonthPct}%</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 flex-1">
+              <div className="grid grid-cols-2 gap-2 flex-1 min-w-0">
                 {thisMonthSummary.map(({ status, count }) => (
                   <div key={status} className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${STATUS_DOT[status] ?? "bg-gray-300"}`} />
@@ -290,7 +293,7 @@ export default async function StudentDashboard() {
           </div>
 
           {/* Jadwal hari ini */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
             <div className="flex items-center gap-2 mb-4">
               <Calendar size={16} className="text-primary-700" />
               <h3 className="font-heading font-semibold text-navy">Jadwal Pelajaran</h3>
@@ -298,7 +301,9 @@ export default async function StudentDashboard() {
             {schedules.length > 0 ? (
               <div className="space-y-2">
                 {DAYS.filter(d => schedules.some(s => s.day === d)).map(day => {
-                  const daySchedules = schedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+                  const daySchedules = mergeConsecutive(
+                    schedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime))
+                  );
                   const isToday = day === todayDay;
                   return (
                     <div key={day} className={`rounded-xl overflow-hidden border ${isToday ? "border-primary-300 ring-1 ring-primary-100" : "border-gray-100"}`}>
@@ -310,7 +315,7 @@ export default async function StudentDashboard() {
                         {daySchedules.map(s => (
                           <div key={s.id} className="px-3 py-2 flex items-center gap-2.5 text-xs">
                             <span className="font-mono text-primary-700 font-bold w-20 shrink-0 text-[10px]">{s.startTime}–{s.endTime}</span>
-                            <span className="font-medium text-gray-800 flex-1 truncate">{s.subject}</span>
+                            <span className="font-medium text-gray-800 flex-1 min-w-0 truncate">{s.subject}</span>
                           </div>
                         ))}
                       </div>
@@ -325,6 +330,11 @@ export default async function StudentDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Agenda Wakil Kepala ── */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <AgendaCalendar agenda={agenda} />
         </div>
 
         {/* ── Nilai per Semester ── */}
@@ -407,14 +417,14 @@ export default async function StudentDashboard() {
 
           {/* PKL */}
           {student?.internship ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
               <div className="flex items-center gap-2 mb-4">
                 <Briefcase size={16} className="text-purple-600" />
                 <h3 className="font-heading font-semibold text-navy">Informasi PKL</h3>
                 <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full border ${
                   student.internship.status === "COMPLETED"
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-blue-50 text-blue-700 border-blue-200"
                 }`}>
                   {student.internship.status === "COMPLETED" ? "Selesai" : "Berlangsung"}
                 </span>
@@ -434,11 +444,7 @@ export default async function StudentDashboard() {
               </div>
             </div>
           ) : (
-            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-36">
-              <Briefcase size={28} className="text-purple-300 mb-3" />
-              <p className="font-semibold text-purple-700 text-sm">Belum Ada Data PKL</p>
-              <p className="text-purple-400 text-xs mt-1">Informasi PKL akan muncul setelah diinput oleh wali kelas.</p>
-            </div>
+            <EmptyState icon={Briefcase} title="Belum Ada Data PKL" description="Informasi PKL akan muncul setelah diinput oleh wali kelas." className="flex flex-col items-center justify-center min-h-36 py-0" />
           )}
 
           {/* Berita terbaru */}

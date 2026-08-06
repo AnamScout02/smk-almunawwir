@@ -1,0 +1,694 @@
+"use client";
+import { useEffect, useState } from "react";
+import { BadgeCheck, Loader2, Plus, Trash2, Save, CheckCircle2, Clock, XCircle, CalendarClock, CheckSquare, Coins } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
+import EmptyState from "@/components/admin/EmptyState";
+import Modal from "@/components/admin/Modal";
+import Select from "@/components/admin/Select";
+import StatTile from "@/components/admin/StatTile";
+import DatePicker from "@/components/shared/DatePicker";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { PageSkeleton } from "@/components/shared/Skeleton";
+import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
+
+interface TeacherOption { id: string; nip: string; user: { name: string } }
+interface DailyRecord { id: string; date: string; status: string; notes: string | null; teacher: { nip: string; user: { name: string } } }
+interface SlotRecord {
+  id: string; date: string; status: string; hasTugas: boolean | null; notes: string | null;
+  schedule: { subject: string; startTime: string; endTime: string; class: { name: string }; teacher: { nip: string; user: { name: string } } | null };
+}
+interface DutyRecord {
+  id: string; date: string; status: string; notes: string | null;
+  user: { name: string; role: string; teacher: { nip: string } | null };
+}
+// Baris tergabung untuk tabel rekap — daily (TeacherDiscipline) vs slot (TeacherScheduleAttendance)
+// vs duty (DutyAttendance, kehadiran petugas piket itu sendiri) dibedakan lewat `kind`, dirender
+// dalam satu tabel yang sama, diurutkan bareng berdasar tanggal.
+// "slot" dikelompokkan per BLOK (JP berurutan, kelas+mapel+guru+status sama) — BUKAN 1 baris per
+// jam pelajaran mentah, supaya 1 kali "masuk kelas" (misal 4 JP berurutan) tampil sebagai 1 baris,
+// bukan 4 baris terpisah (dulu bug: StatTile & rekap ikut menghitung 4x untuk 1 kejadian yang sama).
+type CombinedRow =
+  | { kind: "daily"; id: string; ids: string[]; date: string; status: string; hasTugas: boolean | null; notes: string | null; teacherName: string; teacherNip: string; detail: string }
+  | { kind: "slot"; id: string; ids: string[]; date: string; status: string; hasTugas: boolean | null; notes: string | null; teacherName: string; teacherNip: string; detail: string }
+  | { kind: "duty"; id: string; ids: string[]; date: string; status: string; hasTugas: boolean | null; notes: string | null; teacherName: string; teacherNip: string; detail: string };
+
+// Baris tabel "Buku Piket" — SEMUA kelas+jam+guru pada satu tanggal (kelas X & XI saja), langsung
+// bisa dicentang statusnya per baris tanpa perlu pilih guru satu-satu dulu. `scheduleIds` bisa
+// berisi LEBIH dari 1 id kalau guru itu ngajar beberapa JP berurutan di kelas+mapel yang sama —
+// API sudah menggabungkannya jadi 1 blok/1 baris, disimpan sebagai 1 status untuk semua JP itu.
+interface DaySlotItem {
+  scheduleIds: string[]; className: string; subject: string; startTime: string; endTime: string; room: string | null;
+  startPeriod: number | null; endPeriod: number | null;
+  teacherId: string | null; teacherName: string; teacherNip: string;
+  status: string; hasTugas: boolean | null; notes: string; periodCount: number;
+}
+
+function jamKeLabel(s: { startPeriod: number | null; endPeriod: number | null; startTime: string; endTime: string }) {
+  if (s.startPeriod === null || s.endPeriod === null) return `${s.startTime}–${s.endTime}`;
+  return s.startPeriod === s.endPeriod ? `Jam ke-${s.startPeriod}` : `Jam ke-${s.startPeriod} s/d ${s.endPeriod}`;
+}
+
+interface SlotItem {
+  scheduleIds: string[]; className: string; subject: string; startTime: string; endTime: string; room: string | null;
+  status: string; hasTugas: boolean | null; notes: string; periodCount: number;
+}
+
+// Kehadiran petugas piket ITU SENDIRI (bukan absensi mengajar) — siapa yang terjadwal piket di
+// tanggal itu (dari Jadwal Piket), status Hadir/Izin/Sakit/Alpha-nya.
+interface DutyAttendanceItem {
+  userId: string; userName: string; userRole: string; userNip: string | null; status: string; notes: string;
+}
+
+const STATUS_OPTIONS = [
+  { value: "HADIR", label: "Hadir" },
+  { value: "TERLAMBAT", label: "Terlambat" },
+  { value: "IZIN", label: "Izin" },
+  { value: "SAKIT", label: "Sakit" },
+  { value: "ALPHA", label: "Alpha" },
+];
+const TUGAS_OPTIONS = [
+  { value: "", label: "-" },
+  { value: "ya", label: "Ada Tugas" },
+  { value: "tidak", label: "Tidak Ada Tugas" },
+];
+const STATUS_BADGE: Record<string, string> = {
+  HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  TERLAMBAT: "bg-amber-50 text-amber-700 border border-amber-200",
+  IZIN: "bg-blue-50 text-blue-600 border border-blue-200",
+  SAKIT: "bg-blue-50 text-blue-600 border border-blue-200",
+  ALPHA: "bg-red-50 text-red-600 border border-red-200",
+};
+const EMPTY_FORM = { teacherId: "", date: new Date().toISOString().slice(0, 10), status: "HADIR", notes: "" };
+
+function fmt(d: string) {
+  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+function tugasLabel(v: boolean | null) {
+  return v === true ? "Ada Tugas" : v === false ? "Tidak Ada Tugas" : "-";
+}
+function groupKey(ids: string[]) {
+  return ids.join(",");
+}
+
+export default function KedisiplinanManager() {
+  const confirmDialog = useConfirm();
+
+  // ===== Tabel "Buku Piket" (utama) — per tanggal, semua kelas & guru sekaligus =====
+  const today = new Date().toISOString().slice(0, 10);
+  const [viewDate, setViewDate] = useState(today);
+  const [daySlots, setDaySlots] = useState<DaySlotItem[]>([]);
+  const [loadingDay, setLoadingDay] = useState(true);
+  const [savingDay, setSavingDay] = useState(false);
+  const [dayBulkStatus, setDayBulkStatus] = useState("HADIR");
+  const [daySaved, setDaySaved] = useState(false);
+  // Baris yang BENAR-BENAR diubah di sesi browser ini — cuma baris ini yang dikirim saat Simpan.
+  // Tanpa ini, kalau guru piket lain sudah lebih dulu menyimpan perubahan di baris LAIN sementara
+  // browser ini masih membuka data lama, klik "Simpan Semua" bisa menimpa balik perubahan mereka
+  // dengan data basi (race condition nyata — 2 guru piket bisa mengisi Buku Piket di waktu
+  // berdekatan tanpa saling tahu).
+  const [dirtyDayKeys, setDirtyDayKeys] = useState<Set<string>>(new Set());
+
+  // ===== Kehadiran Guru Piket (petugas piket itu sendiri, bukan absensi mengajar) — pakai viewDate yang sama =====
+  const [dutyAttendance, setDutyAttendance] = useState<DutyAttendanceItem[]>([]);
+  const [loadingDuty, setLoadingDuty] = useState(true);
+  const [savingDuty, setSavingDuty] = useState(false);
+  const [dutySaved, setDutySaved] = useState(false);
+  const [dirtyDutyUserIds, setDirtyDutyUserIds] = useState<Set<string>>(new Set());
+
+  function loadDutyAttendance() {
+    setLoadingDuty(true);
+    setDirtyDutyUserIds(new Set());
+    fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance?date=${viewDate}`)
+      .then(r => r.json()).then(d => setDutyAttendance(Array.isArray(d) ? d : []))
+      .catch(() => {}).finally(() => setLoadingDuty(false));
+  }
+  useEffect(() => { loadDutyAttendance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [viewDate]);
+
+  function setDutyField(userId: string, field: "status" | "notes", value: string) {
+    setDutyAttendance(prev => prev.map(d => d.userId === userId ? { ...d, [field]: value } : d));
+    setDirtyDutyUserIds(prev => new Set(prev).add(userId));
+    setDutySaved(false);
+  }
+
+  async function handleSaveDuty() {
+    const changed = dutyAttendance.filter(d => dirtyDutyUserIds.has(d.userId));
+    if (changed.length === 0) return;
+    setSavingDuty(true);
+    const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: viewDate, records: changed.map(d => ({ userId: d.userId, status: d.status, notes: d.notes })) }),
+    });
+    setSavingDuty(false);
+    if (res.ok) {
+      setDutySaved(true);
+      setTimeout(() => setDutySaved(false), 3000);
+      setDirtyDutyUserIds(new Set());
+    }
+  }
+
+  function loadDay() {
+    setLoadingDay(true);
+    setDirtyDayKeys(new Set());
+    fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots?date=${viewDate}`)
+      .then(r => r.json()).then(d => setDaySlots(Array.isArray(d) ? d : []))
+      .catch(() => {}).finally(() => setLoadingDay(false));
+  }
+  useEffect(() => { loadDay(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [viewDate]);
+
+  function setDaySlotField(key: string, field: "status" | "hasTugas" | "notes", value: string | boolean | null) {
+    setDaySlots(prev => prev.map(s => {
+      if (groupKey(s.scheduleIds) !== key) return s;
+      const next = { ...s, [field]: value };
+      if (field === "status" && value === "HADIR") next.hasTugas = null; // Ada Tugas cuma relevan kalau tidak Hadir
+      return next;
+    }));
+    setDirtyDayKeys(prev => new Set(prev).add(key));
+    setDaySaved(false);
+  }
+  // Jam yang BELUM MULAI (kalau viewDate = hari ini) tidak boleh dinilai kehadirannya — guru
+  // piket belum bisa tahu guru itu masuk atau tidak kalau jamnya saja belum tiba. Baris begini
+  // dikunci (tidak bisa diedit, tidak ikut kena "Terapkan ke Semua") sampai jamnya benar tiba.
+  function isFutureSlot(s: DaySlotItem) {
+    if (viewDate !== today) return false;
+    const nowHHMM = new Date().toTimeString().slice(0, 5);
+    return s.startTime > nowHHMM;
+  }
+  function applyDayBulkStatus() {
+    setDaySlots(prev => prev.map(s => isFutureSlot(s) ? s : { ...s, status: dayBulkStatus, hasTugas: dayBulkStatus === "HADIR" ? null : s.hasTugas }));
+    setDirtyDayKeys(new Set(daySlots.filter(s => !isFutureSlot(s)).map(s => groupKey(s.scheduleIds))));
+    setDaySaved(false);
+  }
+  async function handleSaveDay() {
+    const changed = daySlots.filter(s => dirtyDayKeys.has(groupKey(s.scheduleIds)));
+    if (changed.length === 0) return;
+    setSavingDay(true);
+    const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: viewDate,
+        records: changed.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
+      }),
+    });
+    setSavingDay(false);
+    if (res.ok) {
+      setDaySaved(true);
+      setTimeout(() => setDaySaved(false), 3000);
+      setDirtyDayKeys(new Set());
+      load();
+      loadDay(); // sinkron ulang dgn server — kalau ada perubahan dari guru piket lain, ikut ke-refresh
+    }
+  }
+
+  // ===== Rekap histori (semua tanggal) + form manual (guru tanpa jadwal di tanggal itu) =====
+  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [scheduleAttendance, setScheduleAttendance] = useState<SlotRecord[]>([]);
+  const [dutyHistory, setDutyHistory] = useState<DutyRecord[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [slots, setSlots] = useState<SlotItem[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState("HADIR");
+  const [dirtySlotKeys, setDirtySlotKeys] = useState<Set<string>>(new Set()); // sama alasannya dgn dirtyDayKeys di atas
+
+  // ===== Pengaturan Poin (leaderboard kedisiplinan) — cuma ADMIN/Wakasek Penjamin Mutu/Kurikulum.
+  // Tidak ada prop server-side utk deteksi jabatan (komponen ini dipakai lintas portal tanpa
+  // prop drilling) — cukup coba GET, kalau 403 (FORBIDDEN) berarti tidak berwenang, section
+  // disembunyikan total. Guru piket harian yang cuma bertugas hari itu TIDAK boleh ubah bobot poin
+  // sekolah (lihat guard `assertPointConfigAccess` di point-config/route.ts).
+  const [pointConfig, setPointConfig] = useState<Record<string, number> | null>(null);
+  const [canEditPoints, setCanEditPoints] = useState(false);
+  const [savingPoints, setSavingPoints] = useState(false);
+  const [pointsSaved, setPointsSaved] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/kedisiplinan/point-config").then(async r => {
+      if (!r.ok) { setCanEditPoints(false); return; }
+      const d = await r.json();
+      setPointConfig(d);
+      setCanEditPoints(true);
+    }).catch(() => {});
+  }, []);
+
+  function setPointField(key: string, value: string) {
+    setPointConfig(prev => prev ? { ...prev, [key]: value === "" ? 0 : parseInt(value, 10) || 0 } : prev);
+    setPointsSaved(false);
+  }
+
+  async function handleSavePoints() {
+    if (!pointConfig) return;
+    setSavingPoints(true);
+    const res = await fetch("/api/admin/kedisiplinan/point-config", {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pointConfig),
+    });
+    setSavingPoints(false);
+    if (res.ok) { setPointsSaved(true); setTimeout(() => setPointsSaved(false), 3000); }
+  }
+
+  function load() {
+    setLoading(true);
+    setError("");
+    fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan").then(async r => {
+      if (!r.ok) { const d = await r.json(); setError(d.error || "Gagal memuat data"); setLoading(false); return; }
+      const d = await r.json();
+      setRecords(d.records ?? []);
+      setScheduleAttendance(d.scheduleAttendance ?? []);
+      setDutyHistory(d.dutyAttendance ?? []);
+      setTeachers(d.teachers ?? []);
+      setLoading(false);
+    }).catch(() => { setError("Gagal memuat data"); setLoading(false); });
+  }
+  useEffect(() => { load(); }, []);
+
+  function openAdd() { setForm(EMPTY_FORM); setFormError(""); setSlots([]); setModal(true); }
+
+  useEffect(() => {
+    if (!modal || !form.teacherId || !form.date) { setSlots([]); return; }
+    setLoadingSlots(true);
+    setDirtySlotKeys(new Set());
+    fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots?teacherId=${form.teacherId}&date=${form.date}`)
+      .then(r => r.json()).then(d => { setSlots(Array.isArray(d) ? d : []); setLoadingSlots(false); })
+      .catch(() => setLoadingSlots(false));
+  }, [modal, form.teacherId, form.date]);
+
+  function setSlotField(key: string, field: "status" | "hasTugas" | "notes", value: string | boolean | null) {
+    setSlots(prev => prev.map(s => {
+      if (groupKey(s.scheduleIds) !== key) return s;
+      const next = { ...s, [field]: value };
+      if (field === "status" && value === "HADIR") next.hasTugas = null;
+      return next;
+    }));
+    setDirtySlotKeys(prev => new Set(prev).add(key));
+  }
+  function applyBulkStatus() {
+    setSlots(prev => prev.map(s => ({ ...s, status: bulkStatus, hasTugas: bulkStatus === "HADIR" ? null : s.hasTugas })));
+    setDirtySlotKeys(new Set(slots.map(s => groupKey(s.scheduleIds))));
+  }
+
+  async function handleSave() {
+    if (!form.teacherId) { setFormError("Pilih guru terlebih dahulu."); return; }
+    setSaving(true);
+    // Guru punya jadwal di tanggal ini → simpan PER BLOK JAM PELAJARAN (TeacherScheduleAttendance).
+    // Tidak ada jadwal (mis. libur/tidak mengajar) → tetap simpan 1 status sepanjang hari
+    // (TeacherDiscipline), sama seperti alur lama.
+    const changedSlots = slots.filter(s => dirtySlotKeys.has(groupKey(s.scheduleIds)));
+    const res = slots.length > 0
+      ? await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: form.date,
+            // Kalau belum ada yg diubah sama sekali (guru cuma mau lihat jadwalnya dulu), kirim
+            // semua apa adanya (idempotent, aman) — bukan array kosong yg bakal ditolak API.
+            records: (changedSlots.length > 0 ? changedSlots : slots).map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
+          }),
+        })
+      : await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+        });
+    setSaving(false);
+    if (!res.ok) { const d = await res.json(); setFormError(d.error || "Gagal menyimpan"); return; }
+    setModal(false);
+    load();
+    if (form.date === viewDate) loadDay();
+  }
+
+  async function handleDeleteDaily(r: DailyRecord) {
+    if (!(await confirmDialog(`Hapus catatan kedisiplinan ${r.teacher.user.name} tanggal ${fmt(r.date)}?`))) return;
+    await fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/${r.id}`, { method: "DELETE" });
+    load();
+  }
+  async function handleDeleteSlotBlock(row: Extract<CombinedRow, { kind: "slot" }>) {
+    if (!(await confirmDialog(`Hapus catatan absensi ${row.teacherName} — ${row.detail} tanggal ${fmt(row.date)}?`))) return;
+    await Promise.all(row.ids.map(id => fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots/${id}`, { method: "DELETE" })));
+    load();
+    loadDay();
+  }
+  async function handleDeleteDutyRecord(row: Extract<CombinedRow, { kind: "duty" }>) {
+    if (!(await confirmDialog(`Hapus catatan piket ${row.teacherName} tanggal ${fmt(row.date)}?`))) return;
+    await fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance/${row.id}`, { method: "DELETE" });
+    load();
+    loadDutyAttendance();
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+        <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-sm">{error}</div>
+      </div>
+    );
+  }
+
+  // Gabungkan JP berurutan (kelas+mapel+guru+status+adaTugas sama, di tanggal sama) jadi 1 blok —
+  // key menyertakan `date`/`status`/`hasTugas` supaya blok TIDAK tergabung lintas tanggal atau
+  // lintas status berbeda (kalau sebagian JP diedit manual jadi status lain, tetap kepisah).
+  const scheduleBlocks = groupConsecutiveSchedules(
+    scheduleAttendance.map(r => ({ ...r, startTime: r.schedule.startTime, endTime: r.schedule.endTime })),
+    r => `${r.date}|${r.schedule.teacher?.nip ?? "-"}|${r.schedule.class.name}|${r.schedule.subject}|${r.status}|${r.hasTugas}`,
+  );
+
+  const combined: CombinedRow[] = [
+    ...records.map((r): CombinedRow => ({
+      kind: "daily", id: r.id, ids: [r.id], date: r.date, status: r.status, hasTugas: null, notes: r.notes,
+      teacherName: r.teacher.user.name, teacherNip: r.teacher.nip, detail: "Sepanjang hari",
+    })),
+    ...scheduleBlocks.map(({ items, first, last }): CombinedRow => ({
+      kind: "slot", id: first.id, ids: items.map(i => i.id), date: first.date, status: first.status, hasTugas: first.hasTugas, notes: first.notes,
+      teacherName: first.schedule.teacher?.user.name ?? "-", teacherNip: first.schedule.teacher?.nip ?? "-",
+      detail: `Kelas ${first.schedule.class.name} · ${first.schedule.subject} · ${first.schedule.startTime}–${last.schedule.endTime}`,
+    })),
+    ...dutyHistory.map((r): CombinedRow => ({
+      kind: "duty", id: r.id, ids: [r.id], date: r.date, status: r.status, hasTugas: null, notes: r.notes,
+      teacherName: r.user.name, teacherNip: r.user.teacher?.nip ?? r.user.role, detail: "Piket",
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const hadir = combined.filter(r => r.status === "HADIR").length;
+  const terlambat = combined.filter(r => r.status === "TERLAMBAT").length;
+  const alpha = combined.filter(r => r.status === "ALPHA").length;
+
+  return (
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <PageHeader
+        icon={<BadgeCheck size={22} />}
+        title="Kedisiplinan Guru"
+        description="Buku piket digital (kelas X & XI) — kehadiran guru per blok jam pelajaran, dicatat Wakil Kepala Penjamin Mutu atau Guru Piket"
+        actions={
+          <button onClick={openAdd} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition whitespace-nowrap">
+            <Plus size={15} /> Tambah Manual
+          </button>
+        }
+      />
+
+      {/* ===== Buku Piket — tabel semua kelas & guru per tanggal ===== */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
+            <DatePicker value={viewDate} onChange={setViewDate} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={dayBulkStatus} onChange={setDayBulkStatus} options={STATUS_OPTIONS} />
+            <button onClick={applyDayBulkStatus} disabled={daySlots.length === 0}
+              className="text-xs font-semibold px-3 py-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition whitespace-nowrap disabled:opacity-40">
+              Terapkan ke Semua
+            </button>
+          </div>
+        </div>
+
+        {loadingDay ? (
+          <div className="py-16 text-center text-gray-400 text-sm">Memuat jadwal hari ini...</div>
+        ) : daySlots.length === 0 ? (
+          <EmptyState icon={CalendarClock} title="Tidak Ada Jadwal" description="Tidak ada jadwal mengajar kelas X/XI pada tanggal ini (libur/akhir pekan)." />
+        ) : (
+          <>
+            {/* Dikelompokkan PER KELAS (bukan tabel flat diurut jam) — samakan dengan format
+                "Daftar Kehadiran Guru" manual yang sudah dipakai sekolah lewat WhatsApp. */}
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Object.entries(
+                daySlots.reduce<Record<string, DaySlotItem[]>>((acc, s) => {
+                  (acc[s.className] ??= []).push(s);
+                  return acc;
+                }, {})
+              ).sort(([a], [b]) => a.localeCompare(b)).map(([className, items]) => (
+                <div key={className} className="bg-gray-50/60 rounded-xl border border-gray-100 overflow-hidden">
+                  <div className="px-3 py-2 bg-primary-900 text-white text-xs font-bold">{className}</div>
+                  <div className="divide-y divide-gray-100">
+                    {items.map(s => {
+                      const key = groupKey(s.scheduleIds);
+                      const locked = isFutureSlot(s);
+                      if (locked) {
+                        return (
+                          <div key={key} className="p-3 space-y-1 opacity-60">
+                            <p className="text-xs font-semibold text-primary-900">{jamKeLabel(s)} · {s.subject}</p>
+                            <p className="text-xs text-gray-500 -mt-1">{s.teacherName}</p>
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium pt-1">
+                              <Clock size={11} /> Belum waktunya — mulai jam {s.startTime}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={key} className="p-3 space-y-2">
+                          <p className="text-xs font-semibold text-primary-900">{jamKeLabel(s)} · {s.subject}</p>
+                          <p className="text-xs text-gray-500 -mt-1">{s.teacherName}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select value={s.status} onChange={e => setDaySlotField(key, "status", e.target.value)}
+                              className={`text-xs font-semibold rounded-lg border px-2 py-1.5 ${STATUS_BADGE[s.status]}`}>
+                              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                            <select value={s.hasTugas === null ? "" : s.hasTugas ? "ya" : "tidak"}
+                              disabled={s.status === "HADIR"}
+                              onChange={e => setDaySlotField(key, "hasTugas", e.target.value === "" ? null : e.target.value === "ya")}
+                              className="text-xs rounded-lg border border-gray-200 px-2 py-1.5 disabled:opacity-40 disabled:bg-white bg-white">
+                              {TUGAS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          </div>
+                          <input value={s.notes} onChange={e => setDaySlotField(key, "notes", e.target.value)}
+                            className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-4 mt-4">
+              {daySaved && <p className="text-emerald-600 text-sm font-semibold">✓ Tersimpan!</p>}
+              {!daySaved && dirtyDayKeys.size > 0 && (
+                <p className="text-amber-600 text-xs font-medium">{dirtyDayKeys.size} baris belum disimpan</p>
+              )}
+              <button onClick={handleSaveDay} disabled={savingDay || dirtyDayKeys.size === 0} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                {savingDay ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Semua
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ===== Kehadiran Guru Piket — petugas piket ITU SENDIRI, bukan absensi mengajar ===== */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+        <h3 className="font-heading font-semibold text-primary-900 mb-1 flex items-center gap-2">
+          <CalendarClock size={16} className="text-primary-700" /> Kehadiran Guru Piket
+        </h3>
+        <p className="text-xs text-gray-400 mb-4">Apakah petugas yang terjadwal piket tanggal ini benar-benar hadir menjalankan tugasnya.</p>
+        {loadingDuty ? (
+          <div className="py-8 text-center text-gray-400 text-sm">Memuat...</div>
+        ) : dutyAttendance.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4">Tidak ada guru/staf yang terjadwal piket pada tanggal ini.</p>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {dutyAttendance.map(d => (
+                <div key={d.userId} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
+                  <div>
+                    <p className="text-xs font-semibold text-primary-900">{d.userName}</p>
+                    <p className="text-[11px] text-gray-400">{d.userNip ?? d.userRole}</p>
+                  </div>
+                  <select value={d.status} onChange={e => setDutyField(d.userId, "status", e.target.value)}
+                    className={`text-xs font-semibold rounded-lg border px-2 py-1.5 w-full ${STATUS_BADGE[d.status]}`}>
+                    {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <input value={d.notes} onChange={e => setDutyField(d.userId, "notes", e.target.value)}
+                    className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-4 mt-4">
+              {dutySaved && <p className="text-emerald-600 text-sm font-semibold">✓ Tersimpan!</p>}
+              {!dutySaved && dirtyDutyUserIds.size > 0 && (
+                <p className="text-amber-600 text-xs font-medium">{dirtyDutyUserIds.size} belum disimpan</p>
+              )}
+              <button onClick={handleSaveDuty} disabled={savingDuty || dirtyDutyUserIds.size === 0} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                {savingDuty ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ===== Rekap histori ===== */}
+      {loading ? (
+        <PageSkeleton />
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <StatTile color="emerald" value={hadir} label="Hadir" icon={CheckCircle2} />
+            <StatTile color="amber" value={terlambat} label="Terlambat" icon={Clock} />
+            <StatTile color="red" value={alpha} label="Alpha" icon={XCircle} />
+          </div>
+          {combined.length === 0 ? (
+            <EmptyState icon={BadgeCheck} title="Belum Ada Catatan" description="Catat kehadiran & kedisiplinan guru di sini." />
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                      {["Guru", "Tanggal", "Kelas / Jam", "Status", "Ada Tugas", "Catatan", ""].map(h => (
+                        <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {combined.map(r => (
+                      <tr key={`${r.kind}-${r.id}`} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <p className="font-semibold text-primary-900">{r.teacherName}</p>
+                          <p className="text-gray-400 text-xs font-mono">{r.teacherNip}</p>
+                        </td>
+                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(r.date)}</td>
+                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{r.detail}</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[r.status]}`}>
+                            {STATUS_OPTIONS.find(s => s.value === r.status)?.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{r.kind === "slot" ? tugasLabel(r.hasTugas) : "-"}</td>
+                        <td className="px-5 py-3.5 text-gray-500 text-xs">{r.notes || "-"}</td>
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                          <button
+                            onClick={() => {
+                              if (r.kind === "daily") handleDeleteDaily(records.find(x => x.id === r.id)!);
+                              else if (r.kind === "slot") handleDeleteSlotBlock(r);
+                              else handleDeleteDutyRecord(r);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ===== Pengaturan Poin — cuma tampil kalau berwenang (ADMIN / Wakasek Penjamin Mutu / Kurikulum) ===== */}
+      {canEditPoints && pointConfig && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-6">
+          <h3 className="font-heading font-semibold text-primary-900 mb-1 flex items-center gap-2">
+            <Coins size={16} className="text-primary-700" /> Pengaturan Poin Kedisiplinan
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">Bobot poin per status ini dipakai untuk menghitung Papan Peringkat Kedisiplinan Guru — bisa diedit kapan saja.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            {[
+              { key: "pointHadir", label: "Hadir" },
+              { key: "pointTerlambat", label: "Terlambat" },
+              { key: "pointIzinAdaTugas", label: "Izin (Ada Tugas)" },
+              { key: "pointIzinTanpaTugas", label: "Izin (Tanpa Tugas)" },
+              { key: "pointSakitAdaTugas", label: "Sakit (Ada Tugas)" },
+              { key: "pointSakitTanpaTugas", label: "Sakit (Tanpa Tugas)" },
+              { key: "pointAlpha", label: "Alpha" },
+            ].map(({ key, label }) => (
+              <div key={key}>
+                <label className="label-field">{label}</label>
+                <input type="number" className="input-field" value={pointConfig[key] ?? 0}
+                  onChange={e => setPointField(key, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleSavePoints} disabled={savingPoints} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40">
+              {savingPoints ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Poin
+            </button>
+            {pointsSaved && <span className="text-emerald-600 text-xs font-semibold">Tersimpan.</span>}
+          </div>
+        </div>
+      )}
+
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title="Tambah Manual — Guru Tanpa Jadwal"
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
+            </button>
+          </>
+        }
+      >
+        {formError && <p className="error-msg mb-3">{formError}</p>}
+        <div className="space-y-3">
+          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <CheckSquare size={13} /> Untuk kasus khusus: guru yang tidak muncul di tabel Buku Piket (tidak ada jadwal di tanggal itu) tapi tetap perlu dicatat izin/sakit.
+          </p>
+          <div>
+            <label className="label-field">Guru</label>
+            <Select value={form.teacherId} onChange={v => setForm(p => ({ ...p, teacherId: v }))}
+              options={teachers.map(t => ({ value: t.id, label: `${t.user.name} (${t.nip})` }))} placeholder="— Pilih Guru —" />
+          </div>
+          <div>
+            <label className="label-field">Tanggal</label>
+            <DatePicker value={form.date} onChange={v => setForm(p => ({ ...p, date: v }))} />
+          </div>
+
+          {form.teacherId && form.date && (
+            loadingSlots ? (
+              <p className="text-xs text-gray-400">Memuat jadwal...</p>
+            ) : slots.length > 0 ? (
+              <div className="bg-primary-50 border border-primary-100 rounded-xl p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-primary-700 flex items-center gap-1.5">
+                    <CalendarClock size={13} /> Guru ini ternyata ADA jadwal — isi per blok jam pelajaran
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={bulkStatus} onChange={setBulkStatus} options={STATUS_OPTIONS} />
+                  <button type="button" onClick={applyBulkStatus}
+                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-200 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
+                    Terapkan ke Semua Jam
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {slots.map(s => {
+                    const key = groupKey(s.scheduleIds);
+                    return (
+                      <div key={key} className="bg-white rounded-lg border border-gray-100 p-2.5 space-y-2">
+                        <p className="text-xs font-semibold text-primary-900">
+                          {s.startTime}–{s.endTime}{s.periodCount > 1 && ` (${s.periodCount} JP)`} · {s.subject} · Kelas {s.className}{s.room && ` · ${s.room}`}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select value={s.status} onChange={v => setSlotField(key, "status", v)} options={STATUS_OPTIONS} />
+                          <Select value={s.hasTugas === null ? "" : s.hasTugas ? "ya" : "tidak"}
+                            onChange={v => setSlotField(key, "hasTugas", v === "" ? null : v === "ya")}
+                            options={TUGAS_OPTIONS} />
+                        </div>
+                        <input value={s.notes} onChange={e => setSlotField(key, "notes", e.target.value)}
+                          className="input-field text-xs" placeholder="Catatan (opsional)" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-primary-50 border border-primary-100 rounded-xl p-3">
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                    <CalendarClock size={13} /> Guru ini tidak ada jadwal mengajar pada tanggal ini — catatan disimpan untuk sepanjang hari.
+                  </p>
+                </div>
+                <div>
+                  <label className="label-field">Status</label>
+                  <Select value={form.status} onChange={v => setForm(p => ({ ...p, status: v }))} options={STATUS_OPTIONS} />
+                </div>
+                <div>
+                  <label className="label-field">Catatan (opsional)</label>
+                  <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="input-field resize-none" />
+                </div>
+              </>
+            )
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+}

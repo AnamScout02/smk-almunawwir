@@ -18,6 +18,7 @@ import {
   Leaf,
   Palette,
   Building2,
+  GraduationCap,
 } from "lucide-react";
 import { getLang } from "@/lib/lang";
 
@@ -30,6 +31,8 @@ const icons: Record<string, React.ElementType> = {
   dkv: Palette,
   dpib: Building2,
 };
+
+const staticBySlug = Object.fromEntries(programs.map(p => [p.slug, p]));
 
 const content = {
   id: {
@@ -76,62 +79,49 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const program = programs.find((p) => p.slug === slug);
-  if (!program) return { title: "Program tidak ditemukan" };
+  const major = await prisma.major.findFirst({ where: { code: { equals: slug, mode: "insensitive" } } }).catch(() => null);
+  if (!major) return { title: "Program tidak ditemukan" };
   return {
-    title: `${program.name} (${program.code}) — SMK Al Munawwir IIBS`,
-    description: program.desc,
+    title: `${major.name} (${major.code}) — SMK Al Munawwir IIBS`,
+    description: major.description,
   };
-}
-
-export function generateStaticParams() {
-  return programs.map((p) => ({ slug: p.slug }));
 }
 
 export default async function ProgramDetailPage({ params }: Props) {
   const { slug } = await params;
   const lang = await getLang();
   const c = content[lang];
-  const program = programs.find((p) => p.slug === slug);
-  if (!program) notFound();
 
-  const Icon = icons[program.slug] ?? Network;
-  const otherPrograms = programs.filter((p) => p.slug !== slug);
+  const majors = await prisma.major.findMany({ include: { gallery: { orderBy: { order: "asc" } } }, orderBy: { name: "asc" } }).catch(() => []);
+  const dbMajor = majors.find(m => m.code.toLowerCase() === slug.toLowerCase());
+  if (!dbMajor) notFound();
 
-  let logoByCode: Record<string, string> = {};
-  let colorByCode: Record<string, string> = {};
-  let dbMajor: Awaited<ReturnType<typeof prisma.major.findFirst>> & { gallery?: { id: string; imageUrl: string; caption: string | null }[] } | null = null;
-  try {
-    const majors = await prisma.major.findMany({ include: { gallery: { orderBy: { order: "asc" } } } });
-    logoByCode = Object.fromEntries(
-      majors.filter(m => m.logoUrl).map(m => [m.code.toUpperCase(), m.logoUrl as string])
-    );
-    colorByCode = Object.fromEntries(
-      majors.filter(m => m.themeColor).map(m => [m.code.toUpperCase(), m.themeColor as string])
-    );
-    dbMajor = majors.find(m => m.code.toUpperCase() === program.code.toUpperCase()) ?? null;
-  } catch {
-    // DB unavailable — pakai data statis di bawah
-  }
-  const logoUrl = logoByCode[program.code.toUpperCase()];
-  const customColor = dbMajor?.themeColor;
+  const program = staticBySlug[slug.toLowerCase()];
+  const Icon = icons[slug.toLowerCase()] ?? GraduationCap;
+  const otherMajors = majors.filter((m) => m.code.toLowerCase() !== slug.toLowerCase());
+
+  const logoUrl = dbMajor.logoUrl ?? undefined;
+  const customColor = dbMajor.themeColor;
+  const fallbackClass = program?.color ?? "from-primary-600 to-primary-800";
   const heroStyle = customColor ? { background: themeGradient(customColor) } : undefined;
   const rightStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
 
-  const tagline = dbMajor?.tagline || program.tagline;
-  const desc = dbMajor?.longDesc || program.desc;
-  const skills = dbMajor?.skills?.length ? dbMajor.skills : program.skills;
-  const career = dbMajor?.career?.length ? dbMajor.career : program.career;
-  const cert = dbMajor?.cert || program.cert;
-  const features = dbMajor?.features?.length ? dbMajor.features : program.features;
-  const gallery = dbMajor?.gallery ?? [];
+  const name = dbMajor.name;
+  const code = dbMajor.code;
+  const tagline = dbMajor.tagline || program?.tagline || "";
+  const desc = dbMajor.longDesc || program?.desc || dbMajor.description;
+  const skills = dbMajor.skills?.length ? dbMajor.skills : program?.skills ?? [];
+  const career = dbMajor.career?.length ? dbMajor.career : program?.career ?? [];
+  const cert = dbMajor.cert || program?.cert || "";
+  const features = dbMajor.features?.length ? dbMajor.features : program?.features ?? [];
+  const gallery = dbMajor.gallery ?? [];
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen">
         {/* Hero */}
-        <section className={`relative ${customColor ? "" : `bg-gradient-to-br ${program.color}`} text-white section-padding overflow-hidden`}
+        <section className={`relative ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white section-padding overflow-hidden`}
           style={heroStyle}>
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
@@ -145,21 +135,21 @@ export default async function ProgramDetailPage({ params }: Props) {
               <ChevronRight size={14} />
               <Link href="/programs" className="hover:text-white transition">{c.programsCrumb}</Link>
               <ChevronRight size={14} />
-              <span className="text-white">{program.code}</span>
+              <span className="text-white">{code}</span>
             </nav>
 
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
                 {logoUrl ? (
-                  <Image src={logoUrl} alt={program.name} fill sizes="96px" className="object-contain p-3" unoptimized />
+                  <Image src={logoUrl} alt={name} fill sizes="96px" className="object-contain p-3" unoptimized />
                 ) : (
                   <Icon size={48} className="text-white" />
                 )}
               </div>
               <div>
-                <span className="text-white/70 text-sm font-semibold uppercase tracking-widest">{program.code}</span>
+                <span className="text-white/70 text-sm font-semibold uppercase tracking-widest">{code}</span>
                 <h1 className="font-heading text-3xl md:text-5xl font-bold mt-1 mb-3">
-                  {program.name}
+                  {name}
                 </h1>
                 <p className="text-white/80 text-lg max-w-2xl leading-relaxed">
                   {tagline}
@@ -203,7 +193,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                   <div className="flex flex-wrap gap-3">
                     {career.map((c) => (
                       <span key={c}
-                        className={`px-4 py-2 rounded-full text-sm font-semibold ${customColor ? "" : `bg-gradient-to-r ${program.color}`} text-white`}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} text-white`}
                         style={rightStyle}>
                         {c}
                       </span>
@@ -218,7 +208,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {gallery.map((g) => (
                         <div key={g.id} className="aspect-video rounded-xl overflow-hidden relative">
-                          <Image src={g.imageUrl} alt={g.caption ?? program.name} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" unoptimized />
+                          <Image src={g.imageUrl} alt={g.caption ?? name} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" unoptimized />
                         </div>
                       ))}
                     </div>
@@ -228,16 +218,16 @@ export default async function ProgramDetailPage({ params }: Props) {
                         {Array.from({ length: 6 }).map((_, i) => (
                           logoUrl ? (
                             <div key={i}
-                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} rounded-xl flex items-center justify-center overflow-hidden relative`}
+                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} rounded-xl flex items-center justify-center overflow-hidden relative`}
                               style={heroStyle}>
                               <div className="absolute inset-0 opacity-[0.1] pointer-events-none"
                                 style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "60px 60px", backgroundRepeat: "repeat", filter: "invert(1)" }}
                               />
-                              <Image src={logoUrl} alt={program.name} fill sizes="120px" className="object-contain p-6" unoptimized />
+                              <Image src={logoUrl} alt={name} fill sizes="120px" className="object-contain p-6" unoptimized />
                             </div>
                           ) : (
                             <div key={i}
-                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${program.color}`} opacity-20 rounded-xl flex items-center justify-center`}
+                              className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} opacity-20 rounded-xl flex items-center justify-center`}
                               style={heroStyle}>
                               <Icon size={28} className="text-gray-400" />
                             </div>
@@ -258,7 +248,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                   <ul className="space-y-3">
                     {features.map((f) => (
                       <li key={f} className="flex items-center gap-3 text-sm">
-                        <div className={`w-2.5 h-2.5 rounded-full ${customColor ? "" : `bg-gradient-to-r ${program.color}`} shrink-0`}
+                        <div className={`w-2.5 h-2.5 rounded-full ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} shrink-0`}
                           style={rightStyle} />
                         <span className="text-gray-700">{f}</span>
                       </li>
@@ -301,10 +291,10 @@ export default async function ProgramDetailPage({ params }: Props) {
 
                 {/* CTA Daftar */}
                 <div className="bg-primary-50 rounded-2xl p-6">
-                  <h3 className="font-heading font-bold text-navy mb-2">{c.interestedTitle(program.code)}</h3>
+                  <h3 className="font-heading font-bold text-navy mb-2">{c.interestedTitle(code)}</h3>
                   <p className="text-sm text-gray-600 mb-4">{c.interestedDesc}</p>
                   <Link href="/admissions"
-                    className={`flex items-center justify-center gap-2 w-full ${customColor ? "" : `bg-gradient-to-r ${program.color}`} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition text-sm`}
+                    className={`flex items-center justify-center gap-2 w-full ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition text-sm`}
                     style={rightStyle}>
                     {c.registerBtn}
                     <ArrowRight size={16} />
@@ -328,23 +318,24 @@ export default async function ProgramDetailPage({ params }: Props) {
               </h2>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {otherPrograms.map((p) => {
-                const OtherIcon = icons[p.slug] ?? Network;
-                const otherLogo = logoByCode[p.code.toUpperCase()];
-                const otherColor = colorByCode[p.code.toUpperCase()];
+              {otherMajors.map((m) => {
+                const otherSlug = m.code.toLowerCase();
+                const otherStatic = staticBySlug[otherSlug];
+                const OtherIcon = icons[otherSlug] ?? GraduationCap;
+                const otherFallback = otherStatic?.color ?? "from-primary-600 to-primary-800";
                 return (
-                  <Link key={p.slug} href={`/programs/${p.slug}`}
+                  <Link key={m.id} href={`/programs/${otherSlug}`}
                     className="group block bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className={`w-11 h-11 rounded-xl ${otherColor ? "" : `bg-gradient-to-br ${p.color}`} flex items-center justify-center mb-3 overflow-hidden relative`}
-                      style={otherColor ? { background: themeGradient(otherColor) } : undefined}>
-                      {otherLogo ? (
-                        <Image src={otherLogo} alt={p.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                    <div className={`w-11 h-11 rounded-xl ${m.themeColor ? "" : `bg-gradient-to-br ${otherFallback}`} flex items-center justify-center mb-3 overflow-hidden relative`}
+                      style={m.themeColor ? { background: themeGradient(m.themeColor) } : undefined}>
+                      {m.logoUrl ? (
+                        <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
                       ) : (
                         <OtherIcon size={20} className="text-white" />
                       )}
                     </div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{p.code}</div>
-                    <div className="font-heading font-bold text-navy text-sm mt-0.5 leading-snug">{p.name}</div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{m.code}</div>
+                    <div className="font-heading font-bold text-navy text-sm mt-0.5 leading-snug">{m.name}</div>
                     <div className="flex items-center gap-1 text-primary-700 text-xs font-semibold mt-3 group-hover:gap-2 transition-all">
                       {c.viewDetail} <ArrowRight size={12} />
                     </div>

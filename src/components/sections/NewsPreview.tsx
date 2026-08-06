@@ -4,15 +4,7 @@ import { Calendar, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
-
-const categoryColors: Record<string, string> = {
-  Prestasi: "bg-amber-100 text-amber-700",
-  Pengumuman: "bg-blue-100 text-blue-700",
-  Kegiatan: "bg-emerald-100 text-emerald-700",
-  Beasiswa: "bg-purple-100 text-purple-700",
-  SPMB: "bg-red-100 text-red-600",
-  Umum: "bg-gray-100 text-gray-600",
-};
+import { NEWS_CATEGORY_COLORS as categoryColors } from "@/lib/news-categories";
 
 export default async function NewsPreview() {
   const lang = await getLang();

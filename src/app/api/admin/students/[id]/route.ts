@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { logActivity } from "@/lib/activity-log";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -24,9 +25,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
-    await prisma.student.delete({ where: { id } });
+    const student = await prisma.student.delete({ where: { id }, include: { user: { select: { name: true } } } });
+    await logActivity(session, {
+      action: "DELETE_STUDENT", entity: "Student", entityId: id,
+      description: `${session.name} menghapus data siswa "${student.user.name}" (NIS ${student.nis})`,
+    });
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Gagal menghapus" }, { status: 500 });

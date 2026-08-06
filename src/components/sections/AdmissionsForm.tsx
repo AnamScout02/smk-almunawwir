@@ -4,14 +4,6 @@ import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon } 
 import DatePicker from "@/components/shared/DatePicker";
 import type { Lang } from "@/lib/lang";
 
-const MAJORS = [
-  "Teknik Komputer & Jaringan (TKJ)",
-  "Akuntansi (AK)",
-  "Agribisnis Ternak Unggas (ATU)",
-  "Desain Komunikasi Visual (DKV)",
-  "Desain Pemodelan dan Informasi Bangunan (DPIB)",
-];
-
 const inputClass =
   "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition bg-white placeholder:text-gray-400";
 const labelClass = "block text-sm font-semibold text-primary-900 mb-1.5";
@@ -108,8 +100,16 @@ const ui = {
 type FormData = {
   fullName: string; birthPlace: string; birthDate: string; gender: string;
   nik: string; phone: string; nisn: string; address: string;
-  previousSchool: string; email: string; guardianName: string; chosenMajor: string;
+  previousSchool: string; email: string; guardianName: string; chosenMajor: string; jalur: string;
 };
+
+const JALUR_OPTIONS: { value: string; label: string }[] = [
+  { value: "REGULER", label: "Reguler" },
+  { value: "PRESTASI_AKADEMIK", label: "Prestasi Akademik" },
+  { value: "PRESTASI_NON_AKADEMIK", label: "Prestasi Non-Akademik" },
+  { value: "TAHFIDZ", label: "Tahfidz Qur'an" },
+  { value: "AFIRMASI", label: "Afirmasi" },
+];
 
 type DocUrls = Partial<Record<DocKey, string>>;
 type DocStatus = Partial<Record<DocKey, "idle" | "uploading" | "done" | "error">>;
@@ -119,7 +119,7 @@ type FormConfig = Record<string, string>;
 const EMPTY: FormData = {
   fullName: "", birthPlace: "", birthDate: "", gender: "",
   nik: "", phone: "", nisn: "", address: "",
-  previousSchool: "", email: "", guardianName: "", chosenMajor: "",
+  previousSchool: "", email: "", guardianName: "", chosenMajor: "", jalur: "REGULER",
 };
 
 function FileUploadField({
@@ -204,10 +204,12 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   const [config, setConfig] = useState<FormConfig>({});
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [majors, setMajors] = useState<{ code: string; name: string }[]>([]);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     fetch("/api/admissions/config").then(r => r.json()).then(setConfig).catch(() => {});
+    fetch("/api/public/majors").then(r => r.json()).then(setMajors).catch(() => {});
   }, []);
 
   function setField(key: keyof FormData, value: string) {
@@ -378,7 +380,18 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
           <label className={labelClass}>{t.major}</label>
           <select value={form.chosenMajor} onChange={e => setField("chosenMajor", e.target.value)} className={inputClass}>
             <option value="">{t.selectPlaceholder}</option>
-            {MAJORS.map(m => <option key={m} value={m}>{m}</option>)}
+            {majors.map(m => {
+              const label = `${m.name} (${m.code})`;
+              return <option key={m.code} value={label}>{label}</option>;
+            })}
+          </select>
+        </div>
+
+        {/* Jalur Pendaftaran */}
+        <div>
+          <label className={labelClass}>Jalur Pendaftaran</label>
+          <select value={form.jalur} onChange={e => setField("jalur", e.target.value)} className={inputClass}>
+            {JALUR_OPTIONS.map(j => <option key={j.value} value={j.value}>{j.label}</option>)}
           </select>
         </div>
 

@@ -3,6 +3,7 @@ import type { Lang } from "./lang";
 const translations = {
   id: {
     // Hero
+    hero_badge: "Pendidikan Terpadu & Berkarakter",
     hero_about: "Tentang Sekolah",
     hero_more: "Selengkapnya",
     hero_active_students: "Siswa Aktif",
@@ -30,10 +31,28 @@ const translations = {
 
     // Programs
     programs_label: "Program Kami",
-    programs_heading: "5 Konsentrasi Keahlian Unggulan",
+    programs_heading: "Konsentrasi Keahlian Unggulan",
     programs_sub: "Pilih jurusan yang sesuai minat dan bakat — semua didukung instruktur berpengalaman dan fasilitas industri modern.",
     programs_view_all: "Lihat Semua Program",
     programs_explore: "Pelajari Program",
+
+    // Why choose us
+    why_label: "Keunggulan Kami",
+    why_heading: "Kenapa Memilih SMK Al Munawwir IIBS?",
+    why_sub: "Perpaduan pendidikan vokasi berstandar industri dengan pembinaan karakter Islami sepanjang hari.",
+    why_1_title: "Boarding 24 Jam",
+    why_1_desc: "Pembinaan akhlak & kemandirian sepanjang hari dalam lingkungan pesantren modern.",
+    why_2_title: "Vokasi + Tahfidz",
+    why_2_desc: "Kompetensi keahlian industri dipadukan program tahfidz Al-Qur'an terjadwal.",
+    why_3_title: "Guru Berpengalaman",
+    why_3_desc: "Tenaga pendidik profesional dan bersertifikat di bidang keahliannya masing-masing.",
+    why_4_title: "PKL & Mitra Industri",
+    why_4_desc: "Praktik kerja lapangan nyata bersama mitra dunia usaha & dunia industri (DU/DI).",
+    why_5_title: "Fasilitas Lengkap",
+    why_5_desc: "Laboratorium komputer, bengkel praktik, dan asrama yang representatif.",
+    why_6_title: "Lingkungan Qurani",
+    why_6_desc: "Nilai-nilai Islam tertanam dalam keseharian, bukan sekadar mata pelajaran.",
+
     islamic_program_title: "Program Islami Terintegrasi",
     islamic_program_desc: "Seluruh program keahlian dilengkapi dengan Tahfidz Al-Qur'an, Bahasa Arab intensif, kajian Islam, dan pembinaan akhlak dalam lingkungan pesantren modern.",
 
@@ -81,22 +100,19 @@ const translations = {
       { name: "Fasilitas", href: "/facilities" },
       { name: "Ekstrakurikuler", href: "/extracurricular" },
       { name: "Alumni", href: "/alumni" },
+      { name: "Tracer Study Alumni", href: "/tracer-study" },
       { name: "Pendaftaran (SPMB)", href: "/admissions" },
+      { name: "Daftar Ulang PPDB", href: "/daftar-ulang" },
+      { name: "Cek Kelulusan", href: "/cek-kelulusan" },
       { name: "Berita & Kegiatan", href: "/news" },
       { name: "Galeri", href: "/gallery" },
       { name: "Kontak", href: "/contact" },
-    ],
-    footer_programs: [
-      "Teknik Komputer & Jaringan (TKJ)",
-      "Akuntansi (AK)",
-      "Agribisnis Ternak Unggas (ATU)",
-      "Desain Komunikasi Visual (DKV)",
-      "Desain Pemodelan & Informasi Bangunan (DPIB)",
     ],
   },
 
   en: {
     // Hero
+    hero_badge: "Integrated and Character Education",
     hero_about: "About School",
     hero_more: "Learn More",
     hero_active_students: "Active Students",
@@ -124,10 +140,28 @@ const translations = {
 
     // Programs
     programs_label: "Our Programs",
-    programs_heading: "5 Leading Areas of Expertise",
+    programs_heading: "Leading Areas of Expertise",
     programs_sub: "Choose a major that fits your interests and talents — all supported by experienced instructors and modern industry facilities.",
     programs_view_all: "View All Programs",
     programs_explore: "Explore Program",
+
+    // Why choose us
+    why_label: "Our Advantages",
+    why_heading: "Why Choose SMK Al Munawwir IIBS?",
+    why_sub: "Industry-standard vocational education combined with all-day Islamic character development.",
+    why_1_title: "24-Hour Boarding",
+    why_1_desc: "Character & independence development all day within a modern boarding school environment.",
+    why_2_title: "Vocation + Tahfidz",
+    why_2_desc: "Industry-standard skill competencies combined with a scheduled Qur'an memorization program.",
+    why_3_title: "Experienced Teachers",
+    why_3_desc: "Professional, certified educators in their respective fields of expertise.",
+    why_4_title: "Internship & Industry Partners",
+    why_4_desc: "Real-world internships with business and industry partners.",
+    why_5_title: "Complete Facilities",
+    why_5_desc: "Computer labs, practical workshops, and representative dormitories.",
+    why_6_title: "Qurani Environment",
+    why_6_desc: "Islamic values embedded in daily life, not just a subject taught in class.",
+
     islamic_program_title: "Integrated Islamic Program",
     islamic_program_desc: "All skill programs are complemented by Qur'an memorization, intensive Arabic, Islamic studies, and character development in a modern Islamic boarding school environment.",
 
@@ -175,17 +209,13 @@ const translations = {
       { name: "Facilities", href: "/facilities" },
       { name: "Extracurricular", href: "/extracurricular" },
       { name: "Alumni", href: "/alumni" },
+      { name: "Alumni Tracer Study", href: "/tracer-study" },
       { name: "Admission (SPMB)", href: "/admissions" },
+      { name: "Re-registration (PPDB)", href: "/daftar-ulang" },
+      { name: "Graduation Result", href: "/cek-kelulusan" },
       { name: "News & Activities", href: "/news" },
       { name: "Gallery", href: "/gallery" },
       { name: "Contact", href: "/contact" },
-    ],
-    footer_programs: [
-      "Computer & Network Engineering (TKJ)",
-      "Accounting (AK)",
-      "Poultry Agribusiness (ATU)",
-      "Visual Communication Design (DKV)",
-      "Building Modeling & Information Design (DPIB)",
     ],
   },
 } as const;

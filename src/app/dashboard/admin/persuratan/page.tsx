@@ -1,15 +1,19 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Save, Trash2, Mail, Send, Eye, Search } from "lucide-react";
+import Link from "next/link";
+import { Plus, Save, Trash2, Mail, Send, Eye, Search, PenLine, Printer } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Surat {
   id: string; tipe: string; nomor: string;
   tanggal: string; pihak: string; perihal: string;
   keterangan?: string; fileUrl?: string; isRead: boolean;
+  content?: string | null;
+  docxUrl?: string | null;
   createdAt: string;
 }
 
@@ -23,8 +27,10 @@ function formatTgl(d: string) {
 }
 
 export default function PersuratanPage() {
+  const confirmDialog = useConfirm();
   const [tab, setTab] = useState<"MASUK" | "KELUAR">("MASUK");
   const [data, setData] = useState<Surat[]>([]);
+  const [unreadMasuk, setUnreadMasuk] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<Partial<Surat> | null>(null);
@@ -41,6 +47,17 @@ export default function PersuratanPage() {
   }, [tab]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Dihitung terpisah dari `data` (yang berubah-ubah ikut tab aktif) supaya badge "belum dibaca"
+  // di tab Surat Masuk selalu akurat, tidak ikut kepakai angka Surat Keluar saat tab KELUAR aktif.
+  const fetchUnreadMasuk = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/surat?tipe=MASUK");
+      const d = await res.json();
+      if (Array.isArray(d)) setUnreadMasuk(d.filter((s: Surat) => !s.isRead).length);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { fetchUnreadMasuk(); }, [fetchUnreadMasuk]);
 
   const filtered = search
     ? data.filter(s =>
@@ -75,13 +92,13 @@ export default function PersuratanPage() {
     });
     setSaving(false);
     if (!res.ok) { setErr("Gagal menyimpan"); return; }
-    setModal(null); fetchData();
+    setModal(null); fetchData(); fetchUnreadMasuk();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Hapus surat ini?")) return;
+    if (!await confirmDialog("Hapus surat ini?")) return;
     await fetch(`/api/admin/surat/${id}`, { method: "DELETE" });
-    fetchData();
+    fetchData(); fetchUnreadMasuk();
   }
 
   async function markRead(id: string) {
@@ -90,9 +107,8 @@ export default function PersuratanPage() {
       body: JSON.stringify({ isRead: true }),
     });
     fetchData();
+    fetchUnreadMasuk();
   }
-
-  const unread = data.filter(s => !s.isRead).length;
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -101,10 +117,18 @@ export default function PersuratanPage() {
         title="Persuratan"
         description="Manajemen surat masuk dan surat keluar sekolah"
         actions={
-          <button onClick={openNew}
-            className="btn-gold flex items-center gap-2 text-sm shrink-0">
-            <Plus size={15} /> Tambah Surat {tab === "MASUK" ? "Masuk" : "Keluar"}
-          </button>
+          <>
+            {tab === "KELUAR" && (
+              <Link href="/dashboard/admin/persuratan/new/setup"
+                className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-white/10 transition shrink-0">
+                <PenLine size={15} /> Tulis Surat Keluar
+              </Link>
+            )}
+            <button onClick={openNew}
+              className="btn-gold flex items-center gap-2 text-sm shrink-0">
+              <Plus size={15} /> Tambah Surat {tab === "MASUK" ? "Masuk" : "Keluar"}
+            </button>
+          </>
         }
       />
 
@@ -115,8 +139,8 @@ export default function PersuratanPage() {
             className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
             {t === "MASUK" ? <Mail size={15} /> : <Send size={15} />}
             Surat {t === "MASUK" ? "Masuk" : "Keluar"}
-            {t === "MASUK" && unread > 0 && (
-              <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{unread}</span>
+            {t === "MASUK" && unreadMasuk > 0 && (
+              <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{unreadMasuk}</span>
             )}
           </button>
         ))}
@@ -172,6 +196,22 @@ export default function PersuratanPage() {
                             className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
                             <Eye size={14} />
                           </button>
+                        )}
+                        {tab === "KELUAR" && (
+                          <>
+                            <Link
+                              href={`/dashboard/admin/persuratan/${s.id}/${s.docxUrl && !s.content ? "edit-word" : "edit"}`}
+                              title="Tulis/Edit Isi Surat"
+                              className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                              <PenLine size={14} />
+                            </Link>
+                            {(s.content || s.docxUrl) && (
+                              <Link href={`/dashboard/admin/persuratan/${s.id}/cetak`} title="Cetak"
+                                className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                                <Printer size={14} />
+                              </Link>
+                            )}
+                          </>
                         )}
                         <button onClick={() => openEdit(s)}
                           className="px-2.5 py-1 text-xs font-semibold bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 transition-colors">

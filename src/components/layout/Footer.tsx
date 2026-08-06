@@ -4,11 +4,15 @@ import { MapPin, Phone, Mail } from "lucide-react";
 import { getSettings } from "@/lib/site-settings";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
+import { prisma } from "@/lib/prisma";
 
 export default async function Footer() {
   const lang = await getLang();
   const tr = t(lang);
-  const s = await getSettings(["logo.full", "logo.full_white", "islamic.footer_arabic", "contact.phone", "contact.email", "contact.address", "contact.hours_main", "contact.hours_friday"]);
+  const [s, majors] = await Promise.all([
+    getSettings(["logo.full", "logo.full_white", "islamic.footer_arabic", "contact.phone", "contact.email", "contact.address", "contact.hours_main", "contact.hours_friday"]),
+    prisma.major.findMany({ orderBy: { name: "asc" }, select: { code: true, name: true } }).catch(() => [] as { code: string; name: string }[]),
+  ]);
   const logoFull = s["logo.full"];
   const logoWhite = s["logo.full_white"];
   const footerArabic = s["islamic.footer_arabic"];
@@ -114,8 +118,12 @@ export default async function Footer() {
           <div>
             <h4 className="font-heading font-semibold text-gold mb-5">{tr.footer_majors}</h4>
             <ul className="space-y-2.5">
-              {tr.footer_programs.map((p) => (
-                <li key={p} className="text-white/70 text-sm">{p}</li>
+              {majors.map((m) => (
+                <li key={m.code}>
+                  <Link href={`/programs/${m.code.toLowerCase()}`} className="text-white/70 hover:text-gold text-sm transition-colors">
+                    {m.name} ({m.code})
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
@@ -151,7 +159,7 @@ export default async function Footer() {
       <div className="border-t border-white/10 relative">
         <div className="container-custom py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-white/50 text-sm">
-            © 2025 SMK Al Munawwir IIBS. {tr.footer_copyright}
+            © {new Date().getFullYear()} SMK Al Munawwir IIBS. {tr.footer_copyright}
           </p>
           <p className="text-white/30 text-xs">
             Developed by{" "}

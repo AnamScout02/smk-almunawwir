@@ -22,14 +22,22 @@ const SECTIONS: Section[] = [
   {
     id: "stats",
     label: "Statistik",
-    desc: "Angka-angka yang tampil di bagian 'Dalam Angka' halaman beranda.",
+    desc: "Angka-angka yang tampil di bagian 'Dalam Angka' halaman beranda. Jumlah siswa aktif & jumlah jurusan sudah otomatis dari data Siswa/Jurusan, tidak perlu diisi manual.",
     fields: [
-      { key: "stats.students", label: "Jumlah Siswa Aktif", type: "number", hint: 'Ditampilkan sebagai "1200+"' },
       { key: "stats.achievements", label: "Prestasi Nasional", type: "number", hint: 'Ditampilkan sebagai "50+"' },
       { key: "stats.graduation_rate", label: "Tingkat Kelulusan (%)", type: "number", hint: 'Ditampilkan sebagai "98%"' },
-      { key: "stats.years", label: "Lama Berdiri (tahun)", type: "number", hint: "Hitung dari 2014 ke tahun sekarang" },
       { key: "stats.partners", label: "Mitra Industri", type: "number", hint: 'Ditampilkan sebagai "30+"' },
-      { key: "stats.founded_year", label: "Tahun Berdiri", type: "number", hint: 'Tampil di deskripsi: "Berdiri sejak 2014"' },
+      { key: "stats.founded_year", label: "Tahun Berdiri", type: "number", hint: 'Tampil di deskripsi: "Berdiri sejak 2014" — lama berdiri dihitung otomatis dari tahun ini' },
+    ],
+  },
+  {
+    id: "facilities",
+    label: "Fasilitas",
+    desc: "Angka yang tampil di halaman Fasilitas — hanya untuk fakta fisik kampus yang tidak ada datanya di sistem. Koleksi Buku sudah otomatis dari data Perpustakaan.",
+    fields: [
+      { key: "facilities.labs", label: "Jumlah Laboratorium", type: "number" },
+      { key: "facilities.dormitory_capacity", label: "Kapasitas Asrama", type: "number", hint: 'Ditampilkan sebagai "800+"' },
+      { key: "facilities.campus_area", label: "Luas Kampus", type: "text", hint: 'Contoh: "10 Ha"' },
     ],
   },
   {

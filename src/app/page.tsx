@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import Hero from "@/components/sections/Hero";
 import Stats from "@/components/sections/Stats";
 import Programs from "@/components/sections/Programs";
+import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import NewsPreview from "@/components/sections/NewsPreview";
 import Testimonials from "@/components/sections/Testimonials";
 import CTABanner from "@/components/sections/CTABanner";
@@ -12,16 +13,22 @@ import PrayerTimes from "@/components/shared/PrayerTimes";
 import IslamicQuote from "@/components/shared/IslamicQuote";
 import { getLang } from "@/lib/lang";
 import { getSettings } from "@/lib/site-settings";
+import { prisma } from "@/lib/prisma";
 
 export default async function HomePage() {
   const lang = await getLang();
-  const s = await getSettings(["stats.students", "stats.founded_year", "stats.graduation_rate"]);
+  const [s, studentCount, majorCount] = await Promise.all([
+    getSettings(["stats.founded_year", "stats.graduation_rate"]),
+    prisma.student.count({ where: { studentStatus: "AKTIF" } }).catch(() => 0),
+    prisma.major.count().catch(() => 0),
+  ]);
   return (
     <>
       <Navbar transparent />
       <main>
         <Hero lang={lang} stats={{
-          students: s["stats.students"],
+          students: String(studentCount),
+          majors: String(majorCount),
           foundedYear: s["stats.founded_year"],
           graduationRate: s["stats.graduation_rate"],
         }} />
@@ -35,6 +42,7 @@ export default async function HomePage() {
 
         <Stats />
         <Programs />
+        <WhyChooseUs />
 
         {/* Islamic quote interlude */}
         <section className="py-16 bg-cream">

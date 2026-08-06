@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Database, Pencil, X, Plus, Save, Loader2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Modal from "@/components/admin/Modal";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface MasterDataItem {
   id: string;
@@ -14,6 +15,7 @@ interface MasterDataItem {
 }
 
 export default function MasterDataPage() {
+  const toast = useToast();
   const [masterData, setMasterData] = useState<MasterDataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editTarget, setEditTarget] = useState<MasterDataItem | null>(null);
@@ -92,7 +94,7 @@ export default function MasterDataPage() {
         closeModal();
       }, 800);
     } catch {
-      alert("Terjadi kesalahan saat menyimpan. Silakan coba lagi.");
+      toast.error("Terjadi kesalahan saat menyimpan. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }

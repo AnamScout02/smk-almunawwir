@@ -20,8 +20,10 @@ const tgl = (v?: string | Date | null): string => {
   if (!v) return "";
   const d = typeof v === "string" ? new Date(v) : v;
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 };
+/** Nama kabupaten/kota tanpa kata "Kabupaten"/"Kota" di depan. */
+const kabupatenName = (v: string) => v.replace(/^(Kabupaten|Kota)\s+/i, "");
 
 export interface ColDef { key: string; label: string; group: string; get: (t: TeacherRow) => string }
 
@@ -40,7 +42,7 @@ export const GURU_COLUMNS: ColDef[] = [
   { key: "address", label: "Alamat", group: "Alamat", get: t => t.address ?? "" },
   { key: "desa", label: "Desa", group: "Alamat", get: t => b(t, "desa") },
   { key: "kecamatan", label: "Kecamatan", group: "Alamat", get: t => b(t, "kecamatan") },
-  { key: "kabupaten", label: "Kabupaten", group: "Alamat", get: t => b(t, "kabupaten") },
+  { key: "kabupaten", label: "Kabupaten", group: "Alamat", get: t => kabupatenName(b(t, "kabupaten")) },
   { key: "phone", label: "No. HP", group: "Alamat", get: t => t.phone ?? "" },
 
   { key: "education", label: "Pendidikan Terakhir", group: "Kepegawaian", get: t => t.education ?? "" },

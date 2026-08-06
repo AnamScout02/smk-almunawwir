@@ -26,6 +26,7 @@ export async function POST() {
       class: {
         include: { major: true },
       },
+      user: { select: { name: true } },
     },
   });
 
@@ -33,6 +34,14 @@ export async function POST() {
   const graduated: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
+  // Sekadar PERINGATAN (bukan blokir) — siswa kelas XI yang naik ke XII tapi belum py
+  // PklRegistration berstatus APPROVED tetap dinaikkan seperti biasa, cuma dicatat di sini
+  // supaya admin/Wakasek Humas bisa tindak lanjuti manual.
+  const pklWarnings: string[] = [];
+  const approvedPklStudentIds = new Set(
+    (await prisma.pklRegistration.findMany({ where: { status: "APPROVED" }, select: { studentId: true } }))
+      .map(r => r.studentId)
+  );
 
   // 3. Snapshot ke StudentClassHistory dalam satu transaction
   await prisma.$transaction(
@@ -96,6 +105,9 @@ export async function POST() {
             data: { classId: nextClass.id },
           });
           promoted.push(student.id);
+          if (!approvedPklStudentIds.has(student.id)) {
+            pklWarnings.push(student.user.name);
+          }
         } else {
           errors.push(`Kelas grade 12 untuk jurusan majorId ${majorId} tidak ditemukan (siswa ${student.id})`);
         }
@@ -126,5 +138,6 @@ export async function POST() {
     graduated: graduated.length,
     skipped: skipped.length,
     errors,
+    pklWarnings,
   });
 }

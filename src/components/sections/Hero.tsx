@@ -23,6 +23,7 @@ const defaultSlides: Banner[] = [
 
 interface HeroStats {
   students?: string;
+  majors?: string;
   foundedYear?: string;
   graduationRate?: string;
 }
@@ -160,7 +161,7 @@ export default function Hero({ lang = "id", stats }: { lang?: Lang; stats?: Hero
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
           </span>
-          <span className="text-gold text-sm font-semibold tracking-wide">Integrated and Character Education</span>
+          <span className="text-gold text-sm font-semibold tracking-wide">{tr.hero_badge}</span>
         </div>
 
         {/* Judul slide */}
@@ -202,7 +203,7 @@ export default function Hero({ lang = "id", stats }: { lang?: Lang; stats?: Hero
           {[
             { v: stats?.students ? `${stats.students}+` : "1.200+", l: tr.hero_active_students },
             { v: stats?.foundedYear || "2014", l: tr.hero_founded },
-            { v: "5", l: tr.hero_majors },
+            { v: stats?.majors || "5", l: tr.hero_majors },
             { v: stats?.graduationRate ? `${stats.graduationRate}%` : "98%", l: tr.hero_graduation },
           ].map(s => (
             <div key={s.l} className="text-center">

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Download, Table2 } from "lucide-react";
 import Select from "@/components/admin/Select";
+import PageHeader from "@/components/admin/PageHeader";
 import { GURU_COLUMNS as ALL_COLUMNS, type TeacherRow } from "@/lib/buku-induk-guru-columns";
 
 interface Teacher extends TeacherRow {
@@ -53,40 +54,41 @@ export default function TabelBukuIndukGuruPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <Link href="/dashboard/admin/buku-induk/guru" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div className="flex-1">
-          <h1 className="font-heading text-xl font-bold text-primary-900 flex items-center gap-2">
-            <Table2 size={20} /> Tabel Lengkap Buku Induk Guru
-          </h1>
-          <p className="text-gray-400 text-sm">Semua data dalam satu tabel — bisa difilter per status atau wali kelas, diurutkan berdasarkan NIP</p>
-        </div>
-        <Select className="sm:w-44" value={statusFilter} onChange={setStatusFilter}
-          options={[
-            { value: "ALL", label: "Semua Status" },
-            { value: "AKTIF", label: "Aktif" },
-            { value: "PENSIUN", label: "Pensiun" },
-            { value: "KELUAR", label: "Keluar" },
-          ]} />
-        <Select className="sm:w-44" value={waliFilter} onChange={setWaliFilter}
-          options={[
-            { value: "ALL", label: "Semua Guru" },
-            { value: "WALI", label: "Wali Kelas" },
-            { value: "BUKAN", label: "Bukan Wali Kelas" },
-          ]} />
-        <a href={exportHref}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
-          <Download size={15} /> Export Excel
-        </a>
-      </div>
+      <PageHeader
+        icon={<Table2 size={22} />}
+        title="Tabel Lengkap Buku Induk Guru"
+        description="Semua data dalam satu tabel — bisa difilter per status atau wali kelas, diurutkan berdasarkan NIP"
+        actions={
+          <>
+            <Link href="/dashboard/admin/buku-induk/guru" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+              <ArrowLeft size={18} />
+            </Link>
+            <Select className="sm:w-44" value={statusFilter} onChange={setStatusFilter}
+              options={[
+                { value: "ALL", label: "Semua Status" },
+                { value: "AKTIF", label: "Aktif" },
+                { value: "PENSIUN", label: "Pensiun" },
+                { value: "KELUAR", label: "Keluar" },
+              ]} />
+            <Select className="sm:w-44" value={waliFilter} onChange={setWaliFilter}
+              options={[
+                { value: "ALL", label: "Semua Guru" },
+                { value: "WALI", label: "Wali Kelas" },
+                { value: "BUKAN", label: "Bukan Wali Kelas" },
+              ]} />
+            <a href={exportHref}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+              <Download size={15} /> Export Excel
+            </a>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-auto max-h-[75vh]">
+          <div className="overflow-auto max-h-[75vh] scrollbar-visible">
             <table className="text-xs border-collapse">
               <thead className="sticky top-0 z-20">
                 <tr>
@@ -114,7 +116,7 @@ export default function TabelBukuIndukGuruPage() {
                 {filtered.map((t, i) => (
                   <tr key={t.id} className="border-b border-gray-200 hover:bg-primary-50/40 transition-colors">
                     <td className="sticky left-0 z-10 w-10 bg-white px-3 py-2 text-center text-gray-400 border-r border-gray-200">{i + 1}</td>
-                    <td className="sticky left-10 z-10 w-48 bg-white px-3 py-2 text-center text-gray-900 font-semibold border-r border-gray-200 whitespace-nowrap shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                    <td className="sticky left-10 z-10 w-48 bg-white px-3 py-2 text-left text-gray-900 font-semibold border-r border-gray-200 whitespace-nowrap shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
                       {NAMA_COL.get(t)}
                     </td>
                     {COLUMNS.map(col => (

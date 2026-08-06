@@ -84,6 +84,87 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(232,160,32,0.4); }
   50%       { box-shadow: 0 0 0 8px rgba(232,160,32,0); }
 }
+.rank-pulse { display: inline-block; border-radius: 9999px; animation: pulseGold 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .rank-pulse { animation: none; }
+}
+
+/* === Efek tambahan Papan Peringkat Kedisiplinan (podium #1, sparkle, wiggle, dst) === */
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.3) translateY(-10px); }
+  55%  { opacity: 1; transform: scale(1.15) translateY(2px); }
+  75%  { transform: scale(0.95); }
+  100% { transform: scale(1) translateY(0); }
+}
+.bounce-in { animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%      { transform: rotate(-10deg); }
+  40%      { transform: rotate(9deg); }
+  60%      { transform: rotate(-6deg); }
+  80%      { transform: rotate(4deg); }
+}
+.wiggle-loop { animation: wiggle 2.2s ease-in-out infinite; transform-origin: center; }
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin-slow { animation: spinSlow 6s linear infinite; }
+
+@keyframes glowBorder {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(232,160,32,0.25), 0 8px 24px -8px rgba(232,160,32,0.35); }
+  50%       { box-shadow: 0 0 0 1px rgba(232,160,32,0.5), 0 8px 32px -6px rgba(232,160,32,0.55); }
+}
+.podium-glow { animation: glowBorder 2.4s ease-in-out infinite; }
+
+@keyframes confettiRise {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(-40px) rotate(180deg); opacity: 0; }
+}
+.confetti-piece { position: absolute; pointer-events: none; animation: confettiRise 2.6s ease-in-out infinite; }
+
+@keyframes marqueeSlide {
+  0%, 15%  { transform: translateX(0); }
+  85%, 100% { transform: translateX(calc(-100% + 100px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bounce-in, .wiggle-loop, .spin-slow, .podium-glow, .confetti-piece { animation: none; }
+}
+
+/* Titik status "hidup" (live) — dipakai untuk indikator online real-time (mis. dashboard Jaringan Sekolah) */
+@keyframes pulseLive {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  50%       { box-shadow: 0 0 0 5px transparent; opacity: 0.75; }
+}
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: pulseLive 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
+
+/* Progress bar bergaya segmented "battery level" untuk gauge resource (CPU/RAM/Storage) */
+.segmented-bar {
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 10px);
+  background-size: 100% 100%;
+}
+
+/* Kedip halus saat angka live berubah (mis. bandwidth) — penanda visual data baru saja update */
+@keyframes numFlash {
+  0% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+.num-flash { animation: numFlash 0.4s ease-out; }
+
 
 @keyframes shimmer {
   0%   { background-position: -200% center; }
@@ -118,6 +199,24 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* === Animasi panel admin (modal, kartu, dropdown) — halus & singkat, bukan loop === */
+@keyframes modalPanelIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-backdrop-in { animation: fadeIn 0.18s ease-out; }
+.modal-panel-in { animation: modalPanelIn 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes cardFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-fade-up { animation: cardFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop-in, .modal-panel-in, .card-fade-up { animation: none; }
+}
+
 @layer base {
   body {
     background-color: var(--color-cream);
@@ -139,12 +238,198 @@
   }
 }
 
+/* Font dokumen administrasi cetak (Buku Induk, Rapor, Absensi, Jurnal, Penugasan Mengajar, dll).
+   .print-doc dipakai di pratinjau layar supaya WYSIWYG dengan hasil cetak; @media print jadi jaring pengaman
+   untuk halaman cetak yang belum diberi class ini. */
+.print-doc, .print-doc * {
+  font-family: "Arial Narrow", Arial, sans-serif !important;
+}
+@media print {
+  * {
+    font-family: "Arial Narrow", Arial, sans-serif !important;
+  }
+  @page {
+    margin: 0;
+    size: A4;
+  }
+  /* Browser default menyembunyikan warna latar saat print (mis. banner navy kop, header tabel gelap)
+     kecuali user manual centang "Print backgrounds" — paksa selalu tampil supaya WYSIWYG. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  .a4-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: auto !important;
+  }
+}
+
+/* Lembar A4 (kop/header dan lain-lain) — ukuran fisik A4 sungguhan supaya tampilan layar (live)
+   sesuai hasil cetak. .a4-page-body diberi margin rata 2cm semua sisi TIDAK termasuk kop, karena
+   kop harus tercetak penuh sampai tepi kertas tanpa margin (lihat @page di atas). */
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+/* Watermark pattern sekolah di badan kertas — gaya sama seperti Buku Induk, tampil baik saat
+   diedit (live) maupun hasil cetak karena satu class dipakai di kedua halaman. */
+.a4-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/pattern-smk.png');
+  background-size: 90px 90px;
+  background-repeat: repeat;
+  opacity: 0.04;
+  pointer-events: none;
+}
+/* flex: 1 mendorong kop bawah (kalau ada) ke tepi bawah kertas selama konten belum melebihi satu
+   halaman A4 — kalau melebihi, kop bawah ikut turun mengikuti konten (tidak diulang tiap halaman). */
+.a4-page-body {
+  position: relative;
+  padding: 2cm;
+  flex: 1 1 auto;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Konten surat (dari RichTextEditor / disimpan sebagai HTML) — dipakai saat mengedit (.prose-surat
+   di dalam ProseMirror) maupun saat cetak (.prose-surat-print membungkus HTML tersimpan). */
+.prose-surat p, .prose-surat-print p {
+  margin-bottom: 0.75em;
+}
+.prose-surat ul, .prose-surat-print ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.prose-surat ol, .prose-surat-print ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.prose-surat p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.prose-surat h1, .prose-surat-print h1 { font-size: 1.4em; font-weight: 700; margin-bottom: 0.5em; }
+.prose-surat h2, .prose-surat-print h2 { font-size: 1.2em; font-weight: 700; margin-bottom: 0.5em; }
+.prose-surat h3, .prose-surat-print h3 { font-size: 1.05em; font-weight: 700; margin-bottom: 0.5em; }
+.prose-surat blockquote, .prose-surat-print blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75em;
+  color: #4b5563;
+  font-style: italic;
+  margin-bottom: 0.75em;
+}
+.prose-surat a, .prose-surat-print a { color: #1d4ed8; text-decoration: underline; }
+.prose-surat mark, .prose-surat-print mark { border-radius: 2px; padding: 0 2px; }
+.prose-surat table, .prose-surat-print table {
+  border-collapse: collapse;
+  margin-bottom: 0.75em;
+  width: 100%;
+}
+.prose-surat table td, .prose-surat table th,
+.prose-surat-print table td, .prose-surat-print table th {
+  border: 1px solid #9ca3af;
+  padding: 4px 8px;
+  text-align: left;
+}
+.prose-surat table th, .prose-surat-print table th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+.prose-surat img, .prose-surat-print img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 0.75em;
+  border-radius: 4px;
+}
+.prose-surat hr, .prose-surat-print hr {
+  border: none;
+  border-top: 1px solid #9ca3af;
+  margin: 1em 0;
+}
+
+/* Body surat hasil konversi mammoth dari .docx (surat "langsung ONLYOFFICE") — versi CETAK saja
+   (lihat cetak/page.tsx). Tabel tanpa border sama seperti aslinya di .docx (tabel Nomor/Perihal
+   & blok tanda tangan sama-sama borderless di src/lib/onlyoffice-docx.ts) — beda dari
+   .prose-surat-print yang sengaja kasih border buat tabel isi surat biasa. Tabel TERAKHIR
+   didorong ke kanan (heuristik: struktur .docx selalu taruh blok tanda tangan sebagai tabel
+   paling akhir) supaya posisinya konsisten dengan versi ONLYOFFICE, teks di dalamnya tetap
+   rata kiri (default, tidak di-override). */
+.docx-print-body { line-height: 1.5; }
+.docx-print-body p { margin-bottom: 0.5em; }
+.docx-print-body table { border-collapse: collapse; margin-bottom: 0.5em; }
+.docx-print-body table:last-of-type { margin-left: auto; width: 40%; }
+.docx-print-body table td, .docx-print-body table th { border: none; padding: 2px 6px; text-align: left; vertical-align: top; }
+/* mammoth tidak baca ukuran <wp:extent> dari .docx, cuma embed gambar apa adanya (resolusi asli
+   file) — batasi lebar sesuai ukuran ttd/QR beneran di .docx (100px = 2,65cm @96dpi, lihat
+   loadLetterheadImage di onlyoffice-docx.ts) supaya tidak tampil lebih besar dari versi ONLYOFFICE. */
+.docx-print-body img { max-width: 100px; height: auto; }
+
+/* Kebalikan dari scrollbar-hide — dipakai di tabel lebar (Tabel Lengkap Buku Induk) supaya
+   admin sadar bisa digeser horizontal & vertikal, karena scrollbar disembunyikan di seluruh situs. */
+.scrollbar-visible {
+  -ms-overflow-style: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-300) var(--color-primary-50);
+}
+.scrollbar-visible::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: var(--color-primary-50);
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  border-radius: 999px;
+  border: 2px solid var(--color-primary-50);
+}
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-500);
+}
+/* Varian gelap untuk sidebar navy — supaya admin sadar menu bisa di-scroll saat daftar menu
+   lebih tinggi dari layar (mis. layar pendek/laptop kecil). */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.scrollbar-visible::-webkit-scrollbar-corner {
+  background: var(--color-primary-50);
 }
 
 /* Scrollbar disembunyikan di seluruh situs — tetap bisa discroll seperti biasa */

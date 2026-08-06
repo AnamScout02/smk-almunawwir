@@ -5,9 +5,10 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
 import Image from "next/image";
+import PageHeader from "@/components/admin/PageHeader";
 
 const GRADES = [10, 11, 12] as const;
 const GRADE_LABEL: Record<number, string> = { 10: "X", 11: "XI", 12: "XII" };
@@ -118,15 +119,20 @@ export default async function RekapSiswaPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
-      <div className="flex items-center gap-3 mb-6 print:hidden">
-        <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div className="flex-1">
-          <h1 className="font-heading text-xl font-bold text-primary-900">Rekapitulasi Jumlah Siswa</h1>
-          <p className="text-gray-400 text-sm">Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — hanya siswa berstatus Aktif</p>
-        </div>
-        <PrintButton />
+      <div className="print:hidden">
+        <PageHeader
+          icon={<BarChart3 size={22} />}
+          title="Rekapitulasi Jumlah Siswa"
+          description="Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — hanya siswa berstatus Aktif"
+          actions={
+            <>
+              <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+                <ArrowLeft size={18} />
+              </Link>
+              <PrintButton />
+            </>
+          }
+        />
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none">

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const years = await prisma.academicYear.findMany({
     orderBy: { createdAt: "desc" },

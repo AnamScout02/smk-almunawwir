@@ -23,6 +23,13 @@ model User {
   avatar    String?
   teacher   Teacher?
   student   Student?
+  staffJabatan StaffJabatan[]
+  bookLoans BookLoan[]
+  bookReservations BookReservation[]
+  dutyRoster DutyRoster[]
+  dutyAttendance DutyAttendance[]
+  kpiPeriodScores KpiPeriodScore[]
+  kpiSubmissions KpiSubmission[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -51,6 +58,347 @@ model Teacher {
   homeroomOf     Class[]
   schedules      Schedule[]
   teachingLoad   TeachingAssignment[]
+  teachingJournals TeachingJournal[]
+  internshipsSupervised Internship[]
+  materials      Material[]
+  assignments    Assignment[]
+  jabatan        TeacherJabatan[]
+  discipline     TeacherDiscipline[]
+  lessonPlans    LessonPlan[]
+  quizzes        Quiz[]
+  questionBank   QuestionBankItem[]
+  exams          Exam[]
+}
+
+// Katalog jabatan/tugas struktural guru (Kepala Sekolah, Wakil Kepala, Kepala Lab, Guru BK, dll) —
+// bebas ditambah admin tanpa ubah kode, satu guru bisa punya beberapa jabatan sekaligus lewat TeacherJabatan.
+// Wali Kelas & Pembimbing PKL TIDAK didaftarkan di sini karena sudah derivable dari Class.homeroomId / Internship.teacherId.
+model Jabatan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  teachers  TeacherJabatan[]
+  staff     StaffJabatan[]
+  programs  ProgramKerja[]
+}
+
+// Program kerja milik tiap jabatan struktural — diinput oleh pemegang jabatan (guru/staf),
+// yang tampil sebagai agenda bersama di dashboard hanya program milik jabatan "Wakil Kepala *".
+model ProgramKerja {
+  id             String    @id @default(cuid())
+  jabatanId      String
+  jabatan        Jabatan   @relation(fields: [jabatanId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime?
+  status         String    @default("DIRENCANAKAN") // DIRENCANAKAN | BERJALAN | SELESAI | BATAL
+  createdByName  String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Pencatatan kedisiplinan guru (jam masuk/keluar, pelanggaran) — dikelola Wakil Kepala Penjamin Mutu.
+model TeacherDiscipline {
+  id           String   @id @default(cuid())
+  teacherId    String
+  teacher      Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  date         DateTime @default(now())
+  status       String   // HADIR | TERLAMBAT | IZIN | SAKIT | ALPHA
+  checkInTime  String?  // "07:15" dsb, opsional
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([teacherId, date])
+}
+
+// Kehadiran guru PER JAM PELAJARAN (per slot Schedule) — dipakai saat guru mengajar di kelas/jam
+// berbeda-beda dalam satu hari, supaya bisa ditandai per slot (mis. hadir jam ke-1 di kelas X,
+// tidak hadir jam ke-3 di kelas Y), bukan cuma 1 status untuk sepanjang hari seperti
+// TeacherDiscipline di atas (yang tetap dipakai untuk hari guru tidak ada jadwal mengajar sama
+// sekali, mis. izin/sakit seharian).
+model TeacherScheduleAttendance {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  date        DateTime
+  status      String   // HADIR | TERLAMBAT | IZIN | SAKIT | ALPHA
+  hasTugas    Boolean? // guru piket titipkan tugas ke kelas atau tidak — cuma relevan saat status != HADIR, null = tidak diisi/tidak relevan
+  checkInTime String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([scheduleId, date])
+}
+
+// Jadwal Piket Guru & Staff — mingguan berulang, ikut sistem rotasi 2 minggu (weekType A/B) yang
+// sama seperti Schedule (SEMUA = tiap minggu sama). Bisa lebih dari 1 orang per hari (guru & staff
+// TAS/Admin campur, makanya relasi ke User langsung — bukan Teacher — supaya staf non-guru juga
+// bisa dijadwalkan).
+model DutyRoster {
+  id       String   @id @default(cuid())
+  day      String   // SENIN | SELASA | RABU | KAMIS | JUMAT | SABTU
+  weekType String   @default("SEMUA") // A | B | SEMUA
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes    String?
+  createdAt DateTime @default(now())
+
+  @@unique([day, weekType, userId])
+}
+
+// Kehadiran PETUGAS PIKET itu sendiri (bukan absensi mengajar) — apakah orang yang terjadwal di
+// DutyRoster hari itu benar-benar datang menjalankan tugas piketnya. Terpisah dari
+// TeacherScheduleAttendance karena piket bukan soal jam mengajar, dan bisa dipegang guru MAUPUN
+// staf TAS (makanya relasi ke User langsung, sama seperti DutyRoster). Dipakai juga sebagai
+// tambahan poin kedisiplinan di leaderboard.
+model DutyAttendance {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  status    String   // HADIR | IZIN | SAKIT | ALPHA
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+// ===== Sistem Manajemen Kinerja Pegawai (SMKP) — Fase 1: kerangka generik + KPI Guru =====
+
+// Definisi indikator KPI per jabatan — bobot bisa diedit ADMIN kapan saja (pola sama seperti
+// DisciplinePointConfig, tapi sekarang multi-baris krn banyak indikator×jabatan). `jabatanName`
+// pakai "GURU" utk indikator dasar semua guru, atau nama jabatan struktural persis string yang
+// dipakai assertJabatan (mis. "Wakil Kepala Kurikulum") utk jabatan tambahan di Fase 2+.
+model KpiIndicator {
+  id          String   @id @default(cuid())
+  jabatanName String
+  name        String
+  weight      Int      // bobot % (jumlah semua indikator aktif per jabatanName idealnya 100)
+  source      String   // AUTO_KEHADIRAN | AUTO_JURNAL | AUTO_RPP | MANUAL
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  periodScores KpiPeriodScore[]
+  submissions  KpiSubmission[]
+
+  @@unique([jabatanName, name])
+}
+
+// Skor TERSIMPAN per pegawai per indikator per periode ("2026-08") — beda dari Kedisiplinan yang
+// full on-the-fly, karena indikator MANUAL baru final setelah diverifikasi manusia, tidak bisa
+// dihitung ulang instan tiap request seperti absensi.
+model KpiPeriodScore {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  indicatorId String
+  indicator   KpiIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  period      String
+  score       Float    // 0-100 (persentase pencapaian indikator, BELUM dikali bobot)
+  notes       String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, indicatorId, period])
+}
+
+// Submission + verifikasi SATU LEVEL utk indikator MANUAL (upload sertifikat, laporan kontribusi,
+// dst) — generalisasi pola ProfileEditRequest, TAPI verifikasinya per-indikator (bukan hardcode
+// TAS/Admin tetap), supaya bisa dirutekan ke Wakasek yang relevan di Fase 2+.
+model KpiSubmission {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  indicatorId     String
+  indicator       KpiIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  period          String
+  description     String
+  fileUrl         String?
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  scoreIfApproved Float    @default(100)
+  reviewNote      String?
+  reviewedByName  String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+}
+
+// Inventaris barang/perlengkapan sekolah — dikelola Wakil Kepala Sarana Prasarana + Admin/TAS.
+model Asset {
+  id            String    @id @default(cuid())
+  name          String
+  category      String
+  quantity      Int       @default(1)
+  condition     String    @default("BAIK") // BAIK | RUSAK_RINGAN | RUSAK_BERAT
+  location      String?
+  acquiredDate  DateTime?
+  fundingSource String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  damageReports AssetDamageReport[]
+}
+
+// Laporan kerusakan & perbaikan barang — riwayat terpisah dari field `condition` yang statis di Asset.
+model AssetDamageReport {
+  id          String    @id @default(cuid())
+  assetId     String
+  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reportDate  DateTime  @default(now())
+  description String
+  status      String    @default("BELUM_DIPERBAIKI") // BELUM_DIPERBAIKI | SEDANG_DIPERBAIKI | SELESAI
+  repairDate  DateTime?
+  repairNotes String?
+  reportedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Tracer study alumni — dikelola Koordinator BKK, hanya utk siswa berstatus LULUS.
+model AlumniTracer {
+  id              String   @id @default(cuid())
+  studentId       String   @unique
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status          String   // BEKERJA | KULIAH | WIRAUSAHA | BELUM_BEKERJA | LAINNYA
+  institutionName String?  // nama perusahaan/kampus
+  position        String?  // jabatan kerja / jurusan kuliah
+  contactPhone    String?
+  contactEmail    String?
+  surveyDate      DateTime
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Kunjungan UKS — dikelola Kepala UKS.
+model UksVisit {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  visitDate DateTime @default(now())
+  complaint String
+  treatment String?
+  notes     String?
+  createdAt DateTime @default(now())
+  usages    UksMedicineUsage[]
+}
+
+// Stok obat P3K UKS — dipakai lewat UksMedicineUsage saat kunjungan, stok berkurang otomatis.
+model UksMedicine {
+  id        String   @id @default(cuid())
+  name      String
+  stock     Int      @default(0)
+  unit      String   @default("pcs") // tablet | strip | botol | pcs | dll
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  usages    UksMedicineUsage[]
+}
+
+model UksMedicineUsage {
+  id         String      @id @default(cuid())
+  visitId    String
+  visit      UksVisit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  medicineId String
+  medicine   UksMedicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  quantity   Int
+  createdAt  DateTime    @default(now())
+}
+
+// Ekstrakurikuler (OSIS, Pramuka, dst) — dikelola Pembina masing-masing + Admin/TAS.
+model Extracurricular {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  members   ExtracurricularMember[]
+}
+
+model ExtracurricularMember {
+  id                String          @id @default(cuid())
+  extracurricularId String
+  extracurricular   Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  role              String?
+  joinedAt          DateTime        @default(now())
+
+  @@unique([extracurricularId, studentId])
+}
+
+// Perpustakaan — dikelola Koordinator Perpustakaan / Tim Perpustakaan + Admin/TAS.
+model Book {
+  id        String   @id @default(cuid())
+  title     String
+  author    String?
+  publisher String?
+  category  String
+  stock     Int      @default(1)
+  location  String?
+  coverUrl  String?
+  barcode   String?  @unique // satu barcode per judul buku, sama utk semua eksemplarnya
+  fileUrl   String?  // versi digital (PDF modul/e-book), opsional
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loans     BookLoan[]
+  reservations BookReservation[]
+}
+
+// Peminjam bisa siswa, guru, atau pegawai (TAS/Admin) — semua punya baris User, jadi direlasikan
+// ke User langsung (bukan Student) supaya satu model BookLoan menampung ketiganya.
+model BookLoan {
+  id         String    @id @default(cuid())
+  bookId     String
+  book       Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  borrowerId String
+  borrower   User      @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+  borrowDate DateTime  @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+  status     String    @default("DIPINJAM") // DIPINJAM | DIKEMBALIKAN — "TERLAMBAT" dihitung on-the-fly
+  finePaid   Boolean   @default(false) // denda dihitung on-the-fly dari selisih hari terlambat, ini cuma penanda sudah dibayar/belum
+  notes      String?
+  createdAt  DateTime  @default(now())
+}
+
+// Antrean pemesanan buku yang eksemplarnya sedang habis dipinjam — dicatat petugas (bukan
+// self-service siswa), sama seperti alur peminjaman biasa.
+model BookReservation {
+  id           String    @id @default(cuid())
+  bookId       String
+  book         Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  borrowerId   String
+  borrower     User      @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+  reservedDate DateTime  @default(now())
+  status       String    @default("MENUNGGU") // MENUNGGU | TERSEDIA | SELESAI | DIBATALKAN
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// Jabatan untuk pengguna non-guru (TAS/Admin) yang tidak punya baris Teacher — mis. Kepala UKS,
+// Kepala TAS, Security. Terpisah dari TeacherJabatan supaya tidak perlu migrasi data guru yang sudah ada.
+model StaffJabatan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jabatanId String
+  jabatan   Jabatan  @relation(fields: [jabatanId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jabatanId])
+}
+
+model TeacherJabatan {
+  id        String   @id @default(cuid())
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  jabatanId String
+  jabatan   Jabatan  @relation(fields: [jabatanId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, jabatanId])
 }
 
 model Major {
@@ -87,6 +435,27 @@ model Subject {
   maxSharedTeacher Int  @default(1) // maksimal kelas berbeda yang boleh dipegang 1 guru di jam sama utk mapel ini (mis. Penjasorkes = 2)
   createdAt    DateTime @default(now())
   assignments  TeachingAssignment[]
+  lessonPlans  LessonPlan[]
+}
+
+// Bank RPP (Rencana Pelaksanaan Pembelajaran) — tiap guru kelola RPP-nya sendiri, tapi semua bisa
+// saling lihat sebagai referensi/bank bersama antar guru.
+model LessonPlan {
+  id         String   @id @default(cuid())
+  teacherId  String
+  teacher    Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId  String?
+  subject    Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  title      String
+  grade      Int?     // 10 | 11 | 12
+  semester   String?
+  objectives String?  // Tujuan Pembelajaran
+  material   String?  // Materi Pokok
+  activities String?  // Kegiatan Pembelajaran
+  assessment String?  // Penilaian
+  fileUrl    String?  // unggah dokumen RPP (PDF/Word), opsional
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model MajorGallery {
@@ -107,10 +476,34 @@ model Class {
   major               Major                 @relation(fields: [majorId], references: [id])
   homeroomId          String?
   homeroom            Teacher?              @relation(fields: [homeroomId], references: [id])
+  ketuaKelasId        String?
+  ketuaKelas          Student?              @relation("KetuaKelas", fields: [ketuaKelasId], references: [id])
+  sekretarisId        String?
+  sekretaris          Student?              @relation("Sekretaris", fields: [sekretarisId], references: [id])
   students            Student[]
   schedules           Schedule[]
   studentHistory      StudentClassHistory[]
   teachingAssignments TeachingAssignment[]
+  teachingJournals    TeachingJournal[]
+  materials           Material[]
+  assignments         Assignment[]
+  raporApprovals      RaporApproval[]
+  quizzes             Quiz[]
+  exams               Exam[]
+}
+
+// Pengesahan rapor per kelas+semester oleh Kepala Sekolah — siswa baru bisa lihat/cetak rapor
+// semester tsb setelah ada baris di sini (lihat gating di dashboard/student/rapor/page.tsx).
+model RaporApproval {
+  id         String   @id @default(cuid())
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  semester   String
+  approvedBy String   // snapshot nama Kepala Sekolah saat mengesahkan, bukan FK
+  approvedAt DateTime @default(now())
+  note       String?
+
+  @@unique([classId, semester])
 }
 
 model Student {
@@ -120,6 +513,7 @@ model Student {
   nis            String       @unique
   nisn           String?      @unique
   noInduk        String?      @unique
+  verificationToken String?   @unique // token acak untuk QR verifikasi keaslian dokumen cetak (Buku Induk/Rapor)
   classId        String?
   class          Class?       @relation(fields: [classId], references: [id])
   majorId        String
@@ -144,6 +538,17 @@ model Student {
   attendance     Attendance[]
   internship     Internship?
   classHistory   StudentClassHistory[]
+  journalEntries JournalEntry[]
+  profileEditRequests ProfileEditRequest[]
+  assignmentSubmissions AssignmentSubmission[]
+  alumniTracer   AlumniTracer?
+  uksVisits      UksVisit[]
+  extracurricular ExtracurricularMember[]
+  ketuaKelasOf   Class[] @relation("KetuaKelas")
+  sekretarisOf   Class[] @relation("Sekretaris")
+  quizAttempts   QuizAttempt[]
+  examAttempts   ExamAttempt[]
+  pklRegistration PklRegistration?
 }
 
 model Grade {
@@ -177,6 +582,240 @@ model Internship {
   endDate    DateTime
   supervisor String
   status     String   @default("ONGOING")
+  teacherId  String?  // guru pembimbing PKL dari sekolah (beda dari `supervisor` = pembimbing industri)
+  teacher    Teacher? @relation(fields: [teacherId], references: [id])
+  journal    InternshipJournal[]
+}
+
+// Katalog mitra industri (DU/DI) untuk pemantauan kemitraan Kepala Sekolah — berdiri sendiri,
+// tidak terhubung FK ke Internship.company (yang tetap string bebas) supaya tidak perlu migrasi
+// data/form PKL yang sudah ada. Status MoU (Aktif/Akan Kedaluwarsa/Kedaluwarsa) dihitung on-the-fly
+// dari mouEndDate, bukan disimpan sebagai kolom.
+model IndustryPartner {
+  id             String    @id @default(cuid())
+  name           String
+  address        String?
+  contactPerson  String?
+  contactPhone   String?
+  industryField  String?
+  mouStartDate   DateTime?
+  mouEndDate     DateTime?
+  mouDocumentUrl String?   // scan/foto dokumen MoU (opsional)
+  quota          Int?      // kapasitas siswa PKL yang bisa diterima mitra ini
+  notes          String?
+  createdAt      DateTime  @default(now())
+}
+
+// Materi pembelajaran diunggah guru per kelas & mapel (PDF/dokumen atau link eksternal).
+model Material {
+  id          String   @id @default(cuid())
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId     String
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     String
+  title       String
+  description String?
+  fileUrl     String?
+  linkUrl     String?
+  createdAt   DateTime @default(now())
+}
+
+// Tugas yang dibuat guru per kelas & mapel — siswa mengumpulkan lewat AssignmentSubmission.
+model Assignment {
+  id          String   @id @default(cuid())
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId     String
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     String
+  title       String
+  description String?
+  fileUrl     String?
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  submissions AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fileUrl      String?
+  note         String?
+  submittedAt  DateTime   @default(now())
+  score        Float?
+  feedback     String?
+
+  @@unique([assignmentId, studentId])
+}
+
+// Kuis pilihan ganda per kelas & mapel — dinilai otomatis saat siswa submit (lihat QuizAttempt.score).
+model Quiz {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId     String
+  class       Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     String
+  title       String
+  description String?
+  duration    Int?           // menit, opsional
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+}
+
+model QuizQuestion {
+  id            String   @id @default(cuid())
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String   // "A" | "B" | "C" | "D"
+  order         Int      @default(0)
+}
+
+// Satu siswa hanya bisa mengerjakan sekali per kuis (@@unique) — score dihitung server-side saat submit, tidak bisa dimanipulasi klien.
+model QuizAttempt {
+  id          String    @id @default(cuid())
+  quizId      String
+  quiz        Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers     Json      @default("{}") // { [questionId]: "A" | "B" | "C" | "D" }
+  score       Float?
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  @@unique([quizId, studentId])
+}
+
+// Bank Soal — pertanyaan tersimpan per guru+mapel, dipakai ulang saat menyusun Ujian (CBT) baru.
+model QuestionBankItem {
+  id            String   @id @default(cuid())
+  teacherId     String
+  teacher       Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject       String
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String
+  createdAt     DateTime @default(now())
+}
+
+// Ujian Online (CBT) — siswa masuk pakai token dalam rentang waktu tertentu, dikerjakan sesuai
+// durasi, dinilai otomatis (lihat ExamAttempt.score). Soal disalin ke ExamQuestion saat ujian
+// disusun (bukan referensi live ke QuestionBankItem) supaya soal ujian tidak berubah kalau bank
+// soal diedit belakangan.
+model Exam {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId     String
+  class       Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     String
+  title       String
+  description String?
+  token       String         @unique
+  duration    Int            // menit
+  startTime   DateTime
+  endTime     DateTime
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  questions   ExamQuestion[]
+  attempts    ExamAttempt[]
+}
+
+model ExamQuestion {
+  id            String @id @default(cuid())
+  examId        String
+  exam          Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String
+  order         Int    @default(0)
+}
+
+// startedAt dipakai untuk menghitung sisa waktu ujian & status monitoring live (sedang mengerjakan
+// vs sudah submit). @@unique mencegah siswa membuka ujian yang sama dua kali dari awal.
+model ExamAttempt {
+  id          String    @id @default(cuid())
+  examId      String
+  exam        Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers     Json      @default("{}")
+  score       Float?
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  @@unique([examId, studentId])
+}
+
+// Jurnal harian PKL — diisi siswa selama masa PKL (kegiatan + foto bukti kerja),
+// guru pembimbing/admin bisa memberi catatan per entri.
+model InternshipJournal {
+  id           String     @id @default(cuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  date         DateTime
+  activity     String
+  photoUrl     String?
+  teacherNote  String?
+  createdAt    DateTime   @default(now())
+}
+
+// Jurnal Mengajar digital — diisi guru tiap pertemuan (materi + per-siswa nilai pengetahuan/keterampilan/catatan).
+// Absensi pertemuan tetap disimpan di model Attendance (sumber tunggal, dipakai di rekap/rapor/dashboard).
+model TeachingJournal {
+  id        String         @id @default(cuid())
+  teacherId String
+  teacher   Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId   String
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   String
+  date      DateTime
+  materi    String
+  semester  String
+  entries   JournalEntry[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model JournalEntry {
+  id                String          @id @default(cuid())
+  journalId         String
+  journal           TeachingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  scorePengetahuan  Float?
+  scoreKeterampilan Float?
+  catatan           String?
+}
+
+// Pengajuan perubahan biodata oleh siswa — tidak langsung mengubah data asli, harus disetujui admin/TAS dulu.
+model ProfileEditRequest {
+  id         String    @id @default(cuid())
+  studentId  String
+  student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  changes    Json      // { fieldKey: { old, new, label } }
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote String?
+  reviewedAt DateTime?
+  reviewedBy String?
+  createdAt  DateTime  @default(now())
 }
 
 model News {
@@ -205,6 +844,7 @@ model Admission {
   email          String
   guardianName   String?
   chosenMajor    String
+  jalur          String   @default("REGULER") // REGULER | PRESTASI_AKADEMIK | PRESTASI_NON_AKADEMIK | TAHFIDZ | AFIRMASI
   // Dokumen pendukung
   ijazahUrl      String?
   kkUrl          String?
@@ -213,6 +853,16 @@ model Admission {
   dokumenLainUrl String?
   status         String   @default("PENDING")
   notes          String?
+  // Scoring otomatis — skorAkhir dihitung dari nilaiRapor & nilaiTes memakai bobot di SiteSetting
+  // ("spmb.bobotRapor"/"spmb.bobotTes"), dipakai untuk meranking pendaftar per jurusan.
+  nilaiRapor     Float?
+  nilaiTes       Float?
+  skorAkhir      Float?
+  // Daftar ulang & validasi pembayaran — diisi pendaftar sendiri lewat halaman publik /daftar-ulang
+  // setelah status ACCEPTED, admin verifikasi manual lewat paymentVerified.
+  buktiPembayaranUrl     String?
+  daftarUlangConfirmedAt DateTime?
+  paymentVerified        Boolean   @default(false)
   createdAt      DateTime @default(now())
 }
 
@@ -270,6 +920,8 @@ model Schedule {
   weekType     String   @default("SEMUA") // A | B | SEMUA — SEMUA = tiap minggu (kelas XII & non-rotasi)
   scheduleType String   @default("BLOK") // BLOK = sistem 2 minggu bergantian (dikali 2) | NONBLOK = 1 minggu biasa tanpa kali 2, khusus upload Dapodik
   createdAt    DateTime @default(now())
+
+  scheduleAttendance TeacherScheduleAttendance[]
 }
 
 model SchoolPeriod {
@@ -346,17 +998,23 @@ model AcademicYear {
 }
 
 model Surat {
-  id         String   @id @default(cuid())
-  tipe       String   // MASUK | KELUAR
-  nomor      String
-  tanggal    DateTime
-  pihak      String   // "dari siapa" (MASUK) atau "kepada siapa" (KELUAR)
-  perihal    String
-  keterangan String?
-  fileUrl    String?
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  tipe           String   // MASUK | KELUAR
+  nomor          String
+  tanggal        DateTime
+  pihak          String   // "dari siapa" (MASUK) atau "kepada siapa" (KELUAR)
+  perihal        String
+  keterangan     String?
+  fileUrl        String?
+  isRead         Boolean  @default(false)
+  // Khusus surat KELUAR yang ditulis langsung di web (bukan sekadar catatan/lampiran):
+  klasifikasi    String?  // kode jenis surat, cth "A.2" — dipakai dalam format nomor otomatis
+  content        String?  // isi surat (HTML dari editor)
+  penandaTangan  String?  // nama & jabatan penandatangan, mis. "Kepala SMK Al Munawwir IIBS"
+  docxUrl        String?  // file .docx asli (diedit via ONLYOFFICE) — opsional, mode editor alternatif dari `content`
+  docxKey        String?  // versi dokumen untuk ONLYOFFICE (wajib berubah tiap kali file diganti)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Arsip {
@@ -368,6 +1026,68 @@ model Arsip {
   keterangan String?
   fileUrl    String?
   createdAt  DateTime @default(now())
+}
+
+// Notulen Rapat — dicetak 3 halaman: (1) notulen, (2) dokumentasi foto + daftar hadir, (3) hasil keputusan.
+// Peserta rapat & sambutan disimpan sebagai teks bebas (bukan relasi User) karena bisa mencakup
+// pihak luar (wali murid, komite, dinas) yang tidak punya akun di sistem.
+model MeetingMinutes {
+  id          String   @id @default(cuid())
+  date        DateTime
+  time        String?
+  place       String?
+  leader      String?  // Pemimpin Rapat
+  topic       String?  // Materi Rapat
+  openedBy    String?  // Dibuka oleh
+  greetings   String[] @default([]) // Sambutan dari (daftar nama/jabatan)
+  decisions   String?  // Hasil Keputusan Rapat
+  notulis     String?  // Nama notulis
+  photos      String[] @default([]) // Dokumentasi rapat
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  attendees   MeetingAttendee[]
+}
+
+model MeetingAttendee {
+  id        String         @id @default(cuid())
+  meetingId String
+  meeting   MeetingMinutes @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  name      String
+  order     Int            @default(0)
+}
+
+// Parameter poin kedisiplinan guru — SATU baris (singleton), diedit ADMIN/Wakasek Penjamin Mutu/
+// Wakasek Kurikulum lewat halaman Kedisiplinan Guru. Dipakai untuk hitung leaderboard poin.
+model DisciplinePointConfig {
+  id                   String   @id @default(cuid())
+  pointHadir           Int      @default(5)
+  pointTerlambat       Int      @default(3)
+  pointIzinAdaTugas    Int      @default(2)
+  pointIzinTanpaTugas  Int      @default(1)
+  pointSakitAdaTugas   Int      @default(2)
+  pointSakitTanpaTugas Int      @default(1)
+  pointAlpha           Int      @default(-1)
+  updatedAt            DateTime @updatedAt
+}
+
+// Jejak aktivitas untuk aksi-aksi SENSITIF saja (reset password, ubah jabatan, hapus akun,
+// keputusan PPDB, ubah biodata inti siswa/guru) — BUKAN log setiap klik/request, supaya volume
+// tetap ringan dan halamannya benar-benar berguna dibaca (bukan cuma tumpukan noise).
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  userName    String
+  userRole    String
+  action      String   // contoh: RESET_PASSWORD, UPDATE_JABATAN, DELETE_USER, DECIDE_ADMISSION
+  entity      String   // contoh: User, Student, Teacher, Admission
+  entityId    String?
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model StudentClassHistory {
@@ -385,4 +1105,56 @@ model StudentClassHistory {
   createdAt      DateTime      @default(now())
 
   @@unique([studentId, academicYearId])
+}
+
+// Sample bandwidth periodik per interface Mikrotik — dipakai grafik riwayat (mirip MRTG) di
+// Jaringan Sekolah. Diisi oleh background sampler di instrumentation.ts (bukan dari request user),
+// tiap ~5 menit. TANPA pembersihan otomatis di kode — retensi lama diatur manual via cron/psql
+// kalau tabelnya sudah terlalu besar (skala sekolah ini kecil, belum jadi masalah dalam waktu dekat).
+// Daftar jenis dokumen syarat pendaftaran PKL — bisa diedit admin/Wakasek Humas (nama, urutan,
+// aktif/nonaktif), bukan hardcode. Pola sama persis KpiIndicator (config list yang bisa diedit).
+model PklDocumentRequirement {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  documents PklRegistrationDocument[]
+}
+
+// Pendaftaran PKL siswa kelas XI (sebelum naik ke XII) — SATU per siswa (kalau ditolak, ajukan
+// ulang dgn overwrite dokumen yg sama, bukan bikin baris baru). Terpisah dari `Internship` (yang
+// tetap dipakai admin mencatat penempatan SETELAH siswa benar-benar dapat tempat PKL).
+model PklRegistration {
+  id             String   @id @default(cuid())
+  studentId      String   @unique
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status         String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote     String?
+  reviewedByName String?
+  reviewedAt     DateTime?
+  submittedAt    DateTime @default(now())
+  documents      PklRegistrationDocument[]
+}
+
+model PklRegistrationDocument {
+  id             String   @id @default(cuid())
+  registrationId String
+  registration   PklRegistration        @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  requirementId  String
+  requirement    PklDocumentRequirement @relation(fields: [requirementId], references: [id])
+  fileUrl        String
+  uploadedAt     DateTime @default(now())
+
+  @@unique([registrationId, requirementId])
+}
+
+model BandwidthLog {
+  id           String   @id @default(cuid())
+  interface    String
+  downloadMbps Float
+  uploadMbps   Float
+  timestamp    DateTime @default(now())
+
+  @@index([interface, timestamp])
 }

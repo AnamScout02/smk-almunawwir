@@ -7,16 +7,21 @@ import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
 import { withAlpha } from "@/lib/color";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface Major { id: string; name: string; code: string; themeColor: string | null }
 interface Teacher { id: string; user: { name: string } }
+interface StudentOption { id: string; nis: string; user: { name: string } }
 interface ClassItem {
   id: string;
   name: string;
   grade: number;
   major: Major;
   homeroom: Teacher | null;
-  students: { id: string }[];
+  students: StudentOption[];
+  ketuaKelas: { id: string; user: { name: string } } | null;
+  sekretaris: { id: string; user: { name: string } } | null;
 }
 
 interface FormState {
@@ -25,13 +30,17 @@ interface FormState {
   grade: string;
   majorId: string;
   homeroomId: string;
+  ketuaKelasId: string;
+  sekretarisId: string;
 }
 
-const emptyForm: FormState = { name: "", grade: "10", majorId: "", homeroomId: "" };
+const emptyForm: FormState = { name: "", grade: "10", majorId: "", homeroomId: "", ketuaKelasId: "", sekretarisId: "" };
 
 const GRADE_OPTIONS = ["10", "11", "12"];
 
 export default function AdminClassesPage() {
+  const confirmDialog = useConfirm();
+  const toast = useToast();
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -42,6 +51,7 @@ export default function AdminClassesPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [majorFilter, setMajorFilter] = useState("");
+  const [editingStudents, setEditingStudents] = useState<StudentOption[]>([]);
 
   async function load() {
     setLoading(true);
@@ -62,12 +72,17 @@ export default function AdminClassesPage() {
 
   function openCreate() {
     setForm({ ...emptyForm, majorId: majors[0]?.id ?? "" });
+    setEditingStudents([]);
     setError("");
     setModal(true);
   }
 
   function openEdit(cls: ClassItem) {
-    setForm({ id: cls.id, name: cls.name, grade: String(cls.grade), majorId: cls.major.id, homeroomId: cls.homeroom?.id ?? "" });
+    setForm({
+      id: cls.id, name: cls.name, grade: String(cls.grade), majorId: cls.major.id, homeroomId: cls.homeroom?.id ?? "",
+      ketuaKelasId: cls.ketuaKelas?.id ?? "", sekretarisId: cls.sekretaris?.id ?? "",
+    });
+    setEditingStudents(cls.students);
     setError("");
     setModal(true);
   }
@@ -95,11 +110,11 @@ export default function AdminClassesPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Hapus kelas "${name}"? Siswa di kelas ini tidak akan ikut terhapus.`)) return;
+    if (!(await confirmDialog(`Hapus kelas "${name}"? Siswa di kelas ini tidak akan ikut terhapus.`))) return;
     const res = await fetch(`/api/admin/classes/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error || "Gagal menghapus");
+      toast.error(d.error || "Gagal menghapus");
       return;
     }
     load();
@@ -229,6 +244,30 @@ export default function AdminClassesPage() {
               placeholder="— Belum ditentukan —"
             />
           </div>
+          {form.id && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label-field">Ketua Kelas</label>
+                <Select
+                  value={form.ketuaKelasId}
+                  onChange={v => setForm(f => ({ ...f, ketuaKelasId: v }))}
+                  options={editingStudents.map(s => ({ value: s.id, label: `${s.user.name} (${s.nis})` }))}
+                  placeholder="— Belum ditentukan —"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
+              </div>
+              <div>
+                <label className="label-field">Sekretaris</label>
+                <Select
+                  value={form.sekretarisId}
+                  onChange={v => setForm(f => ({ ...f, sekretarisId: v }))}
+                  options={editingStudents.map(s => ({ value: s.id, label: `${s.user.name} (${s.nis})` }))}
+                  placeholder="— Belum ditentukan —"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
+              </div>
+            </div>
+          )}
           {error && <p className="error-msg">{error}</p>}
         </form>
       </Modal>

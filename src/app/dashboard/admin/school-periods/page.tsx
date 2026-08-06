@@ -5,6 +5,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import Alert from "@/components/admin/Alert";
+import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface PeriodItem {
   id: string; day: string; order: number; startTime: string; endTime: string; isBreak: boolean; label: string | null;
@@ -27,6 +29,8 @@ const DAY_COLOR: Record<string, string> = {
 const emptyForm = { day: "SENIN", order: "1", startTime: "07:00", endTime: "07:45", isBreak: false, label: "" };
 
 export default function SchoolPeriodsPage() {
+  const confirmDialog = useConfirm();
+  const toast = useToast();
   const [periods, setPeriods] = useState<PeriodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -68,19 +72,19 @@ export default function SchoolPeriodsPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Hapus jam pelajaran ini?")) return;
+    if (!(await confirmDialog("Hapus jam pelajaran ini?"))) return;
     await fetch(`/api/admin/school-periods/${id}`, { method: "DELETE" });
     load();
   }
 
   async function seedDefault(replace: boolean) {
-    if (replace && !confirm("Ini akan menghapus SEMUA kerangka jam yang ada dan menggantinya dengan default. Lanjutkan?")) return;
+    if (replace && !(await confirmDialog("Ini akan menghapus SEMUA kerangka jam yang ada dan menggantinya dengan default. Lanjutkan?"))) return;
     setSeeding(true);
     const res = await fetch("/api/admin/school-periods/seed-default", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ replace }),
     });
     if (res.ok) load();
-    else { const d = await res.json(); alert(d.error || "Gagal membuat default"); }
+    else { const d = await res.json(); toast.error(d.error || "Gagal membuat default"); }
     setSeeding(false);
   }
 

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2, BarChart2 } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface StudentSummary {
   id: string;
@@ -48,16 +49,17 @@ export default function AttendanceSummaryPage() {
   }, [selectedClass]);
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Rekap Absensi per Siswa</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Total kehadiran masing-masing siswa dari semua catatan absensi</p>
-        </div>
-      </div>
+    <div className="p-6 lg:p-8">
+      <PageHeader
+        icon={<BarChart2 size={22} />}
+        title="Rekap Absensi per Siswa"
+        description="Total kehadiran masing-masing siswa dari semua catatan absensi"
+        actions={
+          <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+            <ArrowLeft size={18} />
+          </Link>
+        }
+      />
 
       {classes.length > 1 && (
         <div className="mb-4 flex items-center gap-3">

@@ -1,15 +1,38 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 
+async function getAllowedClassIds(session: { role: string; email: string }): Promise<string[] | null> {
+  if (session.role !== "TEACHER") return null;
+  const teacher = await prisma.teacher.findFirst({
+    where: { user: { email: session.email } },
+    include: {
+      homeroomOf: { select: { id: true } },
+      teachingLoad: { select: { classId: true } },
+    },
+  });
+  const homeroomIds = teacher?.homeroomOf.map(c => c.id) ?? [];
+  const assignedIds = teacher?.teachingLoad.map(a => a.classId) ?? [];
+  return [...new Set([...homeroomIds, ...assignedIds])];
+}
+
 export async function GET(req: Request) {
   try {
-    await verifyRole(["TEACHER", "ADMIN"]);
+    const session = await verifyRole(["TEACHER", "ADMIN"]);
     const { searchParams } = new URL(req.url);
     const classId = searchParams.get("classId");
     const date = searchParams.get("date");
 
+    const allowedClassIds = await getAllowedClassIds(session);
+    if (allowedClassIds !== null) {
+      if (classId && !allowedClassIds.includes(classId)) {
+        return Response.json({ error: "Anda tidak memiliki akses ke kelas ini" }, { status: 403 });
+      }
+      if (!classId && allowedClassIds.length === 0) return Response.json([]);
+    }
+
     const where: Record<string, unknown> = {};
     if (classId) where.student = { classId };
+    else if (allowedClassIds) where.student = { classId: { in: allowedClassIds } };
     if (date) where.date = { gte: new Date(date), lt: new Date(new Date(date).getTime() + 86400000) };
 
     const records = await prisma.attendance.findMany({
@@ -25,13 +48,25 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["TEACHER", "ADMIN"]);
+    const session = await verifyRole(["TEACHER", "ADMIN"]);
     const { records } = await req.json();
 
     type AttRecord = { studentId: string; date: string; status: string };
+    const list = records as AttRecord[];
+
+    const allowedClassIds = await getAllowedClassIds(session);
+    if (allowedClassIds !== null) {
+      const studentIds = [...new Set(list.map(r => r.studentId))];
+      const validCount = await prisma.student.count({
+        where: { id: { in: studentIds }, classId: { in: allowedClassIds } },
+      });
+      if (validCount !== studentIds.length) {
+        return Response.json({ error: "Anda tidak memiliki akses ke sebagian siswa ini" }, { status: 403 });
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
-      for (const r of records as AttRecord[]) {
+      for (const r of list) {
         const date = new Date(r.date);
         const nextDay = new Date(date.getTime() + 86400000);
         await tx.attendance.deleteMany({

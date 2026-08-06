@@ -54,7 +54,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
     setPopupStyle({
       position: "fixed",
       left: rect.left,
-      width: rect.width < 288 ? 288 : rect.width,
+      width: 288, // ukuran tetap & kompak — jangan ikut lebar tombol pemicu (bisa sangat lebar di form lembar kerja)
       top: above ? rect.top - popupH - 4 : rect.bottom + 4,
       zIndex: 99999,
     });

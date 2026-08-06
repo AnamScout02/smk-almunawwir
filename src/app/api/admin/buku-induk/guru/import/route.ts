@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
+import { toProperCaseName } from "@/lib/text";
 
 function parseDate(val: unknown): Date | null {
   if (!val) return null;
@@ -28,7 +29,7 @@ function s(val: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
           const bcrypt = await import("bcryptjs");
           user = await prisma.user.create({
             data: {
-              name: nama,
+              name: toProperCaseName(nama),
               email,
               password: await bcrypt.hash(nip, 10),
               role: "TEACHER",

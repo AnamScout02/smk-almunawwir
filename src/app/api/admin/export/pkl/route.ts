@@ -5,6 +5,7 @@ export async function GET() {
   await verifyRole(["ADMIN", "TAS"]);
 
   const students = await prisma.student.findMany({
+    where: { studentStatus: "AKTIF" },
     include: {
       user: { select: { name: true, email: true } },
       class: { select: { name: true, grade: true } },

@@ -2,15 +2,22 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft } from "lucide-react";
+import { getSettings } from "@/lib/site-settings";
+import { ArrowLeft, FileText, Lock, CheckCircle2, Stethoscope, CalendarX, XCircle } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "@/components/shared/PrintButton";
+import PrintKop from "@/components/shared/PrintKop";
+import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
+import { getOrCreateVerificationToken } from "@/lib/verification";
+import { generateQrDataUrl } from "@/lib/qrcode";
 
 export const metadata = { title: "Rapor Nilai — Portal Siswa" };
 
 export default async function RaporPage() {
   const session = await verifyRole(["STUDENT"]);
 
+  const settings = await getSettings(["logo.full_white"]);
   const student = await prisma.student.findFirst({
     where: { user: { email: session.email } },
     include: {
@@ -22,8 +29,20 @@ export default async function RaporPage() {
     },
   });
 
+  let qrDataUrl = "";
+  if (student) {
+    const token = await getOrCreateVerificationToken(student.id);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    qrDataUrl = await generateQrDataUrl(`${baseUrl}/verify/${token}`);
+  }
+
   const grades = student?.grades ?? [];
   const semesters = [...new Set(grades.map(g => g.semester))].sort();
+
+  const approvals = student?.classId
+    ? await prisma.raporApproval.findMany({ where: { classId: student.classId, semester: { in: semesters } }, select: { semester: true } })
+    : [];
+  const approvedSemesters = new Set(approvals.map(a => a.semester));
 
   const gradesBySemester = semesters.map(sem => {
     const sg = grades.filter(g => g.semester === sem);
@@ -66,26 +85,29 @@ export default async function RaporPage() {
   }
 
   return (
-    <>
+    <div className="p-6 lg:p-8 print:p-0">
       {/* Tombol aksi — tidak ikut print */}
-      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/student" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowLeft size={16} />
-          </Link>
-          <h1 className="font-heading font-bold">Rapor Nilai</h1>
-        </div>
-        <PrintButton />
+      <div className="print:hidden">
+        <PageHeader
+          icon={<FileText size={22} />}
+          title="Rapor Nilai"
+          description="Laporan hasil belajar & rekap kehadiran"
+          actions={
+            <>
+              <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+                <ArrowLeft size={18} />
+              </Link>
+              <PrintButton />
+            </>
+          }
+        />
       </div>
 
       {/* Konten rapor — ikut print */}
-      <div className="max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
+      <div className="print-doc max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
         {/* Header rapor */}
-        <div className="text-center border-b-2 border-primary-900 pb-4 mb-6">
-          <h2 className="font-heading text-2xl font-bold text-primary-900">SMK Al Munawwir IIBS</h2>
-          <p className="text-gray-500 text-sm">Singojuruh, Banyuwangi, Jawa Timur · NPSN 69896523</p>
-          <h3 className="font-heading text-lg font-bold text-primary-900 mt-3">LAPORAN HASIL BELAJAR SISWA</h3>
-        </div>
+        <PrintKop title="Laporan Hasil Belajar Siswa" subtitle="SMK Al Munawwir IIBS" logoUrl={settings["logo.full_white"]} />
+        <p className="text-center text-gray-400 text-xs mb-6 -mt-2">Singojuruh, Banyuwangi, Jawa Timur · NPSN 69896523</p>
 
         {/* Data siswa */}
         <div className="bg-gray-50 rounded-xl p-4 mb-6 grid grid-cols-2 gap-2 text-sm">
@@ -105,12 +127,20 @@ export default async function RaporPage() {
             <div key={sem} className="mb-8">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-heading font-bold text-primary-900">Semester: {sem}</h4>
-                {semAvg !== null && (
+                {approvedSemesters.has(sem) && semAvg !== null && (
                   <span className={`text-sm font-bold px-3 py-1 rounded-full border ${semAvg >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>
                     Rata-rata: {semAvg.toFixed(1)}
                   </span>
                 )}
               </div>
+              {!approvedSemesters.has(sem) ? (
+                <div className="border border-amber-100 bg-amber-50 rounded-xl py-10 text-center print:border-gray-200 print:bg-gray-50">
+                  <Lock size={28} className="text-amber-400 mx-auto mb-2" />
+                  <p className="text-amber-700 font-semibold text-sm">Rapor semester ini belum disahkan Kepala Sekolah</p>
+                  <p className="text-amber-500 text-xs mt-1">Nilai akan tersedia setelah disahkan.</p>
+                </div>
+              ) : (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
@@ -144,6 +174,8 @@ export default async function RaporPage() {
                 </table>
               </div>
               <p className="text-xs text-gray-400 mt-1">KKM: 75 · UH = Ulangan Harian · UTS = Ujian Tengah Semester · UAS = Ujian Akhir Semester</p>
+              </>
+              )}
             </div>
           ))
         )}
@@ -154,10 +186,10 @@ export default async function RaporPage() {
             <h4 className="font-heading font-bold text-primary-900 mb-3">Rekap Kehadiran</h4>
             <div className="grid grid-cols-4 gap-3">
               {attSummary.map(({ status, count }) => (
-                <div key={status} className="border border-gray-100 rounded-xl p-3 text-center shadow-sm">
-                  <p className="font-heading font-bold text-xl text-primary-900">{count}</p>
-                  <p className="text-xs text-gray-500">{status}</p>
-                </div>
+                <StatTile key={status} size="md"
+                  color={status === "HADIR" ? "emerald" : status === "IZIN" ? "blue" : status === "SAKIT" ? "amber" : "red"}
+                  icon={status === "HADIR" ? CheckCircle2 : status === "IZIN" ? CalendarX : status === "SAKIT" ? Stethoscope : XCircle}
+                  value={count} label={status} />
               ))}
             </div>
             <p className="text-sm text-gray-500 mt-2">Total: {totalDays} hari · Persentase kehadiran: <strong>{presentPct}%</strong></p>
@@ -165,23 +197,33 @@ export default async function RaporPage() {
         )}
 
         {/* Tanda tangan */}
-        <div className="mt-10 grid grid-cols-3 gap-8 text-center text-sm">
-          <div>
+        <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-8 text-center text-sm">
+          <div className="min-w-0">
             <p className="text-gray-500 mb-12">Wali Kelas,</p>
             <div className="border-b border-gray-400 mb-1" />
-            <p className="text-gray-500">( _____________________ )</p>
+            <p className="text-gray-500 break-words">( _____________ )</p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-gray-500 mb-12">Mengetahui,<br />Kepala Sekolah</p>
             <div className="border-b border-gray-400 mb-1" />
-            <p className="text-gray-500">( _____________________ )</p>
+            <p className="text-gray-500 break-words">( _____________ )</p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-gray-500 mb-12">Orang Tua / Wali,</p>
             <div className="border-b border-gray-400 mb-1" />
-            <p className="text-gray-500">( _____________________ )</p>
+            <p className="text-gray-500 break-words">( _____________ )</p>
           </div>
         </div>
+
+        {qrDataUrl && (
+          <div className="mt-8 flex justify-center">
+            <div className="text-center text-[10px] text-gray-400">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrDataUrl} alt="QR verifikasi dokumen" className="w-20 h-20 mx-auto" />
+              <p className="mt-1">Scan untuk verifikasi keaslian dokumen</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -190,6 +232,6 @@ export default async function RaporPage() {
           body { background: white; }
         }
       `}</style>
-    </>
+    </div>
   );
 }

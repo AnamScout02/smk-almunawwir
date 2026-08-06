@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { assertBranding } from "@/lib/branding-guard";
 
 export async function GET() {
   try {
@@ -10,7 +11,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["ADMIN"]);
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertBranding(session);
     const body = await req.json();
     const slug = body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now();
     const news = await prisma.news.create({
@@ -18,6 +20,9 @@ export async function POST(req: Request) {
     });
     return Response.json(news);
   } catch (e: unknown) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Koordinator Tim Branding & Publikasi." }, { status: 403 });
+    }
     const msg = e instanceof Error ? e.message : "Gagal menyimpan";
     return Response.json({ error: msg }, { status: 500 });
   }

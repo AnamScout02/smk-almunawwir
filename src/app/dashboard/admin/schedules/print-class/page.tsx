@@ -104,7 +104,7 @@ export default async function ClassSchedulePrintPage({ searchParams }: { searchP
         <PrintButton />
       </div>
 
-      <div className="relative p-6 print:p-2">
+      <div className="print-doc relative p-6 print:p-2">
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none -z-10"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat" }} />
         <PrintKop title={`Jadwal Pelajaran — ${activeClass.name}`} subtitle="SMK Al Munawwir IIBS" logoUrl={logoUrl} />

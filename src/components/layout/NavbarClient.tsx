@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, ChevronDown } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 const navLinks = {
@@ -12,6 +12,7 @@ const navLinks = {
     { name: "Program", href: "/programs" },
     { name: "Berita", href: "/news" },
     { name: "Galeri", href: "/gallery" },
+    { name: "Alumni", href: "/alumni" },
     { name: "Kontak", href: "/contact" },
   ],
   en: [
@@ -20,13 +21,31 @@ const navLinks = {
     { name: "Programs", href: "/programs" },
     { name: "News", href: "/news" },
     { name: "Gallery", href: "/gallery" },
+    { name: "Alumni", href: "/alumni" },
     { name: "Contact", href: "/contact" },
   ],
 };
 
+const serviceLinks = {
+  id: [
+    { name: "Fasilitas", href: "/facilities" },
+    { name: "Ekstrakurikuler", href: "/extracurricular" },
+    { name: "Tracer Study Alumni", href: "/tracer-study" },
+    { name: "Cek Kelulusan", href: "/cek-kelulusan" },
+    { name: "Daftar Ulang PPDB", href: "/daftar-ulang" },
+  ],
+  en: [
+    { name: "Facilities", href: "/facilities" },
+    { name: "Extracurricular", href: "/extracurricular" },
+    { name: "Alumni Tracer Study", href: "/tracer-study" },
+    { name: "Graduation Status", href: "/cek-kelulusan" },
+    { name: "Re-registration", href: "/daftar-ulang" },
+  ],
+};
+
 const ui = {
-  id: { login: "Masuk", register: "Daftar Sekarang", registerShort: "Daftar" },
-  en: { login: "Login", register: "Register Now", registerShort: "Register" },
+  id: { login: "Masuk", register: "Daftar Sekarang", registerShort: "Daftar", services: "Layanan" },
+  en: { login: "Login", register: "Register Now", registerShort: "Register", services: "Services" },
 };
 
 interface NavbarClientProps {
@@ -47,7 +66,10 @@ export default function NavbarClient({
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [lang, setLang] = useState<"id" | "en">("id");
+  const servicesTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoEmblem = initialEmblem;
   const logoFull = initialFull;
   const logoFullWhite = initialFullWhite;
@@ -166,6 +188,41 @@ export default function NavbarClient({
             </li>
             );
           })}
+
+          {/* Layanan dropdown */}
+          <li
+            className="relative"
+            onMouseEnter={() => {
+              if (servicesTimeout.current) clearTimeout(servicesTimeout.current);
+              setServicesOpen(true);
+            }}
+            onMouseLeave={() => {
+              servicesTimeout.current = setTimeout(() => setServicesOpen(false), 150);
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setServicesOpen(o => !o)}
+              className={`flex items-center gap-1 font-medium text-sm transition-colors hover:text-gold pb-1 ${
+                serviceLinks[lang].some(l => isActive(l.href)) ? "text-gold" : isDark ? "text-white/90" : "text-navy"
+              }`}
+            >
+              {t.services}
+              <ChevronDown size={14} className={`transition-transform ${servicesOpen ? "rotate-180" : ""}`} />
+            </button>
+            {servicesOpen && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 z-50">
+                <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1.5">
+                  {serviceLinks[lang].map(link => (
+                    <Link key={link.href} href={link.href} onClick={() => setServicesOpen(false)}
+                      className={`block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary-50 hover:text-primary-700 ${isActive(link.href) ? "text-gold" : "text-navy"}`}>
+                      {link.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </li>
         </ul>
 
         {/* Desktop CTA */}
@@ -226,10 +283,10 @@ export default function NavbarClient({
       {/* Mobile Menu */}
       <div
         className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          open ? "max-h-96" : "max-h-0"
+          open ? "max-h-[42rem]" : "max-h-0"
         }`}
       >
-        <div className="bg-white border-t border-gray-100 px-6 py-4">
+        <div className="bg-white border-t border-gray-100 px-6 py-4 max-h-[80vh] overflow-y-auto">
           {links.map((link) => {
             const active = isActive(link.href);
             return (
@@ -246,6 +303,32 @@ export default function NavbarClient({
             </Link>
             );
           })}
+
+          <button
+            type="button"
+            onClick={() => setMobileServicesOpen(o => !o)}
+            className={`w-full flex items-center justify-between py-3 font-medium border-b border-gray-100 hover:text-gold transition-colors ${
+              serviceLinks[lang].some(l => isActive(l.href)) ? "text-gold" : "text-navy"
+            }`}
+          >
+            {t.services}
+            <ChevronDown size={16} className={`transition-transform ${mobileServicesOpen ? "rotate-180" : ""}`} />
+          </button>
+          {mobileServicesOpen && (
+            <div className="pl-3 border-b border-gray-100">
+              {serviceLinks[lang].map(link => {
+                const active = isActive(link.href);
+                return (
+                  <Link key={link.href} href={link.href} onClick={() => setOpen(false)}
+                    className={`flex items-center justify-between py-2.5 text-sm font-medium hover:text-gold transition-colors ${active ? "text-gold" : "text-gray-600"}`}>
+                    {link.name}
+                    {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex gap-3 mt-4">
             <Link
               href="/login"

@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { weekTypesOverlap } from "@/lib/schedule-week";
+import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { Calendar } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
 
 const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
@@ -13,12 +15,12 @@ export default async function TeacherSchedulePage() {
 
   const teacher = await prisma.teacher.findFirst({ where: { user: { email: session.email } } });
 
-  // Jadwal BLOK guru ini — kelas X/XI ikut sistem 2 minggu bergantian (weekType A/B), kelas
-  // XII tetap (weekType SEMUA, otomatis muncul di kedua minggu via weekTypesOverlap). Kedua
-  // minggu ditampilkan sekaligus terpisah per hari, tidak perlu toggle.
+  // Jadwal BLOK guru ini — kelas X/XI ikut sistem 2 minggu bergantian (weekType A/B). Kelas XII
+  // TIDAK ditampilkan (sedang PKL, tidak ada KBM tatap muka). Kedua minggu ditampilkan sekaligus
+  // terpisah per hari, tidak perlu toggle.
   const allSchedules = teacher
     ? await prisma.schedule.findMany({
-        where: { teacherId: teacher.id, scheduleType: "BLOK" },
+        where: { teacherId: teacher.id, scheduleType: "BLOK", class: { grade: { in: [10, 11] } } },
         include: { class: { include: { major: true } } },
         orderBy: [{ day: "asc" }, { startTime: "asc" }],
       })
@@ -50,11 +52,13 @@ export default async function TeacherSchedulePage() {
               <div key={day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-4 py-2.5 bg-primary-900 text-white text-sm font-bold">{DAY_LABEL[day]}</div>
                 <div className="divide-y divide-gray-50">
-                  {byDay[day].map(s => (
-                    <div key={s.id} className="px-4 py-2.5 text-xs">
-                      <p className="font-mono text-gray-400">{s.startTime}–{s.endTime}</p>
-                      <p className="font-semibold text-gray-800">{s.subject}</p>
-                      <p className="text-gray-500">{s.class.name} · {s.class.major.name}</p>
+                  {groupConsecutiveSchedules(byDay[day], s => `${s.classId}|${s.subject}`).map(({ items, first, last }) => (
+                    <div key={items[0].id} className="px-4 py-2.5 text-xs">
+                      <p className="font-mono text-gray-400">
+                        {first.startTime}–{last.endTime}{items.length > 1 && <span className="text-gray-300"> ({items.length} JP)</span>}
+                      </p>
+                      <p className="font-semibold text-gray-800">{first.subject}</p>
+                      <p className="text-gray-500">{first.class.name} · {first.class.major.name}</p>
                     </div>
                   ))}
                 </div>
@@ -67,18 +71,14 @@ export default async function TeacherSchedulePage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-11 h-11 rounded-2xl bg-primary-900 text-white flex items-center justify-center">
-          <Calendar size={20} />
-        </div>
-        <div>
-          <h1 className="font-heading text-xl font-bold text-primary-900">Jadwal Mengajar Saya</h1>
-          <p className="text-sm text-gray-500">{totalHours} jam pelajaran · {classNames.length} kelas ({classNames.join(", ") || "belum ada"})</p>
-        </div>
-      </div>
-      <p className="text-xs text-gray-400 mb-6">
-        Kelas X &amp; XI memakai jadwal blok (bergantian Minggu 1/2, jam digandakan) — ditampilkan terpisah per minggu di bawah. Kelas XII tetap sama, muncul di kedua minggu.
+    <div className="p-6 lg:p-8">
+      <PageHeader
+        icon={<Calendar size={22} />}
+        title="Jadwal Mengajar Saya"
+        description={`${totalHours} jam pelajaran · ${classNames.length} kelas (${classNames.join(", ") || "belum ada"})`}
+      />
+      <p className="text-xs text-gray-400 mb-6 -mt-4">
+        Kelas X &amp; XI memakai jadwal blok (bergantian Minggu 1/2, jam digandakan) — ditampilkan terpisah per minggu di bawah. Kelas XII tidak ditampilkan (sedang PKL).
       </p>
 
       <div className="space-y-8">

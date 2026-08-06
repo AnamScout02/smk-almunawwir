@@ -4,15 +4,16 @@ import ContentEditor from "@/components/admin/ContentEditor";
 import LogoEditor from "@/components/admin/LogoEditor";
 import StructureEditor from "@/components/admin/StructureEditor";
 import KaprodiEditor from "@/components/admin/KaprodiEditor";
+import AchievementsEditor from "@/components/admin/AchievementsEditor";
 import PageHeader from "@/components/admin/PageHeader";
 import Alert from "@/components/admin/Alert";
-import { FileText, ImageIcon, Users } from "lucide-react";
+import { FileText, ImageIcon, Users, Trophy } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContentPage() {
   await verifyRole(["ADMIN"]);
-  const settings = await getSettings([...Object.keys(DEFAULTS), "logo.emblem", "logo.full", "logo.full_white", "letterhead.bukuInduk"]);
+  const settings = await getSettings([...Object.keys(DEFAULTS), "logo.emblem", "logo.full", "logo.full_white", "letterhead.bukuInduk", "letterhead.kopBawah", "letterhead.ttdKepalaSekolah"]);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen">
@@ -36,6 +37,8 @@ export default async function ContentPage() {
             logoFull={settings["logo.full"]}
             logoFullWhite={settings["logo.full_white"]}
             letterheadBukuInduk={settings["letterhead.bukuInduk"]}
+            letterheadKopBawah={settings["letterhead.kopBawah"]}
+            letterheadTtd={settings["letterhead.ttdKepalaSekolah"]}
           />
         </section>
 
@@ -59,6 +62,17 @@ export default async function ContentPage() {
             <h2 className="font-heading text-base font-semibold text-navy">Kepala Kompetensi Keahlian</h2>
           </div>
           <KaprodiEditor initialValue={settings["school.kaprodi"]} />
+        </section>
+
+        {/* Prestasi Ekstrakurikuler */}
+        <section>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center">
+              <Trophy size={14} className="text-primary-700" />
+            </div>
+            <h2 className="font-heading text-base font-semibold text-navy">Prestasi Ekstrakurikuler</h2>
+          </div>
+          <AchievementsEditor initialValue={settings["ekskul.achievements"]} />
         </section>
 
         {/* Content Section */}

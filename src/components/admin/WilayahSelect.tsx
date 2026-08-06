@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Select from "./Select";
+import { toProperCase } from "@/lib/text";
 
 interface Item { id: string; name: string }
 
@@ -8,6 +9,9 @@ const stripRegencyPrefix = (name: string) => name.replace(/^(KABUPATEN|KOTA)\s+/
 const byName = (a: Item, b: Item) => a.name.localeCompare(b.name, "id");
 const byLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label, "id");
 const normalize = (s: string) => s.trim().toUpperCase();
+/** Data wilayah dari API pemerintah selalu ALL CAPS ("JAWA TIMUR") — tampilkan & simpan
+ * Proper Case ("Jawa Timur") supaya konsisten dengan data teks lain di Buku Induk. */
+const display = (name: string) => toProperCase(name);
 
 /** Cari item yang cocok secara longgar (trim + case-insensitive, dengan/tanpa prefix Kabupaten/Kota)
  *  agar data lama (input manual sebelum dropdown ini ada) tetap terbaca sebagai terpilih. */
@@ -26,11 +30,12 @@ interface WilayahSelectProps {
   onRegency: (v: string) => void;
   onDistrict: (v: string) => void;
   onVillage: (v: string) => void;
+  readOnly?: boolean;
 }
 
 export default function WilayahSelect({
   province, regency, district, village,
-  onProvince, onRegency, onDistrict, onVillage,
+  onProvince, onRegency, onDistrict, onVillage, readOnly = false,
 }: WilayahSelectProps) {
   const [provinces, setProvinces] = useState<Item[]>([]);
   const [regencies, setRegencies] = useState<Item[]>([]);
@@ -70,39 +75,40 @@ export default function WilayahSelect({
         <label className="label-field">Provinsi</label>
         <Select
           value={provinceMatch?.name ?? province}
-          onChange={v => { onProvince(v); onRegency(""); onDistrict(""); onVillage(""); }}
-          options={[...provinces].sort(byName).map(p => ({ value: p.name, label: p.name }))}
+          onChange={v => { onProvince(toProperCase(v)); onRegency(""); onDistrict(""); onVillage(""); }}
+          options={[...provinces].sort(byName).map(p => ({ value: p.name, label: display(p.name) }))}
           placeholder="Pilih provinsi"
+          disabled={readOnly}
         />
       </div>
       <div>
         <label className="label-field">Kabupaten/Kota</label>
         <Select
-          value={regencyMatch?.name ?? regency}
-          onChange={v => { onRegency(v); onDistrict(""); onVillage(""); }}
-          options={regencies.map(r => ({ value: r.name, label: stripRegencyPrefix(r.name) })).sort(byLabel)}
+          value={stripRegencyPrefix(regencyMatch?.name ?? regency)}
+          onChange={v => { onRegency(toProperCase(v)); onDistrict(""); onVillage(""); }}
+          options={regencies.map(r => ({ value: stripRegencyPrefix(r.name), label: display(stripRegencyPrefix(r.name)) })).sort(byLabel)}
           placeholder={province ? "Pilih kabupaten/kota" : "Pilih provinsi dulu"}
-          disabled={!province}
+          disabled={readOnly || !province}
         />
       </div>
       <div>
         <label className="label-field">Kecamatan</label>
         <Select
           value={districtMatch?.name ?? district}
-          onChange={v => { onDistrict(v); onVillage(""); }}
-          options={[...districts].sort(byName).map(d => ({ value: d.name, label: d.name }))}
+          onChange={v => { onDistrict(toProperCase(v)); onVillage(""); }}
+          options={[...districts].sort(byName).map(d => ({ value: d.name, label: display(d.name) }))}
           placeholder={regency ? "Pilih kecamatan" : "Pilih kabupaten dulu"}
-          disabled={!regency}
+          disabled={readOnly || !regency}
         />
       </div>
       <div>
         <label className="label-field">Desa/Kelurahan</label>
         <Select
           value={villageMatch?.name ?? village}
-          onChange={onVillage}
-          options={[...villages].sort(byName).map(v => ({ value: v.name, label: v.name }))}
+          onChange={v => onVillage(toProperCase(v))}
+          options={[...villages].sort(byName).map(v => ({ value: v.name, label: display(v.name) }))}
           placeholder={district ? "Pilih desa/kelurahan" : "Pilih kecamatan dulu"}
-          disabled={!district}
+          disabled={readOnly || !district}
         />
       </div>
     </>

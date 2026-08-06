@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import DatePicker from "@/components/shared/DatePicker";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface Student {
   id: string;
@@ -44,20 +45,26 @@ export default function AbsensiPage() {
     Promise.all([
       fetch(`/api/teacher/students?classId=${classId}`).then(r => r.json()),
       fetch("/api/teacher/classes").then(r => r.json()),
-    ]).then(([students, classes]) => {
+      // Muat absensi yang SUDAH tersimpan untuk tanggal ini — tanpa ini status lama (mis. ALPHA)
+      // tidak pernah kelihatan saat halaman dibuka ulang, dan tombol Simpan bisa menimpa data lama
+      // jadi HADIR semua tanpa sengaja.
+      fetch(`/api/teacher/attendance?classId=${classId}&date=${date}`).then(r => r.json()),
+    ]).then(([students, classes, existing]) => {
       if (Array.isArray(students)) {
         setStudents(students);
         const init: Record<string, AttendanceStatus> = {};
         students.forEach((s: Student) => { init[s.id] = "HADIR"; });
+        if (Array.isArray(existing)) {
+          existing.forEach((r: { studentId: string; status: AttendanceStatus }) => { init[r.studentId] = r.status; });
+        }
         setAttendance(init);
       }
       if (Array.isArray(classes)) {
         const found = classes.find((c: ClassInfo) => c.id === classId);
         if (found) setCls(found);
       }
-      setLoading(false);
-    });
-  }, [classId]);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [classId, date]);
 
   function setStatus(studentId: string, status: AttendanceStatus) {
     setAttendance(prev => ({ ...prev, [studentId]: status }));
@@ -89,18 +96,17 @@ export default function AbsensiPage() {
   const summary = STATUSES.map(s => ({ label: s, count: Object.values(attendance).filter(v => v === s).length }));
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-          <ArrowLeft size={18} />
-        </Link>
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-primary-900">Input Absensi</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
-            {cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
-          </p>
-        </div>
-      </div>
+    <div className="p-6 lg:p-8">
+      <PageHeader
+        icon={<CheckSquare size={22} />}
+        title="Input Absensi"
+        description={cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
+        actions={
+          <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
+            <ArrowLeft size={18} />
+          </Link>
+        }
+      />
 
       {/* Tanggal + summary */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

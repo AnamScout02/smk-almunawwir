@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
+import { assertKurikulum } from "@/lib/kurikulum-guard";
 
 export async function GET(req: NextRequest) {
   await verifyRole(["ADMIN", "TEACHER"]);
@@ -23,34 +24,50 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
-  const body = await req.json();
-  const { classId, teacherId, subject, day, startTime, endTime, room, weekType, scheduleType } = body;
-  if (!classId || !subject || !day || !startTime || !endTime) {
-    return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
+  try {
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertKurikulum(session);
+    const body = await req.json();
+    const { classId, teacherId, subject, day, startTime, endTime, room, weekType, scheduleType } = body;
+    if (!classId || !subject || !day || !startTime || !endTime) {
+      return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
+    }
+    const item = await prisma.schedule.create({
+      data: { classId, teacherId: teacherId || null, subject, day, startTime, endTime, room: room || null, weekType: weekType || "SEMUA", scheduleType: scheduleType || "BLOK" },
+      include: {
+        class: { include: { major: true } },
+        teacher: { include: { user: { select: { name: true } } } },
+      },
+    });
+    return NextResponse.json(item, { status: 201 });
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Gagal menyimpan jadwal" }, { status: 500 });
   }
-  const item = await prisma.schedule.create({
-    data: { classId, teacherId: teacherId || null, subject, day, startTime, endTime, room: room || null, weekType: weekType || "SEMUA", scheduleType: scheduleType || "BLOK" },
-    include: {
-      class: { include: { major: true } },
-      teacher: { include: { user: { select: { name: true } } } },
-    },
-  });
-  return NextResponse.json(item, { status: 201 });
 }
 
 // Hapus massal hasil Generate Otomatis (generated=true) — opsional discope ke 1 kelas via
 // ?classId=. Jadwal yang ditambah/diedit manual (generated=false) TIDAK ikut terhapus.
 export async function DELETE(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
-  const { "schedule.locked": locked } = await getSettings(["schedule.locked"]);
-  if (locked === "1") {
-    return NextResponse.json({ error: "Jadwal sedang dikunci — buka kunci dulu di halaman Jadwal Pelajaran sebelum menghapus hasil generate." }, { status: 423 });
+  try {
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+    await assertKurikulum(session);
+    const { "schedule.locked": locked } = await getSettings(["schedule.locked"]);
+    if (locked === "1") {
+      return NextResponse.json({ error: "Jadwal sedang dikunci — buka kunci dulu di halaman Jadwal Pelajaran sebelum menghapus hasil generate." }, { status: 423 });
+    }
+    const classId = req.nextUrl.searchParams.get("classId");
+    const scheduleType = req.nextUrl.searchParams.get("scheduleType") ?? "BLOK";
+    const result = await prisma.schedule.deleteMany({
+      where: { generated: true, scheduleType, ...(classId ? { classId } : {}) },
+    });
+    return NextResponse.json({ deleted: result.count });
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Gagal menghapus jadwal" }, { status: 500 });
   }
-  const classId = req.nextUrl.searchParams.get("classId");
-  const scheduleType = req.nextUrl.searchParams.get("scheduleType") ?? "BLOK";
-  const result = await prisma.schedule.deleteMany({
-    where: { generated: true, scheduleType, ...(classId ? { classId } : {}) },
-  });
-  return NextResponse.json({ deleted: result.count });
 }

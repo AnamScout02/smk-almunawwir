@@ -86,7 +86,7 @@ export default function BukuIndukGuruPage() {
 
   useEffect(() => {
     fetchTeachers();
-    fetch("/api/admin/master-data").then(r => r.json()).then(setMasterData).catch(() => {});
+    fetch("/api/admin/master-data").then(r => r.json()).then(d => setMasterData(Array.isArray(d) ? d : [])).catch(() => {});
   }, [fetchTeachers]);
 
   useEffect(() => {
@@ -309,7 +309,8 @@ export default function BukuIndukGuruPage() {
               <Section title="A. Data Pribadi" icon={User} open={!!sections.personal} onToggle={() => toggleSection("personal")}>
                 <Field label="NIK (16 digit)" value={e("nik")} type="nik" onChange={setE("nik")} />
                 <Field label="NUPTK" value={e("nuptk")} type="nik" onChange={setE("nuptk")} />
-                <Field label="Jenis Kelamin" value={String(form.gender ?? "")} options={md("jenis_kelamin")}
+                <Field label="Jenis Kelamin" value={String(form.gender ?? "")}
+                  options={[{ value: "L", label: "Laki-laki" }, { value: "P", label: "Perempuan" }]}
                   onChange={v => setForm(p => ({...p, gender: v}))} />
                 <Field label="Tempat Lahir" value={String(form.birthPlace ?? "")}
                   onChange={v => setForm(p => ({...p, birthPlace: v}))} />
