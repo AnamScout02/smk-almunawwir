@@ -2,9 +2,96 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2 } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
+
+interface MenuItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badge?: number }
+
+interface SidebarContentProps {
+  logoEmblem: string;
+  logoFullWhite?: string;
+  search: string;
+  setSearch: (v: string) => void;
+  filteredItems: MenuItem[];
+  isActive: (href: string, exact?: boolean) => boolean;
+  onLinkClick: () => void;
+}
+
+// Komponen TERPISAH di luar TeacherSidebar (bukan didefinisikan ulang di dalam body tiap render) —
+// lihat komentar lengkap di AdminSidebar.tsx: kalau didefinisikan di dalam, React membongkar-pasang
+// ulang seluruh sidebar tiap ketikan di kotak pencarian, bikin input kehilangan fokus tiap huruf.
+// Daftar menu di portal Guru sengaja TETAP FLAT (bukan dikelompokkan seperti AdminSidebar) —
+// kebanyakan guru cuma punya belasan menu (tidak sebanyak Admin), jadi grup/accordion cuma
+// menambah klik tanpa banyak manfaat di sini (keputusan eksplisit user).
+function SidebarContent({ logoEmblem, logoFullWhite, search, setSearch, filteredItems, isActive, onLinkClick }: SidebarContentProps) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-5 py-4 border-b border-white/10">
+        {logoFullWhite ? (
+          <div className="flex flex-col gap-1.5">
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
+            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Portal Guru</p>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <div>
+              <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
+              <p className="text-white/50 text-xs">Portal Guru</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Cari menu — berguna kalau guru merangkap banyak jabatan */}
+      <div className="px-3 pt-3">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari menu..."
+            className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-gold/50 focus:bg-white/10 transition-colors"
+          />
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto sidebar-scroll">
+        {filteredItems.length === 0 && (
+          <p className="px-3 py-6 text-center text-xs text-white/30">Tidak ada menu yang cocok.</p>
+        )}
+        {filteredItems.map(item => {
+          const active = isActive(item.href, item.exact);
+          const badgeCount = item.badge ?? 0;
+          return (
+            <Link key={item.href} href={item.href} onClick={onLinkClick}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-gold text-primary-900 shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"}`}>
+              <item.icon size={17} />
+              <span className="flex-1">{item.label}</span>
+              {badgeCount > 0 && (
+                <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"}`}>
+                  {badgeCount > 99 ? "99+" : badgeCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="px-3 py-4 border-t border-white/10 space-y-1">
+        <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-white/10 hover:text-white transition-all">
+          <Globe size={17} /> Lihat Website
+        </Link>
+        <form action={logout}>
+          <button type="submit" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-red-500/20 hover:text-red-300 transition-all">
+            <LogOut size={17} /> Keluar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 interface TeacherSidebarProps {
   logoEmblem?: string;
@@ -12,14 +99,17 @@ interface TeacherSidebarProps {
   jabatanNames?: string[];
   hasInternshipBimbingan?: boolean;
   isGuruPiketOnDutyToday?: boolean;
+  overdueBooks?: number;
+  hasHomeroom?: boolean;
 }
 
 export default function TeacherSidebar({
   logoEmblem = "/images/logo-emblem.png", logoFullWhite, jabatanNames = [], hasInternshipBimbingan = false,
-  isGuruPiketOnDutyToday = false,
+  isGuruPiketOnDutyToday = false, overdueBooks = 0, hasHomeroom = false,
 }: TeacherSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const isKepalaSekolah = jabatanNames.includes("Kepala Sekolah");
   const isWakasekHumas = jabatanNames.includes("Wakil Kepala Humas");
   const isWakasekKurikulum = jabatanNames.includes("Wakil Kepala Kurikulum");
@@ -45,7 +135,7 @@ export default function TeacherSidebar({
   // supaya role TEACHER berjabatan ini diloloskan verifyTasAccess().
   const isTasStaff = jabatanNames.includes("Tenaga Administrasi Sekolah") || jabatanNames.includes("Kepala Tenaga Administrasi Sekolah");
 
-  const menu = [
+  const menu: (MenuItem & { show: boolean })[] = [
     { href: "/dashboard/teacher", label: "Dashboard", icon: LayoutDashboard, exact: true, show: true },
     { href: "/dashboard/teacher/kepala-sekolah", label: "Dashboard Kepala Sekolah", icon: Gauge, show: isKepalaSekolah },
     { href: "/dashboard/teacher/wakasek/kurikulum", label: "Dashboard Kurikulum", icon: GraduationCap, show: isWakasekKurikulum },
@@ -69,6 +159,8 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse, show: isKepalaUks },
     { href: "/dashboard/teacher/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
     { href: "/dashboard/teacher/perpustakaan", label: "Perpustakaan", icon: Library, show: isPerpustakaan },
+    { href: "/dashboard/teacher/buku-saya", label: "Buku Saya", icon: BookOpen, show: true, badge: overdueBooks },
+    { href: "/dashboard/teacher/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: true },
     { href: "/dashboard/teacher/jaringan", label: "Jaringan Sekolah", icon: Network, show: isPengelolaJaringan },
     { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: isTasStaff },
     { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, show: isTasStaff },
@@ -84,10 +176,14 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/program-kerja", label: "Program Kerja", icon: ListChecks, show: jabatanNames.length > 0 },
     { href: "/dashboard/teacher/schedule", label: "Jadwal Saya", icon: Calendar, show: true },
     { href: "/dashboard/teacher/students", label: "Daftar Siswa", icon: Users, show: true },
-    { href: "/dashboard/teacher/grades", label: "Input Nilai", icon: ClipboardList, show: true },
+    { href: "/dashboard/teacher/dkn", label: "DKN Kelas", icon: ClipboardList, show: hasHomeroom },
     { href: "/dashboard/teacher/rpp", label: "Bank RPP", icon: NotebookPen, show: true },
     { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion, show: true },
-    { href: "/dashboard/teacher/attendance", label: "Absensi", icon: CheckSquare, show: true },
+    // Absensi KHUSUS wali kelas — guru mapel biasa tidak lagi bisa input absensi resmi di sini
+    // (per keputusan terbaru, membalik kebijakan lama). Kalau guru mapel perlu catat kehadiran
+    // per pertemuan mapelnya, itu lewat kolom Kehadiran di Jurnal Mengajar (terpisah, tidak
+    // menimpa Absensi resmi kelas).
+    { href: "/dashboard/teacher/attendance", label: "Absensi", icon: CheckSquare, show: hasHomeroom },
     { href: "/dashboard/teacher/journal", label: "Jurnal Mengajar", icon: NotebookPen, show: true },
     { href: "/dashboard/teacher/pkl", label: "PKL Pembimbingan", icon: Briefcase, show: hasInternshipBimbingan },
     { href: "/dashboard/teacher/materials", label: "Materi & Tugas", icon: BookOpen, show: true },
@@ -95,51 +191,11 @@ export default function TeacherSidebar({
   ].filter(item => item.show);
 
   function isActive(href: string, exact = false) {
-    return exact ? pathname === href : pathname.startsWith(href);
+    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="px-5 py-4 border-b border-white/10">
-        {logoFullWhite ? (
-          <div className="flex flex-col gap-1.5">
-            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
-            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Portal Guru</p>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
-            <div>
-              <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
-              <p className="text-white/50 text-xs">Portal Guru</p>
-            </div>
-          </div>
-        )}
-      </div>
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
-        {menu.map(item => {
-          const active = isActive(item.href, item.exact);
-          return (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-gold text-primary-900 shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"}`}>
-              <item.icon size={17} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="px-3 py-4 border-t border-white/10 space-y-1">
-        <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-white/10 hover:text-white transition-all">
-          <Globe size={17} /> Lihat Website
-        </Link>
-        <form action={logout}>
-          <button type="submit" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-red-500/20 hover:text-red-300 transition-all">
-            <LogOut size={17} /> Keluar
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  const q = search.trim().toLowerCase();
+  const filteredItems = q ? menu.filter(i => i.label.toLowerCase().includes(q)) : menu;
 
   return (
     <>
@@ -147,7 +203,11 @@ export default function TeacherSidebar({
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
-        <SidebarContent />
+        <SidebarContent
+          logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}
+          search={search} setSearch={setSearch}
+          filteredItems={filteredItems} isActive={isActive} onLinkClick={() => setOpen(false)}
+        />
       </aside>
       <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2">
@@ -170,7 +230,11 @@ export default function TeacherSidebar({
               style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat" }}
             />
             <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white"><X size={20} /></button>
-            <SidebarContent />
+            <SidebarContent
+              logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}
+              search={search} setSearch={setSearch}
+              filteredItems={filteredItems} isActive={isActive} onLinkClick={() => setOpen(false)}
+            />
           </aside>
         </div>
       )}

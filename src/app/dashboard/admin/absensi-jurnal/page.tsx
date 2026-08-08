@@ -31,12 +31,13 @@ export default function AbsensiJurnalPage() {
         icon={<ClipboardList size={22} />}
         title="Absensi & Jurnal Kelas"
         description="Cetak lembar Absensi Siswa, Jurnal Mengajar, dan Rekap Absensi Bulanan per kelas"
-        actions={
-          <Link href="/dashboard/admin/absensi-jurnal/cover-editor" className="btn-gold flex items-center gap-2 text-sm">
-            <ImageIcon size={16} /> Desain Cover
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/admin/absensi-jurnal/cover-editor" className="btn-gold flex items-center gap-2 text-sm">
+          <ImageIcon size={16} /> Desain Cover
+        </Link>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>

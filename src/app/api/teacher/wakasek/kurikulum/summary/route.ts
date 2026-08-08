@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
+import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 function currentSemester(): string {
   const now = new Date();
@@ -31,7 +32,7 @@ export async function GET() {
         where: { date: { gte: since } },
         select: { teacherId: true, classId: true, subject: true },
       }),
-      prisma.grade.findMany({ where: { semester: currentSemester() }, select: { subject: true, score: true } }),
+      getJournalGradeAggregates({ semester: currentSemester() }),
       prisma.class.findMany({
         select: { id: true, name: true, grade: true, _count: { select: { schedules: true } } },
         orderBy: [{ grade: "asc" }, { name: "asc" }],
@@ -43,18 +44,20 @@ export async function GET() {
       .filter(a => !journalSet.has(`${a.teacherId}::${a.classId}::${a.subject.name}`))
       .map(a => ({ teacherName: a.teacher.user.name, className: a.class.name, subject: a.subject.name }));
 
+    const gradedRows = semesterGrades.filter((g): g is typeof g & { avg: number } => g.avg !== null);
+
     const bySubject = new Map<string, { total: number; count: number }>();
-    for (const g of semesterGrades) {
+    for (const g of gradedRows) {
       const e = bySubject.get(g.subject) ?? { total: 0, count: 0 };
-      e.total += g.score; e.count += 1;
+      e.total += g.avg; e.count += 1;
       bySubject.set(g.subject, e);
     }
     const avgBySubject = [...bySubject.entries()]
       .map(([subject, v]) => ({ subject, avg: Math.round((v.total / v.count) * 10) / 10 }))
       .sort((a, b) => b.avg - a.avg);
 
-    const schoolAvg = semesterGrades.length
-      ? Math.round((semesterGrades.reduce((a, g) => a + g.score, 0) / semesterGrades.length) * 10) / 10
+    const schoolAvg = gradedRows.length
+      ? Math.round((gradedRows.reduce((a, g) => a + g.avg, 0) / gradedRows.length) * 10) / 10
       : null;
 
     const classesWithoutSchedule = classes.filter(c => c._count.schedules === 0)

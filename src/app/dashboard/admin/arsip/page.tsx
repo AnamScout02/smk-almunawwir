@@ -91,12 +91,13 @@ export default function ArsipPage() {
         icon={<Archive size={22} />}
         title="Pengarsipan"
         description="Manajemen arsip dan dokumen sekolah"
-        actions={
-          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm shrink-0">
-            <Plus size={15} /> Tambah Arsip
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-3">
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm shrink-0">
+          <Plus size={15} /> Tambah Arsip
+        </button>
+      </div>
 
       <div className="relative mb-5">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -121,7 +122,7 @@ export default function ArsipPage() {
       )}
 
       {/* Modal */}
-      <Modal
+      <Modal scrollBody
         open={modal !== null}
         onClose={() => setModal(null)}
         title={isNew ? "Tambah Arsip" : "Edit Arsip"}

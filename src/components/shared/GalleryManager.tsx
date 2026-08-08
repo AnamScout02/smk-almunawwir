@@ -65,12 +65,13 @@ export default function GalleryManager() {
         icon={<GalleryHorizontal size={22} />}
         title="Galeri Foto"
         description={`${items.length} foto tersimpan`}
-        actions={
-          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={18} /> Upload Foto Baru
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-4">
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={18} /> Upload Foto Baru
+        </button>
+      </div>
 
       <div className="relative mb-4">
         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />

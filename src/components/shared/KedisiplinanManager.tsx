@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Loader2, Plus, Trash2, Save, CheckCircle2, Clock, XCircle, CalendarClock, CheckSquare, Coins } from "lucide-react";
+import { BadgeCheck, Loader2, Plus, Trash2, Save, CheckCircle2, Clock, XCircle, CalendarClock, CheckSquare, Coins, Search, ScanLine } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -8,6 +8,7 @@ import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
 import DatePicker from "@/components/shared/DatePicker";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 
@@ -72,13 +73,18 @@ const TUGAS_OPTIONS = [
   { value: "tidak", label: "Tidak Ada Tugas" },
 ];
 const STATUS_BADGE: Record<string, string> = {
+  "": "bg-gray-50 text-gray-400 border border-gray-200",
   HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   TERLAMBAT: "bg-amber-50 text-amber-700 border border-amber-200",
   IZIN: "bg-blue-50 text-blue-600 border border-blue-200",
   SAKIT: "bg-blue-50 text-blue-600 border border-blue-200",
   ALPHA: "bg-red-50 text-red-600 border border-red-200",
 };
-const EMPTY_FORM = { teacherId: "", date: new Date().toISOString().slice(0, 10), status: "HADIR", notes: "" };
+// Dipakai khusus dropdown PER BARIS (per guru/per blok jam) — SENGAJA ada opsi kosong di depan
+// supaya status TIDAK otomatis kelihatan "Hadir" sebelum benar2 dipilih Wakasek/Guru Piket (dulu
+// defaultnya diam2 "Hadir", jadi seperti sudah dicek padahal belum — resiko data kehadiran palsu).
+const STATUS_OPTIONS_ROW = [{ value: "", label: "— Pilih —" }, ...STATUS_OPTIONS];
+const EMPTY_FORM = { teacherId: "", date: new Date().toISOString().slice(0, 10), status: "", notes: "" };
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
@@ -92,6 +98,7 @@ function groupKey(ids: string[]) {
 
 export default function KedisiplinanManager() {
   const confirmDialog = useConfirm();
+  const toast = useToast();
 
   // ===== Tabel "Buku Piket" (utama) — per tanggal, semua kelas & guru sekaligus =====
   const today = new Date().toISOString().slice(0, 10);
@@ -99,7 +106,7 @@ export default function KedisiplinanManager() {
   const [daySlots, setDaySlots] = useState<DaySlotItem[]>([]);
   const [loadingDay, setLoadingDay] = useState(true);
   const [savingDay, setSavingDay] = useState(false);
-  const [dayBulkStatus, setDayBulkStatus] = useState("HADIR");
+  const [dayBulkStatus, setDayBulkStatus] = useState("");
   const [daySaved, setDaySaved] = useState(false);
   // Baris yang BENAR-BENAR diubah di sesi browser ini — cuma baris ini yang dikirim saat Simpan.
   // Tanpa ini, kalau guru piket lain sudah lebih dulu menyimpan perubahan di baris LAIN sementara
@@ -131,7 +138,9 @@ export default function KedisiplinanManager() {
   }
 
   async function handleSaveDuty() {
-    const changed = dutyAttendance.filter(d => dirtyDutyUserIds.has(d.userId));
+    // Status kosong (belum dipilih) tidak boleh ikut tersimpan — cuma kirim baris yg statusnya
+    // benar2 sudah dipilih Wakasek/Guru Piket.
+    const changed = dutyAttendance.filter(d => dirtyDutyUserIds.has(d.userId) && d.status !== "");
     if (changed.length === 0) return;
     setSavingDuty(true);
     const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance", {
@@ -144,6 +153,22 @@ export default function KedisiplinanManager() {
       setTimeout(() => setDutySaved(false), 3000);
       setDirtyDutyUserIds(new Set());
     }
+  }
+
+  // ===== Scan Kartu Tanda — auto-catat HADIR petugas piket yang scan kartu hari ini =====
+  const [scanDutyInput, setScanDutyInput] = useState("");
+  async function handleScanDuty(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const code = scanDutyInput.trim();
+    setScanDutyInput("");
+    if (!code) return;
+    const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance/scan", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }),
+    });
+    const d = await res.json();
+    if (res.ok) { toast.success(`Piket tercatat: ${d.name}`); loadDutyAttendance(); }
+    else toast.error(d.error || "Gagal mencatat kehadiran");
   }
 
   function loadDay() {
@@ -179,7 +204,9 @@ export default function KedisiplinanManager() {
     setDaySaved(false);
   }
   async function handleSaveDay() {
-    const changed = daySlots.filter(s => dirtyDayKeys.has(groupKey(s.scheduleIds)));
+    // Status kosong (belum dipilih) tidak boleh ikut tersimpan — cuma kirim blok yg statusnya
+    // benar2 sudah dipilih.
+    const changed = daySlots.filter(s => dirtyDayKeys.has(groupKey(s.scheduleIds)) && s.status !== "");
     if (changed.length === 0) return;
     setSavingDay(true);
     const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots", {
@@ -212,8 +239,9 @@ export default function KedisiplinanManager() {
   const [formError, setFormError] = useState("");
   const [slots, setSlots] = useState<SlotItem[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState("HADIR");
+  const [bulkStatus, setBulkStatus] = useState("");
   const [dirtySlotKeys, setDirtySlotKeys] = useState<Set<string>>(new Set()); // sama alasannya dgn dirtyDayKeys di atas
+  const [historySearch, setHistorySearch] = useState("");
 
   // ===== Pengaturan Poin (leaderboard kedisiplinan) — cuma ADMIN/Wakasek Penjamin Mutu/Kurikulum.
   // Tidak ada prop server-side utk deteksi jabatan (komponen ini dipakai lintas portal tanpa
@@ -291,19 +319,22 @@ export default function KedisiplinanManager() {
 
   async function handleSave() {
     if (!form.teacherId) { setFormError("Pilih guru terlebih dahulu."); return; }
-    setSaving(true);
     // Guru punya jadwal di tanggal ini → simpan PER BLOK JAM PELAJARAN (TeacherScheduleAttendance).
     // Tidak ada jadwal (mis. libur/tidak mengajar) → tetap simpan 1 status sepanjang hari
     // (TeacherDiscipline), sama seperti alur lama.
+    if (slots.length === 0 && !form.status) { setFormError("Pilih status kehadiran terlebih dahulu."); return; }
     const changedSlots = slots.filter(s => dirtySlotKeys.has(groupKey(s.scheduleIds)));
+    // Status kosong (belum dipilih) JANGAN pernah ikut terkirim — baik dari blok yg baru diubah
+    // maupun dari fallback "kirim semua apa adanya" di bawah.
+    const toSend = (changedSlots.length > 0 ? changedSlots : slots).filter(s => s.status !== "");
+    if (slots.length > 0 && toSend.length === 0) { setFormError("Pilih status kehadiran utk minimal 1 blok jam terlebih dahulu."); return; }
+    setSaving(true);
     const res = slots.length > 0
       ? await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date: form.date,
-            // Kalau belum ada yg diubah sama sekali (guru cuma mau lihat jadwalnya dulu), kirim
-            // semua apa adanya (idempotent, aman) — bukan array kosong yg bakal ditolak API.
-            records: (changedSlots.length > 0 ? changedSlots : slots).map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
+            records: toSend.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
           }),
         })
       : await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan", {
@@ -369,6 +400,10 @@ export default function KedisiplinanManager() {
   const hadir = combined.filter(r => r.status === "HADIR").length;
   const terlambat = combined.filter(r => r.status === "TERLAMBAT").length;
   const alpha = combined.filter(r => r.status === "ALPHA").length;
+  const hq = historySearch.toLowerCase();
+  const filteredCombined = combined.filter(r =>
+    !hq || r.teacherName.toLowerCase().includes(hq) || r.teacherNip.toLowerCase().includes(hq) || r.detail.toLowerCase().includes(hq)
+  );
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -376,12 +411,13 @@ export default function KedisiplinanManager() {
         icon={<BadgeCheck size={22} />}
         title="Kedisiplinan Guru"
         description="Buku piket digital (kelas X & XI) — kehadiran guru per blok jam pelajaran, dicatat Wakil Kepala Penjamin Mutu atau Guru Piket"
-        actions={
-          <button onClick={openAdd} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition whitespace-nowrap">
-            <Plus size={15} /> Tambah Manual
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openAdd} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
+          <Plus size={15} /> Tambah Manual
+        </button>
+      </div>
 
       {/* ===== Buku Piket — tabel semua kelas & guru per tanggal ===== */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
@@ -391,9 +427,9 @@ export default function KedisiplinanManager() {
             <DatePicker value={viewDate} onChange={setViewDate} />
           </div>
           <div className="flex items-center gap-2">
-            <Select value={dayBulkStatus} onChange={setDayBulkStatus} options={STATUS_OPTIONS} />
-            <button onClick={applyDayBulkStatus} disabled={daySlots.length === 0}
-              className="text-xs font-semibold px-3 py-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition whitespace-nowrap disabled:opacity-40">
+            <Select value={dayBulkStatus} onChange={setDayBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
+            <button onClick={applyDayBulkStatus} disabled={daySlots.length === 0 || !dayBulkStatus}
+              className="text-xs font-semibold px-3 py-2.5 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40">
               Terapkan ke Semua
             </button>
           </div>
@@ -438,7 +474,7 @@ export default function KedisiplinanManager() {
                           <div className="grid grid-cols-2 gap-2">
                             <select value={s.status} onChange={e => setDaySlotField(key, "status", e.target.value)}
                               className={`text-xs font-semibold rounded-lg border px-2 py-1.5 ${STATUS_BADGE[s.status]}`}>
-                              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                              {STATUS_OPTIONS_ROW.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <select value={s.hasTugas === null ? "" : s.hasTugas ? "ya" : "tidak"}
                               disabled={s.status === "HADIR"}
@@ -475,6 +511,12 @@ export default function KedisiplinanManager() {
           <CalendarClock size={16} className="text-primary-700" /> Kehadiran Guru Piket
         </h3>
         <p className="text-xs text-gray-400 mb-4">Apakah petugas yang terjadwal piket tanggal ini benar-benar hadir menjalankan tugasnya.</p>
+        <div className="flex items-center gap-2 bg-primary-50/60 border border-primary-100 rounded-xl px-3 py-2.5 mb-4">
+          <ScanLine size={16} className="text-primary-700 shrink-0" />
+          <input value={scanDutyInput} onChange={e => setScanDutyInput(e.target.value)} onKeyDown={handleScanDuty}
+            placeholder="Scan Kartu Tanda petugas piket lalu Enter — otomatis tercatat Hadir hari ini..."
+            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400" />
+        </div>
         {loadingDuty ? (
           <div className="py-8 text-center text-gray-400 text-sm">Memuat...</div>
         ) : dutyAttendance.length === 0 ? (
@@ -490,7 +532,7 @@ export default function KedisiplinanManager() {
                   </div>
                   <select value={d.status} onChange={e => setDutyField(d.userId, "status", e.target.value)}
                     className={`text-xs font-semibold rounded-lg border px-2 py-1.5 w-full ${STATUS_BADGE[d.status]}`}>
-                    {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {STATUS_OPTIONS_ROW.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                   <input value={d.notes} onChange={e => setDutyField(d.userId, "notes", e.target.value)}
                     className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
@@ -520,8 +562,17 @@ export default function KedisiplinanManager() {
             <StatTile color="amber" value={terlambat} label="Terlambat" icon={Clock} />
             <StatTile color="red" value={alpha} label="Alpha" icon={XCircle} />
           </div>
+          {combined.length > 0 && (
+            <div className="relative max-w-sm mb-4">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={historySearch} onChange={e => setHistorySearch(e.target.value)}
+                placeholder="Cari nama guru, NIP, atau kelas..." className="input-field pl-9 text-sm" />
+            </div>
+          )}
           {combined.length === 0 ? (
             <EmptyState icon={BadgeCheck} title="Belum Ada Catatan" description="Catat kehadiran & kedisiplinan guru di sini." />
+          ) : filteredCombined.length === 0 ? (
+            <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada catatan yang cocok dengan pencarian." />
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
@@ -534,7 +585,7 @@ export default function KedisiplinanManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {combined.map(r => (
+                    {filteredCombined.map(r => (
                       <tr key={`${r.kind}-${r.id}`} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                         <td className="px-5 py-3.5">
                           <p className="font-semibold text-primary-900">{r.teacherName}</p>
@@ -603,7 +654,7 @@ export default function KedisiplinanManager() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title="Tambah Manual — Guru Tanpa Jadwal"
@@ -642,9 +693,9 @@ export default function KedisiplinanManager() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={bulkStatus} onChange={setBulkStatus} options={STATUS_OPTIONS} />
-                  <button type="button" onClick={applyBulkStatus}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-200 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
+                  <Select value={bulkStatus} onChange={setBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
+                  <button type="button" onClick={applyBulkStatus} disabled={!bulkStatus}
+                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-200 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                     Terapkan ke Semua Jam
                   </button>
                 </div>
@@ -678,7 +729,7 @@ export default function KedisiplinanManager() {
                 </div>
                 <div>
                   <label className="label-field">Status</label>
-                  <Select value={form.status} onChange={v => setForm(p => ({ ...p, status: v }))} options={STATUS_OPTIONS} />
+                  <Select value={form.status} onChange={v => setForm(p => ({ ...p, status: v }))} options={STATUS_OPTIONS} placeholder="Pilih Status" />
                 </div>
                 <div>
                   <label className="label-field">Catatan (opsional)</label>

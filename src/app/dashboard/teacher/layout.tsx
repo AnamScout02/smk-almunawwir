@@ -2,25 +2,28 @@ import { verifyRole } from "@/lib/dal";
 import { getSettings } from "@/lib/site-settings";
 import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
+import { getOverdueLoanCount } from "@/lib/perpustakaan-notif";
 import TeacherSidebar from "@/components/teacher/TeacherSidebar";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
-  const [s, teacher] = await Promise.all([
+  const [s, teacher, overdueBooks] = await Promise.all([
     getSettings(["logo.emblem", "logo.full_white"]),
     prisma.teacher.findFirst({
       where: { user: { email: session.email } },
       select: {
         userId: true,
         jabatan: { select: { jabatan: { select: { name: true } } } },
-        _count: { select: { internshipsSupervised: true } },
+        _count: { select: { internshipsSupervised: true, homeroomOf: true } },
       },
     }),
+    getOverdueLoanCount(session.userId),
   ]);
   const jabatanNames = teacher?.jabatan.map(j => j.jabatan.name) ?? [];
   const hasInternshipBimbingan = (teacher?._count.internshipsSupervised ?? 0) > 0;
+  const hasHomeroom = (teacher?._count.homeroomOf ?? 0) > 0;
 
   // Menu Kedisiplinan Guru cuma muncul pas HARI INI guru ini memang terjadwal piket di Jadwal
   // Piket (DutyRoster) — TIDAK perlu jabatan formal "Guru Piket" (piket di sini dijalankan
@@ -45,6 +48,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         jabatanNames={jabatanNames}
         hasInternshipBimbingan={hasInternshipBimbingan}
         isGuruPiketOnDutyToday={isGuruPiketOnDutyToday}
+        overdueBooks={overdueBooks}
+        hasHomeroom={hasHomeroom}
       />
       <main className="flex-1 min-w-0 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
         {children}

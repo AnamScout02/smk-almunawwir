@@ -32,26 +32,20 @@ export async function GET(req: Request) {
       where.date = { gte: start, lt: end };
     }
 
+    // Kehadiran H/I/S/A di rekap ini dihitung dari JournalEntry.attendanceStatus milik jurnal itu
+    // sendiri (pegangan guru mapel), BUKAN dari tabel Attendance (absensi resmi kelas) — dua alur
+    // ini sudah sengaja dipisah, lihat komentar di /api/teacher/journal.
     const journals = await prisma.teachingJournal.findMany({
       where,
       include: {
         class: { select: { name: true } },
-        entries: { select: { scorePengetahuan: true, scoreKeterampilan: true, catatan: true, studentId: true } },
+        entries: { select: { scorePengetahuan: true, scoreKeterampilan: true, catatan: true, studentId: true, attendanceStatus: true } },
       },
       orderBy: { date: "asc" },
     });
 
-    const dates = journals.map(j => ({ gte: j.date, lt: new Date(j.date.getTime() + 86400000) }));
-    const attendance = dates.length
-      ? await prisma.attendance.findMany({
-          where: { student: { classId: classId ?? undefined }, OR: dates.map(d => ({ date: d })) },
-          select: { date: true, status: true },
-        })
-      : [];
-
     const result = journals.map(j => {
-      const dayAtt = attendance.filter(a => a.date.getTime() === j.date.getTime());
-      const count = (status: string) => dayAtt.filter(a => a.status === status).length;
+      const count = (status: string) => j.entries.filter(e => e.attendanceStatus === status).length;
       const scoresP = j.entries.map(e => e.scorePengetahuan).filter((v): v is number => v !== null);
       const scoresK = j.entries.map(e => e.scoreKeterampilan).filter((v): v is number => v !== null);
       const avg = (arr: number[]) => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : null;

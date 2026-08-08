@@ -191,14 +191,15 @@ export default function AdminAdmissionsPage() {
         icon={<ClipboardList size={22} />}
         title="Kelola Pendaftaran"
         description="Daftar calon siswa yang mendaftar melalui website"
-        actions={
-          <a href="/api/admin/export/admissions"
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} />
-            Export CSV
-          </a>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <a href="/api/admin/export/admissions"
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <Download size={15} />
+          Export CSV
+        </a>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">

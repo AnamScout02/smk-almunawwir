@@ -68,6 +68,7 @@ export default function JaringanManager() {
   const [pppoe, setPppoe] = useState<PppoeData>({ secrets: [], active: [] });
 
   const [search, setSearch] = useState("");
+  const [hotspotSearch, setHotspotSearch] = useState("");
   const [userModal, setUserModal] = useState<null | "HOTSPOT" | "PPPOE">(null);
   const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
   const [saving, setSaving] = useState(false);
@@ -320,6 +321,11 @@ export default function JaringanManager() {
 
   const printUsers = printProfile ? hotspot.users.filter(u => u.profile === printProfile).sort((a, b) => a.name.localeCompare(b.name)) : [];
 
+  const hq = hotspotSearch.toLowerCase();
+  const filteredHotspotUsers = hotspot.users.filter(u =>
+    !hq || u.name.toLowerCase().includes(hq) || (u.profile ?? "").toLowerCase().includes(hq) || displayComment(u.comment).toLowerCase().includes(hq)
+  );
+
   return (
     <>
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:hidden">
@@ -327,12 +333,13 @@ export default function JaringanManager() {
         icon={<Network size={22} />}
         title="Jaringan Sekolah"
         description="Monitoring & manajemen jaringan Mikrotik — status perangkat, bandwidth, hotspot, dan PPPoE"
-        actions={
-          <button onClick={loadAll} className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors border border-primary-100">
-            <RefreshCw size={15} /> Segarkan
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={loadAll} className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors border border-primary-100">
+          <RefreshCw size={15} /> Segarkan
+        </button>
+      </div>
 
       {connError && (
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3 mb-5">
@@ -795,13 +802,23 @@ export default function JaringanManager() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
-              <span className="font-heading font-bold text-primary-900 text-sm">Daftar User Hotspot</span>
-              <button onClick={() => openAddUser("HOTSPOT")}
-                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
-                <Plus size={13} /> Tambah User
-              </button>
+            <div className="px-5 py-3.5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="font-heading font-bold text-primary-900 text-sm shrink-0">Daftar User Hotspot ({filteredHotspotUsers.length}{hotspotSearch ? ` dari ${hotspot.users.length}` : ""})</span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-56">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input value={hotspotSearch} onChange={e => setHotspotSearch(e.target.value)}
+                    placeholder="Cari nama atau profil..." className="input-field pl-8 py-1.5 text-xs" />
+                </div>
+                <button onClick={() => openAddUser("HOTSPOT")}
+                  className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
+                  <Plus size={13} /> Tambah User
+                </button>
+              </div>
             </div>
+            {filteredHotspotUsers.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">Tidak ada user hotspot yang cocok dengan pencarian.</p>
+            ) : (
             <div className="overflow-x-auto max-h-[50vh]">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white z-10">
@@ -813,7 +830,7 @@ export default function JaringanManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {hotspot.users.map(u => (
+                  {filteredHotspotUsers.map(u => (
                     <tr key={u[".id"]} className="border-b border-gray-50 last:border-0">
                       <td className="px-5 py-3 font-medium text-gray-800">{u.name}{u.comment && <span className="text-gray-400 font-normal"> · {displayComment(u.comment)}</span>}</td>
                       <td className="px-5 py-3 text-gray-400 hidden md:table-cell">{u.profile || "default"}</td>
@@ -829,6 +846,7 @@ export default function JaringanManager() {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -980,7 +998,7 @@ export default function JaringanManager() {
       </Modal>
 
       {/* Modal tambah/edit profil hotspot */}
-      <Modal
+      <Modal scrollBody
         open={profileModal !== null}
         onClose={() => setProfileModal(null)}
         title={profileModal === "EDIT" ? `Edit Profil "${editingProfileName}"` : "Tambah Profil Hotspot"}

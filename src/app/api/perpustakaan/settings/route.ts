@@ -11,8 +11,11 @@ export async function GET() {
     const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
     await assertPerpustakaan(session);
 
-    const settings = await getSettings(["perpustakaan.dendaPerHari"]);
-    return NextResponse.json({ dendaPerHari: Number(settings["perpustakaan.dendaPerHari"] ?? 0) });
+    const settings = await getSettings(["perpustakaan.dendaPerHari", "perpustakaan.masaPeminjamanHari"]);
+    return NextResponse.json({
+      dendaPerHari: Number(settings["perpustakaan.dendaPerHari"] ?? 0),
+      masaPeminjamanHari: Number(settings["perpustakaan.masaPeminjamanHari"] ?? 7),
+    });
   } catch (e) {
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
@@ -27,16 +30,28 @@ export async function PUT(req: NextRequest) {
     await assertPerpustakaan(session);
 
     const body = await req.json();
-    const dendaPerHari = Number(body.dendaPerHari);
-    if (isNaN(dendaPerHari) || dendaPerHari < 0) {
-      return NextResponse.json({ error: "Nilai denda tidak valid" }, { status: 400 });
+    const updates: { key: string; value: string }[] = [];
+
+    if (body.dendaPerHari !== undefined) {
+      const dendaPerHari = Number(body.dendaPerHari);
+      if (isNaN(dendaPerHari) || dendaPerHari < 0) {
+        return NextResponse.json({ error: "Nilai denda tidak valid" }, { status: 400 });
+      }
+      updates.push({ key: "perpustakaan.dendaPerHari", value: String(dendaPerHari) });
+    }
+    if (body.masaPeminjamanHari !== undefined) {
+      const masaPeminjamanHari = Number(body.masaPeminjamanHari);
+      if (isNaN(masaPeminjamanHari) || masaPeminjamanHari < 1) {
+        return NextResponse.json({ error: "Masa peminjaman minimal 1 hari" }, { status: 400 });
+      }
+      updates.push({ key: "perpustakaan.masaPeminjamanHari", value: String(masaPeminjamanHari) });
     }
 
-    await prisma.siteSetting.upsert({
-      where: { key: "perpustakaan.dendaPerHari" },
-      update: { value: String(dendaPerHari) },
-      create: { key: "perpustakaan.dendaPerHari", value: String(dendaPerHari) },
-    });
+    await Promise.all(updates.map(u => prisma.siteSetting.upsert({
+      where: { key: u.key },
+      update: { value: u.value },
+      create: { key: u.key, value: u.value },
+    })));
 
     return NextResponse.json({ success: true });
   } catch (e) {

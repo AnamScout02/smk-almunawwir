@@ -109,13 +109,14 @@ export default function AdminMajorsPage() {
         icon={<BookOpen size={22} />}
         title="Kelola Jurusan"
         description="Program keahlian yang tersedia di SMK Al Munawwir"
-        actions={
-          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={16} />
-            Tambah Jurusan
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={16} />
+          Tambah Jurusan
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">

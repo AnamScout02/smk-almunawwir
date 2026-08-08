@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
+import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 function currentSemester(): string {
   const now = new Date();
@@ -21,7 +22,7 @@ export async function GET() {
     since.setDate(since.getDate() - 30);
 
     const [grades, attendance, gradeTwelve, noGenderStudents, noGenderTeachers, unclassedStudents] = await Promise.all([
-      prisma.grade.findMany({ where: { semester }, select: { score: true } }),
+      getJournalGradeAggregates({ semester }),
       prisma.attendance.findMany({
         where: { date: { gte: since }, student: { studentStatus: "AKTIF" } },
         select: { status: true },
@@ -35,7 +36,8 @@ export async function GET() {
       prisma.student.count({ where: { studentStatus: "AKTIF", classId: null } }),
     ]);
 
-    const schoolAvg = grades.length ? Math.round((grades.reduce((a, g) => a + g.score, 0) / grades.length) * 10) / 10 : null;
+    const gradedRows = grades.filter((g): g is typeof g & { avg: number } => g.avg !== null);
+    const schoolAvg = gradedRows.length ? Math.round((gradedRows.reduce((a, g) => a + g.avg, 0) / gradedRows.length) * 10) / 10 : null;
 
     const hadir = attendance.filter(a => a.status === "HADIR").length;
     const attendanceRate = attendance.length > 0 ? Math.round((hadir / attendance.length) * 100) : null;

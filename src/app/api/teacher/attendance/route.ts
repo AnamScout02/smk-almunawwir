@@ -1,18 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 
+// Absensi resmi KHUSUS wali kelas (per keputusan terbaru, membalik kebijakan lama) — guru mapel
+// biasa yang cuma punya TeachingAssignment (bukan wali kelas) TIDAK lagi boleh input di sini.
+// Kalau guru mapel perlu catat kehadiran per pertemuan mapelnya sendiri, itu lewat kolom
+// Kehadiran di Jurnal Mengajar (JournalEntry.attendanceStatus, terpisah & tidak menimpa tabel ini).
 async function getAllowedClassIds(session: { role: string; email: string }): Promise<string[] | null> {
   if (session.role !== "TEACHER") return null;
   const teacher = await prisma.teacher.findFirst({
     where: { user: { email: session.email } },
-    include: {
-      homeroomOf: { select: { id: true } },
-      teachingLoad: { select: { classId: true } },
-    },
+    include: { homeroomOf: { select: { id: true } } },
   });
-  const homeroomIds = teacher?.homeroomOf.map(c => c.id) ?? [];
-  const assignedIds = teacher?.teachingLoad.map(a => a.classId) ?? [];
-  return [...new Set([...homeroomIds, ...assignedIds])];
+  return teacher?.homeroomOf.map(c => c.id) ?? [];
 }
 
 export async function GET(req: Request) {

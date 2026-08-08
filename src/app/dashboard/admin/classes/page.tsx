@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, Save, Users, BookOpen, Loader2, School, Search } from "lucide-react";
+import Link from "next/link";
+import { Plus, Edit2, Trash2, Save, Users, BookOpen, Loader2, School, Search, Printer } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
@@ -137,12 +138,17 @@ export default function AdminClassesPage() {
         icon={<School size={22} />}
         title="Kelola Kelas"
         description="Buat dan atur kelas, jurusan, dan wali kelas"
-        actions={
-          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={16} /> Tambah Kelas
-          </button>
-        }
       />
+
+      <div className="flex justify-end gap-2 mb-5">
+        <Link href="/dashboard/admin/classes/cetak"
+          className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 transition-colors">
+          <Printer size={16} /> Cetak Data Kelas
+        </Link>
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={16} /> Tambah Kelas
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
@@ -191,7 +197,7 @@ export default function AdminClassesPage() {
       )}
 
       {/* Modal */}
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={form.id ? "Edit Kelas" : "Tambah Kelas"}

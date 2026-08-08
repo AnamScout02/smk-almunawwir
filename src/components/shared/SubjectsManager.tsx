@@ -122,12 +122,13 @@ export default function SubjectsManager() {
         icon={<BookMarked size={22} />}
         title="Kode Mata Pelajaran"
         description="Daftar kode mapel Kurikulum Merdeka — tiap tingkat (X/XI/XII) bisa punya mapel & jam berbeda"
-        actions={
-          <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={15} /> Tambah Mapel
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={15} /> Tambah Mapel
+        </button>
+      </div>
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5">
         {([10, 11, 12] as const).map(g => (
@@ -199,7 +200,7 @@ export default function SubjectsManager() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={selected !== null}
         onClose={() => setSelected(null)}
         title={isNew ? "Tambah Kode Mapel" : "Edit Kode Mapel"}

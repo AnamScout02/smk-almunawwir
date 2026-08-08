@@ -89,7 +89,9 @@ export async function GET(req: NextRequest) {
         id: s.id, classId: s.class.id, className: s.class.name, subject: s.subject,
         startTime: s.startTime, endTime: s.endTime, room: s.room,
         teacherId: s.teacher?.id ?? null, teacherName: s.teacher?.user.name ?? "-", teacherNip: s.teacher?.nip ?? "-",
-        status: e?.status ?? "HADIR", hasTugas: e?.hasTugas ?? null, notes: e?.notes ?? "",
+        // "" (bukan "HADIR") kalau belum pernah dicatat — supaya Wakasek/Guru Piket TERPAKSA
+        // memilih status secara sadar, bukan diam2 dianggap sudah "Hadir" tanpa dicek.
+        status: e?.status ?? "", hasTugas: e?.hasTugas ?? null, notes: e?.notes ?? "",
       };
     });
 

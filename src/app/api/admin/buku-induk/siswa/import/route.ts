@@ -77,11 +77,17 @@ export async function POST(req: NextRequest) {
 
     const kelasNama = s(row["Nama Kelas (contoh: X DPIB 1)"]);
     let classId: string | undefined;
+    // "Rombel" = angka terakhir nama kelas (cth "XII DPIB 1" → "1") — sama persis dengan logic
+    // auto-isi di form manual BukuIndukSiswaModal (baris `cls.name.match(/(\d+)\s*$/)`). Dulu jalur
+    // import ini TIDAK mengisi rombel sama sekali (beda dari form manual) — sekarang disamakan,
+    // supaya siswa yang datanya masuk lewat import tetap konsisten saat dicetak Buku Induk.
+    let rombel: string | undefined;
     if (kelasNama) {
       classId = classMap[`${majorId}::${kelasNama.toUpperCase()}`];
       if (!classId) {
         results.errors.push(`Baris ${rowNum}: Kelas "${kelasNama}" tidak ditemukan untuk jurusan ${kodeJurusan} — siswa tetap disimpan tanpa kelas`);
       }
+      rombel = kelasNama.match(/(\d+)\s*$/)?.[1] ?? "1";
     }
 
     const enrollYearRaw = s(row["Tahun Masuk"]);
@@ -140,6 +146,7 @@ export async function POST(req: NextRequest) {
       pindahanDari:     s(row["Pindahan Dari"]) || null,
       alasanPindahKe:   s(row["Alasan Pindah ke Sekolah Ini"]) || null,
       tingkatMasuk:     s(row["Diterima di Tingkat"]) || null,
+      rombel:           rombel ?? null,
       bidangKeahlian:   keahlian?.bidang ?? null,
       programKeahlian:  keahlian?.program ?? null,
       kompetensiKeahlian: keahlian?.kompetensi ?? null,

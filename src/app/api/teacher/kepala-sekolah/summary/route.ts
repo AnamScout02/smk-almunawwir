@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 function currentSemester(): string {
   const now = new Date();
@@ -61,15 +62,19 @@ export async function GET() {
 
     // Capaian akademik per jurusan (semester berjalan)
     const semester = currentSemester();
-    const grades = await prisma.grade.findMany({
-      where: { semester },
-      select: { score: true, student: { select: { major: { select: { name: true } } } } },
+    const grades = await getJournalGradeAggregates({ semester });
+    const gradedRows = grades.filter((g): g is typeof g & { avg: number } => g.avg !== null);
+    const studentMajors = await prisma.student.findMany({
+      where: { id: { in: [...new Set(gradedRows.map(g => g.studentId))] } },
+      select: { id: true, major: { select: { name: true } } },
     });
+    const majorByStudent = new Map(studentMajors.map(s => [s.id, s.major.name]));
     const byMajor = new Map<string, { total: number; count: number }>();
-    for (const g of grades) {
-      const majorName = g.student.major.name;
+    for (const g of gradedRows) {
+      const majorName = majorByStudent.get(g.studentId);
+      if (!majorName) continue;
       const entry = byMajor.get(majorName) ?? { total: 0, count: 0 };
-      entry.total += g.score;
+      entry.total += g.avg;
       entry.count += 1;
       byMajor.set(majorName, entry);
     }

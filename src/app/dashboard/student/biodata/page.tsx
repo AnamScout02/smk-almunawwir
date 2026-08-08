@@ -102,12 +102,13 @@ export default function StudentBiodataPage() {
         icon={<User size={22} />}
         title="Biodata Saya"
         description={`${data.class?.name ?? "—"} · ${data.major?.name ?? "—"} · NIS ${data.nis}`}
-        actions={
-          <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-            <ArrowLeft size={18} />
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       <div className="max-w-4xl space-y-4">
         {pending && (

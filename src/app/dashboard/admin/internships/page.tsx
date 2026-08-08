@@ -188,7 +188,7 @@ export default function AdminInternshipsPage() {
       )}
 
       {/* Modal */}
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title="Data PKL Siswa"

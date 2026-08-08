@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Award, TrendingUp, Upload, CheckCircle2, XCircle, Clock, Loader2, Users, ClipboardCheck, Trophy, Crown, Sparkles, Maximize2, Minimize2 } from "lucide-react";
+import { Award, TrendingUp, Upload, CheckCircle2, XCircle, Clock, Loader2, Users, ClipboardCheck, Trophy, Crown, Sparkles, Maximize2, Minimize2, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -91,6 +91,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
   // jalan tiap kali halaman ini dibuka kalau usernya cuma mau lihat Guru seperti biasa.
   const [jabatanFilter, setJabatanFilter] = useState("GURU");
   const [sortBy, setSortBy] = useState("final");
+  const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const fullscreenRef = useRef<HTMLDivElement>(null);
 
@@ -248,22 +249,21 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       {/* Saat layar penuh, header+filter+antrean verifikasi disembunyikan — biar cuma papan
           ranking-nya yang terlihat (dipasang utk tampilan TV/monitor umum, sama seperti Kedisiplinan). */}
       {!fullscreen && (
-      <PageHeader icon={<Users size={22} className="wiggle-loop" />} title="Kinerja Pegawai" description="Ranking kinerja pegawai berdasarkan KPI bulan berjalan"
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {onSwitchTab && (
-              <button onClick={onSwitchTab}
-                className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-all whitespace-nowrap">
-                <Trophy size={15} /> Kedisiplinan
-              </button>
-            )}
-            <button onClick={toggleFullscreen}
-              className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-all whitespace-nowrap">
-              <Maximize2 size={15} /> Layar Penuh
-            </button>
-          </div>
-        }
-      />
+      <>
+      <PageHeader icon={<Users size={22} className="wiggle-loop" />} title="Kinerja Pegawai" description="Ranking kinerja pegawai berdasarkan KPI bulan berjalan" />
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        {onSwitchTab && (
+          <button onClick={onSwitchTab}
+            className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+            <Trophy size={15} /> Kedisiplinan
+          </button>
+        )}
+        <button onClick={toggleFullscreen}
+          className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+          <Maximize2 size={15} /> Layar Penuh
+        </button>
+      </div>
+      </>
       )}
 
       {fullscreen && (
@@ -315,7 +315,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       ) : (
         <>
           {!fullscreen && (
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <label className="text-xs text-gray-400 font-semibold shrink-0">Urutkan berdasarkan</label>
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium">
@@ -324,8 +324,22 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
                 <option key={b.indicatorId} value={b.name}>{b.name}</option>
               ))}
             </select>
+            <div className="relative flex-1 min-w-48 ml-auto">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Cari nama atau NIP..." className="input-field pl-9 text-sm" />
+            </div>
           </div>
           )}
+          {(() => {
+            const q = search.toLowerCase();
+            const filteredLeaders = fullscreen ? leaders : leaders.filter(l =>
+              !q || l.name.toLowerCase().includes(q) || l.nip.toLowerCase().includes(q)
+            );
+            if (filteredLeaders.length === 0) {
+              return <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada pegawai yang cocok dengan pencarian." />;
+            }
+            return (
           <div className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50"
             style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
@@ -336,7 +350,11 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
             </span>
           </div>
           <div className="divide-y divide-gray-50">
-            {leaders.map((l, i) => {
+            {filteredLeaders.map(l => {
+              // Rank badge (emas/perak/perunggu, mahkota) ikut posisi ASLI di ranking penuh, bukan
+              // posisi di hasil pencarian — supaya pencarian tidak salah menampilkan "TERBAIK BULAN
+              // INI" untuk orang yang sebenarnya bukan peringkat 1.
+              const i = leaders.indexOf(l);
               const displayScore = sortBy === "final" ? l.finalScore : (l.breakdown.find(b => b.name === sortBy)?.score ?? 0);
               return (
               <div key={l.userId}
@@ -392,6 +410,8 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
             })}
           </div>
           </div>
+            );
+          })()}
         </>
       )}
     </div>

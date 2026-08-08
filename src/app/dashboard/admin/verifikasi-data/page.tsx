@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ShieldCheck, Loader2, Check, X } from "lucide-react";
+import { ShieldCheck, Loader2, Check, X, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -25,6 +25,7 @@ export default function VerifikasiDataPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -55,13 +56,28 @@ export default function VerifikasiDataPage() {
         description="Siswa mengajukan perubahan biodata sendiri — data resmi baru berubah setelah Anda setujui di sini"
       />
 
-      {loading ? (
+      {!loading && requests.length > 0 && (
+        <div className="relative max-w-sm mb-5">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama atau NIS siswa..." className="input-field pl-9 text-sm" />
+        </div>
+      )}
+
+      {(() => {
+        const q = search.toLowerCase();
+        const filteredRequests = requests.filter(req =>
+          !q || req.student.user.name.toLowerCase().includes(q) || req.student.nis.toLowerCase().includes(q)
+        );
+        return loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : requests.length === 0 ? (
         <EmptyState icon={ShieldCheck} title="Tidak Ada Pengajuan Menunggu" description="Semua pengajuan perubahan data siswa sudah diproses." />
+      ) : filteredRequests.length === 0 ? (
+        <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada pengajuan yang cocok dengan pencarian." />
       ) : (
         <div className="space-y-4">
-          {requests.map(req => {
+          {filteredRequests.map(req => {
             const expanded = expandedId === req.id;
             const changeCount = Object.keys(req.changes).length;
             return (
@@ -112,7 +128,8 @@ export default function VerifikasiDataPage() {
             );
           })}
         </div>
-      )}
+      );
+      })()}
     </div>
   );
 }

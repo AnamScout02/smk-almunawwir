@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
       const a = attByUserId.get(r.userId);
       return {
         userId: r.userId, userName: r.user.name, userRole: r.user.role, userNip: r.user.teacher?.nip ?? null,
-        status: a?.status ?? "HADIR", notes: a?.notes ?? "",
+        // "" kalau belum pernah dicatat — jangan diam2 dianggap "Hadir" sebelum benar2 dicek/scan.
+        status: a?.status ?? "", notes: a?.notes ?? "",
       };
     }));
   } catch (e) {

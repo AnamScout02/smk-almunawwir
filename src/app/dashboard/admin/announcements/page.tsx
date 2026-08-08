@@ -110,12 +110,13 @@ export default function AdminAnnouncementsPage() {
         icon={<Bell size={22} />}
         title="Pengumuman"
         description={`${active.length} aktif · ${inactive.length} nonaktif`}
-        actions={
-          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={18} /> Buat Pengumuman
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={18} /> Buat Pengumuman
+        </button>
+      </div>
 
       {/* Info Banner */}
       <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
@@ -146,7 +147,7 @@ export default function AdminAnnouncementsPage() {
       )}
 
       {/* Modal Form */}
-      <Modal
+      <Modal scrollBody
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? "Edit Pengumuman" : "Buat Pengumuman Baru"}

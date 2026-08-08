@@ -99,23 +99,22 @@ export default function SchoolPeriodsPage() {
         icon={<Clock size={22} />}
         title="Kerangka Jam Pelajaran"
         description="Kerangka jam ke-1 s/d ke-N per hari — dipakai sebagai slot oleh Generate Jadwal Otomatis"
-        actions={
-          <div className="flex gap-2">
-            {periods.length === 0 ? (
-              <button onClick={() => seedDefault(false)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition disabled:opacity-60">
-                {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Buat Default Otomatis
-              </button>
-            ) : (
-              <button onClick={() => seedDefault(true)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition disabled:opacity-60">
-                {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Ganti dengan Default
-              </button>
-            )}
-            <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm">
-              <Plus size={15} /> Tambah Jam
-            </button>
-          </div>
-        }
       />
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        {periods.length === 0 ? (
+          <button onClick={() => seedDefault(false)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition disabled:opacity-60">
+            {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Buat Default Otomatis
+          </button>
+        ) : (
+          <button onClick={() => seedDefault(true)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition disabled:opacity-60">
+            {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Ganti dengan Default
+          </button>
+        )}
+        <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+          <Plus size={15} /> Tambah Jam
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
@@ -159,7 +158,7 @@ export default function SchoolPeriodsPage() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={showForm}
         onClose={() => setShowForm(false)}
         title={<span className="flex items-center gap-2"><Clock size={18} /> {editing ? "Edit Jam Pelajaran" : "Tambah Jam Pelajaran"}</span>}

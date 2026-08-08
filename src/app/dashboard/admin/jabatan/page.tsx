@@ -55,12 +55,13 @@ export default function AdminJabatanPage() {
         icon={<Award size={22} />}
         title="Jabatan"
         description="Katalog jabatan/tugas struktural guru — bisa ditambah bebas, satu guru bisa punya beberapa jabatan"
-        actions={
-          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Plus size={15} /> Tambah Jabatan
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <Plus size={15} /> Tambah Jabatan
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">

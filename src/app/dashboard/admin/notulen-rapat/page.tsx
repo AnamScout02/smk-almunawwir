@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { NotebookPen, Loader2, Plus, Trash2, Printer, Edit2, Users, MapPin, Calendar } from "lucide-react";
+import { NotebookPen, Loader2, Plus, Trash2, Printer, Edit2, Users, MapPin, Calendar, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -15,6 +15,7 @@ export default function NotulenRapatPage() {
   const confirmDialog = useConfirm();
   const [meetings, setMeetings] = useState<MeetingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -36,20 +37,39 @@ export default function NotulenRapatPage() {
         icon={<NotebookPen size={22} />}
         title="Notulen Rapat"
         description="Catatan hasil rapat — bisa dicetak lengkap dengan daftar hadir & dokumentasi"
-        actions={
-          <Link href="/dashboard/admin/notulen-rapat/new" className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={16} /> Tambah Notulen
-          </Link>
-        }
       />
 
-      {loading ? (
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/admin/notulen-rapat/new" className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={16} /> Tambah Notulen
+        </Link>
+      </div>
+
+      {meetings.length > 0 && (
+        <div className="relative max-w-sm mb-5">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari topik, pemimpin rapat, atau tempat..." className="input-field pl-9 text-sm" />
+        </div>
+      )}
+
+      {(() => {
+        const q = search.toLowerCase();
+        const filtered = meetings.filter(m =>
+          !q ||
+          (m.topic || "").toLowerCase().includes(q) ||
+          (m.leader || "").toLowerCase().includes(q) ||
+          (m.place || "").toLowerCase().includes(q)
+        );
+        return loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : meetings.length === 0 ? (
         <EmptyState icon={NotebookPen} title="Belum Ada Notulen Rapat" description="Tambahkan catatan rapat pertama." />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada notulen yang cocok dengan pencarian." />
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
-          {meetings.map(m => (
+          {filtered.map(m => (
             <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-start justify-between mb-2">
                 <p className="font-heading font-bold text-primary-900">{m.topic || "Rapat"}</p>
@@ -76,7 +96,8 @@ export default function NotulenRapatPage() {
             </div>
           ))}
         </div>
-      )}
+      );
+      })()}
     </div>
   );
 }

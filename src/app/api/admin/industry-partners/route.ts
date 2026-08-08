@@ -9,7 +9,10 @@ export async function GET() {
     await assertHumas(session);
     const partners = await prisma.industryPartner.findMany({ orderBy: { name: "asc" } });
     return Response.json(partners);
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -37,7 +40,10 @@ export async function POST(req: NextRequest) {
       },
     });
     return Response.json(partner);
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Gagal menyimpan mitra industri." }, { status: 500 });
   }
 }

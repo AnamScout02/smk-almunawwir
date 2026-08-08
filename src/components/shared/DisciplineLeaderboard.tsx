@@ -144,6 +144,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
             cuma tabel/papan yang terlihat (dipasang utk tampilan TV/monitor umum). Tombol keluar
             layar penuh dipindah jadi tombol mengambang kecil di pojok, satu2nya kontrol yg tersisa. */}
         {!fullscreen && (
+          <>
           <PageHeader
             icon={<Trophy size={22} className="wiggle-loop" />}
             title="Papan Peringkat Kedisiplinan Guru"
@@ -156,43 +157,42 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                 </span>
               ) : "Memuat..."
             }
-            actions={
-              <div className="flex flex-wrap items-center gap-2">
-                {onSwitchTab && (
-                  <button onClick={onSwitchTab}
-                    className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-all whitespace-nowrap">
-                    <Users2 size={15} /> Kinerja Pegawai
-                  </button>
-                )}
-                <div className="flex items-center rounded-xl border border-white/20 overflow-hidden">
-                  <button onClick={() => setPeriod("week")}
-                    className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-gold text-primary-900" : "text-white/70 hover:bg-white/10"}`}>
-                    Minggu
-                  </button>
-                  <button onClick={() => setPeriod("month")}
-                    className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-gold text-primary-900" : "text-white/70 hover:bg-white/10"}`}>
-                    Bulan
-                  </button>
-                </div>
-                <div className="flex items-center rounded-xl border border-white/20 overflow-hidden">
-                  <button onClick={() => setRefDate(d => shiftDate(d, period, -1))} className="p-2.5 text-white/70 hover:bg-white/10 transition-colors" title="Sebelumnya">
-                    <ChevronLeft size={15} />
-                  </button>
-                  {!isNow && (
-                    <button onClick={() => setRefDate(todayStr())} className="px-2.5 py-2 text-xs font-semibold text-white/70 hover:bg-white/10 transition-colors flex items-center gap-1 border-x border-white/20" title="Kembali ke sekarang">
-                      <CalendarDays size={13} /> Sekarang
-                    </button>
-                  )}
-                  <button onClick={() => setRefDate(d => shiftDate(d, period, 1))} disabled={isNow} className="p-2.5 text-white/70 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Berikutnya">
-                    <ChevronRight size={15} />
-                  </button>
-                </div>
-                <button onClick={toggleFullscreen} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 hover:scale-[1.03] active:scale-95 transition-all whitespace-nowrap">
-                  <Maximize2 size={15} /> Layar Penuh
-                </button>
-              </div>
-            }
           />
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {onSwitchTab && (
+              <button onClick={onSwitchTab}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+                <Users2 size={15} /> Kinerja Pegawai
+              </button>
+            )}
+            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+              <button onClick={() => setPeriod("week")}
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>
+                Minggu
+              </button>
+              <button onClick={() => setPeriod("month")}
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>
+                Bulan
+              </button>
+            </div>
+            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+              <button onClick={() => setRefDate(d => shiftDate(d, period, -1))} className="p-2.5 text-gray-500 hover:bg-gray-50 transition-colors" title="Sebelumnya">
+                <ChevronLeft size={15} />
+              </button>
+              {!isNow && (
+                <button onClick={() => setRefDate(todayStr())} className="px-2.5 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors flex items-center gap-1 border-x border-gray-200" title="Kembali ke sekarang">
+                  <CalendarDays size={13} /> Sekarang
+                </button>
+              )}
+              <button onClick={() => setRefDate(d => shiftDate(d, period, 1))} disabled={isNow} className="p-2.5 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Berikutnya">
+                <ChevronRight size={15} />
+              </button>
+            </div>
+            <button onClick={toggleFullscreen} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 hover:scale-[1.03] active:scale-95 transition-all whitespace-nowrap sm:ml-auto">
+              <Maximize2 size={15} /> Layar Penuh
+            </button>
+          </div>
+          </>
         )}
 
         {fullscreen && (

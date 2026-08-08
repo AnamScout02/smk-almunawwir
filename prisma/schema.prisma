@@ -26,6 +26,7 @@ model User {
   staffJabatan StaffJabatan[]
   bookLoans BookLoan[]
   bookReservations BookReservation[]
+  libraryVisits LibraryVisit[]
   dutyRoster DutyRoster[]
   dutyAttendance DutyAttendance[]
   kpiPeriodScores KpiPeriodScore[]
@@ -375,6 +376,16 @@ model BookReservation {
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+// Kunjungan fisik ke perpustakaan — dicatat petugas via scan kartu (barcode/NIS/NIP), TERPISAH
+// dari peminjaman (siswa/guru/pegawai bisa datang tanpa pinjam buku, mis. cuma baca di tempat).
+// Dipakai untuk Papan Peringkat Perpustakaan (frekuensi kunjungan, di luar frekuensi pinjam).
+model LibraryVisit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visitedAt DateTime @default(now())
 }
 
 // Jabatan untuk pengguna non-guru (TAS/Admin) yang tidak punya baris Teacher — mis. Kepala UKS,
@@ -800,6 +811,11 @@ model JournalEntry {
   journal           TeachingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
   studentId         String
   student           Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // Kehadiran versi guru mapel ITU SENDIRI (pegangan pribadi per pertemuan) — TERPISAH dari
+  // Attendance (absensi resmi harian kelas, punya wali kelas/ketua-sekretaris). Dulu field ini
+  // tidak ada — Jurnal malah menimpa langsung tabel Attendance, bikin guru mapel & wali kelas
+  // rebutan "siapa yang benar" utk hari yang sama. Sekarang benar2 independen.
+  attendanceStatus  String?
   scorePengetahuan  Float?
   scoreKeterampilan Float?
   catatan           String?

@@ -1,16 +1,27 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import type { SessionPayload } from "@/types";
 
 const secretKey = process.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);
 
+// Sesi "sliding window", BUKAN fixed-expiry — durasi ini dipakai baik saat login pertama kali
+// MAUPUN tiap kali diperpanjang otomatis oleh proxy.ts di setiap request (lihat refreshSessionCookie
+// di bawah). Selama user masih aktif (buka halaman apa pun di /dashboard), sesi terus mundur lagi
+// 8 jam dari SEKARANG — user TIDAK akan ke-logout paksa selama aktif. Kalau benar2 idle (tidak ada
+// request sama sekali) lebih dari 8 jam, baru sesi kadaluarsa beneran & wajib login ulang. Dipilih
+// 8 jam (bukan 7 hari seperti sebelumnya) atas permintaan eksplisit user — device di TU/lab sekolah
+// sering dipakai bergantian, sesi multi-hari terlalu berisiko kalau lupa logout.
+const SESSION_DURATION_STR = "8h";
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
+
 export async function encrypt(payload: SessionPayload) {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(SESSION_DURATION_STR)
     .sign(encodedKey);
 }
 
@@ -27,10 +38,27 @@ export async function decrypt(session: string | undefined = "") {
 }
 
 export async function createSession(payload: Omit<SessionPayload, "expiresAt">) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   const session = await encrypt({ ...payload, expiresAt });
   const cookieStore = await cookies();
   cookieStore.set("session", session, {
+    httpOnly: true,
+    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
+    expires: expiresAt,
+    sameSite: "lax",
+    path: "/",
+  });
+}
+
+/** Perpanjang sesi 8 jam lagi dari SEKARANG — dipanggil dari proxy.ts di HAMPIR SETIAP request
+ * (halaman maupun API) yang membawa cookie sesi valid. Re-sign JWT baru (bukan cuma geser
+ * `expires` cookie) karena validitas sebenarnya ditentukan oleh klaim `exp` di dalam JWT itu
+ * sendiri (dicek jwtVerify di decrypt()) — sekadar menggeser `expires` cookie tanpa re-sign JWT
+ * tidak akan memperpanjang apa-apa, JWT lama tetap kadaluarsa di waktu semula. */
+export async function refreshSessionCookie(res: NextResponse, payload: Omit<SessionPayload, "expiresAt">) {
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  const session = await encrypt({ ...payload, expiresAt });
+  res.cookies.set("session", session, {
     httpOnly: true,
     secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
     expires: expiresAt,

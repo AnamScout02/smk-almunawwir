@@ -107,12 +107,13 @@ export default function ProgramKerjaTeacherPage() {
         icon={<ListChecks size={22} />}
         title="Program Kerja"
         description="Program kerja jabatan struktural Anda"
-        actions={
-          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Tambah Program
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+          <Plus size={15} /> Tambah Program
+        </button>
+      </div>
 
       {jabatanList.length > 1 && (
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 flex-wrap">
@@ -158,7 +159,7 @@ export default function ProgramKerjaTeacherPage() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={editing ? "Ubah Program Kerja" : "Tambah Program Kerja"}

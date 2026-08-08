@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { NotebookPen, Loader2, Plus, Edit2, Trash2, Save, BookOpen, Download } from "lucide-react";
+import { NotebookPen, Loader2, Plus, Edit2, Trash2, Save, BookOpen, Download, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -39,6 +39,7 @@ export default function RppManager() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -93,6 +94,10 @@ export default function RppManager() {
   }
 
   const myPlans = plans.filter(p => p.teacher.id === myTeacherId).length;
+  const q = search.toLowerCase();
+  const filteredPlans = plans.filter(p =>
+    !q || p.title.toLowerCase().includes(q) || p.teacher.user.name.toLowerCase().includes(q) || (p.subject?.name ?? "").toLowerCase().includes(q)
+  );
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -100,12 +105,13 @@ export default function RppManager() {
         icon={<NotebookPen size={22} />}
         title="Bank RPP"
         description="Rencana Pelaksanaan Pembelajaran — kelola RPP Anda, lihat referensi RPP guru lain"
-        actions={
-          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Tambah RPP
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+          <Plus size={15} /> Tambah RPP
+        </button>
+      </div>
 
       {loading ? (
         <PageSkeleton />
@@ -115,11 +121,20 @@ export default function RppManager() {
             <StatTile color="primary" value={myPlans} label="RPP Saya" icon={NotebookPen} />
             <StatTile color="blue" value={plans.length} label="Total di Bank RPP" icon={BookOpen} />
           </div>
+          {plans.length > 0 && (
+            <div className="relative max-w-sm mb-5">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Cari judul, guru, atau mapel..." className="input-field pl-9 text-sm" />
+            </div>
+          )}
           {plans.length === 0 ? (
             <EmptyState icon={NotebookPen} title="Belum Ada RPP" description="Tambahkan RPP Anda ke bank bersama." />
+          ) : filteredPlans.length === 0 ? (
+            <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada RPP yang cocok dengan pencarian." />
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
-              {plans.map(p => {
+              {filteredPlans.map(p => {
                 const isMine = p.teacher.id === myTeacherId;
                 return (
                   <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

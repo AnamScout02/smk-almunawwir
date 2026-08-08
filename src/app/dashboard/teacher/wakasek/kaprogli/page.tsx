@@ -43,13 +43,14 @@ export default function KaprogliDashboard() {
         icon={<Award size={22} />}
         title={`Dashboard Kaprogli — ${major.majorName}`}
         description={`Ringkasan capaian jurusan — Semester ${data.semester}`}
-        actions={
-          <Link href="/dashboard/teacher/wakasek/kaprogli/ukk"
-            className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <FileCheck size={15} /> Rekap UKK
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/wakasek/kaprogli/ukk"
+          className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+          <FileCheck size={15} /> Rekap UKK
+        </Link>
+      </div>
 
       {data.majors.length > 1 && (
         <div className="flex items-center gap-2 mb-5">

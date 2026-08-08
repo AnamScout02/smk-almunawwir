@@ -94,18 +94,19 @@ export default function StudentExamPage() {
         icon={<FileQuestion size={22} />}
         title={exam.title}
         description={`${exam.subject} · ${exam.teacher.user.name}`}
-        actions={
-          !exam.submitted ? (
-            <span className={`flex items-center gap-2 font-mono font-bold text-lg px-3 py-1.5 rounded-xl ${isUrgent ? "bg-red-500/20 text-red-200" : "bg-white/10 text-white"}`}>
-              <Timer size={16} /> {fmtClock(remaining)}
-            </span>
-          ) : (
-            <Link href="/ujian-online" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-          )
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        {!exam.submitted ? (
+          <span className={`flex items-center gap-2 font-mono font-bold text-lg px-3 py-1.5 rounded-xl ${isUrgent ? "bg-red-50 text-red-600 border border-red-200" : "bg-primary-50 text-primary-700 border border-primary-100"}`}>
+            <Timer size={16} /> {fmtClock(remaining)}
+          </span>
+        ) : (
+          <Link href="/ujian-online" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+            <ArrowLeft size={18} />
+          </Link>
+        )}
+      </div>
 
       {exam.description && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 text-sm text-gray-600">{exam.description}</div>

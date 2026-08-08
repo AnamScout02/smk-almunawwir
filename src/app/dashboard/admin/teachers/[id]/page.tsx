@@ -71,18 +71,17 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
         icon={<UserCircle size={22} />}
         title={teacher.user.name}
         description="Detail guru"
-        actions={
-          <>
-            <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-            <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
-              <Pencil size={14} /> Edit Biodata
-            </Link>
-          </>
-        }
       />
+
+      <div className="flex items-center gap-2 mb-5">
+        <Link href="/dashboard/admin/teachers" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
+          <Pencil size={14} /> Edit Biodata
+        </Link>
+      </div>
 
       {/* Profil */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { usePathname } from "next/navigation";
-import { BookMarked, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, Library, History, QrCode, Download, Upload, FileText, ScanLine, Search, IdCard, Printer, BookmarkPlus, ArrowRightCircle } from "lucide-react";
+import Link from "next/link";
+import { BookMarked, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, Library, History, QrCode, Download, Upload, ScanLine, Search, IdCard, BookmarkPlus, ArrowRightCircle, Footprints } from "lucide-react";
 import Image from "next/image";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
@@ -56,9 +57,9 @@ type TabKey = (typeof TABS)[number]["key"];
 
 const EMPTY_BOOK_FORM = { title: "", author: "", publisher: "", category: "", stock: "1", location: "", coverUrl: "", barcode: "", fileUrl: "" };
 
-function defaultDueDate() {
+function defaultDueDate(days = 7) {
   const d = new Date();
-  d.setDate(d.getDate() + 7);
+  d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
 const EMPTY_LOAN_FORM = { borrowerType: "SISWA" as BorrowerType, classId: "", borrowerId: "", bookId: "", dueDate: defaultDueDate(), notes: "" };
@@ -107,11 +108,11 @@ export default function PerpustakaanManager() {
   const [dendaPerHari, setDendaPerHari] = useState(0);
   const [dendaInput, setDendaInput] = useState("");
   const [savingDenda, setSavingDenda] = useState(false);
+  const [masaPeminjamanHari, setMasaPeminjamanHari] = useState(7);
+  const [masaInput, setMasaInput] = useState("7");
+  const [savingMasa, setSavingMasa] = useState(false);
+  const [visitScanInput, setVisitScanInput] = useState("");
 
-  const [cardType, setCardType] = useState<BorrowerType>("SISWA");
-  const [cardClassId, setCardClassId] = useState("");
-  const [cardData, setCardData] = useState<{ identifier: string; name: string; className: string | null; qr: string }[] | null>(null);
-  const [loadingCard, setLoadingCard] = useState(false);
   const [scanCardInput, setScanCardInput] = useState("");
 
   async function handleImportBooks(e: ChangeEvent<HTMLInputElement>) {
@@ -145,7 +146,10 @@ export default function PerpustakaanManager() {
       .then(d => setBorrowers({ classes: d.classes ?? [], students: d.students ?? [], teachers: d.teachers ?? [], staff: d.staff ?? [] }))
       .catch(() => {});
     fetch("/api/perpustakaan/settings").then(r => r.json())
-      .then(d => { setDendaPerHari(d.dendaPerHari ?? 0); setDendaInput(String(d.dendaPerHari ?? 0)); })
+      .then(d => {
+        setDendaPerHari(d.dendaPerHari ?? 0); setDendaInput(String(d.dendaPerHari ?? 0));
+        setMasaPeminjamanHari(d.masaPeminjamanHari ?? 7); setMasaInput(String(d.masaPeminjamanHari ?? 7));
+      })
       .catch(() => {});
   }, []);
 
@@ -158,19 +162,20 @@ export default function PerpustakaanManager() {
     if (res.ok) { setDendaPerHari(val); loadAll(); }
   }
 
+  async function handleSaveMasa() {
+    const val = Number(masaInput);
+    if (isNaN(val) || val < 1) return;
+    setSavingMasa(true);
+    const res = await fetch("/api/perpustakaan/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ masaPeminjamanHari: val }) });
+    setSavingMasa(false);
+    if (res.ok) setMasaPeminjamanHari(val);
+  }
+
   async function handleMarkPaid(loan: Loan) {
     await fetch(`/api/perpustakaan/loans/${loan.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "MARK_PAID" }) });
     loadAll();
   }
 
-  async function loadCards() {
-    setLoadingCard(true);
-    setCardData(null);
-    const qs = new URLSearchParams({ type: cardType, ...(cardType === "SISWA" && cardClassId ? { classId: cardClassId } : {}) });
-    const res = await fetch(`/api/perpustakaan/borrower-qr?${qs.toString()}`);
-    setLoadingCard(false);
-    if (res.ok) setCardData(await res.json());
-  }
 
   function handleScanCard(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
@@ -193,6 +198,23 @@ export default function PerpustakaanManager() {
     } else {
       setLoanError(`Kartu "${code}" tidak dikenali.`);
     }
+  }
+
+  async function handleScanVisit(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const code = visitScanInput.trim();
+    setVisitScanInput("");
+    if (!code) return;
+    const student = borrowers.students.find(s => s.identifier === code);
+    const teacher = borrowers.teachers.find(t => t.identifier === code);
+    const staff = borrowers.staff.find(s => s.identifier === code);
+    const found = student ?? teacher ?? staff;
+    if (!found) { toast.error(`Kartu "${code}" tidak dikenali.`); return; }
+    const res = await fetch("/api/perpustakaan/visits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: found.id }) });
+    const d = await res.json();
+    if (res.ok) toast.success(`Kunjungan tercatat: ${d.name}`);
+    else toast.error(d.error || "Gagal mencatat kunjungan");
   }
 
   function openAddBook() { setEditingBook(null); setBookForm(EMPTY_BOOK_FORM); setBookError(""); setBookModal(true); }
@@ -218,7 +240,7 @@ export default function PerpustakaanManager() {
     loadAll();
   }
 
-  function openLoan() { setLoanForm({ ...EMPTY_LOAN_FORM, dueDate: defaultDueDate() }); setLoanError(""); setScanInput(""); setScanCardInput(""); setLoanModal(true); }
+  function openLoan() { setLoanForm({ ...EMPTY_LOAN_FORM, dueDate: defaultDueDate(masaPeminjamanHari) }); setLoanError(""); setScanInput(""); setScanCardInput(""); setLoanModal(true); }
 
   function handleScanBook(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
@@ -288,36 +310,37 @@ export default function PerpustakaanManager() {
         icon={<BookMarked size={22} />}
         title="Perpustakaan"
         description="Katalog buku, peminjaman, dan riwayat sirkulasi"
-        actions={
-          tab === "katalog" ? (
-            <>
-              <a href={`${basePath}/perpustakaan/cetak-barcode`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-                <QrCode size={15} /> Cetak Semua Barcode
-              </a>
-              <a href="/api/perpustakaan/books/template"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-                <Download size={15} /> Template
-              </a>
-              <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer">
-                <Upload size={15} /> {importLoading ? "Mengimpor..." : "Import Excel"}
-                <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportBooks} disabled={importLoading} />
-              </label>
-              <button onClick={openAddBook} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-                <Plus size={15} /> Tambah Buku
-              </button>
-            </>
-          ) : tab === "peminjaman" ? (
-            <button onClick={openLoan} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Pinjamkan Buku
-            </button>
-          ) : tab === "reservasi" ? (
-            <button onClick={openReservation} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Reservasi Baru
-            </button>
-          ) : undefined
-        }
       />
+
+      <div className="flex flex-wrap justify-end gap-2 mb-5">
+        {tab === "katalog" ? (
+          <>
+            <a href={`${basePath}/perpustakaan/cetak-barcode`} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+              <QrCode size={15} /> Cetak Semua Barcode
+            </a>
+            <a href="/api/perpustakaan/books/template"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+              <Download size={15} /> Template
+            </a>
+            <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer">
+              <Upload size={15} /> {importLoading ? "Mengimpor..." : "Import Excel"}
+              <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportBooks} disabled={importLoading} />
+            </label>
+            <button onClick={openAddBook} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+              <Plus size={15} /> Tambah Buku
+            </button>
+          </>
+        ) : tab === "peminjaman" ? (
+          <button onClick={openLoan} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Pinjamkan Buku
+          </button>
+        ) : tab === "reservasi" ? (
+          <button onClick={openReservation} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Reservasi Baru
+          </button>
+        ) : null}
+      </div>
 
       {tab === "katalog" && importResult && (
         <Alert variant={importResult.errors.length > 0 ? "warning" : "success"} className="mb-4"
@@ -346,6 +369,14 @@ export default function PerpustakaanManager() {
             <t.icon size={15} /> {t.label}
           </button>
         ))}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3.5 flex items-center gap-3 mb-5">
+        <Footprints size={16} className="text-primary-700 shrink-0" />
+        <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Catat Kunjungan:</span>
+        <input value={visitScanInput} onChange={e => setVisitScanInput(e.target.value)} onKeyDown={handleScanVisit}
+          placeholder="Scan/ketik NIS, NIP, atau ID kartu lalu Enter — untuk kunjungan yang tidak pinjam buku..."
+          className="input-field flex-1 py-1.5 text-sm min-w-0" />
       </div>
 
       {loading ? (
@@ -426,6 +457,15 @@ export default function PerpustakaanManager() {
             <button onClick={handleSaveDenda} disabled={savingDenda || Number(dendaInput) === dendaPerHari}
               className="text-xs font-semibold text-primary-700 hover:text-primary-900 disabled:opacity-40 disabled:cursor-not-allowed">
               {savingDenda ? "Menyimpan..." : "Simpan"}
+            </button>
+            <span className="w-px h-4 bg-gray-200 mx-1" />
+            <span className="text-xs font-semibold text-gray-500">Masa peminjaman:</span>
+            <input type="number" min={1} value={masaInput} onChange={e => setMasaInput(e.target.value)}
+              className="input-field w-20 py-1.5 text-sm" />
+            <span className="text-xs text-gray-400">hari</span>
+            <button onClick={handleSaveMasa} disabled={savingMasa || Number(masaInput) === masaPeminjamanHari}
+              className="text-xs font-semibold text-primary-700 hover:text-primary-900 disabled:opacity-40 disabled:cursor-not-allowed">
+              {savingMasa ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
           {activeLoans.length === 0 ? (
@@ -535,7 +575,7 @@ export default function PerpustakaanManager() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 justify-end">
-                            <button onClick={() => { setConvertingId(r.id); setConvertDueDate(defaultDueDate()); }}
+                            <button onClick={() => { setConvertingId(r.id); setConvertDueDate(defaultDueDate(masaPeminjamanHari)); }}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-gold transition-colors">
                               <ArrowRightCircle size={13} /> Pinjamkan
                             </button>
@@ -605,60 +645,17 @@ export default function PerpustakaanManager() {
           </div>
         )
       ) : (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="font-heading font-bold text-primary-900 text-sm mb-3">Cetak Kartu Anggota</p>
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="label-field">Jenis</label>
-                <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-                  {(["SISWA", "GURU", "PEGAWAI"] as const).map(t => (
-                    <button key={t} type="button" onClick={() => { setCardType(t); setCardData(null); }}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${cardType === t ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
-                      {BORROWER_TYPE_LABEL[t]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {cardType === "SISWA" && (
-                <div>
-                  <label className="label-field">Kelas</label>
-                  <Select className="w-48" value={cardClassId} onChange={v => { setCardClassId(v); setCardData(null); }}
-                    options={[{ value: "", label: "Semua Kelas" }, ...borrowers.classes.map(c => ({ value: c.id, label: c.name }))]} />
-                </div>
-              )}
-              <button onClick={loadCards} disabled={loadingCard}
-                className="inline-flex items-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 disabled:opacity-60">
-                {loadingCard ? <Loader2 size={14} className="animate-spin" /> : <IdCard size={14} />} Muat Kartu
-              </button>
-              {cardData && cardData.length > 0 && (
-                <button onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl">
-                  <Printer size={14} /> Cetak {cardData.length} Kartu
-                </button>
-              )}
-            </div>
-          </div>
-          {cardData && (
-            cardData.length === 0 ? (
-              <EmptyState icon={IdCard} title="Tidak ada data" description="Tidak ada anggota untuk pilihan ini." />
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {cardData.map(c => (
-                  <div key={c.identifier} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 text-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={c.qr} alt="QR" className="mx-auto w-20 h-20" />
-                    <p className="font-semibold text-primary-900 text-xs mt-1 truncate">{c.name}</p>
-                    <p className="text-gray-400 text-[0.68rem] font-mono">{c.identifier}</p>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm text-center py-16 text-gray-400">
+          <IdCard size={40} className="mx-auto mb-3 text-gray-200" />
+          <p className="font-medium text-gray-500">Sudah Pindah ke Kartu Tanda</p>
+          <p className="text-sm mt-1 max-w-md mx-auto">Cetak kartu anggota (siswa/guru/pegawai) sekarang jadi satu di halaman Kartu Tanda — kartu identitas resmi sekolah yang QR-nya tetap bisa dipakai scan di Perpustakaan.</p>
+          <Link href="/dashboard/admin/kartu-tanda" className="btn-gold inline-flex items-center gap-2 text-sm mt-4">
+            <IdCard size={16} /> Buka Kartu Tanda
+          </Link>
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={bookModal}
         onClose={() => setBookModal(false)}
         title={editingBook ? "Ubah Buku" : "Tambah Buku"}
@@ -715,7 +712,7 @@ export default function PerpustakaanManager() {
         </div>
       </Modal>
 
-      <Modal
+      <Modal scrollBody
         open={loanModal}
         onClose={() => setLoanModal(false)}
         title="Pinjamkan Buku"
@@ -879,20 +876,6 @@ export default function PerpustakaanManager() {
       </div>
     )}
 
-    {cardData && cardData.length > 0 && (
-      <div className="hidden print:grid print:grid-cols-3 print:gap-4 p-4">
-        {cardData.map(c => (
-          <div key={c.identifier} className="border border-gray-400 rounded-lg p-3 text-center break-inside-avoid">
-            <p className="text-[0.6rem] font-bold uppercase tracking-wide text-gray-500">Kartu Anggota Perpustakaan</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={c.qr} alt="QR" className="mx-auto w-24 h-24 my-1" />
-            <p className="font-bold text-sm">{c.name}</p>
-            <p className="text-xs font-mono">{c.identifier}</p>
-            {c.className && <p className="text-[0.65rem] text-gray-500">{c.className}</p>}
-          </div>
-        ))}
-      </div>
-    )}
     </>
   );
 }

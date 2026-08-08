@@ -246,29 +246,28 @@ export default function NonBlokSchedulePage() {
         icon={<CalendarDays size={22} />}
         title="Jadwal Non-Blok (Dapodik)"
         description={`${schedules.length} jam pelajaran — 1 minggu, tanpa kali 2, khusus upload Dapodik`}
-        actions={
-          <div className="flex gap-2">
-            <Link href="/dashboard/admin/schedules" className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-              <ArrowLeft size={16} /> Ke Jadwal Blok
-            </Link>
-            <Link href="/dashboard/admin/schedules/nonblok/print"
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-              <Printer size={16} /> Cetak Gabungan
-            </Link>
-            <Link href={selectedClass ? `/dashboard/admin/schedules/nonblok/print-class?classId=${selectedClass}` : "/dashboard/admin/schedules/nonblok/print-class"}
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-              <Printer size={16} /> Cetak per Kelas
-            </Link>
-            <button onClick={() => { setShowGenerate(true); setGenerateReport(null); }}
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-              <Wand2 size={16} /> Generate Otomatis
-            </button>
-            <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-              <Plus size={18} /> Tambah Jadwal
-            </button>
-          </div>
-        }
       />
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        <Link href="/dashboard/admin/schedules" className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <ArrowLeft size={16} /> Ke Jadwal Blok
+        </Link>
+        <Link href="/dashboard/admin/schedules/nonblok/print"
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <Printer size={16} /> Cetak Gabungan
+        </Link>
+        <Link href={selectedClass ? `/dashboard/admin/schedules/nonblok/print-class?classId=${selectedClass}` : "/dashboard/admin/schedules/nonblok/print-class"}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <Printer size={16} /> Cetak per Kelas
+        </Link>
+        <button onClick={() => { setShowGenerate(true); setGenerateReport(null); }}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <Wand2 size={16} /> Generate Otomatis
+        </button>
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+          <Plus size={18} /> Tambah Jadwal
+        </button>
+      </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
@@ -319,7 +318,7 @@ export default function NonBlokSchedulePage() {
       )}
 
       {/* Modal Form */}
-      <Modal
+      <Modal scrollBody
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? "Edit Jadwal Non-Blok" : "Tambah Jadwal Non-Blok"}

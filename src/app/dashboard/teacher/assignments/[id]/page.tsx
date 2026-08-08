@@ -73,17 +73,16 @@ export default function TeacherAssignmentDetailPage() {
         icon={<ClipboardList size={22} />}
         title={data.title}
         description={`${data.class.name} · ${data.submissions.length} dari ${data.class.students.length} siswa terkumpul`}
-        actions={
-          <>
-            <button onClick={handleDeleteAssignment} className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-red-300 transition">
-              <Trash2 size={18} />
-            </button>
-            <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-          </>
-        }
       />
+
+      <div className="flex items-center gap-2 mb-5">
+        <button onClick={handleDeleteAssignment} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition">
+          <Trash2 size={18} />
+        </button>
+        <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
         {data.description && <p className="text-sm text-gray-600 mb-3">{data.description}</p>}

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { HeartPulse, Loader2, Plus, Edit2, Trash2, Save, CalendarDays, Pill, X } from "lucide-react";
+import { HeartPulse, Loader2, Plus, Edit2, Trash2, Save, CalendarDays, Pill, X, Search, ScanLine } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -8,6 +8,7 @@ import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
 import DatePicker from "@/components/shared/DatePicker";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 
 interface StudentOption { id: string; nis: string; name: string; className: string }
@@ -33,6 +34,7 @@ function fmt(d: string) {
 
 export default function UksManager() {
   const confirmDialog = useConfirm();
+  const toast = useToast();
   const [tab, setTab] = useState<TabKey>("kunjungan");
   const [visits, setVisits] = useState<Visit[]>([]);
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -50,6 +52,7 @@ export default function UksManager() {
   const [medForm, setMedForm] = useState(EMPTY_MED_FORM);
   const [medError, setMedError] = useState("");
   const [savingMed, setSavingMed] = useState(false);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -68,6 +71,27 @@ export default function UksManager() {
   }, []);
 
   function openAdd() { setEditing(null); setForm(EMPTY_FORM); setUsageRows([]); setError(""); setModal(true); }
+
+  // Scan Kartu Tanda — identifier SAMA PERSIS dgn yg dipakai Perpustakaan/Piket (NIS siswa), jadi
+  // kartu yg sama tinggal di-scan di sini juga. Beda dari Perpustakaan/Piket yg langsung
+  // auto-simpan, di sini scan cuma BUKA & isi form "Tambah Kunjungan" dgn siswa terpilih (bukan
+  // auto-submit) — karena UksVisit.complaint wajib diisi, petugas tetap perlu ketik keluhannya.
+  const [scanInput, setScanInput] = useState("");
+  function handleScan(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const code = scanInput.trim();
+    setScanInput("");
+    if (!code) return;
+    const student = students.find(s => s.nis === code);
+    if (!student) { toast.error(`Kartu "${code}" tidak dikenali.`); return; }
+    setEditing(null);
+    setForm({ ...EMPTY_FORM, studentId: student.id });
+    setUsageRows([]);
+    setError("");
+    setModal(true);
+    toast.success(`${student.name} — lengkapi keluhan lalu simpan.`);
+  }
   function openEdit(v: Visit) {
     setEditing(v);
     setForm({ studentId: "", visitDate: v.visitDate.slice(0, 10), complaint: v.complaint, treatment: v.treatment ?? "", notes: v.notes ?? "" });
@@ -134,24 +158,40 @@ export default function UksManager() {
   for (const v of visits) complaintCount.set(v.complaint, (complaintCount.get(v.complaint) ?? 0) + 1);
   const topComplaint = Array.from(complaintCount.entries()).sort((a, b) => b[1] - a[1])[0];
 
+  const q = search.toLowerCase();
+  const filteredVisits = visits.filter(v =>
+    !q || v.student.user.name.toLowerCase().includes(q) || v.student.nis.toLowerCase().includes(q) || v.complaint.toLowerCase().includes(q)
+  );
+  const filteredMedicines = medicines.filter(m => !q || m.name.toLowerCase().includes(q));
+
   return (
     <div className="p-6 lg:p-8">
       <PageHeader
         icon={<HeartPulse size={22} />}
         title="UKS"
         description="Catatan kunjungan & stok obat Usaha Kesehatan Sekolah"
-        actions={
-          tab === "kunjungan" ? (
-            <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Kunjungan
-            </button>
-          ) : (
-            <button onClick={openAddMed} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Obat
-            </button>
-          )
-        }
       />
+
+      {tab === "kunjungan" && (
+        <div className="flex items-center gap-2 bg-primary-50/60 border border-primary-100 rounded-xl px-3 py-2.5 mb-4">
+          <ScanLine size={16} className="text-primary-700 shrink-0" />
+          <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={handleScan}
+            placeholder="Scan Kartu Tanda siswa lalu Enter — form kunjungan otomatis terbuka & terisi..."
+            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400" />
+        </div>
+      )}
+
+      <div className="flex justify-end mb-5">
+        {tab === "kunjungan" ? (
+          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Tambah Kunjungan
+          </button>
+        ) : (
+          <button onClick={openAddMed} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Tambah Obat
+          </button>
+        )}
+      </div>
 
       {!loading && tab === "kunjungan" && (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -161,13 +201,21 @@ export default function UksManager() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5">
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
-            {t.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={tab === "kunjungan" ? "Cari nama, NIS, atau keluhan..." : "Cari nama obat..."}
+            className="input-field pl-9 text-sm" />
+        </div>
       </div>
 
       {loading ? (
@@ -176,6 +224,8 @@ export default function UksManager() {
         <>
           {visits.length === 0 ? (
             <EmptyState icon={HeartPulse} title="Belum Ada Kunjungan" description="Tambahkan catatan kunjungan siswa ke UKS." />
+          ) : filteredVisits.length === 0 ? (
+            <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada kunjungan yang cocok dengan pencarian." />
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
@@ -188,7 +238,7 @@ export default function UksManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visits.map(v => (
+                    {filteredVisits.map(v => (
                       <tr key={v.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                         <td className="px-5 py-3.5">
                           <p className="font-semibold text-primary-900">{v.student.user.name}</p>
@@ -222,6 +272,8 @@ export default function UksManager() {
       ) : (
         medicines.length === 0 ? (
           <EmptyState icon={Pill} title="Belum Ada Data Obat" description="Tambahkan obat P3K ke stok UKS." />
+        ) : filteredMedicines.length === 0 ? (
+          <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada obat yang cocok dengan pencarian." />
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -234,7 +286,7 @@ export default function UksManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {medicines.map(m => (
+                  {filteredMedicines.map(m => (
                     <tr key={m.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                       <td className="px-5 py-3.5 font-semibold text-primary-900">{m.name}</td>
                       <td className="px-5 py-3.5">
@@ -259,7 +311,7 @@ export default function UksManager() {
         )
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={editing ? "Ubah Kunjungan" : "Tambah Kunjungan"}

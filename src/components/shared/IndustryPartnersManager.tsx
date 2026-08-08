@@ -125,12 +125,13 @@ export default function IndustryPartnersManager() {
         icon={<Building2 size={22} />}
         title="Mitra Industri (DU/DI)"
         description="Kelola daftar perusahaan mitra PKL & status MoU kerja sama"
-        actions={
-          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Building2 size={15} /> Tambah Mitra
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <Building2 size={15} /> Tambah Mitra
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <StatTile color="primary" icon={Building2} value={counts.total} label="Total Mitra" />
@@ -189,7 +190,7 @@ export default function IndustryPartnersManager() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={form.id ? "Ubah Mitra Industri" : "Tambah Mitra Industri"}

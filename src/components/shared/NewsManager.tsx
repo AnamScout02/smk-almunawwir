@@ -90,12 +90,13 @@ export default function NewsManager() {
         icon={<Newspaper size={22} />}
         title="Kelola Berita"
         description={`${items.length} berita tersimpan`}
-        actions={
-          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={18} /> Tulis Berita Baru
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-4">
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={18} /> Tulis Berita Baru
+        </button>
+      </div>
 
       <div className="relative mb-4">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />

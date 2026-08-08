@@ -37,13 +37,14 @@ export default function WakasekSarprasDashboard() {
         icon={<Building2 size={22} />}
         title="Dashboard Sarana Prasarana"
         description="Pemanfaatan & bentrok ruangan berdasarkan Jadwal Pelajaran"
-        actions={
-          <Link href="/dashboard/teacher/wakasek/sarpras/inventaris"
-            className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Boxes size={15} /> Inventaris Barang
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/wakasek/sarpras/inventaris"
+          className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+          <Boxes size={15} /> Inventaris Barang
+        </Link>
+      </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">

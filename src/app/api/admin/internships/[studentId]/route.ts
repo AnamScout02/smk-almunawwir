@@ -38,7 +38,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
     });
 
     return Response.json(internship);
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Gagal menyimpan data PKL." }, { status: 500 });
   }
 }
@@ -50,7 +53,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     const { studentId } = await params;
     await prisma.internship.delete({ where: { studentId } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Gagal menghapus data PKL." }, { status: 500 });
   }
 }

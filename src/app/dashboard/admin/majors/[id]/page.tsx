@@ -151,13 +151,14 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
         icon={<Save size={22} />}
         title={`Detail Halaman Publik — ${major.name}`}
         description="Konten ini tampil di halaman /programs di website"
-        actions={
-          <button onClick={() => router.push("/dashboard/admin/majors")}
-            className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <ArrowLeft size={16} /> Kembali
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={() => router.push("/dashboard/admin/majors")}
+          className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <ArrowLeft size={16} /> Kembali
+        </button>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">

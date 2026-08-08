@@ -37,12 +37,13 @@ export default function RekapUkkPage() {
         icon={<FileCheck size={22} />}
         title={`Rekap UKK — ${major.majorName}`}
         description={`Uji Kompetensi Keahlian kelas XII — Semester ${data.semester}`}
-        actions={
-          <Link href="/dashboard/teacher/wakasek/kaprogli" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-            <ArrowLeft size={18} />
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/wakasek/kaprogli" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {data.majors.length > 1 && (
         <div className="flex items-center gap-2 mb-5">

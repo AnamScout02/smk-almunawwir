@@ -15,6 +15,8 @@ export default async function TeacherDashboard() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
 
   const now = new Date();
+  const since7d = new Date();
+  since7d.setDate(since7d.getDate() - 7);
   const currentWeekType = await getCurrentWeekType();
   const [teacher, announcements, teachingSchedules, agenda] = await Promise.all([
     prisma.teacher.findFirst({
@@ -26,8 +28,6 @@ export default async function TeacherDashboard() {
             major: true,
           },
         },
-        grades: { orderBy: { createdAt: "desc" }, take: 6 },
-        _count: { select: { grades: true } },
         teachingLoad: { include: { subject: { select: { name: true } } }, distinct: ["subjectId"] },
       },
     }),
@@ -49,8 +49,20 @@ export default async function TeacherDashboard() {
     getWakilKepalaAgenda(),
   ]);
 
+  // Nilai sekarang diisi lewat Jurnal Mengajar (bukan halaman Input Nilai terpisah, dihapus per
+  // keputusan user — lihat src/lib/journal-grades.ts). Panel & statistik di bawah menunjukkan
+  // aktivitas Jurnal guru ini, bukan lagi baris Grade.
+  const [journalCount7d, recentJournals] = teacher ? await Promise.all([
+    prisma.teachingJournal.count({ where: { teacherId: teacher.id, date: { gte: since7d } } }),
+    prisma.teachingJournal.findMany({
+      where: { teacherId: teacher.id },
+      orderBy: { date: "desc" },
+      take: 6,
+      include: { class: { select: { name: true } } },
+    }),
+  ]) : [0, []];
+
   const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
-  const totalGradesCount = teacher?._count?.grades ?? 0;
   const mataPelajaran = teacher?.teachingLoad.length
     ? teacher.teachingLoad.map(t => t.subject.name).join(", ")
     : (teacher?.subject && teacher.subject !== "—" ? teacher.subject : "Belum ada penugasan mengajar");
@@ -83,16 +95,18 @@ export default async function TeacherDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/teacher/grades"
+            <Link href="/dashboard/teacher/journal"
               className="flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gold/30 transition-colors">
               <ClipboardList size={14} />
-              Input Nilai
+              Jurnal Mengajar
             </Link>
-            <Link href="/dashboard/teacher/attendance"
-              className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-emerald-500/30 transition-colors">
-              <CheckSquare size={14} />
-              Absensi
-            </Link>
+            {!!teacher?.homeroomOf.length && (
+              <Link href="/dashboard/teacher/attendance"
+                className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-emerald-500/30 transition-colors">
+                <CheckSquare size={14} />
+                Absensi
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -125,7 +139,7 @@ export default async function TeacherDashboard() {
           {[
             { icon: Users, label: "Siswa Wali Kelas", value: totalStudents, grad: "from-primary-500 to-primary-700", ring: "ring-primary-100" },
             { icon: BookOpen, label: "Kelas Wali", value: teacher?.homeroomOf.length ?? 0, grad: "from-amber-500 to-amber-600", ring: "ring-amber-100" },
-            { icon: TrendingUp, label: "Nilai Diinput", value: totalGradesCount, grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
+            { icon: TrendingUp, label: "Jurnal 7 Hari Terakhir", value: journalCount7d, grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
           ].map(({ icon: Icon, label, value, grad, ring }) => (
             <div key={label} className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${grad} ring-1 ${ring} min-w-0`}>
               <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -159,9 +173,9 @@ export default async function TeacherDashboard() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <Link href={`/dashboard/teacher/grades/${cls.id}`}
+                    <Link href={`/dashboard/teacher/dkn/${cls.id}`}
                       className="flex-1 flex items-center justify-center gap-1.5 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                      <ClipboardList size={14} /> Input Nilai
+                      <ClipboardList size={14} /> DKN Kelas
                     </Link>
                     <Link href={`/dashboard/teacher/attendance/${cls.id}`}
                       className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
@@ -220,28 +234,28 @@ export default async function TeacherDashboard() {
             )}
           </div>
 
-          {/* Nilai Terakhir Diinput */}
+          {/* Jurnal Terakhir Diisi */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
               <div className="flex items-center gap-2">
                 <TrendingUp size={16} className="text-primary-700" />
-                <h3 className="font-heading font-semibold text-navy text-sm">Nilai Terakhir Diinput</h3>
+                <h3 className="font-heading font-semibold text-navy text-sm">Jurnal Terakhir Diisi</h3>
               </div>
-              <Link href="/dashboard/teacher/grades"
+              <Link href="/dashboard/teacher/journal"
                 className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
                 Lihat semua <ArrowRight size={11} />
               </Link>
             </div>
-            {teacher?.grades && teacher.grades.length > 0 ? (
+            {recentJournals.length > 0 ? (
               <div className="divide-y divide-gray-50">
-                {teacher.grades.map((g) => (
-                  <div key={g.id} className="flex items-center justify-between px-5 py-3 text-xs hover:bg-gray-50/50 transition-colors">
+                {recentJournals.map((j) => (
+                  <div key={j.id} className="flex items-center justify-between px-5 py-3 text-xs hover:bg-gray-50/50 transition-colors">
                     <div>
-                      <p className="font-semibold text-navy">{g.subject}</p>
-                      <p className="text-gray-400 mt-0.5">{g.type} · {g.semester}</p>
+                      <p className="font-semibold text-navy">{j.subject}</p>
+                      <p className="text-gray-400 mt-0.5">{j.class.name} · {j.semester}</p>
                     </div>
-                    <span className={`font-heading font-bold text-lg ${g.score >= 75 ? "text-emerald-600" : "text-red-500"}`}>
-                      {g.score}
+                    <span className="text-gray-400 text-[11px] font-medium">
+                      {j.date.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                     </span>
                   </div>
                 ))}
@@ -249,13 +263,13 @@ export default async function TeacherDashboard() {
             ) : (
               <div className="text-center py-10 text-gray-400">
                 <ClipboardList size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada nilai yang diinput.</p>
+                <p className="text-sm">Belum ada jurnal yang diisi.</p>
               </div>
             )}
             <div className="px-5 py-3 border-t border-gray-50">
-              <Link href="/dashboard/teacher/grades"
+              <Link href="/dashboard/teacher/journal"
                 className="flex items-center justify-center gap-1.5 text-xs text-primary-700 font-semibold hover:text-gold transition-colors">
-                Input nilai baru <ArrowRight size={11} />
+                Isi jurnal baru <ArrowRight size={11} />
               </Link>
             </div>
           </div>
@@ -272,9 +286,10 @@ export default async function TeacherDashboard() {
           <h3 className="font-heading font-semibold text-navy text-sm mb-4">Akses Cepat</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Input Nilai",  href: "/dashboard/teacher/grades",     icon: ClipboardList, color: "bg-primary-700 hover:bg-primary-800" },
-              { label: "Absensi",      href: "/dashboard/teacher/attendance",  icon: CheckSquare,   color: "bg-emerald-600 hover:bg-emerald-700" },
-              { label: "Daftar Siswa", href: "/dashboard/teacher/grades",      icon: Users,         color: "bg-blue-600 hover:bg-blue-700" },
+              { label: "Jurnal Mengajar", href: "/dashboard/teacher/journal", icon: ClipboardList, color: "bg-primary-700 hover:bg-primary-800" },
+              // Absensi khusus wali kelas — sembunyikan tombolnya dari guru mapel biasa.
+              ...(teacher?.homeroomOf.length ? [{ label: "Absensi", href: "/dashboard/teacher/attendance", icon: CheckSquare, color: "bg-emerald-600 hover:bg-emerald-700" }] : []),
+              { label: "Daftar Siswa", href: "/dashboard/teacher/students",   icon: Users,         color: "bg-blue-600 hover:bg-blue-700" },
               { label: "Profil Saya",  href: "/dashboard/teacher/profile",     icon: UserCog,       color: "bg-amber-600 hover:bg-amber-700" },
             ].map(({ label, href, icon: Icon, color }) => (
               <Link key={label} href={href}

@@ -64,13 +64,14 @@ export default function PerformaServerPage() {
         icon={<Activity size={22} />}
         title="Performa Server"
         description="Pemantauan RAM, CPU, dan disk server secara real-time"
-        actions={
-          <button onClick={() => { setLoading(true); load(); }}
-            className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition">
-            <RefreshCw size={15} /> Segarkan
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={() => { setLoading(true); load(); }}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <RefreshCw size={15} /> Segarkan
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 size={28} className="animate-spin" /></div>

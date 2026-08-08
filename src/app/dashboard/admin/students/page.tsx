@@ -59,14 +59,15 @@ export default function AdminStudentsPage() {
         icon={<Users size={22} />}
         title="Kelola Siswa"
         description="Atur NIS, jurusan, dan kelas setiap siswa"
-        actions={
-          <a href="/api/admin/export/students"
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} />
-            Export CSV
-          </a>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <a href="/api/admin/export/students"
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <Download size={15} />
+          Export CSV
+        </a>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-5">

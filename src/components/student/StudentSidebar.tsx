@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Menu, X, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion } from "lucide-react";
+import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Menu, X, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
 
@@ -11,9 +11,10 @@ interface StudentSidebarProps {
   logoFullWhite?: string;
   hasPendingBiodata?: boolean;
   isKelasAdmin?: boolean;
+  overdueBooks?: number;
 }
 
-export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, isKelasAdmin = false }: StudentSidebarProps) {
+export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, isKelasAdmin = false, overdueBooks = 0 }: StudentSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -23,13 +24,15 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     { href: "/dashboard/student/rapor", label: "Rapor Nilai", icon: Printer, show: true },
     { href: "/dashboard/student/pkl", label: "PKL Saya", icon: Briefcase, show: true },
     { href: "/dashboard/student/materials", label: "Materi & Tugas", icon: BookOpen, show: true },
+    { href: "/dashboard/student/buku-saya", label: "Buku Saya", icon: BookOpen, badge: overdueBooks, show: true },
+    { href: "/dashboard/student/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: true },
     { href: "/ujian-online", label: "Ujian Online (CBT)", icon: FileQuestion, show: true },
     { href: "/dashboard/student/biodata", label: "Biodata Saya", icon: IdCard, badgeKey: "pendingBiodata" as const, show: true },
     { href: "/dashboard/student/profile", label: "Profil Saya", icon: UserCircle, show: true },
   ].filter(item => item.show);
 
   function isActive(href: string, exact = false) {
-    return exact ? pathname === href : pathname.startsWith(href);
+    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
   }
 
   const SidebarContent = () => (
@@ -54,12 +57,18 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
         {menu.map(item => {
           const active = isActive(item.href, item.exact);
           const showBadge = "badgeKey" in item && item.badgeKey === "pendingBiodata" && hasPendingBiodata;
+          const badgeCount = "badge" in item ? item.badge ?? 0 : 0;
           return (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-gold text-primary-900 shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"}`}>
               <item.icon size={17} />
               <span className="flex-1">{item.label}</span>
               {showBadge && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Pengajuan menunggu persetujuan" />}
+              {badgeCount > 0 && (
+                <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shrink-0 ${active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"}`}>
+                  {badgeCount > 99 ? "99+" : badgeCount}
+                </span>
+              )}
             </Link>
           );
         })}

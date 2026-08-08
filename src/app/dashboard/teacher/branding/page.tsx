@@ -39,20 +39,19 @@ export default function BrandingDashboard() {
         icon={<Megaphone size={22} />}
         title="Dashboard Branding & Publikasi"
         description="Ringkasan konten berita & galeri foto website sekolah"
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link href="/dashboard/teacher/branding/news" className="btn-gold flex items-center gap-2 text-sm">
-              <Newspaper size={16} /> Kelola Berita
-            </Link>
-            <Link href="/dashboard/teacher/branding/gallery" className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition">
-              <GalleryHorizontal size={16} /> Kelola Galeri
-            </Link>
-            <Link href="/dashboard/teacher/branding/banners" className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition">
-              <ImageIcon size={16} /> Kelola Banner
-            </Link>
-          </div>
-        }
       />
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        <Link href="/dashboard/teacher/branding/news" className="btn-gold flex items-center gap-2 text-sm">
+          <Newspaper size={16} /> Kelola Berita
+        </Link>
+        <Link href="/dashboard/teacher/branding/gallery" className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 transition">
+          <GalleryHorizontal size={16} /> Kelola Galeri
+        </Link>
+        <Link href="/dashboard/teacher/branding/banners" className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 transition">
+          <ImageIcon size={16} /> Kelola Banner
+        </Link>
+      </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">

@@ -1,0 +1,146 @@
+import { NextRequest, NextResponse } from "next/server";
+import { verifyRole } from "@/lib/dal";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+/** DKN (Daftar Kumpulan Nilai) — HANYA Wali Kelas homeroom kelas tsb (atau ADMIN) yang boleh
+ * akses, BUKAN guru mapel biasa (beda dari Nilai/Absensi biasa yang boleh diakses guru mapel
+ * sesuai TeachingAssignment — DKN adalah rekap resmi lintas mapel, tanggung jawab wali kelas). */
+async function assertHomeroomOwner(email: string, role: string, classId: string) {
+  if (role === "ADMIN") return true;
+  const teacher = await prisma.teacher.findFirst({
+    where: { user: { email } },
+    include: { homeroomOf: { select: { id: true } } },
+  });
+  return !!teacher?.homeroomOf.some(c => c.id === classId);
+}
+
+/** Roster siswa kelas TIDAK selalu boleh diambil live dari Student.classId — begitu Naik Kelas
+ * berjalan, siswa lama pindah ke Class lain (mis. X TKJ 1 -> XI TKJ 1) dan classId ini bisa saja
+ * sudah ditempati angkatan baru. Kalau tahun ajaran dari semester yang diminta SUDAH punya
+ * snapshot di StudentClassHistory (dibuat otomatis tiap proses Naik Kelas, lihat
+ * /api/admin/tahun-ajaran/naik-kelas), pakai roster snapshot itu supaya DKN semester lama tetap
+ * menampilkan siswa yang BENAR ada di kelas ini saat itu — bukan roster kelas sekarang. Tahun
+ * ajaran yang masih berjalan (belum pernah di-snapshot, karena snapshot baru dibuat pas Naik
+ * Kelas ke tahun berikutnya) tetap pakai roster live seperti biasa. Dipakai bareng oleh GET
+ * (tampilkan tabel) & PUT (validasi siswa yang nilainya sedang diubah). */
+async function getClassRoster(classId: string, semester: string) {
+  const tahunAjaran = semester.trim().split(/\s+/).pop() ?? "";
+  const historyRows = tahunAjaran
+    ? await prisma.studentClassHistory.findMany({
+        where: { classId, academicYear: { name: tahunAjaran } },
+        select: { studentId: true, student: { select: { nis: true, user: { select: { name: true } } } } },
+      })
+    : [];
+
+  if (historyRows.length > 0) {
+    return historyRows
+      .map(h => ({ id: h.studentId, nis: h.student.nis, name: h.student.user.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  const live = await prisma.student.findMany({
+    where: { classId, studentStatus: "AKTIF" },
+    select: { id: true, nis: true, user: { select: { name: true } } },
+    orderBy: { user: { name: "asc" } },
+  });
+  return live.map(s => ({ id: s.id, nis: s.nis, name: s.user.name }));
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
+  try {
+    const session = await verifyRole(["TEACHER", "ADMIN"]);
+    const { classId } = await params;
+    if (!(await assertHomeroomOwner(session.email, session.role, classId))) {
+      return NextResponse.json({ error: "Khusus Wali Kelas kelas ini." }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const semester = searchParams.get("semester");
+    if (!semester) return NextResponse.json({ error: "Parameter semester wajib diisi" }, { status: 400 });
+
+    const cls = await prisma.class.findUnique({ where: { id: classId }, select: { name: true, grade: true, major: { select: { name: true } } } });
+    if (!cls) return NextResponse.json({ error: "Kelas tidak ditemukan" }, { status: 404 });
+
+    const students = await getClassRoster(classId, semester);
+    const studentIds = students.map(s => s.id);
+
+    const [assignments, grades] = await Promise.all([
+      prisma.teachingAssignment.findMany({ where: { classId }, select: { subject: { select: { name: true, order: true } } }, orderBy: { subject: { order: "asc" } } }),
+      // Cuma nilai bertipe DKN — DKN murni input manual wali kelas, TIDAK dihitung/di-default
+      // dari nilai komponen mapel (Tugas/UH/UTS/UAS) manapun. Kosong berarti memang belum diisi.
+      prisma.grade.findMany({
+        where: { semester, studentId: { in: studentIds }, type: "DKN" },
+        select: { studentId: true, subject: true, score: true },
+      }),
+    ]);
+
+    // Daftar mapel dari Penugasan Mengajar kelas ini (urut sesuai Kode Mata Pelajaran) — fallback ke
+    // mapel yang punya nilai DKN tercatat kalau penugasan belum lengkap, supaya nilai lama tetap terlihat.
+    const subjectSet = new Set(assignments.map(a => a.subject.name));
+    for (const g of grades) subjectSet.add(g.subject);
+    const subjects = [...subjectSet];
+
+    const scores: Record<string, Record<string, number | null>> = {};
+    for (const s of students) scores[s.id] = {};
+
+    for (const student of students) {
+      for (const subject of subjects) {
+        scores[student.id][subject] = grades.find(g => g.studentId === student.id && g.subject === subject)?.score ?? null;
+      }
+    }
+
+    return NextResponse.json({
+      class: cls,
+      students,
+      subjects,
+      scores,
+    });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
+  try {
+    const session = await verifyRole(["TEACHER", "ADMIN"]);
+    const { classId } = await params;
+    if (!(await assertHomeroomOwner(session.email, session.role, classId))) {
+      return NextResponse.json({ error: "Khusus Wali Kelas kelas ini." }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { studentId, subject, semester, score } = body;
+    if (!studentId || !subject || !semester || typeof score !== "number" || isNaN(score)) {
+      return NextResponse.json({ error: "Data tidak lengkap/valid" }, { status: 400 });
+    }
+    if (score < 0 || score > 100) {
+      return NextResponse.json({ error: "Nilai harus di antara 0-100" }, { status: 400 });
+    }
+
+    // Validasi terhadap roster SEMESTER TERSEBUT (bukan cuma Student.classId sekarang) — supaya
+    // wali kelas tetap bisa mengoreksi nilai DKN semester lama utk siswa yg sudah naik kelas.
+    const roster = await getClassRoster(classId, semester);
+    if (!roster.some(s => s.id === studentId)) {
+      return NextResponse.json({ error: "Siswa tidak ditemukan di kelas ini untuk semester tersebut" }, { status: 404 });
+    }
+
+    // ADMIN tidak punya baris Teacher sendiri — kalau ADMIN yang menyimpan (mis. mewakili wali
+    // kelas), atribusikan nilai ke wali kelas resmi kelas ini, bukan gagal karena tidak ketemu.
+    const teacher = session.role === "ADMIN"
+      ? await prisma.teacher.findFirst({ where: { homeroomOf: { some: { id: classId } } } })
+      : await prisma.teacher.findFirst({ where: { user: { email: session.email } } });
+    if (!teacher) return NextResponse.json({ error: "Data guru wali kelas tidak ditemukan" }, { status: 404 });
+
+    // Delete-then-create (Grade tanpa unique constraint di DB — lihat CLAUDE.md) supaya tidak
+    // dobel tiap kali wali kelas mengubah nilai DKN mapel yang sama.
+    await prisma.$transaction(async tx => {
+      await tx.grade.deleteMany({ where: { studentId, subject, type: "DKN", semester } });
+      await tx.grade.create({ data: { studentId, teacherId: teacher.id, subject, type: "DKN", semester, score } });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}

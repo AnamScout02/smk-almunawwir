@@ -94,12 +94,13 @@ export default function TeacherPklDetailPage() {
         icon={<Briefcase size={22} />}
         title={data.student.user.name}
         description={`${data.student.class?.name ?? "—"} · ${data.student.major?.name ?? "—"} · NIS ${data.student.nis}`}
-        actions={
-          <Link href="/dashboard/teacher/pkl" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-            <ArrowLeft size={18} />
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/pkl" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">

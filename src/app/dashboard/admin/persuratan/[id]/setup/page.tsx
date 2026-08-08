@@ -101,12 +101,13 @@ export default function SuratKeluarSetupPage() {
         icon={<Mail size={22} />}
         title="Tulis Surat Keluar"
         description="Isi data singkat surat, lalu lanjut ke Editor Word untuk menulis isinya"
-        actions={
-          <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-            <ArrowLeft size={18} />
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
 

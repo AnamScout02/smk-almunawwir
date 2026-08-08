@@ -104,19 +104,18 @@ export default function StudentQuizPage() {
         icon={<HelpCircle size={22} />}
         title={quiz.title}
         description={`${quiz.subject} · ${quiz.teacher.user.name}${quiz.duration ? ` · ${quiz.duration} menit` : ""}`}
-        actions={
-          <div className="flex items-center gap-3">
-            {remaining !== null && !quiz.alreadyAttempted && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold ${remaining < 60 ? "bg-red-500/20 text-red-200" : "bg-white/10 text-white"}`}>
-                <Timer size={14} /> {fmtClock(remaining)}
-              </div>
-            )}
-            <Link href="/dashboard/student/materials" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-          </div>
-        }
       />
+
+      <div className="flex items-center gap-3 mb-5">
+        {remaining !== null && !quiz.alreadyAttempted && (
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold ${remaining < 60 ? "bg-red-50 text-red-600 border border-red-200" : "bg-primary-50 text-primary-700 border border-primary-100"}`}>
+            <Timer size={14} /> {fmtClock(remaining)}
+          </div>
+        )}
+        <Link href="/dashboard/student/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {quiz.description && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 text-sm text-gray-600">{quiz.description}</div>

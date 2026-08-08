@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
+import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 function currentSemester(): string {
   const now = new Date();
@@ -39,13 +40,13 @@ export async function GET() {
       const studentIds = classes.flatMap(c => c.students.map(s => s.id));
 
       const [grades, attendance, internships] = await Promise.all([
-        prisma.grade.findMany({ where: { semester, studentId: { in: studentIds } }, select: { studentId: true, score: true } }),
+        getJournalGradeAggregates({ semester, studentIds }),
         prisma.attendance.findMany({ where: { date: { gte: since }, studentId: { in: studentIds } }, select: { studentId: true, status: true } }),
         prisma.internship.findMany({ where: { studentId: { in: studentIds } }, select: { status: true } }),
       ]);
 
       const gradesByStudent = new Map<string, number[]>();
-      for (const g of grades) gradesByStudent.set(g.studentId, [...(gradesByStudent.get(g.studentId) ?? []), g.score]);
+      for (const g of grades) if (g.avg !== null) gradesByStudent.set(g.studentId, [...(gradesByStudent.get(g.studentId) ?? []), g.avg]);
       const attByStudent = new Map<string, { hadir: number; total: number }>();
       for (const a of attendance) {
         const e = attByStudent.get(a.studentId) ?? { hadir: 0, total: 0 };

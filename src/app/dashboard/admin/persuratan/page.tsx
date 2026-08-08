@@ -116,21 +116,20 @@ export default function PersuratanPage() {
         icon={<Mail size={22} />}
         title="Persuratan"
         description="Manajemen surat masuk dan surat keluar sekolah"
-        actions={
-          <>
-            {tab === "KELUAR" && (
-              <Link href="/dashboard/admin/persuratan/new/setup"
-                className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-white/10 transition shrink-0">
-                <PenLine size={15} /> Tulis Surat Keluar
-              </Link>
-            )}
-            <button onClick={openNew}
-              className="btn-gold flex items-center gap-2 text-sm shrink-0">
-              <Plus size={15} /> Tambah Surat {tab === "MASUK" ? "Masuk" : "Keluar"}
-            </button>
-          </>
-        }
       />
+
+      <div className="flex items-center gap-2 mb-5 justify-end">
+        {tab === "KELUAR" && (
+          <Link href="/dashboard/admin/persuratan/new/setup"
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition shrink-0">
+            <PenLine size={15} /> Tulis Surat Keluar
+          </Link>
+        )}
+        <button onClick={openNew}
+          className="btn-gold flex items-center gap-2 text-sm shrink-0">
+          <Plus size={15} /> Tambah Surat {tab === "MASUK" ? "Masuk" : "Keluar"}
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-6">
@@ -235,7 +234,7 @@ export default function PersuratanPage() {
       )}
 
       {/* Modal */}
-      <Modal
+      <Modal scrollBody
         open={modal !== null}
         onClose={() => setModal(null)}
         title={isNew ? `Tambah Surat ${tab === "MASUK" ? "Masuk" : "Keluar"}` : "Edit Surat"}

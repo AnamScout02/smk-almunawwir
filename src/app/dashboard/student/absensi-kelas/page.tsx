@@ -32,6 +32,7 @@ export default function AbsensiKelasPage() {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -41,8 +42,10 @@ export default function AbsensiKelasPage() {
       const d = await r.json();
       setClassName(d.className);
       setStudents(d.students ?? []);
+      // JANGAN pre-fill "HADIR" — biarkan kosong sampai Ketua Kelas/Sekretaris benar2 pilih status
+      // per siswa (atau pakai "Tandai Semua Hadir" scr sengaja), supaya klik Simpan tanpa
+      // ngecek satu-satu tidak diam-diam nyatet semua orang hadir.
       const init: Record<string, AttendanceStatus> = {};
-      (d.students ?? []).forEach((s: Student) => { init[s.id] = "HADIR"; });
       (d.existing ?? []).forEach((r: AttendanceRecord) => { init[r.studentId] = r.status as AttendanceStatus; });
       setAttendance(init);
       setLoading(false);
@@ -62,8 +65,14 @@ export default function AbsensiKelasPage() {
   }
 
   async function handleSave() {
+    const missing = students.filter(s => !attendance[s.id]);
+    if (missing.length > 0) {
+      setSaveError(`${missing.length} siswa belum diisi statusnya: ${missing.slice(0, 3).map(s => s.user.name).join(", ")}${missing.length > 3 ? ", dst." : ""}`);
+      return;
+    }
+    setSaveError("");
     startTransition(async () => {
-      const records = students.map(s => ({ studentId: s.id, status: attendance[s.id] ?? "HADIR" }));
+      const records = students.map(s => ({ studentId: s.id, status: attendance[s.id] }));
       const res = await fetch("/api/student/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,7 +83,7 @@ export default function AbsensiKelasPage() {
         setTimeout(() => setSaved(false), 3000);
       } else {
         const d = await res.json();
-        setError(d.error || "Gagal menyimpan absensi");
+        setSaveError(d.error || "Gagal menyimpan absensi");
       }
     });
   }
@@ -106,12 +115,17 @@ export default function AbsensiKelasPage() {
               <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
               <DatePicker value={date} onChange={setDate} />
             </div>
-            <div className="flex gap-3 text-sm">
+            <div className="flex gap-3 text-sm flex-wrap">
               {summary.map(s => (
                 <div key={s.label} className={`px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_COLOR[s.label as AttendanceStatus]}`}>
                   {s.label}: {s.count}
                 </div>
               ))}
+              {students.length - Object.keys(attendance).length > 0 && (
+                <div className="px-3 py-1 rounded-full border text-xs font-semibold bg-gray-50 text-gray-400 border-gray-200">
+                  Belum Diisi: {students.length - Object.keys(attendance).length}
+                </div>
+              )}
             </div>
           </div>
 
@@ -154,6 +168,7 @@ export default function AbsensiKelasPage() {
           </div>
 
           <div className="flex items-center justify-end gap-4">
+            {saveError && <p className="text-red-600 text-sm font-semibold">{saveError}</p>}
             {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absensi berhasil disimpan!</p>}
             <button onClick={handleSave} disabled={isPending} className="btn-gold flex items-center gap-2 text-sm">
               <CheckSquare size={16} /> {isPending ? "Menyimpan..." : "Simpan Absensi"}

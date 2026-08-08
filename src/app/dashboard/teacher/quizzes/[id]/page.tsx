@@ -116,26 +116,27 @@ export default function TeacherQuizBuilderPage() {
         icon={<HelpCircle size={22} />}
         title={isNew ? "Buat Kuis Baru" : "Edit Kuis"}
         description={detail ? `${detail.class.name}` : "Kuis pilihan ganda — dinilai otomatis"}
-        actions={
-          <>
-            {!isNew && detail && (
-              <button onClick={togglePublish}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
-                style={{ background: detail.isPublished ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.1)", color: detail.isPublished ? "#34d399" : "#fff" }}>
-                {detail.isPublished ? <Eye size={14} /> : <EyeOff size={14} />} {detail.isPublished ? "Dipublikasikan" : "Draft"}
-              </button>
-            )}
-            {!isNew && (
-              <button onClick={handleDelete} className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-red-300 transition">
-                <Trash2 size={18} />
-              </button>
-            )}
-            <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-          </>
-        }
       />
+
+      {/* Aksi di baris terpisah (bukan actions PageHeader) — header cukup ikon+judul+keterangan saja. */}
+      <div className="flex items-center gap-2 mb-5">
+        {!isNew && detail && (
+          <button onClick={togglePublish}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              detail.isPublished ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-50 text-gray-600 border border-gray-200"
+            }`}>
+            {detail.isPublished ? <Eye size={14} /> : <EyeOff size={14} />} {detail.isPublished ? "Dipublikasikan" : "Draft"}
+          </button>
+        )}
+        {!isNew && (
+          <button onClick={handleDelete} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition">
+            <Trash2 size={18} />
+          </button>
+        )}
+        <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
 

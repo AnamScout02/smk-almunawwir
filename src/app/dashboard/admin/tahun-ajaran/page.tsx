@@ -149,15 +149,16 @@ export default function TahunAjaranPage() {
         icon={<CalendarDays size={22} />}
         title="Tahun Ajaran"
         description="Kelola tahun ajaran dan proses kenaikan kelas"
-        actions={
-          <button
-            onClick={() => { setShowModal(true); setFormError(""); }}
-            className="btn-gold flex items-center gap-2 text-sm"
-          >
-            <Plus size={16} /> Buat Tahun Ajaran
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button
+          onClick={() => { setShowModal(true); setFormError(""); }}
+          className="btn-gold flex items-center gap-2 text-sm"
+        >
+          <Plus size={16} /> Buat Tahun Ajaran
+        </button>
+      </div>
 
       {/* Daftar Tahun Ajaran */}
       <div className="space-y-3 mb-8">

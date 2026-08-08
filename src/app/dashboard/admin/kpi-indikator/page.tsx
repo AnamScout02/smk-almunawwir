@@ -60,20 +60,20 @@ export default function KpiIndikatorPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <PageHeader icon={<Sliders size={22} />} title="Pengaturan KPI" description="Atur bobot indikator kinerja per jabatan — total bobot per jabatan idealnya 100%"
-        actions={jabatanNames.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button onClick={() => setOpenJabatan(new Set(jabatanNames))}
-              className="text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-all whitespace-nowrap">
-              Buka Semua
-            </button>
-            <button onClick={() => setOpenJabatan(new Set())}
-              className="text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-all whitespace-nowrap">
-              Tutup Semua
-            </button>
-          </div>
-        )}
-      />
+      <PageHeader icon={<Sliders size={22} />} title="Pengaturan KPI" description="Atur bobot indikator kinerja per jabatan — total bobot per jabatan idealnya 100%" />
+
+      {jabatanNames.length > 0 && (
+        <div className="flex items-center gap-2 mb-5">
+          <button onClick={() => setOpenJabatan(new Set(jabatanNames))}
+            className="text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+            Buka Semua
+          </button>
+          <button onClick={() => setOpenJabatan(new Set())}
+            className="text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+            Tutup Semua
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>

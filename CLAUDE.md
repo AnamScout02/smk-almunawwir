@@ -34,18 +34,26 @@ PostgreSQL 17 lokal (diinstal via winget). Pastikan service berjalan sebelum `np
 
 - **Next.js 16.2.9** + React 19 + TypeScript + Tailwind CSS v4
 - **Prisma 7** + `@prisma/adapter-pg` (wajib pakai Pool dari `pg` — bukan koneksi default Prisma)
-- **jose** — JWT untuk session (disimpan di HttpOnly cookie `session`, expired 7 hari)
+- **jose** — JWT untuk session (disimpan di HttpOnly cookie `session`, sliding window 8 jam — lihat bagian Auth & Session)
 - **bcryptjs** — hash password
 - **lucide-react** — ikon
 - **Turbopack** dipakai saat `npm run dev` (bawaan Next.js 16)
 
 ## Auth & Session (PALING PENTING)
 
-Session disimpan sebagai **JWT di cookie `session`** (HttpOnly, SameSite=lax).
+Session disimpan sebagai **JWT di cookie `session`** (HttpOnly, SameSite=lax), **sliding window 8 jam**
+(bukan fixed-expiry) — tiap request (halaman `/dashboard/**` MAUPUN `/api/**`) yang bawa cookie sesi
+valid otomatis memperpanjang lagi 8 jam dari saat itu (`src/proxy.ts` memanggil `refreshSessionCookie`
+di `session.ts` di HAMPIR SETIAP request). Jadi selama user aktif (termasuk sekadar halaman polling data
+tanpa pindah halaman, mis. Papan Peringkat mode layar penuh), TIDAK akan ke-logout paksa — cuma idle
+total >8 jam yang bikin sesi benar2 kadaluarsa. Durasi ini keputusan eksplisit user (bukan 7 hari
+seperti sebelumnya) karena banyak device TU/lab dipakai bergantian.
 
 ```
-src/lib/session.ts   ← encrypt/decrypt JWT, createSession, deleteSession, getSession
+src/lib/session.ts   ← encrypt/decrypt JWT, createSession, deleteSession, getSession, refreshSessionCookie
 src/lib/dal.ts       ← verifySession(), verifyRole(["ADMIN"|"TEACHER"|"STUDENT"])
+src/proxy.ts          ← Next.js 16 "Proxy" (BUKAN middleware.ts — nama file berubah versi ini),
+                         jalan di semua route KECUALI _next/static, _next/image, favicon.ico, *.svg
 ```
 
 **Wajib dipakai di setiap server component/route yang butuh auth:**
@@ -236,8 +244,11 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
 9. **Semester dinamis** — jangan hardcode semester. Pakai fungsi `generateSemesters()` yang menghitung berdasarkan bulan sekarang (Juli+ = tahun ajaran baru). Contoh ada di `src/app/dashboard/teacher/grades/[classId]/page.tsx`.
 
 10. **Kelas wali guru** — endpoint API guru wajib scope ke kelas yang benar-benar berhak diakses guru itu (bukan semua kelas). Ini WAJIB dicek di setiap endpoint baru `/api/teacher/**` yang menerima `classId`/`studentId` dari client — jangan percaya begitu saja (kalau tidak divalidasi, itu celah IDOR/data leak — pernah kejadian nyata di `/api/teacher/attendance`, `/api/teacher/students`, `/api/teacher/grades`, semuanya sudah diperbaiki).
-    - **Nilai & Absensi** (per keputusan eksplisit user): guru wali kelas boleh akses SEMUA mapel siswa di kelas walinya (`teacher.homeroomOf`). Guru mapel yang BUKAN wali kelas tetap boleh input Nilai/Absensi, TAPI KHUSUS untuk mapel yang benar-benar diampunya sesuai `TeachingAssignment` (`teacher.teachingLoad`) di kelas tsb — bukan bebas mapel apapun. Endpoint `/api/teacher/classes` (dipakai halaman Nilai & Absensi utama) sudah mengembalikan gabungan `homeroomOf` ∪ kelas dari `teachingLoad`; validasi per-mapel yang sebenarnya terjadi di `/api/teacher/grades` POST (cek `isAssignedSubject`) dan diterima bebas di `/api/teacher/attendance` (absensi tidak punya konsep mapel).
-    - Modul lain (Jurnal Mengajar, Materi & Tugas, Ujian/Kuis) SUDAH dari awal berbasis `TeachingAssignment` (`/api/teacher/journal-classes`), bukan `homeroomOf` — pola ini yang dijadikan acuan saat memperluas Nilai/Absensi di atas.
+    - **Nilai** (per keputusan eksplisit user): guru wali kelas boleh akses SEMUA mapel siswa di kelas walinya (`teacher.homeroomOf`). Guru mapel yang BUKAN wali kelas tetap boleh input Nilai, TAPI KHUSUS untuk mapel yang benar-benar diampunya sesuai `TeachingAssignment` (`teacher.teachingLoad`) di kelas tsb — bukan bebas mapel apapun. Endpoint `/api/teacher/classes` (dipakai halaman Nilai) mengembalikan gabungan `homeroomOf` ∪ kelas dari `teachingLoad`; validasi per-mapel yang sebenarnya terjadi di `/api/teacher/grades` POST (cek `isAssignedSubject`).
+    - **Absensi** (per keputusan terbaru — MEMBALIK kebijakan lama di atas): KHUSUS wali kelas, TIDAK LAGI terbuka utk guru mapel biasa via `teachingLoad`. Menu "Absensi" di `TeacherSidebar` cuma tampil kalau `hasHomeroom`. `/api/teacher/attendance` `getAllowedClassIds()` cuma pakai `teacher.homeroomOf`. Halaman Absensi (`attendance/page.tsx`, `attendance/summary/page.tsx`, `attendance/[classId]/page.tsx`) panggil `/api/teacher/classes?scope=homeroom` (bukan endpoint polos) supaya daftar kelasnya juga cuma kelas wali — endpoint `/api/teacher/classes` sendiri TETAP defaultnya gabungan (dipakai halaman Nilai yg tidak berubah), `scope=homeroom` cuma opt-in dari sisi pemanggil. Absensi siswa via Ketua Kelas/Sekretaris (`/dashboard/student/absensi-kelas`) tetap ada sbg alternatif kalau wali kelas berhalangan — tabel `Attendance` yg sama, bukan modul terpisah.
+    - **Jurnal Mengajar** SUDAH dari awal berbasis `TeachingAssignment` (`/api/teacher/journal-classes`), bukan `homeroomOf` — guru mapel apapun boleh isi jurnal utk kelas yg diampunya. Daftar kelas di jurnal SEKARANG difilter lagi berdasarkan jadwal (`Schedule` day+weekType) pas tanggal yg dipilih (`?date=` param) — bukan seluruh `TeachingAssignment` guru itu tanpa peduli hari.
+    - **Kehadiran di Jurnal Mengajar** (kolom "Kehadiran" per pertemuan) TERPISAH TOTAL dari Absensi resmi — disimpan di `JournalEntry.attendanceStatus`, BUKAN di tabel `Attendance`. Dulu (bug lama, sudah diperbaiki) Jurnal ikut menimpa `Attendance` langsung, bikin guru mapel & wali kelas rebutan status hari yg sama (race, siapa simpan terakhir menang). Kolom Kehadiran di Jurnal murni pegangan pribadi guru mapel itu, tidak memengaruhi rekap/rapor Absensi resmi.
+    - **Semua dropdown status kehadiran** (Absensi, Absensi Kelas, Buku Piket, Kehadiran Guru Piket, Jurnal Mengajar) WAJIB default KOSONG (`""`), bukan `"HADIR"` — baik di state awal React maupun fallback API (`?? ""`, bukan `?? "HADIR"`). Simpan/POST wajib validasi tidak ada yang masih kosong sebelum record ditulis (skip atau tolak). Ini keputusan eksplisit user (2026-08-08) setelah nemu bug nyata: default lama diam-diam bikin siswa/guru yg tidak dicek sama sekali kelihatan "Hadir" begitu wali kelas/Wakasek klik Simpan tanpa sadar.
 
 11. **`Major` adalah satu-satunya sumber daftar jurusan** — JANGAN hardcode daftar jurusan (nama/kode) di halaman publik manapun. Selalu `prisma.major.findMany()` langsung di setiap tempat yang menampilkan daftar jurusan (homepage `Programs.tsx`, `/programs`, `/programs/[slug]`, `about/page.tsx`, `Footer.tsx`, form SPMB `AdmissionsForm.tsx` via `/api/public/majors`). `src/data/programs.ts` HANYA dipakai sebagai fallback ikon/warna Tailwind untuk 5 jurusan awal (TKJ/AK/ATU/DKV/DPIB) — kalau admin menambah jurusan baru lewat `/dashboard/admin/majors`, jurusan itu otomatis muncul di semua tempat tanpa perlu ubah kode, SELAMA kodenya query live dari DB.
 

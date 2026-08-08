@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Boxes, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, AlertTriangle, XOctagon, Wrench } from "lucide-react";
+import { Boxes, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, AlertTriangle, XOctagon, Wrench, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -75,6 +75,7 @@ export default function InventarisManager() {
   const [damageRepairNotes, setDamageRepairNotes] = useState("");
   const [damageError, setDamageError] = useState("");
   const [savingDamage, setSavingDamage] = useState(false);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -155,24 +156,33 @@ export default function InventarisManager() {
   const berat = items.filter(i => i.condition === "RUSAK_BERAT").length;
   const belumDiperbaiki = reports.filter(r => r.status !== "SELESAI").length;
 
+  const q = search.toLowerCase();
+  const filteredItems = items.filter(i =>
+    !q || i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q) || (i.location ?? "").toLowerCase().includes(q)
+  );
+  const filteredReports = reports.filter(r =>
+    !q || r.asset.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) || (r.reportedBy ?? "").toLowerCase().includes(q)
+  );
+
   return (
     <div className="p-6 lg:p-8">
       <PageHeader
         icon={<Boxes size={22} />}
         title="Inventaris Barang"
         description="Data barang, perlengkapan & laporan kerusakan sekolah"
-        actions={
-          tab === "barang" ? (
-            <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Barang
-            </button>
-          ) : (
-            <button onClick={openAddDamage} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Lapor Kerusakan
-            </button>
-          )
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        {tab === "barang" ? (
+          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Tambah Barang
+          </button>
+        ) : (
+          <button onClick={openAddDamage} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Lapor Kerusakan
+          </button>
+        )}
+      </div>
 
       {!loading && tab === "barang" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -183,16 +193,24 @@ export default function InventarisManager() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5">
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
-            {t.label}
-            {t.key === "kerusakan" && belumDiperbaiki > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-red-500 text-white">{belumDiperbaiki}</span>
-            )}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+              {t.label}
+              {t.key === "kerusakan" && belumDiperbaiki > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-red-500 text-white">{belumDiperbaiki}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={tab === "barang" ? "Cari nama, kategori, atau lokasi..." : "Cari barang, deskripsi, atau pelapor..."}
+            className="input-field pl-9 text-sm" />
+        </div>
       </div>
 
       {loading ? (
@@ -201,6 +219,8 @@ export default function InventarisManager() {
         <>
           {items.length === 0 ? (
             <EmptyState icon={Boxes} title="Belum Ada Data Inventaris" description="Tambahkan barang/perlengkapan sekolah." />
+          ) : filteredItems.length === 0 ? (
+            <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada barang yang cocok dengan pencarian." />
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
@@ -213,7 +233,7 @@ export default function InventarisManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(item => (
+                    {filteredItems.map(item => (
                       <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                         <td className="px-5 py-3.5">
                           <p className="font-semibold text-primary-900">{item.name}</p>
@@ -247,6 +267,8 @@ export default function InventarisManager() {
       ) : (
         reports.length === 0 ? (
           <EmptyState icon={Wrench} title="Belum Ada Laporan Kerusakan" description="Laporkan barang yang rusak untuk dipantau perbaikannya." />
+        ) : filteredReports.length === 0 ? (
+          <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada laporan yang cocok dengan pencarian." />
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -259,7 +281,7 @@ export default function InventarisManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map(r => (
+                  {filteredReports.map(r => (
                     <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-primary-900">{r.asset.name}</p>
@@ -290,7 +312,7 @@ export default function InventarisManager() {
         )
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={editing ? "Ubah Barang" : "Tambah Barang"}
@@ -346,7 +368,7 @@ export default function InventarisManager() {
         </div>
       </Modal>
 
-      <Modal
+      <Modal scrollBody
         open={damageModal}
         onClose={() => setDamageModal(false)}
         title={editingDamage ? "Perbarui Status Perbaikan" : "Lapor Kerusakan"}

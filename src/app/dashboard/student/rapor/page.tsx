@@ -11,6 +11,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import { getOrCreateVerificationToken } from "@/lib/verification";
 import { generateQrDataUrl } from "@/lib/qrcode";
+import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 export const metadata = { title: "Rapor Nilai — Portal Siswa" };
 
@@ -24,7 +25,6 @@ export default async function RaporPage() {
       user: { select: { name: true, email: true } },
       class: { select: { name: true, grade: true } },
       major: { select: { name: true, code: true } },
-      grades: { orderBy: [{ semester: "asc" }, { subject: "asc" }] },
       attendance: { orderBy: { date: "asc" } },
     },
   });
@@ -36,8 +36,10 @@ export default async function RaporPage() {
     qrDataUrl = await generateQrDataUrl(`${baseUrl}/verify/${token}`);
   }
 
-  const grades = student?.grades ?? [];
-  const semesters = [...new Set(grades.map(g => g.semester))].sort();
+  // Nilai dihitung dari rata-rata skor Pengetahuan/Keterampilan yang guru mapel isi di Jurnal
+  // Mengajar tiap pertemuan — lihat komentar di src/lib/journal-grades.ts.
+  const aggregates = student ? await getJournalGradeAggregates({ studentIds: [student.id] }) : [];
+  const semesters = [...new Set(aggregates.map(g => g.semester))].sort();
 
   const approvals = student?.classId
     ? await prisma.raporApproval.findMany({ where: { classId: student.classId, semester: { in: semesters } }, select: { semester: true } })
@@ -45,22 +47,9 @@ export default async function RaporPage() {
   const approvedSemesters = new Set(approvals.map(a => a.semester));
 
   const gradesBySemester = semesters.map(sem => {
-    const sg = grades.filter(g => g.semester === sem);
-    const subjects = [...new Set(sg.map(g => g.subject))];
-    const bySubject = subjects.map(subject => {
-      const rows = sg.filter(g => g.subject === subject);
-      const getScore = (type: string) => rows.find(g => g.type === type)?.score ?? null;
-      const scores = ["Tugas", "Ulangan Harian", "UTS", "UAS"].map(t => getScore(t)).filter((s): s is number => s !== null);
-      const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-      return {
-        subject,
-        tugas: getScore("Tugas"),
-        uh: getScore("Ulangan Harian"),
-        uts: getScore("UTS"),
-        uas: getScore("UAS"),
-        avg,
-      };
-    });
+    const bySubject = aggregates.filter(g => g.semester === sem)
+      .sort((a, b) => a.subject.localeCompare(b.subject))
+      .map(g => ({ subject: g.subject, pengetahuan: g.avgPengetahuan, keterampilan: g.avgKeterampilan, avg: g.avg }));
     const semAvg = bySubject.filter(s => s.avg !== null).reduce((a, s) => a + (s.avg ?? 0), 0) / bySubject.filter(s => s.avg !== null).length;
     return { sem, bySubject, semAvg: isNaN(semAvg) ? null : semAvg };
   });
@@ -92,15 +81,14 @@ export default async function RaporPage() {
           icon={<FileText size={22} />}
           title="Rapor Nilai"
           description="Laporan hasil belajar & rekap kehadiran"
-          actions={
-            <>
-              <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-                <ArrowLeft size={18} />
-              </Link>
-              <PrintButton />
-            </>
-          }
         />
+      </div>
+
+      <div className="flex items-center gap-2 mb-5 print:hidden">
+        <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <PrintButton />
       </div>
 
       {/* Konten rapor — ikut print */}
@@ -146,22 +134,18 @@ export default async function RaporPage() {
                   <thead>
                     <tr className="bg-primary-900 text-white">
                       <th className="border border-primary-800 px-3 py-2.5 text-left font-medium">Mata Pelajaran</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-16">Tugas</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-16">UH</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-16">UTS</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-16">UAS</th>
+                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Pengetahuan</th>
+                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Keterampilan</th>
                       <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-20">Rata-rata</th>
                       <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Predikat</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bySubject.map(({ subject, tugas, uh, uts, uas, avg }, idx) => (
+                    {bySubject.map(({ subject, pengetahuan, keterampilan, avg }, idx) => (
                       <tr key={subject} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                         <td className="border border-gray-200 px-3 py-2 font-medium text-primary-900">{subject}</td>
-                        {scoreCell(tugas)}
-                        {scoreCell(uh)}
-                        {scoreCell(uts)}
-                        {scoreCell(uas)}
+                        {scoreCell(pengetahuan)}
+                        {scoreCell(keterampilan)}
                         <td className={`border border-gray-200 px-3 py-2 text-center font-bold ${avg !== null ? (avg >= 75 ? "text-emerald-700" : "text-red-600") : "text-gray-300"}`}>
                           {avg !== null ? avg.toFixed(1) : "—"}
                         </td>
@@ -173,7 +157,7 @@ export default async function RaporPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-gray-400 mt-1">KKM: 75 · UH = Ulangan Harian · UTS = Ujian Tengah Semester · UAS = Ujian Akhir Semester</p>
+              <p className="text-xs text-gray-400 mt-1">KKM: 75 · Nilai dihitung dari rata-rata Jurnal Mengajar tiap pertemuan sepanjang semester.</p>
               </>
               )}
             </div>

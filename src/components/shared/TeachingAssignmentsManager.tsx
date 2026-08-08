@@ -427,13 +427,14 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
         icon={<UserCog size={22} />}
         title="Penugasan Mengajar"
         description="Tentukan guru pengampu tiap mata pelajaran per kelas — dipakai sebagai dasar Generate Jadwal Otomatis"
-        actions={
-          <Link href={`${basePath}/print`}
-            className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-            <Printer size={16} /> Cetak Pembagian Tugas Mengajar
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href={`${basePath}/print`}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          <Printer size={16} /> Cetak Pembagian Tugas Mengajar
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 2xl:grid-cols-[1.6fr_1fr] gap-6 items-start">
         <div className="min-w-0">

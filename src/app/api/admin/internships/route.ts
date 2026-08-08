@@ -17,7 +17,10 @@ export async function GET() {
       orderBy: [{ class: { grade: "asc" } }, { user: { name: "asc" } }],
     });
     return Response.json(students);
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

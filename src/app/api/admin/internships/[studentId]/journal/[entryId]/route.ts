@@ -13,7 +13,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ studentI
       data: { teacherNote: body.teacherNote ?? null },
     });
     return Response.json(entry);
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
+    }
     return Response.json({ error: "Gagal menyimpan catatan" }, { status: 500 });
   }
 }

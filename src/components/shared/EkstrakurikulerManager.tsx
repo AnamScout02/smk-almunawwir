@@ -132,12 +132,12 @@ export default function EkstrakurikulerManager() {
           icon={<Flag size={22} />}
           title="Ekstrakurikuler"
           description="Data anggota ekstrakurikuler"
-          actions={
-            <button onClick={openAddCategory} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Ekstrakurikuler
-            </button>
-          }
         />
+        <div className="flex justify-end mb-5">
+          <button onClick={openAddCategory} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            <Plus size={15} /> Tambah Ekstrakurikuler
+          </button>
+        </div>
         <EmptyState icon={Flag} title="Belum Ada Ekstrakurikuler" description="Tambahkan ekstrakurikuler pertama (mis. OSIS, Pramuka, Futsal, PMR, dll)." />
         {categoryModalNode}
       </div>
@@ -152,17 +152,16 @@ export default function EkstrakurikulerManager() {
         icon={<Flag size={22} />}
         title="Ekstrakurikuler"
         description={activeEkskul ? `Anggota ${activeEkskul.name}` : "Data anggota ekstrakurikuler"}
-        actions={
-          <>
-            <button onClick={openAddCategory} className="inline-flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-white/10 transition whitespace-nowrap">
-              <Plus size={15} /> Tambah Ekstrakurikuler
-            </button>
-            <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Anggota
-            </button>
-          </>
-        }
       />
+
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <button onClick={openAddCategory} className="inline-flex items-center gap-2 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition whitespace-nowrap">
+          <Plus size={15} /> Tambah Ekstrakurikuler
+        </button>
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap sm:ml-auto">
+          <Plus size={15} /> Tambah Anggota
+        </button>
+      </div>
 
       {ekskulList.length > 0 && (
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 flex-wrap">

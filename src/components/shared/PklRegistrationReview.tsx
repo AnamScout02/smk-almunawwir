@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { FileCheck2, Loader2, CheckCircle2, XCircle, Clock, FileText, Settings, Plus, Trash2, Eye } from "lucide-react";
+import { FileCheck2, Loader2, CheckCircle2, XCircle, Clock, FileText, Settings, Plus, Trash2, Eye, Search } from "lucide-react";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -27,6 +27,7 @@ export default function PklRegistrationReview() {
   const confirmDialog = useConfirm();
   const [tab, setTab] = useState<"pendaftaran" | "syarat">("pendaftaran");
   const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [search, setSearch] = useState("");
   const [list, setList] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<Registration | null>(null);
@@ -104,22 +105,32 @@ export default function PklRegistrationReview() {
 
       {tab === "pendaftaran" ? (
         <>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             {["PENDING", "APPROVED", "REJECTED"].map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${statusFilter === s ? "bg-primary-800 text-white border-primary-800" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}>
                 {STATUS_META[s].label}
               </button>
             ))}
+            <div className="relative flex-1 min-w-48 ml-auto">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Cari nama atau NIS siswa..." className="input-field pl-9 text-sm" />
+            </div>
           </div>
-          {loading ? (
+          {(() => {
+            const filtered = list.filter(reg => {
+              const q = search.toLowerCase();
+              return !q || reg.student.user.name.toLowerCase().includes(q) || reg.student.nis.toLowerCase().includes(q);
+            });
+            return loading ? (
             <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
-          ) : list.length === 0 ? (
-            <EmptyState icon={FileCheck2} title="Tidak Ada Pendaftaran" description={`Belum ada pendaftaran PKL berstatus ${STATUS_META[statusFilter].label.toLowerCase()}.`} />
+          ) : filtered.length === 0 ? (
+            <EmptyState icon={FileCheck2} title="Tidak Ada Pendaftaran" description={search ? "Tidak ada yang cocok dengan pencarian." : `Belum ada pendaftaran PKL berstatus ${STATUS_META[statusFilter].label.toLowerCase()}.`} />
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="divide-y divide-gray-50">
-                {list.map(reg => (
+                {filtered.map(reg => (
                   <div key={reg.id} className="px-5 py-3.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-primary-900">{reg.student.user.name}</p>
@@ -133,7 +144,8 @@ export default function PklRegistrationReview() {
                 ))}
               </div>
             </div>
-          )}
+          );
+          })()}
         </>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-xl">

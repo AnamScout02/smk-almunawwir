@@ -111,19 +111,19 @@ export default function BukuMutasiPage() {
           icon={<Repeat size={22} />}
           title="Buku Mutasi Siswa"
           description="Rekap siswa masuk dan keluar per bulan"
-          actions={
-            <div className="flex items-center gap-3">
-              <Select className="w-auto" value={bulan} onChange={setBulan}
-                options={BULAN_LABEL.map((b, i) => ({ value: String(i + 1), label: b }))} />
-              <Select className="w-auto" value={tahunPelajaran} onChange={setTahunPelajaran}
-                options={tahunAjaranList.map(y => ({ value: y.name, label: `${y.name}${y.isActive ? " (Aktif)" : ""}` }))}
-                placeholder="Pilih tahun ajaran" />
-              <button onClick={() => window.print()} className="btn-gold flex items-center gap-2 text-sm">
-                <Printer size={15} /> Cetak
-              </button>
-            </div>
-          }
         />
+        {/* Filter & cetak di baris terpisah (bukan di actions PageHeader) — actions berbagi baris
+            dengan judul, jadi kalau diisi banyak elemen judulnya kepepet & wrap. */}
+        <div className="flex flex-wrap items-center gap-3 mb-5">
+          <Select className="w-auto" value={bulan} onChange={setBulan}
+            options={BULAN_LABEL.map((b, i) => ({ value: String(i + 1), label: b }))} />
+          <Select className="w-auto" value={tahunPelajaran} onChange={setTahunPelajaran}
+            options={tahunAjaranList.map(y => ({ value: y.name, label: `${y.name}${y.isActive ? " (Aktif)" : ""}` }))}
+            placeholder="Pilih tahun ajaran" />
+          <button onClick={() => window.print()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+            <Printer size={15} /> Cetak
+          </button>
+        </div>
       </div>
 
       {/* Summary */}

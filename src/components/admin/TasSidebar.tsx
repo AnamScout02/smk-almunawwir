@@ -6,9 +6,11 @@ import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Menu, X, Calendar, Bell, BarChart2, GraduationCap,
   UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, ShieldCheck, Award, Building2, ListChecks, Boxes,
-  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy,
+  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, IdCard,
+  ChevronDown, Search,
 } from "lucide-react";
-import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
 import NotificationBell from "@/components/shared/NotificationBell";
 
@@ -37,29 +39,51 @@ const menuGroups = [
     items: [
       { href: "/dashboard/admin/admissions", label: "Pendaftaran Siswa", icon: ClipboardList, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/classes", label: "Kelas", icon: School, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/jabatan", label: "Jabatan", icon: Award, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/program-kerja", label: "Program Kerja", icon: ListChecks, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Jadwal & Pengajaran",
+    items: [
+      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/rpp", label: "Bank RPP", icon: BookMarked, show: (_j: string[], full: boolean) => full },
+      { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Kedisiplinan & Kinerja",
+    items: [
       { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck,
         show: (j: string[]) => j.includes("Wakil Kepala Bidang Penjamin Mutu") || j.includes("Wakil Kepala Kurikulum") || j.includes("Guru Piket") },
       { href: "/dashboard/admin/kedisiplinan-leaderboard", label: "Kedisiplinan & Kinerja", icon: Trophy, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/kinerja-saya", label: "Kinerja Saya", icon: Award, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "PKL & Karir",
+    items: [
+      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Sarana & Layanan Siswa",
+    items: [
+      { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, show: (j: string[]) => j.includes("Kepala UKS") },
       { href: "/dashboard/admin/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag,
         show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
       { href: "/dashboard/admin/perpustakaan", label: "Perpustakaan", icon: Library,
         show: (j: string[]) => j.includes("Koordinator Perpustakaan") || j.includes("Tim Perpustakaan") },
+      { href: "/dashboard/admin/buku-saya", label: "Buku Saya", icon: BookOpen, badgeKey: "overdueBooks" as const, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/jaringan", label: "Jaringan Sekolah", icon: Network, show: (j: string[]) => j.includes("Pengelola Jaringan Sekolah") },
-      { href: "/dashboard/admin/classes", label: "Kelas", icon: School, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/rpp", label: "Bank RPP", icon: BookMarked, show: (_j: string[], full: boolean) => full },
-      { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
@@ -71,6 +95,7 @@ const menuGroups = [
       { href: "/dashboard/admin/persuratan",        label: "Persuratan",       icon: Mail, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/arsip",             label: "Pengarsipan",      icon: Archive, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/notulen-rapat",     label: "Notulen Rapat",    icon: NotebookPen, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/kartu-tanda",       label: "Kartu Tanda",      icon: IdCard, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/verifikasi-data",   label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const, show: (_j: string[], _full: boolean) => true },
     ],
   },
@@ -84,27 +109,31 @@ const menuGroups = [
   },
 ];
 
-interface TasSidebarProps {
-  logoEmblem?: string;
+interface RenderItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badgeKey?: "pendingProfileEdits" | "overdueBooks" }
+interface RenderGroup { label: string | null; items: RenderItem[] }
+
+interface SidebarContentProps {
+  logoEmblem: string;
   logoFullWhite?: string;
-  pendingProfileEdits?: number;
-  jabatanNames?: string[];
-  isFullTas?: boolean;
+  isFullTas: boolean;
+  search: string;
+  setSearch: (v: string) => void;
+  filteredGroups: RenderGroup[];
+  openGroups: Set<string>;
+  toggleGroup: (label: string) => void;
+  isActive: (href: string, exact?: boolean) => boolean;
+  pendingProfileEdits: number;
+  overdueBooks: number;
+  onLinkClick: () => void;
 }
 
-export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, jabatanNames = [], isFullTas = true }: TasSidebarProps) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  function isActive(href: string, exact = false) {
-    return exact ? pathname === href : pathname.startsWith(href);
-  }
-
-  const notifications = [
-    { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
-  ];
-
-  const SidebarContent = () => (
+// Komponen TERPISAH di luar TasSidebar (bukan didefinisikan ulang di dalam body tiap render) —
+// lihat komentar lengkap di AdminSidebar.tsx: kalau didefinisikan di dalam, React membongkar-pasang
+// ulang seluruh sidebar tiap ketikan di kotak pencarian, bikin input kehilangan fokus tiap huruf.
+function SidebarContent({
+  logoEmblem, logoFullWhite, isFullTas, search, setSearch, filteredGroups, openGroups, toggleGroup, isActive, pendingProfileEdits, overdueBooks, onLinkClick,
+}: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full">
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-2">
         {logoFullWhite ? (
@@ -123,27 +152,51 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
         )}
       </div>
 
-      <nav className="flex-1 px-3 py-4 overflow-y-auto sidebar-scroll space-y-4">
-        {menuGroups.map((group) => {
-          const visibleItems = group.items.filter(item => item.show(jabatanNames, isFullTas));
-          if (visibleItems.length === 0) return null;
+      {/* Cari menu — filter cepat lintas grup */}
+      <div className="px-3 pt-3">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari menu..."
+            className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-gold/50 focus:bg-white/10 transition-colors"
+          />
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 py-3 overflow-y-auto sidebar-scroll space-y-1">
+        {filteredGroups.length === 0 && (
+          <p className="px-3 py-6 text-center text-xs text-white/30">Tidak ada menu yang cocok.</p>
+        )}
+        {filteredGroups.map((group) => {
+          const isRoot = group.label === null;
+          const isOpen = isRoot || !!search.trim() || openGroups.has(group.label!);
           return (
-          <div key={group.label ?? "__root__"}>
+          <div key={group.label ?? "__root__"} className={isRoot ? "" : "pt-2"}>
             {group.label && (
-              <p className="px-3 mb-1 text-[10px] font-bold tracking-widest text-white/30 uppercase">{group.label}</p>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label!)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/30 hover:text-white/60 uppercase transition-colors"
+              >
+                <span>{group.label}</span>
+                <ChevronDown size={12} className={`shrink-0 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
+              </button>
             )}
+            {isOpen && (
             <div className="space-y-0.5">
-              {visibleItems.map((item) => {
+              {group.items.map((item) => {
                 // Guru-TU (bukan TAS penuh) pakai profil guru asli (akun & password sama, halaman
                 // /dashboard/admin/profile khusus role ADMIN/TAS) supaya link tidak 500/redirect.
                 const href = item.href === "/dashboard/admin/profile" && !isFullTas ? "/dashboard/teacher/profile" : item.href;
-                const active = isActive(href, "exact" in item ? item.exact : false);
-                const badgeCount = "badgeKey" in item && item.badgeKey === "pendingProfileEdits" ? pendingProfileEdits : 0;
+                const active = isActive(href, item.exact);
+                const badgeCount = item.badgeKey === "pendingProfileEdits" ? pendingProfileEdits : item.badgeKey === "overdueBooks" ? overdueBooks : 0;
                 return (
                   <Link
                     key={item.href}
                     href={href}
-                    onClick={() => setOpen(false)}
+                    onClick={onLinkClick}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? "bg-gold text-primary-900 shadow-sm"
@@ -161,6 +214,7 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
                 );
               })}
             </div>
+            )}
           </div>
           );
         })}
@@ -195,6 +249,77 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
       </div>
     </div>
   );
+}
+
+interface TasSidebarProps {
+  logoEmblem?: string;
+  logoFullWhite?: string;
+  pendingProfileEdits?: number;
+  overdueBooks?: number;
+  jabatanNames?: string[];
+  isFullTas?: boolean;
+}
+
+const OPEN_GROUPS_KEY = "tas-sidebar-open-groups";
+
+export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true }: TasSidebarProps) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+
+  function isActive(href: string, exact = false) {
+    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
+  }
+
+  // Grup yang benar2 punya item terlihat (sesuai jabatan) DAN cocok dengan pencarian.
+  const visibleGroups = menuGroups
+    .map(g => ({ ...g, items: g.items.filter(item => item.show(jabatanNames, isFullTas)) }))
+    .filter(g => g.items.length > 0) as RenderGroup[];
+
+  function activeGroupLabel(): string | null {
+    for (const g of visibleGroups) {
+      if (!g.label) continue;
+      if (g.items.some(item => isActive(item.href, !!item.exact))) return g.label;
+    }
+    return null;
+  }
+
+  // Accordion satu-per-satu (lihat komentar lengkap di AdminSidebar.tsx) — buka grup lain otomatis
+  // menutup yang sedang terbuka.
+  useEffect(() => {
+    const active = activeGroupLabel();
+    if (active) { setOpenGroups(new Set([active])); return; }
+    let saved: string[] = [];
+    try { saved = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) ?? "[]"); } catch {}
+    setOpenGroups(new Set(saved.slice(0, 1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const active = activeGroupLabel();
+    if (!active) return;
+    setOpenGroups(new Set([active]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  function toggleGroup(label: string) {
+    setOpenGroups(prev => {
+      const next = prev.has(label) ? new Set<string>() : new Set([label]);
+      localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  const q = search.trim().toLowerCase();
+  const filteredGroups = visibleGroups
+    .map(g => ({ ...g, items: q ? g.items.filter(i => i.label.toLowerCase().includes(q)) : g.items }))
+    .filter(g => g.items.length > 0);
+
+  const notifications = [
+    { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
+    { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
+  ];
 
   return (
     <>
@@ -202,7 +327,12 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
-        <SidebarContent />
+        <SidebarContent
+          logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} isFullTas={isFullTas}
+          search={search} setSearch={setSearch}
+          filteredGroups={filteredGroups} openGroups={openGroups} toggleGroup={toggleGroup}
+          isActive={isActive} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} onLinkClick={() => setOpen(false)}
+        />
       </aside>
 
       <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
@@ -234,7 +364,12 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
             <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white">
               <X size={20} />
             </button>
-            <SidebarContent />
+            <SidebarContent
+              logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} isFullTas={isFullTas}
+              search={search} setSearch={setSearch}
+              filteredGroups={filteredGroups} openGroups={openGroups} toggleGroup={toggleGroup}
+              isActive={isActive} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} onLinkClick={() => setOpen(false)}
+            />
           </aside>
         </div>
       )}

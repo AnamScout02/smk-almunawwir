@@ -46,19 +46,20 @@ export default function AdminMessagesPage() {
         icon={<MessageSquare size={22} />}
         title="Pesan Masuk"
         description={unread > 0 ? `${unread} pesan belum dibaca` : "Semua pesan sudah dibaca"}
-        actions={
-          unread > 0 ? (
-            <button
-              onClick={async () => {
-                await fetch("/api/admin/messages", { method: "PATCH" });
-                load();
-              }}
-              className="inline-flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-              <CheckCheck size={15} /> Tandai Semua Dibaca
-            </button>
-          ) : undefined
-        }
       />
+
+      {unread > 0 && (
+        <div className="flex justify-end mb-5">
+          <button
+            onClick={async () => {
+              await fetch("/api/admin/messages", { method: "PATCH" });
+              load();
+            }}
+            className="inline-flex items-center gap-2 border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            <CheckCheck size={15} /> Tandai Semua Dibaca
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>

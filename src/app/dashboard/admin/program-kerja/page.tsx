@@ -99,16 +99,15 @@ export default function ProgramKerjaAdminPage() {
         icon={<ListChecks size={22} />}
         title="Program Kerja"
         description="Program kerja seluruh jabatan struktural — guru & staf"
-        actions={
-          <div className="flex items-center gap-3">
-            <Select className="w-56" value={filterJabatan} onChange={setFilterJabatan}
-              options={[{ value: "", label: "Semua Jabatan" }, ...jabatanList.map(j => ({ value: j.id, label: j.name }))]} />
-            <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Program
-            </button>
-          </div>
-        }
       />
+
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <Select className="w-56" value={filterJabatan} onChange={setFilterJabatan}
+          options={[{ value: "", label: "Semua Jabatan" }, ...jabatanList.map(j => ({ value: j.id, label: j.name }))]} />
+        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap sm:ml-auto">
+          <Plus size={15} /> Tambah Program
+        </button>
+      </div>
 
       {!loading && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -169,7 +168,7 @@ export default function ProgramKerjaAdminPage() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={editing ? "Ubah Program Kerja" : "Tambah Program Kerja"}

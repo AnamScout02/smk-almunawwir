@@ -39,12 +39,13 @@ export default function AbsensiPage() {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetch(`/api/teacher/students?classId=${classId}`).then(r => r.json()),
-      fetch("/api/teacher/classes").then(r => r.json()),
+      fetch("/api/teacher/classes?scope=homeroom").then(r => r.json()),
       // Muat absensi yang SUDAH tersimpan untuk tanggal ini — tanpa ini status lama (mis. ALPHA)
       // tidak pernah kelihatan saat halaman dibuka ulang, dan tombol Simpan bisa menimpa data lama
       // jadi HADIR semua tanpa sengaja.
@@ -52,8 +53,11 @@ export default function AbsensiPage() {
     ]).then(([students, classes, existing]) => {
       if (Array.isArray(students)) {
         setStudents(students);
+        // JANGAN pre-fill "HADIR" — biarkan kosong (belum dipilih) sampai guru benar2 klik salah
+        // satu status per siswa (atau pakai "Tandai Semua Hadir" scr sengaja). Kalau di-pre-fill,
+        // guru yang klik Simpan tanpa mengecek satu-satu bakal nyimpen semua siswa HADIR walau
+        // ada yg sebenarnya alpha/izin/sakit — data absensi jadi tidak bisa dipercaya.
         const init: Record<string, AttendanceStatus> = {};
-        students.forEach((s: Student) => { init[s.id] = "HADIR"; });
         if (Array.isArray(existing)) {
           existing.forEach((r: { studentId: string; status: AttendanceStatus }) => { init[r.studentId] = r.status; });
         }
@@ -79,8 +83,14 @@ export default function AbsensiPage() {
   }
 
   async function handleSave() {
+    const missing = students.filter(s => !attendance[s.id]);
+    if (missing.length > 0) {
+      setSaveError(`${missing.length} siswa belum diisi statusnya: ${missing.slice(0, 3).map(s => s.user.name).join(", ")}${missing.length > 3 ? ", dst." : ""}`);
+      return;
+    }
+    setSaveError("");
     startTransition(async () => {
-      const records = students.map(s => ({ studentId: s.id, date, status: attendance[s.id] ?? "HADIR" }));
+      const records = students.map(s => ({ studentId: s.id, date, status: attendance[s.id] }));
       const res = await fetch("/api/teacher/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,12 +111,13 @@ export default function AbsensiPage() {
         icon={<CheckSquare size={22} />}
         title="Input Absensi"
         description={cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
-        actions={
-          <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-            <ArrowLeft size={18} />
-          </Link>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {/* Tanggal + summary */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -114,12 +125,17 @@ export default function AbsensiPage() {
           <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
           <DatePicker value={date} onChange={setDate} />
         </div>
-        <div className="flex gap-3 text-sm">
+        <div className="flex gap-3 text-sm flex-wrap">
           {summary.map(s => (
             <div key={s.label} className={`px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_COLOR[s.label as AttendanceStatus]}`}>
               {s.label}: {s.count}
             </div>
           ))}
+          {students.length - Object.keys(attendance).length > 0 && (
+            <div className="px-3 py-1 rounded-full border text-xs font-semibold bg-gray-50 text-gray-400 border-gray-200">
+              Belum Diisi: {students.length - Object.keys(attendance).length}
+            </div>
+          )}
         </div>
       </div>
 
@@ -165,6 +181,7 @@ export default function AbsensiPage() {
       </div>
 
       <div className="flex items-center justify-end gap-4">
+        {saveError && <p className="text-red-600 text-sm font-semibold">{saveError}</p>}
         {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absensi berhasil disimpan!</p>}
         <button onClick={handleSave} disabled={isPending} className="btn-gold flex items-center gap-2 text-sm">
           <Save size={16} /> {isPending ? "Menyimpan..." : "Simpan Absensi"}

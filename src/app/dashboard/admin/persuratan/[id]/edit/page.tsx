@@ -133,20 +133,19 @@ export default function SuratKeluarEditPage() {
         icon={<Mail size={22} />}
         title={isNew ? "Tulis Surat Keluar" : "Edit Surat Keluar"}
         description="Isi langsung di lembar kerja di bawah — tampilannya mengikuti surat yang akan dicetak"
-        actions={
-          <div className="flex items-center gap-2">
-            {!isNew && (
-              <Link href={`/dashboard/admin/persuratan/${id}/edit-word`}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 transition">
-                <FileType2 size={13} /> Buka di Editor Word <span className="text-gold">(Beta)</span>
-              </Link>
-            )}
-            <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-          </div>
-        }
       />
+
+      <div className="flex items-center gap-2 mb-5">
+        {!isNew && (
+          <Link href={`/dashboard/admin/persuratan/${id}/edit-word`}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+            <FileType2 size={13} /> Buka di Editor Word <span className="text-primary-600">(Beta)</span>
+          </Link>
+        )}
+        <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
+          <ArrowLeft size={18} />
+        </Link>
+      </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
 

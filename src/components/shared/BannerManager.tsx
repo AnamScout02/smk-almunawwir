@@ -73,12 +73,13 @@ export default function BannerManager() {
         icon={<ImageIcon size={22} />}
         title="Banner / Hero"
         description="Kelola foto dan teks yang tampil di halaman utama website"
-        actions={
-          <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-            <Plus size={18} /> Tambah Banner
-          </button>
-        }
       />
+
+      <div className="flex justify-end mb-5">
+        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
+          <Plus size={18} /> Tambah Banner
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
@@ -126,7 +127,7 @@ export default function BannerManager() {
       )}
 
       {/* Modal Form */}
-      <Modal
+      <Modal scrollBody
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? "Edit Banner" : "Tambah Banner Baru"}

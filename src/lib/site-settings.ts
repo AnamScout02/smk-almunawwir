@@ -122,3 +122,16 @@ export async function getSettings(keys?: string[]): Promise<Record<string, strin
   }
   return result;
 }
+
+/** Nama pejabat yang di-highlight di "school.structure" (default: Kepala Sekolah) — dipakai
+ * sbg penanda tangan dokumen resmi. Duplikat kecil dari helper yang sudah ada di beberapa
+ * halaman cetak (persuratan, notulen-rapat, dll — lihat masing2 kalau perlu diseragamkan),
+ * disalin ke sini supaya konsumen baru (mis. Kartu Tanda) tidak perlu re-implement parsing-nya. */
+export function getPrincipalName(structureJson: string): string {
+  try {
+    const parsed = JSON.parse(structureJson || "[]") as { role: string; name: string; highlight?: boolean }[];
+    return parsed.find(r => r.highlight)?.name ?? parsed[0]?.name ?? "";
+  } catch {
+    return "";
+  }
+}

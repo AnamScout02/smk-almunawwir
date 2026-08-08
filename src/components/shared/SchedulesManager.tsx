@@ -424,45 +424,47 @@ export default function SchedulesManager({
         icon={<Calendar size={22} />}
         title="Jadwal Pelajaran"
         description={`${schedules.length} jam pelajaran terjadwal`}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {showPrintLinks && (
-              <>
-                <Link href="/dashboard/admin/schedules/nonblok"
-                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                  <CalendarDays size={16} /> Jadwal Non-Blok
-                </Link>
-                <Link href="/dashboard/admin/schedules/print?week=A"
-                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                  <Printer size={16} /> Cetak Tabel Gabungan
-                </Link>
-                <Link href={selectedClass ? `/dashboard/admin/schedules/print-class?classId=${selectedClass}&week=${defaultWeek}` : "/dashboard/admin/schedules/print-class"}
-                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                  <Printer size={16} /> Cetak per Kelas
-                </Link>
-              </>
-            )}
-            <button
-              disabled={scheduleLocked}
-              onClick={() => { setShowGenerate(true); setGenerateReport(null); }}
-              title={scheduleLocked ? "Jadwal dikunci — buka kunci dulu untuk generate" : ""}
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-              <Wand2 size={16} /> Generate Otomatis
-            </button>
-            <button onClick={toggleLock} disabled={togglingLock}
-              title={scheduleLocked ? "Buka kunci jadwal" : "Kunci jadwal supaya tidak bisa digenerate ulang"}
-              className={`flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border transition disabled:opacity-60 ${
-                scheduleLocked ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" : "border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}>
-              {togglingLock ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
-              {scheduleLocked ? "Terkunci" : "Kunci Jadwal"}
-            </button>
-            <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm">
-              <Plus size={18} /> Tambah Jadwal
-            </button>
-          </div>
-        }
       />
+
+      {/* Tombol-tombol di baris TERPISAH di bawah header (bukan di actions PageHeader) — actions
+          berbagi baris dengan judul, jadi kalau diisi banyak tombol judul & deskripsinya kepepet
+          bahkan bisa tertimpa (persis laporan user: teks "jam pelajaran terjadwal" ketiban tombol). */}
+      <div className="flex flex-wrap gap-2 mb-5">
+        {showPrintLinks && (
+          <>
+            <Link href="/dashboard/admin/schedules/nonblok"
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              <CalendarDays size={16} /> Jadwal Non-Blok
+            </Link>
+            <Link href="/dashboard/admin/schedules/print?week=A"
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              <Printer size={16} /> Cetak Tabel Gabungan
+            </Link>
+            <Link href={selectedClass ? `/dashboard/admin/schedules/print-class?classId=${selectedClass}&week=${defaultWeek}` : "/dashboard/admin/schedules/print-class"}
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              <Printer size={16} /> Cetak per Kelas
+            </Link>
+          </>
+        )}
+        <button
+          disabled={scheduleLocked}
+          onClick={() => { setShowGenerate(true); setGenerateReport(null); }}
+          title={scheduleLocked ? "Jadwal dikunci — buka kunci dulu untuk generate" : ""}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition disabled:opacity-40 disabled:cursor-not-allowed">
+          <Wand2 size={16} /> Generate Otomatis
+        </button>
+        <button onClick={toggleLock} disabled={togglingLock}
+          title={scheduleLocked ? "Buka kunci jadwal" : "Kunci jadwal supaya tidak bisa digenerate ulang"}
+          className={`flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border transition disabled:opacity-60 ${
+            scheduleLocked ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" : "border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100"
+          }`}>
+          {togglingLock ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+          {scheduleLocked ? "Terkunci" : "Kunci Jadwal"}
+        </button>
+        <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+          <Plus size={18} /> Tambah Jadwal
+        </button>
+      </div>
 
       {scheduleLocked && (
         <Alert variant="warning">
@@ -546,7 +548,7 @@ export default function SchedulesManager({
       )}
 
       {/* Modal Form */}
-      <Modal
+      <Modal scrollBody
         open={showForm}
         onClose={() => setShowForm(false)}
         title={<span className="flex items-center gap-2"><Calendar size={18} /> {editing ? "Edit Jadwal" : "Tambah Jadwal"}</span>}

@@ -115,29 +115,33 @@ export default async function AdminDashboard() {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
         <div className="relative px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={14} className="text-gold" />
-              <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
-            </div>
             <h1 className="font-heading text-2xl font-bold text-white">Dashboard Administrator</h1>
             <p className="text-white/50 text-sm mt-0.5">
               Selamat datang, <span className="text-white/80 font-medium">{session.name}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {messageUnread > 0 && (
-              <Link href="/dashboard/admin/messages"
-                className="relative flex items-center gap-2 bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-red-500/30 transition-colors">
-                <Mail size={14} />
-                {messageUnread} pesan baru
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-              </Link>
-            )}
-            <Link href="/dashboard/admin/admissions"
-              className="flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gold/30 transition-colors">
-              <ClipboardList size={14} />
-              {admissionPending} menunggu
-            </Link>
+          <div className="flex flex-col sm:items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-gold" />
+              <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {messageUnread > 0 && (
+                <Link href="/dashboard/admin/messages"
+                  className="relative flex items-center gap-2 bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-red-500/30 transition-colors">
+                  <Mail size={14} />
+                  {messageUnread} pesan baru
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                </Link>
+              )}
+              {admissionPending > 0 && (
+                <Link href="/dashboard/admin/admissions"
+                  className="flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gold/30 transition-colors">
+                  <ClipboardList size={14} />
+                  {admissionPending} menunggu
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>

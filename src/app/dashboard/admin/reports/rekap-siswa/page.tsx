@@ -124,15 +124,14 @@ export default async function RekapSiswaPage() {
           icon={<BarChart3 size={22} />}
           title="Rekapitulasi Jumlah Siswa"
           description="Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — hanya siswa berstatus Aktif"
-          actions={
-            <>
-              <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-                <ArrowLeft size={18} />
-              </Link>
-              <PrintButton />
-            </>
-          }
         />
+      </div>
+
+      <div className="flex items-center gap-2 mb-5 print:hidden">
+        <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <PrintButton />
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none">

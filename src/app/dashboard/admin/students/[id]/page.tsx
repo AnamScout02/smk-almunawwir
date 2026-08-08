@@ -56,22 +56,21 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         icon={<UserCircle size={22} />}
         title={student.user.name}
         description="Detail siswa"
-        actions={
-          <>
-            <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-            <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors whitespace-nowrap">
-              <Printer size={14} /> Lihat Buku Induk
-            </Link>
-            <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
-              <Pencil size={14} /> Edit Biodata
-            </Link>
-          </>
-        }
       />
+
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-50 border border-primary-100 hover:bg-primary-100 text-primary-700 rounded-xl font-semibold transition-colors whitespace-nowrap">
+          <Printer size={14} /> Lihat Buku Induk
+        </Link>
+        <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
+          <Pencil size={14} /> Edit Biodata
+        </Link>
+      </div>
 
       {/* Info profil */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">

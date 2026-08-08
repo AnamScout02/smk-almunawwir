@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { UserCheck, Loader2, Edit2 } from "lucide-react";
+import { UserCheck, Loader2, Edit2, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -43,6 +43,7 @@ export default function TracerStudyManager() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   function load() {
     setLoading(true);
@@ -77,6 +78,11 @@ export default function TracerStudyManager() {
   }
 
   const withData = items.filter(i => i.alumniTracer).length;
+  const q = search.toLowerCase();
+  const filteredItems = items.filter(i =>
+    !q || i.user.name.toLowerCase().includes(q) || i.nis.toLowerCase().includes(q) ||
+    i.major.name.toLowerCase().includes(q) || (i.alumniTracer?.institutionName ?? "").toLowerCase().includes(q)
+  );
 
   return (
     <div className="p-6 lg:p-8">
@@ -86,10 +92,20 @@ export default function TracerStudyManager() {
         description={`Pelacakan lulusan — ${withData}/${items.length} sudah disurvei`}
       />
 
+      {!loading && items.length > 0 && (
+        <div className="relative max-w-sm mb-5">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama, NIS, jurusan, atau institusi..." className="input-field pl-9 text-sm" />
+        </div>
+      )}
+
       {loading ? (
         <PageSkeleton />
       ) : items.length === 0 ? (
         <EmptyState icon={UserCheck} title="Belum Ada Alumni" description="Belum ada siswa berstatus Lulus." />
+      ) : filteredItems.length === 0 ? (
+        <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada alumni yang cocok dengan pencarian." />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -102,7 +118,7 @@ export default function TracerStudyManager() {
                 </tr>
               </thead>
               <tbody>
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                     <td className="px-5 py-3.5">
                       <p className="font-semibold text-primary-900">{item.user.name}</p>
@@ -133,7 +149,7 @@ export default function TracerStudyManager() {
         </div>
       )}
 
-      <Modal
+      <Modal scrollBody
         open={modal}
         onClose={() => setModal(false)}
         title={editing ? `Data Tracer — ${editing.user.name}` : "Data Tracer"}

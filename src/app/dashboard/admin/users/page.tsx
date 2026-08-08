@@ -135,18 +135,17 @@ export default function UsersPage() {
         icon={<UserCog size={22} />}
         title="Akun Pengguna"
         description="Kelola akun login admin, guru, dan siswa"
-        actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href="/dashboard/admin/users/cetak-akun"
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition whitespace-nowrap">
-              <Printer size={15} /> Cetak Akun Guru &amp; Pegawai
-            </Link>
-            <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-              <Plus size={16} /> Tambah Akun
-            </button>
-          </div>
-        }
       />
+
+      <div className="flex items-center gap-2 flex-wrap mb-5">
+        <Link href="/dashboard/admin/users/cetak-akun"
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
+          <Printer size={15} /> Cetak Akun Guru &amp; Pegawai
+        </Link>
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+          <Plus size={16} /> Tambah Akun
+        </button>
+      </div>
 
       {/* Cari */}
       <div className="relative mb-5">
@@ -372,7 +371,7 @@ function UserTable({ items, onEdit, onDelete, onManageJabatan }: {
                   {onManageJabatan && (
                     <button onClick={() => onManageJabatan(u)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition" title="Kelola Jabatan"><Award size={15} /></button>
                   )}
-                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition"><Edit2 size={15} /></button>
+                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"><Edit2 size={15} /></button>
                   <button onClick={() => onDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
                 </div>
               </td>

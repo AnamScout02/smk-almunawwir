@@ -58,31 +58,31 @@ export default function TabelBukuIndukGuruPage() {
         icon={<Table2 size={22} />}
         title="Tabel Lengkap Buku Induk Guru"
         description="Semua data dalam satu tabel — bisa difilter per status atau wali kelas, diurutkan berdasarkan NIP"
-        actions={
-          <>
-            <Link href="/dashboard/admin/buku-induk/guru" className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition">
-              <ArrowLeft size={18} />
-            </Link>
-            <Select className="sm:w-44" value={statusFilter} onChange={setStatusFilter}
-              options={[
-                { value: "ALL", label: "Semua Status" },
-                { value: "AKTIF", label: "Aktif" },
-                { value: "PENSIUN", label: "Pensiun" },
-                { value: "KELUAR", label: "Keluar" },
-              ]} />
-            <Select className="sm:w-44" value={waliFilter} onChange={setWaliFilter}
-              options={[
-                { value: "ALL", label: "Semua Guru" },
-                { value: "WALI", label: "Wali Kelas" },
-                { value: "BUKAN", label: "Bukan Wali Kelas" },
-              ]} />
-            <a href={exportHref}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-              <Download size={15} /> Export Excel
-            </a>
-          </>
-        }
       />
+
+      {/* Aksi & filter di baris terpisah (bukan di actions PageHeader) — header cukup ikon+judul+keterangan saja. */}
+      <div className="flex flex-wrap items-center gap-2.5 mb-5">
+        <Link href="/dashboard/admin/buku-induk/guru" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <Select className="sm:w-44" value={statusFilter} onChange={setStatusFilter}
+          options={[
+            { value: "ALL", label: "Semua Status" },
+            { value: "AKTIF", label: "Aktif" },
+            { value: "PENSIUN", label: "Pensiun" },
+            { value: "KELUAR", label: "Keluar" },
+          ]} />
+        <Select className="sm:w-44" value={waliFilter} onChange={setWaliFilter}
+          options={[
+            { value: "ALL", label: "Semua Guru" },
+            { value: "WALI", label: "Wali Kelas" },
+            { value: "BUKAN", label: "Bukan Wali Kelas" },
+          ]} />
+        <a href={exportHref}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap sm:ml-auto">
+          <Download size={15} /> Export Excel
+        </a>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
