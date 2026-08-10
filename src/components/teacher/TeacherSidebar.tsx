@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Menu, X, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
@@ -155,6 +155,12 @@ export default function TeacherSidebar({
     // Read-only lintas kelas (bukan cuma kelas wali) — Kesiswaan/BK butuh pantau kehadiran siswa
     // sekolah utk keperluan pembinaan/konseling. Input absensi resmi tetap khusus wali kelas.
     { href: "/dashboard/teacher/kesiswaan/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare, show: isWakasekKesiswaan || isGuruBk },
+    // Poin Siswa (Tata Tertib) — akses PENUH khusus Wakasek Kesiswaan & Guru BK. Guru Piket
+    // (siapa pun terjadwal piket HARI INI, bukan jabatan tetap) dapat menu terbatas terpisah di
+    // bawah, cuma boleh catat Terlambat & seragam/atribut (lihat kesiswaan-guard.ts).
+    { href: "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin Siswa", icon: ShieldAlert, show: isWakasekKesiswaan || isGuruBk },
+    { href: "/dashboard/teacher/piket/poin-siswa", label: "Catat Poin Siswa (Piket)", icon: ShieldAlert, show: isGuruPiketOnDutyToday && !isWakasekKesiswaan && !isGuruBk },
+    { href: "/dashboard/teacher/tata-tertib", label: "Tata Tertib Peserta Didik", icon: BookOpenCheck, show: true },
     { href: "/dashboard/teacher/bkk", label: "Dashboard BKK", icon: UserCheck, show: isKoordinatorBkk },
     { href: "/dashboard/teacher/branding", label: "Dashboard Branding & Publikasi", icon: Megaphone, show: isKoordinatorBranding },
     { href: "/dashboard/teacher/operator", label: "Dashboard Operator Sekolah", icon: Database, show: isOperatorSekolah },

@@ -5,6 +5,21 @@ import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
+/** Cek murni: apakah user ini terjadwal piket HARI INI di Jadwal Piket (DutyRoster)? Dipakai
+ * bareng oleh assertKedisiplinan di bawah & guard input Poin Siswa (kesiswaan-guard.ts) —
+ * keduanya sama-sama "guru piket boleh akses fitur ini kalau memang lagi piket hari ini". */
+export async function isOnDutyToday(email: string): Promise<boolean> {
+  const user = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+  if (!user) return false;
+  const today = new Date();
+  const day = DAYS[today.getDay()];
+  const weekType = await getWeekTypeForDate(today);
+  const duty = await prisma.dutyRoster.findFirst({
+    where: { userId: user.id, day, OR: [{ weekType: "SEMUA" }, { weekType }] },
+  });
+  return !!duty;
+}
+
 // Wakil Kepala Bidang Penjamin Mutu & Wakil Kepala Kurikulum selalu boleh akses Kedisiplinan
 // Guru. Guru/staff LAIN boleh akses HANYA kalau memang terjadwal piket HARI INI di Jadwal Piket
 // (DutyRoster) — TIDAK perlu jabatan formal "Guru Piket" tersendiri, karena piket di sekolah ini
@@ -23,18 +38,7 @@ export async function assertKedisiplinan(session: { role: string; email: string 
     // Bukan salah satu jabatan di atas — lanjut cek apakah terjadwal piket hari ini.
   }
 
-  // Cek lewat User.id langsung (bukan Teacher.userId) — DutyRoster boleh diisi guru MAUPUN
-  // staf TAS (lihat duty-roster/route.ts), jadi lookup-nya tidak boleh cuma lewat tabel Teacher.
-  const user = await prisma.user.findFirst({ where: { email: session.email }, select: { id: true } });
-  if (!user) throw new Error("FORBIDDEN");
-
-  const today = new Date();
-  const day = DAYS[today.getDay()];
-  const weekType = await getWeekTypeForDate(today);
-  const duty = await prisma.dutyRoster.findFirst({
-    where: { userId: user.id, day, OR: [{ weekType: "SEMUA" }, { weekType }] },
-  });
-  if (!duty) throw new Error("FORBIDDEN");
+  if (!(await isOnDutyToday(session.email))) throw new Error("FORBIDDEN");
 }
 
 // Khusus untuk MENGATUR Jadwal Piket itu sendiri (DutyRoster) — TIDAK pakai gating "harus piket

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Menu, X, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy } from "lucide-react";
+import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Menu, X, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck } from "lucide-react";
 import { useState } from "react";
 import { logout } from "@/app/actions/auth";
 
@@ -22,6 +22,8 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     { href: "/dashboard/student", label: "Dashboard", icon: LayoutDashboard, exact: true, show: true },
     { href: "/dashboard/student/absensi-kelas", label: "Absensi Kelas", icon: CheckSquare, show: isKelasAdmin },
     { href: "/dashboard/student/rapor", label: "Rapor Nilai", icon: Printer, show: true },
+    { href: "/dashboard/student/poin-saya", label: "Poin Saya", icon: ShieldAlert, show: true },
+    { href: "/dashboard/student/tata-tertib", label: "Tata Tertib Peserta Didik", icon: BookOpenCheck, show: true },
     { href: "/dashboard/student/pkl", label: "PKL Saya", icon: Briefcase, show: true },
     { href: "/dashboard/student/materials", label: "Materi & Tugas", icon: BookOpen, show: true },
     { href: "/dashboard/student/buku-saya", label: "Buku Saya", icon: BookOpen, badge: overdueBooks, show: true },

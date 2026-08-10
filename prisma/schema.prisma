@@ -565,6 +565,59 @@ model Student {
   quizAttempts   QuizAttempt[]
   examAttempts   ExamAttempt[]
   pklRegistration PklRegistration?
+  pointRecords   StudentPointRecord[]
+}
+
+// ── Poin Pelanggaran & Prestasi Siswa (Tata Tertib Peserta Didik) ─────────────────────────
+// Dasar: SK Tata Tertib Peserta Didik SMK Al Munawwir IIBS TP 2026/2027 (request BK
+// 2026-08-10). Daftar jenis pelanggaran/prestasi BISA DIEDIT admin/Kesiswaan/BK (bukan
+// hardcode) — pola sama dgn KpiIndicator. pointsMin=pointsMax utk poin tetap; beda utk
+// kategori yg rentang (mis. Kenakalan & Kriminalitas 50-100, poin no.26 Prestasi 10-100) —
+// pencatat pilih angka pastinya sendiri saat input, dalam rentang itu.
+model StudentViolationType {
+  id           String   @id @default(cuid())
+  category     String   // Kehadiran | Penampilan | Kebersihan, Kerapihan dan Ketertiban | Kenakalan dan Kriminalitas
+  name         String
+  pointsMin    Int
+  pointsMax    Int
+  // Cuma 2 jenis pelanggaran yg boleh diinput Guru Piket biasa (bukan BK/Kesiswaan) — sesuai
+  // permintaan eksplisit: Terlambat & seragam/atribut tidak sesuai ketentuan. Selain itu HANYA
+  // BK & Wakasek Kesiswaan (lihat assertKesiswaanOrBk, src/lib/kesiswaan-guard.ts).
+  piketAllowed Boolean  @default(false)
+  order        Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  records      StudentPointRecord[]
+}
+
+model StudentAchievementType {
+  id        String   @id @default(cuid())
+  name      String
+  pointsMin Int
+  pointsMax Int
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  records   StudentPointRecord[]
+}
+
+// Satu baris = satu kejadian (pelanggaran ATAU prestasi) yg dicatat utk satu siswa.
+model StudentPointRecord {
+  id                String    @id @default(cuid())
+  studentId         String
+  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind              String    // PELANGGARAN | PRESTASI
+  violationTypeId   String?
+  violationType     StudentViolationType?   @relation(fields: [violationTypeId], references: [id])
+  achievementTypeId String?
+  achievementType   StudentAchievementType? @relation(fields: [achievementTypeId], references: [id])
+  points            Int       // nilai poin AKTUAL dicatat (dalam rentang pointsMin-pointsMax jenisnya)
+  note              String?
+  semester          String
+  date              DateTime  @default(now())
+  recordedByName    String    // snapshot nama pencatat (guru piket/BK/Kesiswaan/Admin) — bukan FK
+  recordedByRole    String    // snapshot role/jabatan pencatat saat itu, utk audit
+  createdAt         DateTime  @default(now())
 }
 
 model Grade {
