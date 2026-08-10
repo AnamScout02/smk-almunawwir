@@ -416,6 +416,11 @@ model Major {
   id          String    @id @default(cuid())
   name        String
   code        String    @unique
+  // Kode akhir format NIS resmi sekolah ini: {urut_global}/{urut_per_jurusan}.{nisCode} — cth
+  // "8.3.3" utk AK. Dulu hardcode di next-nis/route.ts (MAJOR_NIS_SUFFIX), sekarang bisa diedit
+  // admin di Kelola Jurusan supaya jurusan baru tidak perlu ubah kode. Null = jurusan belum
+  // dikasih kode NIS (generate-NIS otomatis akan menolak sampai diisi).
+  nisCode     String?
   description String
   icon        String?
   logoUrl     String?

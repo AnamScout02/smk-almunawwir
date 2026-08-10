@@ -216,18 +216,22 @@ export async function POST(req: NextRequest) {
         });
         results.updated++;
       } else {
-        // NIS di sekolah ini sering mengandung "/" dan "." (nomor buku induk), tidak valid untuk email —
-        // pakai NISN (selalu digit) kalau ada, fallback ke NIS yang disaring dari simbol.
-        const emailLocal = s(row["NISN"]) || nis.replace(/[^a-zA-Z0-9]/g, "");
+        // Email login = NIS (BUKAN lagi NISN — keputusan eksplisit user 2026-08-09: NISN belum
+        // semua siswa punya, NIS dipakai sbg satu-satunya basis identitas login yang konsisten).
+        // NIS di sekolah ini sering mengandung "/" dan "." (nomor buku induk), tidak valid untuk
+        // email — disaring dulu.
+        const emailLocal = nis.replace(/[^a-zA-Z0-9]/g, "");
         const email = `${emailLocal}@smkalmunawwir.sch.id`;
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           const bcrypt = await import("bcryptjs");
+          // Password default = "Almunawwir1" (keputusan eksplisit user 2026-08-09, bukan lagi
+          // berbasis NIS — sama dgn siswa/guru baru lewat form manual).
           user = await prisma.user.create({
             data: {
               name: toProperCaseName(nama),
               email,
-              password: await bcrypt.hash(nis, 10),
+              password: await bcrypt.hash("Almunawwir1", 10),
               role: "STUDENT",
             },
           });

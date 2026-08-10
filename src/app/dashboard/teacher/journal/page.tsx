@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { NotebookPen, Loader2, Save, Printer, Users } from "lucide-react";
+import { NotebookPen, Loader2, Save, Printer, Users, Pencil } from "lucide-react";
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
@@ -15,7 +15,7 @@ interface JournalRow {
   attendanceStatus: string; scorePengetahuan: number | null; scoreKeterampilan: number | null; catatan: string;
 }
 interface HistoryRow {
-  id: string; date: string; className: string; subject: string; materi: string;
+  id: string; date: string; classId: string; className: string; subject: string; materi: string;
   hadir: number; izin: number; sakit: number; alpha: number;
   avgPengetahuan: number | null; avgKeterampilan: number | null; catatanCount: number;
 }
@@ -44,6 +44,7 @@ function todayStr() {
 
 export default function TeacherJournalPage() {
   const toast = useToast();
+  const formRef = useRef<HTMLDivElement>(null);
   const [classes, setClasses] = useState<TeachClass[]>([]);
   const [classKey, setClassKey] = useState(""); // `${classId}::${subjectName}`
   const [date, setDate] = useState(todayStr());
@@ -53,6 +54,10 @@ export default function TeacherJournalPage() {
   const [loadingRows, setLoadingRows] = useState(false);
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  // Kelas+mapel yg "ditarget" saat klik Edit dari Riwayat — dipakai sekali begitu daftar kelas
+  // hari itu selesai dimuat, lalu dikosongkan lagi. Tanpa ini, effect di bawah selalu memaksa
+  // classKey balik ke kelas pertama hari itu tiap tanggal berubah, menimpa pilihan dari Edit.
+  const pendingClassKeyRef = useRef<string | null>(null);
 
   // Daftar kelas+mapel di-refetch tiap tanggal berubah — cuma yang BENAR-BENAR terjadwal hari itu
   // (bukan semua Penugasan Mengajar guru) yang ditampilkan, biar tidak perlu scroll kelas yang
@@ -60,9 +65,22 @@ export default function TeacherJournalPage() {
   useEffect(() => {
     fetch(`/api/teacher/journal-classes?date=${date}`).then(r => r.json()).then((d: TeachClass[]) => {
       setClasses(d);
-      setClassKey(d.length > 0 ? `${d[0].classId}::${d[0].subjectName}` : "");
+      const pending = pendingClassKeyRef.current;
+      pendingClassKeyRef.current = null;
+      if (pending && d.some(c => `${c.classId}::${c.subjectName}` === pending)) {
+        setClassKey(pending);
+      } else {
+        setClassKey(d.length > 0 ? `${d[0].classId}::${d[0].subjectName}` : "");
+      }
     }).catch(() => {});
   }, [date]);
+
+  function editHistoryRow(h: HistoryRow) {
+    const dateOnly = new Date(h.date).toISOString().slice(0, 10);
+    pendingClassKeyRef.current = `${h.classId}::${h.subject}`;
+    setDate(dateOnly);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const selected = useMemo(() => {
     const [classId, subjectName] = classKey.split("::");
@@ -127,7 +145,7 @@ export default function TeacherJournalPage() {
 
       {/* Tanggal & Semester SELALU tampil di luar — supaya guru tetap bisa ganti tanggal walau
           hari yang lagi dipilih kebetulan tidak ada jadwal mengajar sama sekali. */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div ref={formRef} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 scroll-mt-6">
         <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className="label-field">Tanggal Pertemuan</label>
@@ -236,17 +254,24 @@ export default function TeacherJournalPage() {
                   <th className="py-2 pr-3">Rata Pengetahuan</th>
                   <th className="py-2 pr-3">Rata Keterampilan</th>
                   <th className="py-2 pr-3">Catatan</th>
+                  <th className="py-2 pr-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map(h => (
-                  <tr key={h.id} className="border-b border-gray-50 last:border-0">
+                  <tr key={h.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
                     <td className="py-2 pr-3 whitespace-nowrap">{new Date(h.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                     <td className="py-2 pr-3 max-w-xs truncate">{h.materi}</td>
                     <td className="py-2 pr-3 whitespace-nowrap text-xs">{h.hadir}/{h.izin}/{h.sakit}/{h.alpha}</td>
                     <td className="py-2 pr-3">{h.avgPengetahuan ?? "—"}</td>
                     <td className="py-2 pr-3">{h.avgKeterampilan ?? "—"}</td>
                     <td className="py-2 pr-3 text-xs text-gray-400">{h.catatanCount > 0 ? `${h.catatanCount} siswa` : "—"}</td>
+                    <td className="py-2 pr-3 text-right">
+                      <button onClick={() => editHistoryRow(h)}
+                        className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                        <Pencil size={12} /> Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

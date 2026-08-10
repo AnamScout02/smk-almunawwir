@@ -101,6 +101,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
   }
 }
 
+interface CellUpdate { studentId: string; subject: string; score: number }
+
+/** Terima SATU update ({studentId, subject, semester, score}) ATAU banyak sekaligus
+ * ({semester, updates: [...]}) — bentuk kedua dipakai fitur paste dari Excel (DknTable.tsx) supaya
+ * satu blok sel yang ditempel tersimpan dalam SATU request/transaksi, bukan satu-satu. */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -110,19 +115,26 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ clas
     }
 
     const body = await req.json();
-    const { studentId, subject, semester, score } = body;
-    if (!studentId || !subject || !semester || typeof score !== "number" || isNaN(score)) {
+    const { semester } = body;
+    const updates: CellUpdate[] = Array.isArray(body.updates)
+      ? body.updates
+      : [{ studentId: body.studentId, subject: body.subject, score: body.score }];
+
+    if (!semester || updates.length === 0 || updates.length > 1000) {
       return NextResponse.json({ error: "Data tidak lengkap/valid" }, { status: 400 });
     }
-    if (score < 0 || score > 100) {
-      return NextResponse.json({ error: "Nilai harus di antara 0-100" }, { status: 400 });
+    for (const u of updates) {
+      if (!u.studentId || !u.subject || typeof u.score !== "number" || isNaN(u.score) || u.score < 0 || u.score > 100) {
+        return NextResponse.json({ error: "Ada nilai yang tidak valid — pastikan semua angka 0-100." }, { status: 400 });
+      }
     }
 
     // Validasi terhadap roster SEMESTER TERSEBUT (bukan cuma Student.classId sekarang) — supaya
     // wali kelas tetap bisa mengoreksi nilai DKN semester lama utk siswa yg sudah naik kelas.
     const roster = await getClassRoster(classId, semester);
-    if (!roster.some(s => s.id === studentId)) {
-      return NextResponse.json({ error: "Siswa tidak ditemukan di kelas ini untuk semester tersebut" }, { status: 404 });
+    const rosterIds = new Set(roster.map(s => s.id));
+    if (updates.some(u => !rosterIds.has(u.studentId))) {
+      return NextResponse.json({ error: "Ada siswa yang tidak ditemukan di kelas ini untuk semester tersebut" }, { status: 404 });
     }
 
     // ADMIN tidak punya baris Teacher sendiri — kalau ADMIN yang menyimpan (mis. mewakili wali
@@ -135,11 +147,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ clas
     // Delete-then-create (Grade tanpa unique constraint di DB — lihat CLAUDE.md) supaya tidak
     // dobel tiap kali wali kelas mengubah nilai DKN mapel yang sama.
     await prisma.$transaction(async tx => {
-      await tx.grade.deleteMany({ where: { studentId, subject, type: "DKN", semester } });
-      await tx.grade.create({ data: { studentId, teacherId: teacher.id, subject, type: "DKN", semester, score } });
-    });
+      for (const u of updates) {
+        await tx.grade.deleteMany({ where: { studentId: u.studentId, subject: u.subject, type: "DKN", semester } });
+        await tx.grade.create({ data: { studentId: u.studentId, teacherId: teacher.id, subject: u.subject, type: "DKN", semester, score: u.score } });
+      }
+    }, { timeout: 30000 });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, count: updates.length });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

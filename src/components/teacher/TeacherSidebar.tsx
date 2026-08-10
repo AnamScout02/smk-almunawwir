@@ -152,6 +152,9 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/wakasek/penjamin-mutu/jadwal-piket", label: "Jadwal Piket", icon: CalendarClock, show: isWakasekPenjaminMutu || isGuruPiket },
     { href: "/dashboard/teacher/wakasek/kaprogli", label: "Dashboard Kaprogli", icon: Award, show: isKaprogli },
     { href: "/dashboard/teacher/bk", label: "Dashboard BK", icon: HeartHandshake, show: isGuruBk },
+    // Read-only lintas kelas (bukan cuma kelas wali) — Kesiswaan/BK butuh pantau kehadiran siswa
+    // sekolah utk keperluan pembinaan/konseling. Input absensi resmi tetap khusus wali kelas.
+    { href: "/dashboard/teacher/kesiswaan/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare, show: isWakasekKesiswaan || isGuruBk },
     { href: "/dashboard/teacher/bkk", label: "Dashboard BKK", icon: UserCheck, show: isKoordinatorBkk },
     { href: "/dashboard/teacher/branding", label: "Dashboard Branding & Publikasi", icon: Megaphone, show: isKoordinatorBranding },
     { href: "/dashboard/teacher/operator", label: "Dashboard Operator Sekolah", icon: Database, show: isOperatorSekolah },

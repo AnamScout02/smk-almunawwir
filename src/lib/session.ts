@@ -77,3 +77,35 @@ export async function getSession() {
   const sessionCookie = cookieStore.get("session")?.value;
   return decrypt(sessionCookie);
 }
+
+// ── Masuk Sebagai (impersonasi akun) ──────────────────────────────────────
+// Khusus ADMIN (superadmin) — lihat src/app/api/admin/users/[id]/impersonate/route.ts. Saat
+// admin "masuk sebagai" akun lain, identitas admin ASLI disimpan di cookie terpisah `impersonator`
+// (bukan ditimpa), supaya bisa dipulihkan lagi lewat tombol "Kembali ke akun Admin" tanpa perlu
+// login ulang. Cookie `session` (yang dipakai verifyRole/proxy.ts utk otorisasi) ditimpa jadi
+// identitas akun yang diimpersonasi — sengaja begitu supaya semua guard existing otomatis bekerja
+// tanpa perlu tahu soal impersonasi sama sekali. Cookie `impersonator` TIDAK ikut diperpanjang
+// oleh sliding window proxy.ts (cuma cookie `session` yang direfresh) — dibiarkan begitu supaya
+// kemampuan "kembali ke admin" tidak menggantung selamanya kalau impersonasi dibiarkan lama.
+export async function setImpersonatorCookie(payload: Omit<SessionPayload, "expiresAt">) {
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  const token = await encrypt({ ...payload, expiresAt });
+  const cookieStore = await cookies();
+  cookieStore.set("impersonator", token, {
+    httpOnly: true,
+    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
+    expires: expiresAt,
+    sameSite: "lax",
+    path: "/",
+  });
+}
+
+export async function getImpersonatorSession() {
+  const cookieStore = await cookies();
+  return decrypt(cookieStore.get("impersonator")?.value);
+}
+
+export async function clearImpersonatorCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete("impersonator");
+}

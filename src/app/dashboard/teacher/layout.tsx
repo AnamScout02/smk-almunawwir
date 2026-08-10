@@ -3,12 +3,15 @@ import { getSettings } from "@/lib/site-settings";
 import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { getOverdueLoanCount } from "@/lib/perpustakaan-notif";
+import { getImpersonatorSession } from "@/lib/session";
 import TeacherSidebar from "@/components/teacher/TeacherSidebar";
+import ImpersonationBanner from "@/components/shared/ImpersonationBanner";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
+  const impersonator = await getImpersonatorSession();
   const [s, teacher, overdueBooks] = await Promise.all([
     getSettings(["logo.emblem", "logo.full_white"]),
     prisma.teacher.findFirst({
@@ -41,19 +44,22 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
-      <TeacherSidebar
-        logoEmblem={s["logo.emblem"]}
-        logoFullWhite={s["logo.full_white"]}
-        jabatanNames={jabatanNames}
-        hasInternshipBimbingan={hasInternshipBimbingan}
-        isGuruPiketOnDutyToday={isGuruPiketOnDutyToday}
-        overdueBooks={overdueBooks}
-        hasHomeroom={hasHomeroom}
-      />
-      <main className="flex-1 min-w-0 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
-        {children}
-      </main>
+    <div style={{ backgroundColor: "#f0f2f7" }}>
+      {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
+      <div className="flex min-h-screen">
+        <TeacherSidebar
+          logoEmblem={s["logo.emblem"]}
+          logoFullWhite={s["logo.full_white"]}
+          jabatanNames={jabatanNames}
+          hasInternshipBimbingan={hasInternshipBimbingan}
+          isGuruPiketOnDutyToday={isGuruPiketOnDutyToday}
+          overdueBooks={overdueBooks}
+          hasHomeroom={hasHomeroom}
+        />
+        <main className="flex-1 min-w-0 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

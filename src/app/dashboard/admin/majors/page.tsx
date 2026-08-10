@@ -16,6 +16,7 @@ interface Major {
   id: string;
   name: string;
   code: string;
+  nisCode: string | null;
   description: string;
   icon: string | null;
   logoUrl: string | null;
@@ -27,11 +28,12 @@ interface FormState {
   id?: string;
   name: string;
   code: string;
+  nisCode: string;
   description: string;
   logoUrl: string;
 }
 
-const emptyForm: FormState = { name: "", code: "", description: "", logoUrl: "" };
+const emptyForm: FormState = { name: "", code: "", nisCode: "", description: "", logoUrl: "" };
 
 export default function AdminMajorsPage() {
   const confirmDialog = useConfirm();
@@ -60,7 +62,7 @@ export default function AdminMajorsPage() {
   }
 
   function openEdit(m: Major) {
-    setForm({ id: m.id, name: m.name, code: m.code, description: m.description, logoUrl: m.logoUrl ?? "" });
+    setForm({ id: m.id, name: m.name, code: m.code, nisCode: m.nisCode ?? "", description: m.description, logoUrl: m.logoUrl ?? "" });
     setError("");
     setModal(true);
   }
@@ -194,6 +196,16 @@ export default function AdminMajorsPage() {
             <p className="text-xs text-gray-400 mt-1">Kode singkat, huruf besar, maks 10 karakter.</p>
           </div>
           <div>
+            <label className="label-field">Kode Jurusan (NIS)</label>
+            <input value={form.nisCode} onChange={e => setForm(f => ({ ...f, nisCode: e.target.value }))}
+              placeholder="cth: 8.3.3"
+              className="input-field font-mono" />
+            <p className="text-xs text-gray-400 mt-1">
+              Suffix kode konsentrasi keahlian di NIS resmi (format <span className="font-mono">urut/urutJurusan.kodeIni</span>).
+              Wajib diisi supaya tombol &quot;Generate NIS&quot; otomatis di Buku Induk Siswa bisa dipakai utk jurusan ini.
+            </p>
+          </div>
+          <div>
             <label className="label-field">Deskripsi *</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               rows={3} placeholder="Deskripsi singkat program keahlian..."
@@ -244,6 +256,9 @@ function MajorTable({ items, onEdit, onDelete }: {
                   style={m.themeColor ? { color: m.themeColor, borderColor: withAlpha(m.themeColor, 25), background: withAlpha(m.themeColor, 6) } : undefined}>
                   {m.code}
                 </span>
+                <p className={`text-[10px] font-mono mt-1 ${m.nisCode ? "text-gray-400" : "text-amber-500 font-semibold"}`}>
+                  {m.nisCode ? `NIS: ${m.nisCode}` : "Kode NIS belum diisi"}
+                </p>
               </td>
               <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{m.description}</td>
               <td className="px-5 py-3.5">

@@ -4,16 +4,16 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-/** Kode akhir NIS per jurusan — format baku sekolah ini: {urut_global}/{urut_per_jurusan}.{kode_jurusan} */
-const MAJOR_NIS_SUFFIX: Record<string, string> = {
-  TKJ: "4.2.1", AK: "8.3.3", DKV: "10.2.1", DPIB: "1.4.1", ATU: "6.2.2",
-};
+// Kode akhir NIS per jurusan — format baku sekolah ini: {urut_global}/{urut_per_jurusan}.{kode_jurusan}.
+// Dulu hardcode di sini, sekarang diambil dari Major.nisCode (bisa diedit admin di Kelola Jurusan)
+// supaya jurusan baru tidak perlu ubah kode aplikasi.
 
 export async function GET(req: NextRequest) {
   await verifyTasAccess();
   const majorCode = req.nextUrl.searchParams.get("majorCode") ?? "";
-  const suffix = MAJOR_NIS_SUFFIX[majorCode];
-  if (!suffix) return NextResponse.json({ error: "Kode jurusan tidak dikenali" }, { status: 400 });
+  const targetMajor = await prisma.major.findUnique({ where: { code: majorCode }, select: { nisCode: true } });
+  const suffix = targetMajor?.nisCode;
+  if (!suffix) return NextResponse.json({ error: "Jurusan ini belum punya Kode Jurusan (NIS) — isi dulu di Kelola Jurusan." }, { status: 400 });
 
   const students = await prisma.student.findMany({
     where: { nis: { contains: "/" } },

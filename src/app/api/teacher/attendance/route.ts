@@ -1,17 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 
-// Absensi resmi KHUSUS wali kelas (per keputusan terbaru, membalik kebijakan lama) — guru mapel
-// biasa yang cuma punya TeachingAssignment (bukan wali kelas) TIDAK lagi boleh input di sini.
-// Kalau guru mapel perlu catat kehadiran per pertemuan mapelnya sendiri, itu lewat kolom
+// Absensi resmi KHUSUS wali kelas utk INPUT (per keputusan terbaru, membalik kebijakan lama) —
+// guru mapel biasa yang cuma punya TeachingAssignment (bukan wali kelas) TIDAK lagi boleh input
+// di sini. Kalau guru mapel perlu catat kehadiran per pertemuan mapelnya sendiri, itu lewat kolom
 // Kehadiran di Jurnal Mengajar (JournalEntry.attendanceStatus, terpisah & tidak menimpa tabel ini).
-async function getAllowedClassIds(session: { role: string; email: string }): Promise<string[] | null> {
+async function getHomeroomClassIds(session: { role: string; email: string }): Promise<string[] | null> {
   if (session.role !== "TEACHER") return null;
   const teacher = await prisma.teacher.findFirst({
     where: { user: { email: session.email } },
     include: { homeroomOf: { select: { id: true } } },
   });
   return teacher?.homeroomOf.map(c => c.id) ?? [];
+}
+
+// Utk MELIHAT (GET) rekap, Wakil Kepala Kesiswaan & Guru BK juga boleh akses SEMUA kelas (bukan
+// cuma kelas wali) — beda dari POST (input/ubah) di bawah yang TETAP pakai getHomeroomClassIds,
+// khusus wali kelas. Lihat src/lib/kesiswaan-guard.ts.
+async function getReadAllowedClassIds(session: { role: string; email: string }): Promise<string[] | null> {
+  if (session.role === "TEACHER") {
+    const names = await getJabatanNames(session.email);
+    if (KESISWAAN_BK_JABATAN.some(n => names.includes(n))) return null;
+  }
+  return getHomeroomClassIds(session);
 }
 
 export async function GET(req: Request) {
@@ -21,7 +34,7 @@ export async function GET(req: Request) {
     const classId = searchParams.get("classId");
     const date = searchParams.get("date");
 
-    const allowedClassIds = await getAllowedClassIds(session);
+    const allowedClassIds = await getReadAllowedClassIds(session);
     if (allowedClassIds !== null) {
       if (classId && !allowedClassIds.includes(classId)) {
         return Response.json({ error: "Anda tidak memiliki akses ke kelas ini" }, { status: 403 });
@@ -53,7 +66,7 @@ export async function POST(req: Request) {
     type AttRecord = { studentId: string; date: string; status: string };
     const list = records as AttRecord[];
 
-    const allowedClassIds = await getAllowedClassIds(session);
+    const allowedClassIds = await getHomeroomClassIds(session);
     if (allowedClassIds !== null) {
       const studentIds = [...new Set(list.map(r => r.studentId))];
       const validCount = await prisma.student.count({

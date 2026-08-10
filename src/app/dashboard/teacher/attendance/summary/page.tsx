@@ -26,6 +26,7 @@ export default function AttendanceSummaryPage() {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
+  const [month, setMonth] = useState(""); // kosong = sepanjang waktu (perilaku lama)
 
   useEffect(() => {
     fetch("/api/teacher/classes?scope=homeroom")
@@ -43,17 +44,18 @@ export default function AttendanceSummaryPage() {
   useEffect(() => {
     if (!selectedClass) return;
     setLoading(true);
-    fetch(`/api/teacher/attendance/summary?classId=${selectedClass}`)
+    const monthQuery = month ? `&month=${month}` : "";
+    fetch(`/api/teacher/attendance/summary?classId=${selectedClass}${monthQuery}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); });
-  }, [selectedClass]);
+  }, [selectedClass, month]);
 
   return (
     <div className="p-6 lg:p-8">
       <PageHeader
         icon={<BarChart2 size={22} />}
         title="Rekap Absensi per Siswa"
-        description="Total kehadiran masing-masing siswa dari semua catatan absensi"
+        description="Total kehadiran masing-masing siswa — bisa difilter per bulan, atau sepanjang waktu"
       />
 
       <div className="flex justify-end mb-5">
@@ -62,15 +64,26 @@ export default function AttendanceSummaryPage() {
         </Link>
       </div>
 
-      {classes.length > 1 && (
-        <div className="mb-4 flex items-center gap-3">
-          <label className="text-sm font-semibold text-gray-600">Kelas:</label>
-          <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-            className="input-field w-auto">
-            {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+      <div className="mb-4 flex items-end gap-3 flex-wrap">
+        {classes.length > 1 && (
+          <div>
+            <label className="text-sm font-semibold text-gray-600 block mb-1.5">Kelas:</label>
+            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
+              className="input-field w-auto">
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="text-sm font-semibold text-gray-600 block mb-1.5">Filter bulan (opsional):</label>
+          <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="input-field w-auto" />
         </div>
-      )}
+        {month && (
+          <button onClick={() => setMonth("")} className="text-xs font-semibold text-primary-600 hover:text-primary-800 pb-2.5">
+            Reset ke sepanjang waktu
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">

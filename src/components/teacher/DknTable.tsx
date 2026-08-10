@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { ClipboardList, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { ClipboardList, Loader2, ClipboardPaste } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
@@ -30,6 +30,8 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
   const [loading, setLoading] = useState(true);
   const [edits, setEdits] = useState<Record<string, string>>({}); // key `${studentId}::${subject}` -> input string sedang diketik
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [pasting, setPasting] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -57,6 +59,82 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
     setEdits(p => { const n = { ...p }; delete n[key]; return n; });
   }
 
+  // Navigasi ala spreadsheet (panah/Enter) + paste blok sel dari Excel — supaya input DKN terasa
+  // seperti excel "live" sesuai permintaan user, tanpa perlu library grid pihak ketiga.
+  function focusCell(row: number, col: number) {
+    if (!data) return;
+    const r = Math.max(0, Math.min(row, data.students.length - 1));
+    const c = Math.max(0, Math.min(col, data.subjects.length - 1));
+    const el = tableRef.current?.querySelector<HTMLInputElement>(`input[data-row="${r}"][data-col="${c}"]`);
+    el?.focus();
+    el?.select();
+  }
+
+  function handleCellKeyDown(e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) {
+    switch (e.key) {
+      case "ArrowUp": e.preventDefault(); focusCell(row - 1, col); break;
+      case "ArrowDown": case "Enter": e.preventDefault(); focusCell(row + 1, col); break;
+      case "ArrowLeft":
+        if ((e.target as HTMLInputElement).selectionStart === 0) { e.preventDefault(); focusCell(row, col - 1); }
+        break;
+      case "ArrowRight": {
+        const el = e.target as HTMLInputElement;
+        if (el.selectionEnd === el.value.length) { e.preventDefault(); focusCell(row, col + 1); }
+        break;
+      }
+    }
+  }
+
+  /** Tempel blok sel yang di-copy dari Excel (TSV: tab antar-kolom, newline antar-baris) mulai
+   * dari sel yang sedang fokus, meluas ke kanan/bawah sesuai ukuran blok yang ditempel — dipotong
+   * otomatis kalau melebihi jumlah siswa/mapel yang ada. Semua sel yang valid disimpan sekaligus
+   * dalam SATU request (lihat PUT bulk di route.ts) supaya tidak spam puluhan request terpisah. */
+  async function handlePaste(e: React.ClipboardEvent<HTMLInputElement>, row: number, col: number) {
+    const text = e.clipboardData.getData("text/plain");
+    if (!text || (!text.includes("\t") && !text.includes("\n"))) return; // paste satu sel biasa — biarkan default
+    e.preventDefault();
+    if (!data) return;
+
+    const rows = text.replace(/\r/g, "").split("\n").filter((_, i, arr) => !(i === arr.length - 1 && arr[i] === ""));
+    const updates: { studentId: string; subject: string; score: number }[] = [];
+    const newScores: Record<string, Record<string, number>> = {};
+    let skipped = 0;
+
+    rows.forEach((line, ri) => {
+      const cells = line.split("\t");
+      cells.forEach((raw, ci) => {
+        const r = row + ri, c = col + ci;
+        if (r >= data.students.length || c >= data.subjects.length) return;
+        const trimmed = raw.trim().replace(",", "."); // excel lokal ID kadang pakai koma desimal
+        if (trimmed === "") return;
+        const score = Number(trimmed);
+        if (isNaN(score) || score < 0 || score > 100) { skipped++; return; }
+        const studentId = data.students[r].id;
+        const subject = data.subjects[c];
+        updates.push({ studentId, subject, score });
+        newScores[studentId] = { ...newScores[studentId], [subject]: score };
+      });
+    });
+
+    if (updates.length === 0) { toast.error("Tidak ada nilai valid (0-100) yang bisa ditempel."); return; }
+
+    setPasting(true);
+    const res = await fetch(`/api/teacher/dkn/${classId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ semester, updates }),
+    });
+    setPasting(false);
+    if (!res.ok) { const d = await res.json(); toast.error(d.error || "Gagal menyimpan tempelan nilai"); return; }
+
+    setData(prev => {
+      if (!prev) return prev;
+      const merged = { ...prev.scores };
+      for (const sid of Object.keys(newScores)) merged[sid] = { ...merged[sid], ...newScores[sid] };
+      return { ...prev, scores: merged };
+    });
+    toast.success(`${updates.length} nilai tersimpan dari tempelan.${skipped ? ` (${skipped} dilewati krn bukan 0-100)` : ""}`);
+  }
+
   function rowAverage(studentId: string): number | null {
     if (!data) return null;
     const vals = data.subjects.map(s => data.scores[studentId]?.[s] ?? null).filter((v): v is number => v !== null);
@@ -75,7 +153,11 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
         <div className="w-56">
           <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
         </div>
-        <span className="text-xs text-gray-400">Klik nilai untuk mengubah — otomatis tersimpan.</span>
+        <span className="text-xs text-gray-400 flex items-center gap-1.5">
+          <ClipboardPaste size={13} className="shrink-0" />
+          Klik nilai untuk mengubah, panah/Enter utk pindah sel — bisa tempel (paste) blok nilai langsung dari Excel.
+        </span>
+        {pasting && <span className="text-xs text-primary-600 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Menyimpan tempelan...</span>}
         <div className="sm:ml-auto"><PrintButton /></div>
       </div>
 
@@ -98,7 +180,7 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
             <EmptyState icon={ClipboardList} title="Belum Ada Mata Pelajaran" description="Belum ada Penugasan Mengajar untuk kelas ini." />
           ) : (
             <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 shadow-sm print:border-0 print:shadow-none print:rounded-none">
-              <table className="w-full text-sm border-collapse">
+              <table ref={tableRef} className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-gray-50 print:bg-gray-100">
                     <th className="border border-gray-200 px-2 py-2 text-center w-10">No</th>
@@ -118,7 +200,7 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
                         <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-400">{i + 1}</td>
                         <td className="border border-gray-200 px-3 py-1.5 font-medium text-primary-900">{st.name}</td>
                         <td className="border border-gray-200 px-2 py-1.5 text-center font-mono text-xs text-gray-500">{st.nis}</td>
-                        {data.subjects.map(subject => {
+                        {data.subjects.map((subject, ci) => {
                           const key = `${st.id}::${subject}`;
                           const cell = data.scores[st.id]?.[subject] ?? null;
                           const displayVal = edits[key] ?? (cell ?? "");
@@ -126,9 +208,12 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
                             <td key={subject} className="border border-gray-200 p-0.5 text-center">
                               <input
                                 type="number" min={0} max={100} value={displayVal}
+                                data-row={i} data-col={ci}
                                 onChange={e => setEdits(p => ({ ...p, [key]: e.target.value }))}
                                 onBlur={e => handleSave(st.id, subject, e.target.value)}
-                                disabled={savingKey === key}
+                                onKeyDown={e => handleCellKeyDown(e, i, ci)}
+                                onPaste={e => handlePaste(e, i, ci)}
+                                disabled={savingKey === key || pasting}
                                 placeholder="—"
                                 className={`w-14 text-center text-sm py-1 border-0 focus:ring-1 focus:ring-primary-400 rounded outline-none print:appearance-none ${
                                   cell !== null && cell < 75 ? "text-red-600" : "text-gray-700"

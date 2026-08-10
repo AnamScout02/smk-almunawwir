@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     const journals = await prisma.teachingJournal.findMany({
       where,
       include: {
-        class: { select: { name: true } },
+        class: { select: { id: true, name: true } },
         entries: { select: { scorePengetahuan: true, scoreKeterampilan: true, catatan: true, studentId: true, attendanceStatus: true } },
       },
       orderBy: { date: "asc" },
@@ -53,6 +53,7 @@ export async function GET(req: Request) {
       return {
         id: j.id,
         date: j.date,
+        classId: j.class.id,
         className: j.class.name,
         subject: j.subject,
         materi: j.materi,

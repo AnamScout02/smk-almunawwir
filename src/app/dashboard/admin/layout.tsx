@@ -4,14 +4,17 @@ import { getSettings } from "@/lib/site-settings";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { getOverdueLoanCount } from "@/lib/perpustakaan-notif";
+import { getImpersonatorSession } from "@/lib/session";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import TasSidebar from "@/components/admin/TasSidebar";
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import ImpersonationBanner from "@/components/shared/ImpersonationBanner";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // verifyTasAccess juga meloloskan guru (role TEACHER) berjabatan "Tenaga Administrasi
   // Sekolah"/"Kepala Tenaga Administrasi Sekolah" — lihat tas-access-guard.ts.
   const session = await verifyTasAccess();
+  const impersonator = await getImpersonatorSession();
 
   const [settings] = await Promise.all([
     getSettings(["logo.emblem", "logo.full_white"]),
@@ -27,12 +30,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       getOverdueLoanCount(session.userId),
     ]);
     return (
-      <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
-        <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} jabatanNames={jabatanNames} isFullTas={session.role === "TAS"} />
-        <main className="flex-1 min-w-0 min-h-screen lg:pt-0 pt-14">
-          <AdminTopBar pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} />
-          {children}
-        </main>
+      <div style={{ backgroundColor: "#f0f2f7" }}>
+        {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
+        <div className="flex min-h-screen">
+          <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} jabatanNames={jabatanNames} isFullTas={session.role === "TAS"} />
+          <main className="flex-1 min-w-0 min-h-screen lg:pt-0 pt-14">
+            <AdminTopBar pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} />
+            {children}
+          </main>
+        </div>
       </div>
     );
   }
@@ -46,18 +52,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ]);
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
-      <AdminSidebar
-        unreadMessages={unreadMessages}
-        pendingAdmissions={pendingAdmissions}
-        pendingProfileEdits={pendingProfileEdits}
-        overdueBooks={overdueBooks}
-        logoEmblem={logoEmblem}
-        logoFullWhite={logoFullWhite}
-      />
-      <main className="flex-1 min-w-0 min-h-screen">
-        {children}
-      </main>
+    <div style={{ backgroundColor: "#f0f2f7" }}>
+      {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
+      <div className="flex min-h-screen">
+        <AdminSidebar
+          unreadMessages={unreadMessages}
+          pendingAdmissions={pendingAdmissions}
+          pendingProfileEdits={pendingProfileEdits}
+          overdueBooks={overdueBooks}
+          logoEmblem={logoEmblem}
+          logoFullWhite={logoFullWhite}
+        />
+        <main className="flex-1 min-w-0 min-h-screen">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

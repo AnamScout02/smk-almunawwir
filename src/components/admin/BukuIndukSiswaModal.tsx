@@ -232,6 +232,25 @@ export default function BukuIndukSiswaModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student, isNew]);
 
+  // Username (email login) siswa baru dibuat otomatis dari NIS — BUKAN lagi dari NISN (keputusan
+  // eksplisit user 2026-08-09: NISN belum semua siswa punya/setor datanya dari Dapodik, jadi NIS
+  // dipakai sbg satu-satunya basis identitas login yang konsisten & sudah 100% terisi resmi utk
+  // semua siswa). Email = NIS disaring dari simbol "/" "." (tidak valid utk email). Password
+  // default = "Almunawwir1" (keputusan eksplisit user, sama dgn guru — bukan lagi berbasis NIS).
+  // Cuma isi kalau field-nya MASIH KOSONG — tidak pernah menimpa yang sudah diketik admin.
+  useEffect(() => {
+    if (!isNew || !accountForm.nis) return;
+    setAccountForm(p => {
+      if (p.email && p.password) return p;
+      const emailLocal = p.nis.replace(/[^a-zA-Z0-9]/g, "");
+      return {
+        ...p,
+        email: p.email || (emailLocal ? `${emailLocal}@smkalmunawwir.sch.id` : p.email),
+        password: p.password || "Almunawwir1",
+      };
+    });
+  }, [isNew, accountForm.nis]);
+
   async function handleSave() {
     setSaveError("");
     const derivedAddress = [
@@ -699,9 +718,12 @@ export default function BukuIndukSiswaModal({
             Email Login {isNew && <span className="text-red-500">*</span>}
           </label>
           {isNew ? (
-            <input className="input-field" type="email" placeholder="gmail atau email lainnya"
-              value={accountForm.email}
-              onChange={e => setAccountForm(p => ({ ...p, email: e.target.value }))} />
+            <>
+              <input className="input-field" type="email" placeholder="Otomatis dari NISN/NIS setelah diisi (bisa diubah)"
+                value={accountForm.email}
+                onChange={e => setAccountForm(p => ({ ...p, email: e.target.value }))} />
+              <p className="text-xs text-gray-400 mt-1">Terisi otomatis dari NIS begitu diisi.</p>
+            </>
           ) : (
             <input className="input-field bg-gray-50 text-gray-500 cursor-default" type="email"
               value={student?.user.email ?? ""} readOnly />
@@ -714,9 +736,10 @@ export default function BukuIndukSiswaModal({
               : <span className="text-gray-400">(kosongkan jika tidak diubah)</span>}
           </label>
           <input className="input-field" type="password"
-            placeholder={isNew ? "Password login" : "Isi untuk reset password"}
+            placeholder={isNew ? "Otomatis = NIS (bisa diubah)" : "Isi untuk reset password"}
             value={accountForm.password}
             onChange={e => setAccountForm(p => ({ ...p, password: e.target.value }))} />
+          {isNew && <p className="text-xs text-gray-400 mt-1">Terisi otomatis = &quot;Almunawwir1&quot;. Beri tahu siswa untuk segera ganti password sendiri.</p>}
         </div>
       </Section>
     </Modal>

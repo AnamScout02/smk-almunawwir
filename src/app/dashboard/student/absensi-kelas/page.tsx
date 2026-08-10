@@ -145,10 +145,12 @@ export default function AbsensiKelasPage() {
                   <div key={s.id} className="flex items-center gap-4 px-5 py-3">
                     <span className="text-gray-300 text-sm w-6 shrink-0">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-primary-900 text-sm">{s.user.name}</p>
+                      <p className="font-semibold text-primary-900 text-sm truncate">{s.user.name}</p>
                       <p className="text-gray-400 text-xs font-mono">{s.nis}</p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    {/* Desktop/tablet: tombol langsung-klik. Mobile (<sm): dropdown — 4 tombol
+                        berdampingan bikin nama siswa kepepet/kepotong di layar sempit. */}
+                    <div className="hidden sm:flex gap-2 shrink-0">
                       {STATUSES.map(status => (
                         <button
                           key={status}
@@ -161,6 +163,16 @@ export default function AbsensiKelasPage() {
                         </button>
                       ))}
                     </div>
+                    <select
+                      value={attendance[s.id] ?? ""}
+                      onChange={e => setStatus(s.id, e.target.value as AttendanceStatus)}
+                      className={`sm:hidden shrink-0 text-xs font-semibold rounded-lg border pl-2 pr-6 py-1.5 outline-none ${
+                        attendance[s.id] ? STATUS_COLOR[attendance[s.id]] : "bg-white border-gray-200 text-gray-400"
+                      }`}
+                    >
+                      <option value="" disabled>— Pilih —</option>
+                      {STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
+                    </select>
                   </div>
                 ))}
               </div>

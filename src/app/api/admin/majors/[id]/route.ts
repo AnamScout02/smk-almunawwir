@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     await verifyRole(["ADMIN", "TAS"]);
     const { id } = await params;
-    const { name, code, description, icon, logoUrl, tagline, longDesc, skills, career, cert, features, themeColor } = await req.json();
+    const { name, code, description, icon, logoUrl, nisCode, tagline, longDesc, skills, career, cert, features, themeColor } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
       return Response.json({ error: "Nama, kode, dan deskripsi wajib diisi." }, { status: 400 });
     }
@@ -33,6 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         description: description.trim(),
         icon: icon?.trim() || null,
         logoUrl: logoUrl?.trim() || null,
+        ...(nisCode !== undefined && { nisCode: nisCode?.trim() || null }),
         ...(tagline !== undefined && { tagline: tagline?.trim() || null }),
         ...(longDesc !== undefined && { longDesc: longDesc?.trim() || null }),
         ...(skills !== undefined && { skills: (skills as string[]).filter(s => s.trim()) }),

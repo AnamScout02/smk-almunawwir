@@ -1,14 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN"]);
     const classId = req.nextUrl.searchParams.get("classId");
+    const month = req.nextUrl.searchParams.get("month"); // format opsional: "2026-08" — kosong = rekap sepanjang waktu (perilaku lama)
+    let dateFilter: { gte: Date; lt: Date } | undefined;
+    if (month) {
+      const [y, m] = month.split("-").map(Number);
+      dateFilter = { gte: new Date(y, m - 1, 1), lt: new Date(y, m, 1) };
+    }
 
     let targetClassId: string;
-    if (session.role === "TEACHER") {
+    // Wakasek Kesiswaan & Guru BK boleh lihat kelas manapun (bukan cuma kelas wali) — sama seperti
+    // ADMIN, wajib kirim classId eksplisit. Lihat src/lib/kesiswaan-guard.ts.
+    const isKesiswaanOrBk = session.role === "TEACHER" && (await getJabatanNames(session.email)).some(n => KESISWAAN_BK_JABATAN.includes(n));
+    if (session.role === "TEACHER" && !isKesiswaanOrBk) {
       const teacher = await prisma.teacher.findFirst({
         where: { user: { email: session.email } },
         include: { homeroomOf: { select: { id: true } } },
@@ -17,7 +28,7 @@ export async function GET(req: NextRequest) {
       if (allowedClassIds.length === 0) return Response.json([]);
       targetClassId = classId && allowedClassIds.includes(classId) ? classId : allowedClassIds[0];
     } else {
-      // ADMIN tidak terikat kelas wali — bebas lihat kelas manapun, wajib kirim classId eksplisit.
+      // ADMIN & Kesiswaan/BK tidak terikat kelas wali — bebas lihat kelas manapun, wajib kirim classId eksplisit.
       if (!classId) return Response.json({ error: "classId wajib diisi" }, { status: 400 });
       targetClassId = classId;
     }
@@ -26,7 +37,7 @@ export async function GET(req: NextRequest) {
       where: { classId: targetClassId, studentStatus: "AKTIF" },
       include: {
         user: { select: { name: true } },
-        attendance: true,
+        attendance: dateFilter ? { where: { date: dateFilter } } : true,
       },
       orderBy: { user: { name: "asc" } },
     });
