@@ -22,12 +22,15 @@ export async function GET(req: Request) {
     const studentId = searchParams.get("studentId");
     const classId = searchParams.get("classId");
     const semester = searchParams.get("semester");
+    const from = searchParams.get("from"); // YYYY-MM-DD — dipakai utk rekap mingguan BK (BAB VII ayat 6)
+    const to = searchParams.get("to");
 
     const records = await prisma.studentPointRecord.findMany({
       where: {
         ...(studentId ? { studentId } : {}),
         ...(semester ? { semester } : {}),
         ...(classId ? { student: { classId } } : {}),
+        ...(from || to ? { date: { ...(from ? { gte: new Date(`${from}T00:00:00`) } : {}), ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}) } } : {}),
       },
       include: {
         student: { select: { id: true, nis: true, user: { select: { name: true } }, class: { select: { name: true } } } },

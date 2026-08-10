@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldAlert, Plus, Trash2, Save, Loader2, Search, ClipboardList, Award, ListChecks, BookOpenCheck } from "lucide-react";
+import { ShieldAlert, Plus, Trash2, Save, Loader2, Search, ClipboardList, Award, ListChecks, BookOpenCheck, AlertTriangle, Printer } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
+import PrintKop from "@/components/shared/PrintKop";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 
@@ -20,6 +21,14 @@ interface PointRecord {
   violationType: { name: string; category: string } | null;
   achievementType: { name: string } | null;
 }
+interface AtRiskStudent { studentId: string; nis: string; name: string; className: string | null; netPoints: number; level: string }
+
+const LEVEL_BADGE: Record<string, string> = {
+  "Surat Peringatan 1": "bg-amber-50 text-amber-700 border-amber-200",
+  "Surat Peringatan 2": "bg-orange-50 text-orange-700 border-orange-200",
+  "Surat Peringatan 3": "bg-red-50 text-red-700 border-red-200",
+  "Dikembalikan ke Orang Tua": "bg-red-100 text-red-800 border-red-300",
+};
 
 function generateSemesters(): string[] {
   const now = new Date();
@@ -43,25 +52,38 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
   const toast = useToast();
   const pathname = usePathname();
   const tataTertibHref = pathname?.startsWith("/dashboard/admin") ? "/dashboard/admin/tata-tertib" : "/dashboard/teacher/tata-tertib";
-  const [tab, setTab] = useState<"catat" | "riwayat" | "jenis">("catat");
+  const [tab, setTab] = useState<"catat" | "riwayat" | "perhatian" | "jenis">("catat");
+  const [atRisk, setAtRisk] = useState<AtRiskStudent[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/student-points/at-risk").then(r => r.json()).then(d => { if (Array.isArray(d.students)) setAtRisk(d.students); }).catch(() => {});
+  }, []);
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
-        description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik"
-        actions={<Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition"><BookOpenCheck size={15} /> Baca Tata Tertib Lengkap</Link>} />
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
+      <div className="print:hidden">
+        <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
+          description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik"
+          actions={<Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition"><BookOpenCheck size={15} /> Baca Tata Tertib Lengkap</Link>} />
+      </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {([["catat", "Catat Poin", Plus], ["riwayat", "Riwayat", ClipboardList], ["jenis", "Kelola Jenis", ListChecks]] as const).map(([v, label, Icon]) => (
+      <div className="flex gap-2 mb-6 flex-wrap print:hidden">
+        {([["catat", "Catat Poin", Plus], ["riwayat", "Riwayat", ClipboardList], ["perhatian", "Perlu Perhatian", AlertTriangle], ["jenis", "Kelola Jenis", ListChecks]] as const).map(([v, label, Icon]) => (
           <button key={v} onClick={() => setTab(v)}
             className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === v ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
             <Icon size={14} /> {label}
+            {v === "perhatian" && atRisk.length > 0 && (
+              <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${tab === v ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
+                {atRisk.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {tab === "catat" && <CatatPoinTab toast={toast} isAdmin={isAdmin} />}
       {tab === "riwayat" && <RiwayatTab toast={toast} confirmDialog={confirmDialog} />}
+      {tab === "perhatian" && <PerhatianTab students={atRisk} />}
       {tab === "jenis" && <KelolaJenisTab toast={toast} confirmDialog={confirmDialog} />}
     </div>
   );
@@ -222,18 +244,35 @@ function CatatPoinTab({ toast, isAdmin }: { toast: ReturnType<typeof useToast>; 
 }
 
 // ── Tab: Riwayat ─────────────────────────────────────────────────────────────
+function startOfWeekISO(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0=Minggu
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  return monday.toISOString().slice(0, 10);
+}
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToast>; confirmDialog: ReturnType<typeof useConfirm> }) {
   const [semester, setSemester] = useState(SEMESTERS[2]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [records, setRecords] = useState<PointRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   function load() {
     setLoading(true);
-    fetch(`/api/admin/student-points/records?semester=${encodeURIComponent(semester)}`)
+    const params = new URLSearchParams({ semester });
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    fetch(`/api/admin/student-points/records?${params.toString()}`)
       .then(r => r.json()).then(d => setRecords(Array.isArray(d) ? d : []))
       .catch(() => {}).finally(() => setLoading(false));
   }
-  useEffect(() => { load(); }, [semester]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [semester, from, to]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleDelete(id: string) {
     if (!await confirmDialog("Hapus catatan poin ini? Tindakan ini tidak bisa dibatalkan.")) return;
@@ -242,12 +281,39 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
     load();
   }
 
+  const rangeLabel = from || to ? `${from ? new Date(from).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "…"} – ${to ? new Date(to).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "…"}` : semester;
+
   return (
     <div>
-      <div className="mb-4 w-56">
-        <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
+      <div className="print:hidden flex flex-wrap items-end gap-3 mb-4">
+        <div className="w-56">
+          <label className="label-field">Semester</label>
+          <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
+        </div>
+        <div>
+          <label className="label-field">Dari Tanggal</label>
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input-field" />
+        </div>
+        <div>
+          <label className="label-field">Sampai Tanggal</label>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input-field" />
+        </div>
+        <button onClick={() => { setFrom(startOfWeekISO()); setTo(todayISO()); }}
+          className="text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">Minggu Ini</button>
+        {(from || to) && (
+          <button onClick={() => { setFrom(""); setTo(""); }} className="text-xs font-semibold text-gray-400 hover:text-gray-600 px-3 py-2.5">Reset Tanggal</button>
+        )}
+        <button onClick={() => window.print()} disabled={records.length === 0}
+          className="ml-auto flex items-center gap-1.5 text-sm font-semibold bg-gold text-primary-900 px-4 py-2.5 rounded-xl hover:bg-gold/90 transition disabled:opacity-40">
+          <Printer size={14} /> Cetak Rekap
+        </button>
       </div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+      <div className="hidden print:block">
+        <PrintKop title="Rekap Poin Siswa" subtitle={`Tata Tertib Peserta Didik — ${rangeLabel}`} />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:border-0 print:shadow-none">
         {loading ? (
           <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
         ) : records.length === 0 ? (
@@ -258,7 +324,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
               <thead>
                 <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
                   <th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Siswa</th><th className="px-4 py-3">Jenis</th>
-                  <th className="px-4 py-3">Poin</th><th className="px-4 py-3">Dicatat Oleh</th><th className="px-4 py-3 text-right">Aksi</th>
+                  <th className="px-4 py-3">Poin</th><th className="px-4 py-3">Dicatat Oleh</th><th className="px-4 py-3 text-right print:hidden">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,7 +344,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
                     </td>
                     <td className="px-4 py-2.5 font-bold">{r.kind === "PELANGGARAN" ? "+" : "-"}{r.points}</td>
                     <td className="px-4 py-2.5 text-xs text-gray-400">{r.recordedByName}</td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-4 py-2.5 text-right print:hidden">
                       <button onClick={() => handleDelete(r.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>
                     </td>
                   </tr>
@@ -287,6 +353,44 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Perlu Perhatian ─────────────────────────────────────────────────────
+/** Siswa yang poin bersihnya (semester berjalan) sudah menyentuh ambang sanksi BAB VII ayat 9
+ * (>=25) — supaya BK/Wakasek Kesiswaan proaktif menindaklanjuti tanpa harus buka Riwayat dan
+ * hitung manual per siswa satu-satu. Data & badge count-nya diambil sekali di parent
+ * (StudentPointsManager) supaya badge tab tetap update walau tab ini belum pernah dibuka. */
+function PerhatianTab({ students }: { students: AtRiskStudent[] }) {
+  if (students.length === 0) {
+    return <EmptyState icon={AlertTriangle} title="Belum Ada yang Perlu Perhatian" description="Belum ada siswa dengan poin bersih >= 25 semester ini." />;
+  }
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
+              <th className="px-4 py-3">Siswa</th><th className="px-4 py-3">Poin Bersih</th><th className="px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map(s => (
+              <tr key={s.studentId} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30">
+                <td className="px-4 py-2.5">
+                  <p className="font-semibold text-primary-900">{s.name}</p>
+                  <p className="text-xs text-gray-400">{s.nis} · {s.className ?? "—"}</p>
+                </td>
+                <td className="px-4 py-2.5 font-bold text-red-600">{s.netPoints} <span className="text-gray-400 font-normal text-xs">/ 100</span></td>
+                <td className="px-4 py-2.5">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${LEVEL_BADGE[s.level] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>{s.level}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

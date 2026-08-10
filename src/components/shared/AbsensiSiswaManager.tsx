@@ -36,6 +36,8 @@ export default function AbsensiSiswaManager() {
   const [summary, setSummary] = useState<SummaryRow[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summaryMonth, setSummaryMonth] = useState(""); // kosong = sepanjang waktu (perilaku lama)
+  const [summaryFrom, setSummaryFrom] = useState(""); // rentang custom (mis. per minggu) — mengalahkan summaryMonth kalau diisi
+  const [summaryTo, setSummaryTo] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/classes").then(r => r.json()).then((d: ClassOption[]) => {
@@ -58,12 +60,27 @@ export default function AbsensiSiswaManager() {
   useEffect(() => {
     if (!classId || tab !== "siswa") return;
     setLoadingSummary(true);
-    const monthQuery = summaryMonth ? `&month=${summaryMonth}` : "";
-    fetch(`/api/teacher/attendance/summary?classId=${classId}${monthQuery}`)
+    const params = new URLSearchParams({ classId });
+    if (summaryFrom || summaryTo) {
+      if (summaryFrom) params.set("from", summaryFrom);
+      if (summaryTo) params.set("to", summaryTo);
+    } else if (summaryMonth) {
+      params.set("month", summaryMonth);
+    }
+    fetch(`/api/teacher/attendance/summary?${params.toString()}`)
       .then(r => r.json())
       .then(d => { if (Array.isArray(d.students)) setSummary(d.students); })
       .catch(() => {}).finally(() => setLoadingSummary(false));
-  }, [classId, tab, summaryMonth]);
+  }, [classId, tab, summaryMonth, summaryFrom, summaryTo]);
+
+  function startOfWeekISO(): string {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    return monday.toISOString().slice(0, 10);
+  }
 
   const dailySummary = ["HADIR", "IZIN", "SAKIT", "ALPHA"].map(s => ({
     status: s, count: records.filter(r => r.status === s).length,
@@ -152,15 +169,25 @@ export default function AbsensiSiswaManager() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-end gap-3 flex-wrap">
                 <div>
                   <label className="label-field">Filter bulan (opsional)</label>
-                  <input type="month" value={summaryMonth} onChange={e => setSummaryMonth(e.target.value)} className="input-field w-auto" />
+                  <input type="month" value={summaryMonth} onChange={e => { setSummaryMonth(e.target.value); setSummaryFrom(""); setSummaryTo(""); }} className="input-field w-auto" />
                 </div>
-                {summaryMonth && (
-                  <button onClick={() => setSummaryMonth("")} className="text-xs font-semibold text-primary-600 hover:text-primary-800 pb-2.5">
+                <div>
+                  <label className="label-field">Dari Tanggal</label>
+                  <input type="date" value={summaryFrom} onChange={e => { setSummaryFrom(e.target.value); setSummaryMonth(""); }} className="input-field w-auto" />
+                </div>
+                <div>
+                  <label className="label-field">Sampai Tanggal</label>
+                  <input type="date" value={summaryTo} onChange={e => { setSummaryTo(e.target.value); setSummaryMonth(""); }} className="input-field w-auto" />
+                </div>
+                <button onClick={() => { setSummaryFrom(startOfWeekISO()); setSummaryTo(today); setSummaryMonth(""); }}
+                  className="text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">Minggu Ini</button>
+                {(summaryMonth || summaryFrom || summaryTo) && (
+                  <button onClick={() => { setSummaryMonth(""); setSummaryFrom(""); setSummaryTo(""); }} className="text-xs font-semibold text-gray-400 hover:text-gray-600 pb-2.5">
                     Reset ke sepanjang waktu
                   </button>
                 )}
                 <span className="text-xs text-gray-400 pb-2.5">
-                  {summaryMonth ? "Rekap dipersempit ke bulan yang dipilih." : "Belum difilter — total sepanjang waktu tercatat."}
+                  {summaryFrom || summaryTo ? "Rekap dipersempit ke rentang tanggal yang dipilih." : summaryMonth ? "Rekap dipersempit ke bulan yang dipilih." : "Belum difilter — total sepanjang waktu tercatat."}
                 </span>
               </div>
               {!loadingSummary && summary.length > 0 && (

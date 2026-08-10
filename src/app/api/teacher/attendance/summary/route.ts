@@ -9,10 +9,16 @@ export async function GET(req: NextRequest) {
     const session = await verifyRole(["TEACHER", "ADMIN"]);
     const classId = req.nextUrl.searchParams.get("classId");
     const month = req.nextUrl.searchParams.get("month"); // format opsional: "2026-08" — kosong = rekap sepanjang waktu (perilaku lama)
+    const from = req.nextUrl.searchParams.get("from"); // format opsional: "YYYY-MM-DD" — rekap per minggu/rentang custom, alternatif dari month
+    const to = req.nextUrl.searchParams.get("to");
     let dateFilter: { gte: Date; lt: Date } | undefined;
     if (month) {
       const [y, m] = month.split("-").map(Number);
       dateFilter = { gte: new Date(y, m - 1, 1), lt: new Date(y, m, 1) };
+    } else if (from || to) {
+      const gte = from ? new Date(`${from}T00:00:00`) : new Date(0);
+      const lt = to ? new Date(new Date(`${to}T00:00:00`).getTime() + 24 * 60 * 60 * 1000) : new Date(8640000000000000);
+      dateFilter = { gte, lt };
     }
 
     let targetClassId: string;

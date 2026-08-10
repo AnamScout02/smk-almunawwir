@@ -60,6 +60,7 @@ model Teacher {
   schedules      Schedule[]
   teachingLoad   TeachingAssignment[]
   teachingJournals TeachingJournal[]
+  extracurricularJournals ExtracurricularJournal[]
   internshipsSupervised Internship[]
   materials      Material[]
   assignments    Assignment[]
@@ -314,6 +315,7 @@ model Extracurricular {
   name      String   @unique
   createdAt DateTime @default(now())
   members   ExtracurricularMember[]
+  journals  ExtracurricularJournal[]
 }
 
 model ExtracurricularMember {
@@ -326,6 +328,34 @@ model ExtracurricularMember {
   joinedAt          DateTime        @default(now())
 
   @@unique([extracurricularId, studentId])
+}
+
+// Absen Ekstra (mis. Pramuka) — request Wakasek Kesiswaan 2026-08-10. Modelnya SENGAJA meniru
+// TeachingJournal/JournalEntry (bukan Attendance) krn ini per SESI ekstrakurikuler, bukan per
+// hari sekolah, dan rosternya dari ExtracurricularMember bukan Class. Delete-then-create per
+// (extracurricularId, date) kalau diedit ulang — pola sama persis Jurnal Mengajar, TANPA unique
+// constraint DB (dijaga di level API). Akses: khusus Pembina ekskul ybs (jabatan "Pembina <Nama>",
+// lihat ekstrakurikuler-guard.ts) — utk sekarang cuma Pembina yg bisa catat (keputusan eksplisit user).
+model ExtracurricularJournal {
+  id                String   @id @default(cuid())
+  extracurricularId String
+  extracurricular   Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  date              DateTime
+  materi            String?
+  entries           ExtracurricularJournalEntry[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ExtracurricularJournalEntry {
+  id        String   @id @default(cuid())
+  journalId String
+  journal   ExtracurricularJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status    String   // HADIR | IZIN | SAKIT | ALPHA
 }
 
 // Perpustakaan — dikelola Koordinator Perpustakaan / Tim Perpustakaan + Admin/TAS.
@@ -560,12 +590,14 @@ model Student {
   alumniTracer   AlumniTracer?
   uksVisits      UksVisit[]
   extracurricular ExtracurricularMember[]
+  extracurricularJournalEntries ExtracurricularJournalEntry[]
   ketuaKelasOf   Class[] @relation("KetuaKelas")
   sekretarisOf   Class[] @relation("Sekretaris")
   quizAttempts   QuizAttempt[]
   examAttempts   ExamAttempt[]
   pklRegistration PklRegistration?
   pointRecords   StudentPointRecord[]
+  caseNotes      StudentCaseNote[]
 }
 
 // ── Poin Pelanggaran & Prestasi Siswa (Tata Tertib Peserta Didik) ─────────────────────────
@@ -618,6 +650,24 @@ model StudentPointRecord {
   recordedByName    String    // snapshot nama pencatat (guru piket/BK/Kesiswaan/Admin) — bukan FK
   recordedByRole    String    // snapshot role/jabatan pencatat saat itu, utk audit
   createdAt         DateTime  @default(now())
+}
+
+// ── Rekam BK / Penanganan Siswa — request Wakasek Kesiswaan 2026-08-10 ────────────────────
+// Catatan naratif per kejadian penanganan (konseling, panggilan ortu, mediasi, dll) — BEDA dari
+// StudentPointRecord (poin = angka). Akses sama: khusus BK & Wakasek Kesiswaan (assertStudentPointsFull,
+// ADMIN otomatis lolos) — TIDAK terbuka utk guru piket/wali kelas, isinya bisa sensitif (privasi konseling).
+model StudentCaseNote {
+  id            String   @id @default(cuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  handlingType  String   // Konseling | Panggilan Orang Tua | Home Visit | Mediasi | Lainnya (freeform)
+  note          String   // kronologi/catatan penanganan, bebas
+  status        String   @default("BERJALAN") // BERJALAN | SELESAI
+  date          DateTime @default(now())
+  handledByName String   // snapshot nama penanganan (BK/Kesiswaan/Admin) — bukan FK, utk audit
+  handledByRole String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Grade {

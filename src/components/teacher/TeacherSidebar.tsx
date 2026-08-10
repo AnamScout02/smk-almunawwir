@@ -159,6 +159,7 @@ export default function TeacherSidebar({
     // (siapa pun terjadwal piket HARI INI, bukan jabatan tetap) dapat menu terbatas terpisah di
     // bawah, cuma boleh catat Terlambat & seragam/atribut (lihat kesiswaan-guard.ts).
     { href: "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin Siswa", icon: ShieldAlert, show: isWakasekKesiswaan || isGuruBk },
+    { href: "/dashboard/teacher/kesiswaan/rekam-bk", label: "Rekam BK — Penanganan Siswa", icon: HeartHandshake, show: isWakasekKesiswaan || isGuruBk },
     { href: "/dashboard/teacher/piket/poin-siswa", label: "Catat Poin Siswa (Piket)", icon: ShieldAlert, show: isGuruPiketOnDutyToday && !isWakasekKesiswaan && !isGuruBk },
     { href: "/dashboard/teacher/tata-tertib", label: "Tata Tertib Peserta Didik", icon: BookOpenCheck, show: true },
     { href: "/dashboard/teacher/bkk", label: "Dashboard BKK", icon: UserCheck, show: isKoordinatorBkk },
@@ -167,6 +168,7 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/lab/inventaris", label: "Inventaris Lab", icon: FlaskConical, show: isKepalaLab },
     { href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse, show: isKepalaUks },
     { href: "/dashboard/teacher/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
+    { href: "/dashboard/teacher/ekstrakurikuler/absensi", label: "Absen Ekstra", icon: CheckSquare, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
     { href: "/dashboard/teacher/perpustakaan", label: "Perpustakaan", icon: Library, show: isPerpustakaan },
     { href: "/dashboard/teacher/buku-saya", label: "Buku Saya", icon: BookOpen, show: true, badge: overdueBooks },
     { href: "/dashboard/teacher/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: true },

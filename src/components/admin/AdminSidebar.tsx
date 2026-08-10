@@ -7,7 +7,7 @@ import {
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut, Menu, X,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, Database, CalendarDays,
   Archive, Repeat, Mail, BookMarked, Clock, Users2, ShieldCheck, Award, Building2, ListChecks, Boxes,
-  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck,
+  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -65,6 +65,7 @@ const menuGroups = [
       { href: "/dashboard/admin/absensi-jurnal", label: "Absensi & Jurnal Kelas", icon: ClipboardCheck, badge: 0 },
       { href: "/dashboard/admin/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare, badge: 0 },
       { href: "/dashboard/admin/poin-siswa", label: "Poin Siswa (Tata Tertib)", icon: ShieldAlert, badge: 0 },
+      { href: "/dashboard/admin/rekam-bk", label: "Rekam BK — Penanganan Siswa", icon: HeartHandshake, badge: 0 },
       { href: "/dashboard/admin/tata-tertib", label: "Baca Tata Tertib Lengkap", icon: BookOpenCheck, badge: 0 },
       { href: "/dashboard/admin/jurnal-guru", label: "Jurnal Mengajar Guru", icon: NotebookPen, badge: 0 },
       { href: "/dashboard/admin/dkn", label: "DKN — Daftar Kumpulan Nilai", icon: ClipboardList, badge: 0 },
