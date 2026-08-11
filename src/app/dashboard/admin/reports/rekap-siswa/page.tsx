@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { Fragment } from "react";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import Link from "next/link";
@@ -58,7 +58,7 @@ function CrestBadge({ url, code, color, size }: { url?: string | null; code: str
 }
 
 export default async function RekapSiswaPage() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const [classes, activeYear, settings] = await Promise.all([
     prisma.class.findMany({

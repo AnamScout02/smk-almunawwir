@@ -27,13 +27,18 @@ export default function AdminStudentsPage() {
 
   async function load() {
     setLoading(true);
-    const [sRes, clsRes] = await Promise.all([
-      fetch("/api/admin/students"),
-      fetch("/api/admin/classes"),
-    ]);
-    if (sRes.ok) setStudents(await sRes.json());
-    if (clsRes.ok) setClasses(await clsRes.json());
-    setLoading(false);
+    try {
+      const [sRes, clsRes] = await Promise.all([
+        fetch("/api/admin/students"),
+        fetch("/api/admin/classes"),
+      ]);
+      if (sRes.ok) setStudents(await sRes.json());
+      if (clsRes.ok) setClasses(await clsRes.json());
+    } catch {
+      // biarkan state lama tetap tampil kalau gagal, jangan sampai spinner macet
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);

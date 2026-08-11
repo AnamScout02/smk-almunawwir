@@ -1,18 +1,49 @@
 export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { isFullTasJabatan } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import {
   Users, GraduationCap, Mail, School, UserCog, ClipboardList,
   Clock, ArrowRight, Newspaper,
-  Sparkles, MessageSquare,
+  Sparkles, MessageSquare, LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import { getWakilKepalaAgenda } from "@/lib/agenda";
 
+// PENTING: TETAP verifyRole(["ADMIN","TAS"]) di sini, BUKAN verifyTasAccess() — halaman ini
+// landing page WAJIB semua akun TAS (lihat proxy.ts), non-TU TAS harus TETAP bisa masuk & lihat
+// versi ringkas (bukan diredirect /login). Pengecualian sengaja dari pola file lain di bawah ini.
 export default async function AdminDashboard() {
   const session = await verifyRole(["ADMIN", "TAS"]);
+
+  // PERBAIKAN KRITIS 2026-08-10 (temuan user): halaman ini adalah landing page OTOMATIS semua
+  // akun role TAS setelah login (lihat proxy.ts roleRedirect) — dulu menampilkan statistik PENUH
+  // (jumlah siswa, isi pesan masuk, data pendaftar) ke SIAPAPUN role TAS tanpa cek jabatan sama
+  // sekali, termasuk Security/Kebersihan. Sekarang staf TAS non-TU cukup lihat halaman ringkas —
+  // menu jabatan-scoped mereka tetap ada di sidebar (TasSidebar sudah discoped dgn benar).
+  if (session.role === "TAS") {
+    const jabatanNames = await getJabatanNames(session.email);
+    if (!isFullTasJabatan(jabatanNames)) {
+      return (
+        <div className="min-h-screen pt-16 lg:pt-0 flex items-center justify-center p-8">
+          <div className="text-center max-w-sm">
+            <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-700 flex items-center justify-center mx-auto mb-4">
+              <LayoutDashboard size={26} />
+            </div>
+            <h1 className="font-heading text-lg font-bold text-primary-900 mb-1">Selamat Datang, {session.name}</h1>
+            <p className="text-sm text-gray-500">
+              {jabatanNames.length > 0
+                ? `Gunakan menu di sidebar sesuai tugas Anda (${jabatanNames.join(", ")}).`
+                : "Belum ada jabatan yang ditetapkan untuk akun Anda — hubungi Admin."}
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   const [
     userCount, studentCount, teacherCount, classCount,

@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
 
     const classId = req.nextUrl.searchParams.get("classId");
     const month = req.nextUrl.searchParams.get("month"); // format: "2025-06"

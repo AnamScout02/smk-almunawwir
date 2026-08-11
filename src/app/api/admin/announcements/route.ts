@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const items = await prisma.announcement.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const body = await req.json();
   const { title, content, targetRole, priority, active, startDate, endDate } = body;
   if (!title?.trim() || !content?.trim()) {

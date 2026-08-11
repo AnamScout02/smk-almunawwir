@@ -33,8 +33,14 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     { href: "/dashboard/student/profile", label: "Profil Saya", icon: UserCircle, show: true },
   ].filter(item => item.show);
 
+  // PERBAIKAN 2026-08-10 (konsistensi dgn perbaikan sidebar admin/guru) — cegah 2 menu ke-highlight
+  // bersamaan kalau suatu saat ada href yg jadi prefix href lain. Hanya href PALING SPESIFIK
+  // (terpanjang) yg match dianggap aktif.
   function isActive(href: string, exact = false) {
-    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
+    if (exact) return pathname === href;
+    if (pathname !== href && !pathname.startsWith(href + "/")) return false;
+    const moreSpecific = menu.some(item => item.href !== href && item.href.length > href.length && (pathname === item.href || pathname.startsWith(item.href + "/")));
+    return !moreSpecific;
   }
 
   const SidebarContent = () => (

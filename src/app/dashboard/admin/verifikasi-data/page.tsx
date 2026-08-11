@@ -32,7 +32,7 @@ export default function VerifikasiDataPage() {
     fetch("/api/admin/profile-edit-requests?status=PENDING").then(r => r.json()).then(d => {
       setRequests(Array.isArray(d) ? d : []);
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }
   useEffect(() => { load(); }, []);
 

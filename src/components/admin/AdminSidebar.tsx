@@ -114,6 +114,7 @@ const menuGroups = [
       { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen, badge: 0 },
       { href: "/dashboard/admin/kartu-tanda", label: "Kartu Tanda", icon: IdCard, badge: 0 },
       { href: "/dashboard/admin/verifikasi-data", label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const },
+      { href: "/dashboard/admin/bel-sekolah", label: "Bel Sekolah Otomatis", icon: Bell, badge: 0 },
     ],
   },
   {
@@ -134,8 +135,17 @@ const menuGroups = [
 type BadgeKey = "pendingAdmissions" | "unreadMessages" | "pendingProfileEdits" | "overdueBooks";
 type MenuGroup = typeof menuGroups[number];
 
+const ALL_HREFS = menuGroups.flatMap(g => g.items.map(i => i.href));
+
+// PERBAIKAN 2026-08-10 (temuan user, screenshot: 2 menu ke-highlight bersamaan) — kalau href
+// menu A jadi prefix dari href menu B (mis. "/x/ekstrakurikuler" vs "/x/ekstrakurikuler/absensi"),
+// dulu KEDUANYA dianggap aktif krn masing2 dicek independen via startsWith. Sekarang hanya href
+// PALING SPESIFIK (terpanjang) yg match dianggap aktif.
 function matchesPath(pathname: string, href: string, exact = false) {
-  return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
+  if (exact) return pathname === href;
+  if (pathname !== href && !pathname.startsWith(href + "/")) return false;
+  const moreSpecific = ALL_HREFS.some(h => h !== href && h.length > href.length && (pathname === h || pathname.startsWith(h + "/")));
+  return !moreSpecific;
 }
 
 /** Grup yang memuat halaman aktif — dipakai supaya grup itu OTOMATIS terbuka (biar user tidak

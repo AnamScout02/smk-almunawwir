@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { ArrowLeft, School } from "lucide-react";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import PageHeader from "@/components/admin/PageHeader";
@@ -15,7 +15,7 @@ import CetakDataKelasClient from "@/components/admin/CetakDataKelasClient";
  * kelas itu. TIDAK menyertakan password — password di-hash (bcrypt, satu arah), sistem TIDAK BISA
  * membaca ulang nilai aslinya utk siapa pun. Landscape krn kolom tabel akun cukup banyak. */
 export default async function CetakDataKelasPage() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const [classes, settings] = await Promise.all([
     prisma.class.findMany({

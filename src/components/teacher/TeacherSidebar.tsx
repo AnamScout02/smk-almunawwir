@@ -168,7 +168,7 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/lab/inventaris", label: "Inventaris Lab", icon: FlaskConical, show: isKepalaLab },
     { href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse, show: isKepalaUks },
     { href: "/dashboard/teacher/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
-    { href: "/dashboard/teacher/ekstrakurikuler/absensi", label: "Absen Ekstra", icon: CheckSquare, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
+    { href: "/dashboard/teacher/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare, show: isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler },
     { href: "/dashboard/teacher/perpustakaan", label: "Perpustakaan", icon: Library, show: isPerpustakaan },
     { href: "/dashboard/teacher/buku-saya", label: "Buku Saya", icon: BookOpen, show: true, badge: overdueBooks },
     { href: "/dashboard/teacher/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: true },
@@ -201,8 +201,15 @@ export default function TeacherSidebar({
     { href: "/dashboard/teacher/profile", label: "Profil Saya", icon: UserCircle, show: true },
   ].filter(item => item.show);
 
+  // PERBAIKAN 2026-08-10 (temuan user, screenshot: 2 menu ke-highlight bersamaan) — kalau href
+  // menu A jadi prefix dari href menu B (mis. "Ekstrakurikuler" vs "Absen Ekstra" waktu masih
+  // bersarang di "/ekstrakurikuler/absensi"), dulu KEDUANYA dianggap aktif. Sekarang hanya href
+  // PALING SPESIFIK (terpanjang) yg match dianggap aktif.
   function isActive(href: string, exact = false) {
-    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
+    if (exact) return pathname === href;
+    if (pathname !== href && !pathname.startsWith(href + "/")) return false;
+    const moreSpecific = menu.some(item => item.href !== href && item.href.length > href.length && (pathname === item.href || pathname.startsWith(item.href + "/")));
+    return !moreSpecific;
   }
 
   const q = search.trim().toLowerCase();

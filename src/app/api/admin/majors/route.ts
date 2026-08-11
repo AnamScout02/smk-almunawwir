@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
   try {
@@ -18,7 +19,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { name, code, description, icon, logoUrl, nisCode } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
       return Response.json({ error: "Nama, kode, dan deskripsi wajib diisi." }, { status: 400 });

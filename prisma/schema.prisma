@@ -334,14 +334,19 @@ model ExtracurricularMember {
 // TeachingJournal/JournalEntry (bukan Attendance) krn ini per SESI ekstrakurikuler, bukan per
 // hari sekolah, dan rosternya dari ExtracurricularMember bukan Class. Delete-then-create per
 // (extracurricularId, date) kalau diedit ulang — pola sama persis Jurnal Mengajar, TANPA unique
-// constraint DB (dijaga di level API). Akses: khusus Pembina ekskul ybs (jabatan "Pembina <Nama>",
-// lihat ekstrakurikuler-guard.ts) — utk sekarang cuma Pembina yg bisa catat (keputusan eksplisit user).
+// constraint DB (dijaga di level API). Akses: khusus Pembina ekskul ybs (jabatan "Pembina <Nama>"
+// ATAU "Koordinator Ekstrakurikuler", lihat ekstrakurikuler-guard.ts) — role guru MAUPUN staf TAS
+// (banyak Pembina ekskul, mis. Pembina Pramuka, ternyata role TAS bukan TEACHER — lihat StaffJabatan).
+// `teacherId` OPSIONAL krn staf TAS tidak punya baris Teacher — recordedByName/Role snapshot dipakai
+// SELALU (pola sama persis StudentPointRecord), teacherId cuma diisi kalau pencatatnya guru asli.
 model ExtracurricularJournal {
   id                String   @id @default(cuid())
   extracurricularId String
   extracurricular   Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
-  teacherId         String
-  teacher           Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId         String?
+  teacher           Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  recordedByName    String   @default("")
+  recordedByRole    String   @default("")
   date              DateTime
   materi            String?
   entries           ExtracurricularJournalEntry[]
@@ -1281,4 +1286,22 @@ model BandwidthLog {
   timestamp    DateTime @default(now())
 
   @@index([interface, timestamp])
+}
+
+// Bel Sekolah Otomatis — request TU 2026-08-11. Native, browser-based: halaman "Player" dibuka
+// TU/Piket sepanjang hari (mode layar penuh), otomatis mainkan audio pas waktu terjadwal tercapai
+// (PC yg buka halaman itu tersambung ke speaker sekolah — TIDAK ada hardware relay/IoT, sama pola
+// dgn AutomaBell/VB6 bell system yg jadi rujukan user, tapi native di sistem ini bukan aplikasi
+// terpisah). `audioUrl` opsional — kosong = pakai nada chime bawaan (sintesis Web Audio API,
+// client-side, tidak perlu file).
+model BellSchedule {
+  id        String   @id @default(cuid())
+  label     String   // "Bel Masuk", "Pergantian Jam 1", "Istirahat", "Bel Pulang", dst — bebas TU
+  time      String   // format "HH:mm", mis. "06:45"
+  days      String   // comma-separated: "SENIN,SELASA,RABU,KAMIS,SABTU" atau "JUMAT" dst
+  audioUrl  String?  // path /uploads/... kalau TU upload MP3 sendiri; null = nada bawaan
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -3,11 +3,22 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getOwnedExtracurricularNames } from "@/lib/ekstrakurikuler-guard";
 import { getJabatanNames } from "@/lib/jabatan-guard";
+import { TAS_JABATAN } from "@/lib/tas-access-guard";
 
 export const dynamic = "force-dynamic";
 
+// PERBAIKAN KRITIS 2026-08-10 (temuan user): dulu SIAPAPUN role TAS (termasuk Security/Kebersihan)
+// otomatis lolos di sini tanpa cek jabatan — bisa lihat SEMUA ekskul & bikin ekskul baru. Sekarang
+// TAS wajib jabatan TU eksplisit ATAU Koordinator Ekstrakurikuler, sama seperti ADMIN.
+async function isFullAccess(session: { role: string; email: string }) {
+  if (session.role === "ADMIN") return true;
+  if (session.role !== "TAS") return false;
+  const names = await getJabatanNames(session.email);
+  return names.some(n => TAS_JABATAN.includes(n));
+}
+
 async function assertCanManageCategories(session: { role: string; email: string }) {
-  if (session.role === "ADMIN" || session.role === "TAS") return;
+  if (await isFullAccess(session)) return;
   const names = await getJabatanNames(session.email);
   if (!names.includes("Koordinator Ekstrakurikuler")) throw new Error("FORBIDDEN");
 }
@@ -16,7 +27,7 @@ export async function GET() {
   try {
     const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
 
-    if (session.role === "ADMIN" || session.role === "TAS") {
+    if (await isFullAccess(session)) {
       const all = await prisma.extracurricular.findMany({
         orderBy: { name: "asc" },
         include: { _count: { select: { members: true } } },

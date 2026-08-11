@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { id } = await params;
     const cls = await prisma.class.findUnique({
       where: { id },

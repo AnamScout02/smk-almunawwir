@@ -44,12 +44,12 @@ export default function AbsensiPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`/api/teacher/students?classId=${classId}`).then(r => r.json()),
-      fetch("/api/teacher/classes?scope=homeroom").then(r => r.json()),
+      fetch(`/api/teacher/students?classId=${classId}`).then(r => r.json()).catch(() => {}),
+      fetch("/api/teacher/classes?scope=homeroom").then(r => r.json()).catch(() => {}),
       // Muat absensi yang SUDAH tersimpan untuk tanggal ini — tanpa ini status lama (mis. ALPHA)
       // tidak pernah kelihatan saat halaman dibuka ulang, dan tombol Simpan bisa menimpa data lama
       // jadi HADIR semua tanpa sengaja.
-      fetch(`/api/teacher/attendance?classId=${classId}&date=${date}`).then(r => r.json()),
+      fetch(`/api/teacher/attendance?classId=${classId}&date=${date}`).then(r => r.json()).catch(() => {}),
     ]).then(([students, classes, existing]) => {
       if (Array.isArray(students)) {
         setStudents(students);

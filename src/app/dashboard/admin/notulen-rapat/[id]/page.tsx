@@ -65,7 +65,7 @@ export default function NotulenRapatFormPage() {
   const [kopBawah, setKopBawah] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/notulen-rapat/people").then(r => r.json()).then(d => setPeople(Array.isArray(d) ? d : []));
+    fetch("/api/admin/notulen-rapat/people").then(r => r.json()).then(d => setPeople(Array.isArray(d) ? d : [])).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => { setKopAtas(d.kopAtas ?? ""); setKopBawah(d.kopBawah ?? ""); }).catch(() => {});
   }, []);
 
@@ -81,7 +81,7 @@ export default function NotulenRapatFormPage() {
       const names: string[] = d.attendees?.map((a: { name: string }) => a.name) ?? [];
       setPendingAttendeeNames(names);
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }, [id, isNew]);
 
   // Setelah daftar people ter-load, pisahkan attendee tersimpan jadi checklist vs nama tambahan.

@@ -354,7 +354,7 @@ export default function KedisiplinanManager() {
   }
   async function handleDeleteSlotBlock(row: Extract<CombinedRow, { kind: "slot" }>) {
     if (!(await confirmDialog(`Hapus catatan absensi ${row.teacherName} — ${row.detail} tanggal ${fmt(row.date)}?`))) return;
-    await Promise.all(row.ids.map(id => fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots/${id}`, { method: "DELETE" })));
+    await Promise.all(row.ids.map(id => fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/slots/${id}`, { method: "DELETE" }))).catch(() => {});
     load();
     loadDay();
   }

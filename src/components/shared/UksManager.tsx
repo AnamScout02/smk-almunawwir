@@ -57,8 +57,8 @@ export default function UksManager() {
   function load() {
     setLoading(true);
     Promise.all([
-      fetch("/api/uks/visits").then(r => r.json()),
-      fetch("/api/uks/medicines").then(r => r.json()),
+      fetch("/api/uks/visits").then(r => r.json()).catch(() => {}),
+      fetch("/api/uks/medicines").then(r => r.json()).catch(() => {}),
     ]).then(([v, m]) => {
       setVisits(Array.isArray(v) ? v : []);
       setMedicines(Array.isArray(m) ? m : []);

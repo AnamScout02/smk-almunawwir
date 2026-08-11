@@ -76,7 +76,7 @@ export default function CetakAbsensiJurnalPage() {
   useEffect(() => {
     fetch(`/api/admin/classes/${classId}/roster`)
       .then(r => { if (!r.ok) return null; return r.json(); })
-      .then(d => { setCls(d); setLoading(false); });
+      .then(d => { setCls(d); setLoading(false); }).catch(() => { setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogoUrl(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/admin/content").then(r => r.json())
       .then((rows: { key: string; value: string }[]) => {

@@ -279,7 +279,7 @@ function JournalModal({ student, onClose, fmt }: { student: Student; onClose: ()
       setEntries(list);
       setNotes(Object.fromEntries(list.map(e => [e.id, e.teacherNote ?? ""])));
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }, [student.id]);
 
   async function saveNote(entryId: string) {

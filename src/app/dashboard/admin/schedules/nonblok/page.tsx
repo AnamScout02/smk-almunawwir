@@ -66,12 +66,16 @@ export default function NonBlokSchedulePage() {
   }, []);
 
   const loadAll = useCallback(async () => {
-    const [allSched, assign] = await Promise.all([
-      fetch("/api/admin/schedules?scheduleType=NONBLOK").then(r => r.json()),
-      fetch("/api/admin/teaching-assignments").then(r => r.json()),
-    ]);
-    setAllSchedules(Array.isArray(allSched) ? allSched : []);
-    setAssignments(Array.isArray(assign) ? assign : []);
+    try {
+      const [allSched, assign] = await Promise.all([
+        fetch("/api/admin/schedules?scheduleType=NONBLOK").then(r => r.json()),
+        fetch("/api/admin/teaching-assignments").then(r => r.json()),
+      ]);
+      setAllSchedules(Array.isArray(allSched) ? allSched : []);
+      setAssignments(Array.isArray(assign) ? assign : []);
+    } catch {
+      // biarkan state lama tetap tampil kalau gagal
+    }
   }, []);
 
   useEffect(() => {
@@ -86,7 +90,7 @@ export default function NonBlokSchedulePage() {
       setSubjects(Array.isArray(subj) ? subj : []);
       setPeriods(Array.isArray(per) ? per : []);
       if (cls.length > 0) setSelectedClass(cls[0].id);
-    });
+    }).catch(() => {});
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import Link from "next/link";
@@ -15,7 +15,7 @@ const DAY_LABEL: Record<string, string> = {
 };
 
 export default async function NonBlokMasterPrintPage() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
 
   const [periods, classes, schedules, subjects, settings] = await Promise.all([
     prisma.schoolPeriod.findMany({ orderBy: [{ day: "asc" }, { order: "asc" }] }),

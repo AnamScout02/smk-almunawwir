@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { id } = await params;
     const { name } = await req.json();
     if (!name?.trim()) {
@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { id } = await params;
     await prisma.jabatan.delete({ where: { id } });
     return Response.json({ ok: true });

@@ -31,7 +31,7 @@ export default function TabelBukuIndukGuruPage() {
   const [waliFilter, setWaliFilter] = useState("ALL");
 
   useEffect(() => {
-    fetch("/api/admin/buku-induk/guru").then(r => r.json()).then(d => { setTeachers(sortByNip(d)); setLoading(false); });
+    fetch("/api/admin/buku-induk/guru").then(r => r.json()).then(d => { setTeachers(sortByNip(d)); setLoading(false); }).catch(() => { setLoading(false); });
   }, []);
 
   const filtered = teachers.filter(t => {

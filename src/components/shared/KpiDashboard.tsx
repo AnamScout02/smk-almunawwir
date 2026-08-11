@@ -115,16 +115,16 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
     setLoading(true);
     if (mode === "personal") {
       Promise.all([
-        fetch("/api/kpi/score").then(r => r.json()),
-        fetch("/api/kpi/submissions").then(r => r.json()),
+        fetch("/api/kpi/score").then(r => r.json()).catch(() => {}),
+        fetch("/api/kpi/submissions").then(r => r.json()).catch(() => {}),
       ]).then(([s, subs]) => {
         setScore(s.finalScore !== undefined ? s : null);
         setMySubmissions(Array.isArray(subs) ? subs : []);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
       Promise.all([
-        fetch(`/api/kpi/leaderboard?jabatanName=${encodeURIComponent(jabatanFilter)}&sortBy=${encodeURIComponent(sortBy)}`).then(r => r.json()),
-        fetch("/api/kpi/submissions?scope=review").then(r => r.json()),
+        fetch(`/api/kpi/leaderboard?jabatanName=${encodeURIComponent(jabatanFilter)}&sortBy=${encodeURIComponent(sortBy)}`).then(r => r.json()).catch(() => {}),
+        fetch("/api/kpi/submissions?scope=review").then(r => r.json()).catch(() => {}),
       ]).then(([lb, subs]) => {
         setLeaders(Array.isArray(lb.list) ? lb.list : []);
         setReviewQueue(Array.isArray(subs) ? subs : []);

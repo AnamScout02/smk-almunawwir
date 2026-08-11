@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { signOnlyofficeConfig, appInternalUrl } from "@/lib/onlyoffice";
@@ -20,7 +20,7 @@ function getPrincipalName(structureJson: string): string {
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyTasAccess();
     const { id } = await params;
     const isViewMode = req.nextUrl.searchParams.get("mode") === "view";
 

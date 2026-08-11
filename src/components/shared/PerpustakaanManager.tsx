@@ -128,10 +128,10 @@ export default function PerpustakaanManager() {
   function loadAll() {
     setLoading(true);
     Promise.all([
-      fetch("/api/perpustakaan/books").then(r => r.json()),
-      fetch("/api/perpustakaan/loans?status=active").then(r => r.json()),
-      fetch("/api/perpustakaan/loans").then(r => r.json()),
-      fetch("/api/perpustakaan/reservations").then(r => r.json()),
+      fetch("/api/perpustakaan/books").then(r => r.json()).catch(() => {}),
+      fetch("/api/perpustakaan/loans?status=active").then(r => r.json()).catch(() => {}),
+      fetch("/api/perpustakaan/loans").then(r => r.json()).catch(() => {}),
+      fetch("/api/perpustakaan/reservations").then(r => r.json()).catch(() => {}),
     ]).then(([b, active, all, res]) => {
       setBooks(Array.isArray(b) ? b : []);
       setActiveLoans(Array.isArray(active) ? active : []);

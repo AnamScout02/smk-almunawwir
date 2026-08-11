@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import StatTile from "@/components/admin/StatTile";
 import PageHeader from "@/components/admin/PageHeader";
 
 export default async function AdminTeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { id } = await params;
 
   const teacher = await prisma.teacher.findUnique({

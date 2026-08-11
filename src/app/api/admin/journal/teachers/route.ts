@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const teachers = await prisma.teacher.findMany({
       where: { teachingLoad: { some: {} } },
       select: { id: true, user: { select: { name: true } } },

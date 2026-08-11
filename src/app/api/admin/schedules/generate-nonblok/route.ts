@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ const XII_QUOTA: Record<string, number> = { SENIN: 9, SELASA: 9, RABU: 8, KAMIS:
 interface Slot { day: string; startTime: string; endTime: string }
 
 export async function POST(req: NextRequest) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const body = await req.json().catch(() => ({}));
   const classIds: string[] | undefined = Array.isArray(body.classIds) && body.classIds.length > 0 ? body.classIds : undefined;
 

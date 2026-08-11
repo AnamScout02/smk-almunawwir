@@ -56,7 +56,7 @@ export default function StudentBiodataPage() {
       });
       setBuku(d.bukuIndukData ?? {});
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }
   useEffect(() => {
     load();

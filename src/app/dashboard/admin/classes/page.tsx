@@ -56,17 +56,22 @@ export default function AdminClassesPage() {
 
   async function load() {
     setLoading(true);
-    const [clsRes, optRes] = await Promise.all([
-      fetch("/api/admin/classes"),
-      fetch("/api/admin/classes/options"),
-    ]);
-    if (clsRes.ok) setClasses(await clsRes.json());
-    if (optRes.ok) {
-      const { majors: m, teachers: t } = await optRes.json();
-      setMajors(m);
-      setTeachers(t);
+    try {
+      const [clsRes, optRes] = await Promise.all([
+        fetch("/api/admin/classes"),
+        fetch("/api/admin/classes/options"),
+      ]);
+      if (clsRes.ok) setClasses(await clsRes.json());
+      if (optRes.ok) {
+        const { majors: m, teachers: t } = await optRes.json();
+        setMajors(m);
+        setTeachers(t);
+      }
+    } catch {
+      // biarkan state lama tetap tampil kalau gagal, jangan sampai spinner macet
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);

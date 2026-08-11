@@ -7,7 +7,7 @@ import {
   BookOpen, Globe, LogOut, Menu, X, Calendar, Bell, BarChart2, GraduationCap,
   UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, ShieldCheck, Award, Building2, ListChecks, Boxes,
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, IdCard,
-  ChevronDown, Search,
+  ChevronDown, Search, CheckSquare,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -79,6 +79,8 @@ const menuGroups = [
       { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, show: (j: string[]) => j.includes("Kepala UKS") },
       { href: "/dashboard/admin/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag,
         show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
+      { href: "/dashboard/admin/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare,
+        show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
       { href: "/dashboard/admin/perpustakaan", label: "Perpustakaan", icon: Library,
         show: (j: string[]) => j.includes("Koordinator Perpustakaan") || j.includes("Tim Perpustakaan") },
       { href: "/dashboard/admin/buku-saya", label: "Buku Saya", icon: BookOpen, badgeKey: "overdueBooks" as const, show: (_j: string[], _full: boolean) => true },
@@ -88,15 +90,22 @@ const menuGroups = [
   },
   {
     label: "Tata Usaha",
+    // PERBAIKAN KRITIS 2026-08-10 (temuan user): dulu SEMUA item di sini `show: () => true` —
+    // literally mengabaikan parameter `full` walau komentar di atas bilang seharusnya disyaratkan.
+    // Akibatnya staf TAS non-TU (Security/Kebersihan/dll) TETAP LIHAT menu Buku Induk/Persuratan/
+    // Pengarsipan dkk di sidebar (walau API-nya sendiri sudah benar ditolak lewat verifyTasAccess,
+    // lihat tas-access-guard.ts) — membingungkan & tetap celah kalau ada halaman TU yg lupa proteksi
+    // sendiri. Sekarang benar-benar disyaratkan `full` (isFullTasJabatan).
     items: [
-      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/buku-induk/guru",  label: "Buku Induk Guru",  icon: UserCog, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/buku-mutasi",       label: "Buku Mutasi",      icon: Repeat, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/persuratan",        label: "Persuratan",       icon: Mail, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/arsip",             label: "Pengarsipan",      icon: Archive, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/notulen-rapat",     label: "Notulen Rapat",    icon: NotebookPen, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/kartu-tanda",       label: "Kartu Tanda",      icon: IdCard, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/verifikasi-data",   label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/buku-induk/guru",  label: "Buku Induk Guru",  icon: UserCog, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/buku-mutasi",       label: "Buku Mutasi",      icon: Repeat, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/persuratan",        label: "Persuratan",       icon: Mail, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/arsip",             label: "Pengarsipan",      icon: Archive, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/notulen-rapat",     label: "Notulen Rapat",    icon: NotebookPen, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kartu-tanda",       label: "Kartu Tanda",      icon: IdCard, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/verifikasi-data",   label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/bel-sekolah",       label: "Bel Sekolah Otomatis", icon: Bell, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
@@ -111,6 +120,8 @@ const menuGroups = [
 
 interface RenderItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badgeKey?: "pendingProfileEdits" | "overdueBooks" }
 interface RenderGroup { label: string | null; items: RenderItem[] }
+
+const ALL_HREFS = menuGroups.flatMap(g => g.items.map(i => i.href));
 
 interface SidebarContentProps {
   logoEmblem: string;
@@ -268,8 +279,14 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
+  // PERBAIKAN 2026-08-10 (temuan user, screenshot: 2 menu ke-highlight bersamaan) — kalau href
+  // menu A jadi prefix dari href menu B, dulu KEDUANYA dianggap aktif. Sekarang hanya href PALING
+  // SPESIFIK (terpanjang) yg match dianggap aktif.
   function isActive(href: string, exact = false) {
-    return exact ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
+    if (exact) return pathname === href;
+    if (pathname !== href && !pathname.startsWith(href + "/")) return false;
+    const moreSpecific = ALL_HREFS.some(h => h !== href && h.length > href.length && (pathname === h || pathname.startsWith(h + "/")));
+    return !moreSpecific;
   }
 
   // Grup yang benar2 punya item terlihat (sesuai jabatan) DAN cocok dengan pencarian.

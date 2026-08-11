@@ -10,6 +10,9 @@ const MIME: Record<string, string> = {
   gif: "image/gif",
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
 };
 
 // Melayani file yang di-upload saat runtime secara langsung dari disk.

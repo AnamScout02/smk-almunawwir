@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { id: userId } = await params;
     const { jabatanIds } = await req.json();
     if (!Array.isArray(jabatanIds)) {

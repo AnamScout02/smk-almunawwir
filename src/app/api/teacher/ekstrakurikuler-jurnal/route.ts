@@ -2,19 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertExtracurricularAccess } from "@/lib/ekstrakurikuler-guard";
 
-async function getTeacherId(email: string) {
-  const teacher = await prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
-  return teacher?.id ?? null;
-}
-
 /** Absen Ekstra (Pramuka, dst) — per sesi ekstrakurikuler, TERPISAH dari Attendance resmi
  * (absensi harian sekolah), sama seperti Jurnal Mengajar terpisah dari Attendance. Roster dari
- * ExtracurricularMember (peserta ekskul), bukan Class. Khusus Pembina ekskul ybs. */
+ * ExtracurricularMember (peserta ekskul), bukan Class. Khusus Pembina ekskul ybs — role GURU
+ * (TeachingAssignment) MAUPUN staf TAS (StaffJabatan, mis. Security yg merangkap Pembina Pramuka
+ * seperti kasus nyata Muhammad Abdul Rokeb) — assertExtracurricularAccess sudah role-agnostic. */
 export async function GET(req: Request) {
   try {
-    const session = await verifyRole(["TEACHER", "ADMIN"]);
-    const teacherId = await getTeacherId(session.email);
-    if (!teacherId) return Response.json({ error: "Data guru tidak ditemukan" }, { status: 404 });
+    const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
 
     const { searchParams } = new URL(req.url);
     const extracurricularId = searchParams.get("extracurricularId");
@@ -61,9 +56,11 @@ interface RowInput { studentId: string; status: string }
 
 export async function POST(req: Request) {
   try {
-    const session = await verifyRole(["TEACHER", "ADMIN"]);
-    const teacherId = await getTeacherId(session.email);
-    if (!teacherId) return Response.json({ error: "Data guru tidak ditemukan" }, { status: 404 });
+    const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
+    // teacherId cuma diisi kalau pencatatnya benar guru (punya baris Teacher) — staf TAS
+    // (Security/Kebersihan/dll yg merangkap Pembina) tidak punya baris Teacher sama sekali,
+    // makanya field ini opsional & recordedByName/Role snapshot dipakai sbg sumber utama.
+    const teacher = await prisma.teacher.findFirst({ where: { user: { email: session.email } }, select: { id: true } });
 
     const body = await req.json() as { extracurricularId: string; date: string; materi?: string; rows: RowInput[] };
     const { extracurricularId, materi } = body;
@@ -85,7 +82,8 @@ export async function POST(req: Request) {
       await tx.extracurricularJournal.deleteMany({ where: { extracurricularId, date: { gte: date, lt: nextDay } } });
       await tx.extracurricularJournal.create({
         data: {
-          extracurricularId, teacherId, date, materi: materi?.trim() || null,
+          extracurricularId, teacherId: teacher?.id ?? null, date, materi: materi?.trim() || null,
+          recordedByName: session.name, recordedByRole: session.role,
           entries: { create: rows.map(r => ({ studentId: r.studentId, status: r.status })) },
         },
       });

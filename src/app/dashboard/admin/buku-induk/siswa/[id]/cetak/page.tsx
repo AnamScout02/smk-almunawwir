@@ -17,7 +17,7 @@ export default function CetakBukuIndukPage() {
   useEffect(() => {
     fetch(`/api/admin/buku-induk/siswa/${id}`)
       .then(r => { if (!r.ok) { setNotFound(true); return null; } return r.json(); })
-      .then(d => { if (d) setStudent(d); setLoading(false); });
+      .then(d => { if (d) setStudent(d); setLoading(false); }).catch(() => { setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
     fetch(`/api/admin/buku-induk/siswa/${id}/qr`).then(r => r.json()).then(d => setQrDataUrl(d.qrDataUrl ?? "")).catch(() => {});

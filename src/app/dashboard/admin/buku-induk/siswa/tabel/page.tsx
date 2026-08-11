@@ -36,7 +36,7 @@ export default function TabelBukuIndukSiswaPage() {
   const [editing, setEditing] = useState<Student | null>(null);
 
   const fetchStudents = useCallback(() => {
-    fetch("/api/admin/buku-induk/siswa").then(r => r.json()).then(d => { setStudents(sortByNis(d)); setLoading(false); });
+    fetch("/api/admin/buku-induk/siswa").then(r => r.json()).then(d => { setStudents(sortByNis(d)); setLoading(false); }).catch(() => { setLoading(false); });
   }, []);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);

@@ -80,8 +80,8 @@ export default function InventarisManager() {
   function load() {
     setLoading(true);
     Promise.all([
-      fetch("/api/inventaris").then(r => r.json()),
-      fetch("/api/inventaris/damage-reports").then(r => r.json()),
+      fetch("/api/inventaris").then(r => r.json()).catch(() => {}),
+      fetch("/api/inventaris/damage-reports").then(r => r.json()).catch(() => {}),
     ]).then(([a, d]) => {
       setItems(Array.isArray(a) ? a : []);
       setReports(Array.isArray(d) ? d : []);

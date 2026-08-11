@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const [majors, teachers] = await Promise.all([
       prisma.major.findMany({ orderBy: { name: "asc" } }),
       prisma.teacher.findMany({

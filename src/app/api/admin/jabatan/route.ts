@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const jabatan = await prisma.jabatan.findMany({
       include: { _count: { select: { teachers: true } } },
       orderBy: { name: "asc" },
@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { name } = await req.json();
     if (!name?.trim()) {
       return Response.json({ error: "Nama jabatan wajib diisi." }, { status: 400 });

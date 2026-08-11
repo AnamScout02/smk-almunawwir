@@ -19,7 +19,7 @@ export default function NotulenRapatPage() {
 
   function load() {
     setLoading(true);
-    fetch("/api/admin/notulen-rapat").then(r => r.json()).then(d => { setMeetings(Array.isArray(d) ? d : []); setLoading(false); });
+    fetch("/api/admin/notulen-rapat").then(r => r.json()).then(d => { setMeetings(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => { setLoading(false); });
   }
   useEffect(() => { load(); }, []);
 

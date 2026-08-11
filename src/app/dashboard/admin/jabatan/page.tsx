@@ -24,7 +24,7 @@ export default function AdminJabatanPage() {
 
   function load() {
     setLoading(true);
-    fetch("/api/admin/jabatan").then(r => r.json()).then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); });
+    fetch("/api/admin/jabatan").then(r => r.json()).then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => { setLoading(false); });
   }
   useEffect(() => { load(); }, []);
 

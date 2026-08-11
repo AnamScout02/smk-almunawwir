@@ -63,7 +63,7 @@ export default function SuratKeluarSetupPage() {
       setPihak(d.pihak ?? ""); setPerihal(d.perihal ?? ""); setKlasifikasi(d.klasifikasi ?? "");
       setPenandaTangan(d.penandaTangan ?? "Kepala SMK Al Munawwir IIBS");
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }, [id, isNew]);
 
   async function handleGenerateNomor() {

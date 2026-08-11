@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { getOwnedJabatanIds } from "@/lib/jabatan-guard";
+import { getOwnedJabatanIds, getJabatanNames } from "@/lib/jabatan-guard";
+import { TAS_JABATAN } from "@/lib/tas-access-guard";
 
 export const dynamic = "force-dynamic";
+
+// PERBAIKAN KRITIS 2026-08-10 (temuan user): dulu SIAPAPUN role TAS otomatis lihat SEMUA Program
+// Kerja lintas jabatan — sekarang wajib jabatan TU eksplisit, kalau tidak scope ke jabatan sendiri.
+async function isFullAccess(session: { role: string; email: string }) {
+  if (session.role === "ADMIN") return true;
+  if (session.role !== "TAS") return false;
+  const names = await getJabatanNames(session.email);
+  return names.some(n => TAS_JABATAN.includes(n));
+}
 
 export async function GET(req: NextRequest) {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
   const { searchParams } = new URL(req.url);
   const jabatanId = searchParams.get("jabatanId");
 
-  if (session.role === "ADMIN" || session.role === "TAS") {
+  if (await isFullAccess(session)) {
     const programs = await prisma.programKerja.findMany({
       where: jabatanId ? { jabatanId } : undefined,
       include: { jabatan: { select: { id: true, name: true } } },
@@ -40,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Jabatan, judul, dan tanggal mulai wajib diisi" }, { status: 400 });
   }
 
-  if (session.role === "TEACHER") {
+  if (!(await isFullAccess(session))) {
     const owned = await getOwnedJabatanIds(session.email);
     if (!owned.some(j => j.id === jabatanId)) {
       return NextResponse.json({ error: "Anda tidak memegang jabatan ini" }, { status: 403 });

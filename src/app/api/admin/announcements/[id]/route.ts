@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { id } = await params;
   const body = await req.json();
   const { title, content, targetRole, priority, active, startDate, endDate } = body;
@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { id } = await params;
   await prisma.announcement.delete({ where: { id } });
   return NextResponse.json({ ok: true });

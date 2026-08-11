@@ -51,10 +51,10 @@ export default function ProgramKerjaAdminPage() {
   function load() {
     setLoading(true);
     const qs = filterJabatan ? `?jabatanId=${filterJabatan}` : "";
-    fetch(`/api/program-kerja${qs}`).then(r => r.json()).then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); });
+    fetch(`/api/program-kerja${qs}`).then(r => r.json()).then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => { setLoading(false); });
   }
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filterJabatan]);
-  useEffect(() => { fetch("/api/admin/jabatan").then(r => r.json()).then(d => setJabatanList(Array.isArray(d) ? d : [])); }, []);
+  useEffect(() => { fetch("/api/admin/jabatan").then(r => r.json()).then(d => setJabatanList(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
 
   function openAdd() { setEditing(null); setForm(EMPTY_FORM); setError(""); setModal(true); }
   function openEdit(item: Program) {

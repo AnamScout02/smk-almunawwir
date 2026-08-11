@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
 import { weekLabel } from "@/lib/schedule-week";
 
@@ -7,7 +7,7 @@ const DAY_ORDER: Record<string, number> = { SENIN: 1, SELASA: 2, RABU: 3, KAMIS:
 
 export async function GET(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
 
     const classId = req.nextUrl.searchParams.get("classId");
     const weekType = req.nextUrl.searchParams.get("weekType");

@@ -1,18 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess, TAS_JABATAN } from "@/lib/tas-access-guard";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 
-const TAS_JABATAN = ["Tenaga Administrasi Sekolah", "Kepala Tenaga Administrasi Sekolah"];
-
 // GET dipakai luas (Buku Induk Siswa, Reports, Absensi, Users, dst) selain oleh halaman Kurikulum
-// (Jadwal/Penugasan) — jadi selain Wakasek Kurikulum, guru berjabatan TU (TAS via jabatan) dan
-// Wakasek Kesiswaan/Guru BK (perlu daftar kelas utk Rekap Absensi Siswa) juga perlu lolos.
+// (Jadwal/Penugasan) — jadi selain Wakasek Kurikulum, guru/staf berjabatan TU (TAS via jabatan)
+// dan Wakasek Kesiswaan/Guru BK (perlu daftar kelas utk Rekap Absensi Siswa) juga perlu lolos.
 // `assertKurikulum` sendiri TIDAK diubah (masih dipakai ketat oleh endpoint schedule/teaching-
 // assignment lain) — pengecualian ditambahkan cuma di sini.
+//
+// PERBAIKAN KRITIS 2026-08-10 (temuan user): dulu `role !== "TEACHER"` return duluan di baris
+// pertama — ADMIN *dan* TAS ikut lolos tanpa cek jabatan sama sekali, jadi security/kebersihan
+// (role TAS tapi jabatan tidak relevan) bisa baca SELURUH data kelas+siswa. Sekarang role TAS
+// diperlakukan sama seperti TEACHER: wajib py salah satu jabatan yg relevan.
 async function assertClassesReadAccess(session: { role: string; email: string }) {
-  if (session.role !== "TEACHER") return;
+  if (session.role === "ADMIN") return;
   const names = await getJabatanNames(session.email);
   if (names.some(n => TAS_JABATAN.includes(n) || KESISWAAN_BK_JABATAN.includes(n))) return;
   await assertKurikulum(session);
@@ -44,7 +48,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const body = await req.json();
     const cls = await prisma.class.create({
       data: {

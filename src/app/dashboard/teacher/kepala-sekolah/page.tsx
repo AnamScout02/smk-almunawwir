@@ -29,7 +29,7 @@ export default function KepalaSekolahDashboard() {
       if (!r.ok) { const d = await r.json(); setError(d.error || "Gagal memuat data"); setLoading(false); return; }
       setData(await r.json());
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
     fetch("/api/teacher/kepala-sekolah/rapor-approvals").then(r => r.json()).then(d => {
       if (Array.isArray(d)) setPendingRapor(d.filter(r => !r.approved).length);
     }).catch(() => {});

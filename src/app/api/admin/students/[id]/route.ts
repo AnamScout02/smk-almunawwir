@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { logActivity } from "@/lib/activity-log";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { id } = await params;
     const { nis, nisn, majorId, classId } = await req.json();
 
@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await verifyRole(["ADMIN", "TAS"]);
+    const session = await verifyTasAccess();
     const { id } = await params;
     const student = await prisma.student.delete({ where: { id }, include: { user: { select: { name: true } } } });
     await logActivity(session, {

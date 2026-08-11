@@ -33,7 +33,7 @@ function CetakJurnalContent() {
       setTeacherName(me.name ?? "");
       setLogoUrl(logos.fullWhite ?? "");
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }, [classId, subject, semester]);
 
   const className = rows[0]?.className ?? "";

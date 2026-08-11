@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
 export async function GET(req: Request) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get("classId") || undefined;
   const semester = searchParams.get("semester") || undefined;

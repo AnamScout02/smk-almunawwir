@@ -18,7 +18,7 @@ export default function AbsensiJurnalPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/classes").then(r => r.json()).then(d => { setClasses(Array.isArray(d) ? d : []); setLoading(false); });
+    fetch("/api/admin/classes").then(r => r.json()).then(d => { setClasses(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => { setLoading(false); });
   }, []);
 
   const grouped = [10, 11, 12]

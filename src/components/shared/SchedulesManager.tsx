@@ -113,7 +113,7 @@ export default function SchedulesManager({
       setSubjects(Array.isArray(subj) ? subj : []);
       setPeriods(Array.isArray(per) ? per : []);
       if (cls.length > 0) setSelectedClass(cls[0].id);
-    });
+    }).catch(() => {});
     loadUnscheduled();
     fetch("/api/admin/schedules/lock").then(r => r.json()).then(d => setScheduleLocked(!!d.locked)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

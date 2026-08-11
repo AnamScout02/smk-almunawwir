@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { getOwnedJabatanIds } from "@/lib/jabatan-guard";
+import { getOwnedJabatanIds, getJabatanNames } from "@/lib/jabatan-guard";
+import { TAS_JABATAN } from "@/lib/tas-access-guard";
 
 export const dynamic = "force-dynamic";
 
+// PERBAIKAN KRITIS 2026-08-10 (temuan user) — lihat komentar sama di ../route.ts.
 async function assertOwnership(session: { role: string; email: string }, jabatanId: string) {
-  if (session.role === "ADMIN" || session.role === "TAS") return true;
+  if (session.role === "ADMIN") return true;
+  if (session.role === "TAS") {
+    const names = await getJabatanNames(session.email);
+    if (names.some(n => TAS_JABATAN.includes(n))) return true;
+  }
   const owned = await getOwnedJabatanIds(session.email);
   return owned.some(j => j.id === jabatanId);
 }

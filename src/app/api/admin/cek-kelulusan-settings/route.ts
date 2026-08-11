@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const settings = await getSettings(["kelulusan.tanggalBuka", "kelulusan.tanggalTutup"]);
     return NextResponse.json({
       tanggalBuka: settings["kelulusan.tanggalBuka"] || "",
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const { tanggalBuka, tanggalTutup } = await req.json();
 
     await prisma.$transaction([

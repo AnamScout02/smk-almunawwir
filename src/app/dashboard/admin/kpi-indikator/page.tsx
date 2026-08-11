@@ -26,7 +26,7 @@ export default function KpiIndikatorPage() {
 
   function load() {
     setLoading(true);
-    fetch("/api/admin/kpi/indicators").then(r => r.json()).then(d => setIndicators(Array.isArray(d) ? d : [])).finally(() => setLoading(false));
+    fetch("/api/admin/kpi/indicators").then(r => r.json()).then(d => setIndicators(Array.isArray(d) ? d : [])).finally(() => setLoading(false)).catch(() => { setLoading(false); });
   }
   useEffect(() => { load(); }, []);
 

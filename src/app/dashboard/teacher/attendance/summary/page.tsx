@@ -38,7 +38,7 @@ export default function AttendanceSummaryPage() {
         } else {
           setLoading(false);
         }
-      });
+      }).catch(() => { setLoading(false); });
   }, []);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function AttendanceSummaryPage() {
     const monthQuery = month ? `&month=${month}` : "";
     fetch(`/api/teacher/attendance/summary?classId=${selectedClass}${monthQuery}`)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); });
+      .then(d => { setData(d); setLoading(false); }).catch(() => { setLoading(false); });
   }, [selectedClass, month]);
 
   return (

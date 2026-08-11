@@ -62,15 +62,20 @@ export default function UsersPage() {
 
   async function fetchUsers() {
     setLoading(true);
-    const [uRes, optRes, clsRes] = await Promise.all([
-      fetch("/api/admin/users"),
-      fetch("/api/admin/classes/options"),
-      fetch("/api/admin/classes"),
-    ]);
-    if (uRes.ok) setUsers(await uRes.json());
-    if (optRes.ok) { const { majors: m } = await optRes.json(); setMajors(m); }
-    if (clsRes.ok) setClasses(await clsRes.json());
-    setLoading(false);
+    try {
+      const [uRes, optRes, clsRes] = await Promise.all([
+        fetch("/api/admin/users"),
+        fetch("/api/admin/classes/options"),
+        fetch("/api/admin/classes"),
+      ]);
+      if (uRes.ok) setUsers(await uRes.json());
+      if (optRes.ok) { const { majors: m } = await optRes.json(); setMajors(m); }
+      if (clsRes.ok) setClasses(await clsRes.json());
+    } catch {
+      // biarkan state lama tetap tampil kalau gagal, jangan sampai spinner macet
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

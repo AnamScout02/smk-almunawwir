@@ -38,7 +38,7 @@ export default function AdminJurnalGuruPage() {
       setTeachers(d);
       if (d.length > 0) setTeacherId(d[0].teacherId);
       setLoading(false);
-    });
+    }).catch(() => { setLoading(false); });
   }, []);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function AdminJurnalGuruPage() {
     fetch(`/api/admin/journal/classes?teacherId=${teacherId}`).then(r => r.json()).then((d: TeachClass[]) => {
       setClasses(d);
       if (d.length > 0) setClassKey(`${d[0].classId}::${d[0].subjectName}`);
-    });
+    }).catch(() => {});
   }, [teacherId]);
 
   const selected = useMemo(() => {
@@ -59,7 +59,7 @@ export default function AdminJurnalGuruPage() {
     if (!selected || !teacherId) return;
     setLoadingHistory(true);
     fetch(`/api/teacher/journal/history?teacherId=${teacherId}&classId=${selected.classId}&subject=${encodeURIComponent(selected.subjectName)}&semester=${encodeURIComponent(semester)}`)
-      .then(r => r.json()).then(d => { setHistory(Array.isArray(d) ? d : []); setLoadingHistory(false); });
+      .then(r => r.json()).then(d => { setHistory(Array.isArray(d) ? d : []); setLoadingHistory(false); }).catch(() => { setLoadingHistory(false); });
   }, [selected, teacherId, semester]);
 
   const printHref = selected

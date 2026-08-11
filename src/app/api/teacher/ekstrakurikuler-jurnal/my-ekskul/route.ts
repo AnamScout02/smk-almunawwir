@@ -2,12 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { getOwnedExtracurricularNames } from "@/lib/ekstrakurikuler-guard";
 
-/** Daftar ekstrakurikuler yang boleh diabsen guru ybs — dari jabatan "Pembina <Nama>" (lihat
- * ekstrakurikuler-guard.ts). ADMIN lihat semua. Dipakai buat dropdown pilih ekskul di halaman
- * Absen Ekstra — untuk sekarang cuma Pembina yg boleh, sesuai keputusan eksplisit user. */
+/** Daftar ekstrakurikuler yang boleh diabsen pembina ybs — dari jabatan "Pembina <Nama>" (lihat
+ * ekstrakurikuler-guard.ts), role GURU maupun staf TAS (banyak Pembina ekskul ternyata role TAS,
+ * bukan guru — kasus nyata Muhammad Abdul Rokeb/Pembina Pramuka). ADMIN lihat semua. */
 export async function GET() {
   try {
-    const session = await verifyRole(["TEACHER", "ADMIN"]);
+    const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
     if (session.role === "ADMIN") {
       const all = await prisma.extracurricular.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
       return Response.json(all);

@@ -40,7 +40,7 @@ export default function CoverEditorPage() {
           } catch { /* ignore corrupt value */ }
         }
         setLoading(false);
-      });
+      }).catch(() => { setLoading(false); });
   }, []);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {

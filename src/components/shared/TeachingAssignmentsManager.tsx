@@ -58,7 +58,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
       setSubjects(Array.isArray(subj) ? subj : []);
       setPeriods(Array.isArray(per) ? per : []);
       if (cls.length > 0) setSelectedClass(cls[0].id);
-    });
+    }).catch(() => {});
   }, []);
 
   const load = useCallback(async (classId: string) => {

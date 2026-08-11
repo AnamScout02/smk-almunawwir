@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const settings = await prisma.siteSetting.findMany({ orderBy: { key: "asc" } });
   return NextResponse.json(settings);
 }
 
 export async function PUT(req: Request) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { key, value } = await req.json() as { key: string; value: string };
   if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });
 

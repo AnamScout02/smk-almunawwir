@@ -21,7 +21,7 @@ export default function CetakKelasPage() {
         setStudents(Array.isArray(d) ? d : []);
         if (Array.isArray(d) && d[0]?.class?.name) setClassName(d[0].class.name);
         setLoading(false);
-      });
+      }).catch(() => { setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
     fetch(`/api/admin/buku-induk/siswa/qr?classId=${classId}`).then(r => r.json()).then(setQrMap).catch(() => {});

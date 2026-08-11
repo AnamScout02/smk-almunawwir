@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import Link from "next/link";
@@ -15,7 +15,7 @@ const DAY_LABEL: Record<string, string> = {
 };
 
 export default async function MasterSchedulePrintPage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
-  await verifyRole(["ADMIN", "TAS"]);
+  await verifyTasAccess();
   const { week } = await searchParams;
   const weekType: "A" | "B" = week === "B" ? "B" : "A";
 

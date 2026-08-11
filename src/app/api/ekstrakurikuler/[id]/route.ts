@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getJabatanNames } from "@/lib/jabatan-guard";
+import { TAS_JABATAN } from "@/lib/tas-access-guard";
 
 export const dynamic = "force-dynamic";
 
+// PERBAIKAN KRITIS 2026-08-10 (temuan user) — lihat komentar sama di ../route.ts.
 async function assertCanManageCategories(session: { role: string; email: string }) {
-  if (session.role === "ADMIN" || session.role === "TAS") return;
+  if (session.role === "ADMIN") return;
   const names = await getJabatanNames(session.email);
+  if (session.role === "TAS" && names.some(n => TAS_JABATAN.includes(n))) return;
   if (!names.includes("Koordinator Ekstrakurikuler")) throw new Error("FORBIDDEN");
 }
 

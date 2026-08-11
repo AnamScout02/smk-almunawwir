@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { verifyRole } from "@/lib/dal";
+import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
   try {
-    await verifyRole(["ADMIN", "TAS"]);
+    await verifyTasAccess();
     const items = await prisma.admission.findMany({ orderBy: { createdAt: "desc" } });
     return Response.json(items);
   } catch { return Response.json({ error: "Gagal memuat" }, { status: 500 }); }

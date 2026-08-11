@@ -101,13 +101,13 @@ export default function JaringanManager() {
     setLoading(true);
     setConnError("");
     Promise.all([
-      fetch("/api/jaringan/status").then(r => r.json()),
-      fetch("/api/jaringan/dhcp-leases").then(r => r.json()),
-      fetch("/api/jaringan/hotspot-users").then(r => r.json()),
-      fetch("/api/jaringan/pppoe-users").then(r => r.json()),
-      fetch("/api/jaringan/hotspot-profiles").then(r => r.json()),
-      fetch("/api/jaringan/ip-pools").then(r => r.json()),
-      fetch("/api/jaringan/ip-bindings").then(r => r.json()),
+      fetch("/api/jaringan/status").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/dhcp-leases").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/hotspot-users").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/pppoe-users").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/hotspot-profiles").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/ip-pools").then(r => r.json()).catch(() => {}),
+      fetch("/api/jaringan/ip-bindings").then(r => r.json()).catch(() => {}),
     ]).then(([s, l, h, p, pr, pools, bindings]) => {
       if (s?.error) { setConnError(s.error); }
       else {
