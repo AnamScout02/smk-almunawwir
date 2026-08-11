@@ -61,11 +61,18 @@ export default async function ClassSchedulePrintPage({ searchParams }: { searchP
 
   const periodsByDay = new Map<string, typeof periods>();
   for (const day of DAYS) periodsByDay.set(day, periods.filter(p => p.day === day));
+  const periodStartsByDay = new Map<string, string[]>();
+  for (const day of DAYS) periodStartsByDay.set(day, (periodsByDay.get(day) ?? []).filter(p => !p.isBreak).map(p => p.startTime));
 
+  // PERBAIKAN 2026-08-11 (akar masalah sama dgn tabel gabungan) — baris block-merge (mencakup
+  // beberapa periode sekaligus) dulu cuma terdaftar di startTime-nya sendiri, periode LANJUTAN
+  // yg ikut tercakup blok itu kelihatan "Kosong". Sekarang didaftarkan ke SEMUA periode yg
+  // startTime-nya jatuh dalam rentang [s.startTime, s.endTime) hari itu.
   const scheduleIndex = new Map<string, (typeof schedules)[number]>();
   for (const s of schedules) {
     if (rotating && !weekTypesOverlap(s.weekType, weekType === "SEMUA" ? "SEMUA" : weekType)) continue;
-    scheduleIndex.set(`${s.day}|${s.startTime}`, s);
+    const starts = (periodStartsByDay.get(s.day) ?? []).filter(t => t >= s.startTime && t < s.endTime);
+    for (const st of (starts.length > 0 ? starts : [s.startTime])) scheduleIndex.set(`${s.day}|${st}`, s);
   }
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });

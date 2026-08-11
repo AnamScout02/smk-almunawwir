@@ -42,10 +42,24 @@ export async function GET(req: NextRequest) {
     prisma.teachingAssignment.findMany({ include: { subject: { select: { hoursPerWeek: true } }, class: { select: { grade: true } } } }),
   ]);
 
+  // PERBAIKAN 2026-08-11 (temuan user, verifikasi ulang jadwal terhadap PDF resmi): dulu tiap
+  // baris Schedule dihitung sbg TEPAT 1 jam, padahal Schedule row BISA menyentuh BEBERAPA periode
+  // sekaligus (block-merge, mis. 1 baris "07:15–09:15" mewakili 4 periode 30 menit) — pola yg
+  // sudah dipakai sejak impor Jadwal Ganjil 2026/2027. Akibatnya baris ter-merge dihitung SANGAT
+  // kurang dari jam sebenarnya, bikin banyak "Belum Sepenuhnya Terjadwal" palsu. Sekarang dihitung
+  // dari BERAPA SLOT PERIODE (SchoolPeriod, bukan-istirahat) yg startTime-nya jatuh di rentang
+  // [s.startTime, s.endTime) hari itu — cocok utk baris 1-periode MAUPUN yg sudah di-block-merge.
+  const periodStartsByDay = new Map<string, string[]>();
+  for (const p of periods) {
+    if (!periodStartsByDay.has(p.day)) periodStartsByDay.set(p.day, []);
+    periodStartsByDay.get(p.day)!.push(p.startTime);
+  }
   const actualCount = new Map<string, number>();
   for (const s of schedules) {
     const key = `${s.classId}|${s.subject}`;
-    actualCount.set(key, (actualCount.get(key) ?? 0) + 1);
+    const dayStarts = periodStartsByDay.get(s.day) ?? [];
+    const periodsInRow = dayStarts.filter(t => t >= s.startTime && t < s.endTime).length;
+    actualCount.set(key, (actualCount.get(key) ?? 0) + Math.max(periodsInRow, 1));
   }
 
   // Beban total per guru (semua kelas, dobel utk kelas rotasi X/XI) — dipakai utk cek batas 56 jam.
@@ -67,14 +81,24 @@ export async function GET(req: NextRequest) {
   const classBusy = new Map<string, string[]>();
   // teacherId|day|startTime -> daftar {weekType, classId, subject} yang mengisi guru itu di jam itu.
   const teacherBusy = new Map<string, { weekType: string; classId: string; subject: string }[]>();
+  // PERBAIKAN 2026-08-11 (sama akar masalah dgn actualCount di atas): baris yg block-merge
+  // (mencakup beberapa periode) dulu cuma "menandai sibuk" di startTime-nya sendiri — periode
+  // TENGAH yg ikut tercakup blok itu dikira masih kosong, bikin saran salah ("ada slot kosong"
+  // padahal sebenarnya sudah terisi blok itu). Sekarang ditandai sibuk di SEMUA periode yg
+  // startTime-nya jatuh dalam rentang [s.startTime, s.endTime) hari itu.
   for (const s of schedules) {
-    const classKey = `${s.classId}|${s.day}|${s.startTime}`;
-    if (!classBusy.has(classKey)) classBusy.set(classKey, []);
-    classBusy.get(classKey)!.push(s.weekType);
-    if (s.teacherId) {
-      const teacherKey = `${s.teacherId}|${s.day}|${s.startTime}`;
-      if (!teacherBusy.has(teacherKey)) teacherBusy.set(teacherKey, []);
-      teacherBusy.get(teacherKey)!.push({ weekType: s.weekType, classId: s.classId, subject: s.subject });
+    const dayStarts = periodStartsByDay.get(s.day) ?? [];
+    const coveredStarts = dayStarts.filter(t => t >= s.startTime && t < s.endTime);
+    if (coveredStarts.length === 0) coveredStarts.push(s.startTime); // fallback kalau tidak ketemu di tabel periode
+    for (const st of coveredStarts) {
+      const classKey = `${s.classId}|${s.day}|${st}`;
+      if (!classBusy.has(classKey)) classBusy.set(classKey, []);
+      classBusy.get(classKey)!.push(s.weekType);
+      if (s.teacherId) {
+        const teacherKey = `${s.teacherId}|${s.day}|${st}`;
+        if (!teacherBusy.has(teacherKey)) teacherBusy.set(teacherKey, []);
+        teacherBusy.get(teacherKey)!.push({ weekType: s.weekType, classId: s.classId, subject: s.subject });
+      }
     }
   }
   // "target" minggu SEMUA (kelas non-rotasi) bentrok dengan APAPUN yang mengisi guru itu di

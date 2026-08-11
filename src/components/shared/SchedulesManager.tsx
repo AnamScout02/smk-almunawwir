@@ -344,16 +344,28 @@ export default function SchedulesManager({
                       </div>
                     );
                   }
-                  const s = byDay[day].find(x => x.startTime === period.startTime);
+                  // PERBAIKAN 2026-08-11 (temuan user, verifikasi ulang jadwal thd PDF resmi): dulu
+                  // cuma exact-match startTime — baris yg block-merge (mencakup beberapa periode
+                  // sekaligus, mis. "07:15–09:15" utk 4 periode 30 menit) TIDAK KETEMU di periode
+                  // 2/3/4-nya (cuma tampil di periode pertama), kelihatan seperti "Kosong" padahal
+                  // sebenarnya terisi. Sekarang dicari baris yg RENTANG [startTime,endTime)-nya
+                  // mencakup periode ini — kalau ini BUKAN periode pertama blok itu, jangan
+                  // ditampilkan lagi (sudah muncul di baris periode pertamanya, dgn badge N JP).
+                  const s = byDay[day].find(x => x.startTime <= period.startTime && period.startTime < x.endTime);
                   const p = pending.find(x => x.startTime === period.startTime);
+                  if (s && s.startTime !== period.startTime) {
+                    return <div key={period.id} className="hidden" />; // periode lanjutan blok — sudah tampil di atas
+                  }
                   if (s) {
                     const locked = s.generated && isFromRequest(s);
+                    const spanPeriods = rows.filter(r => !r.isBreak && r.startTime >= s.startTime && r.startTime < s.endTime).length;
                     return (
                       <div key={period.id} title={locked ? "Terkunci — berasal dari Preferensi Hari/Jam. Ubah/hapus request-nya di Penugasan Mengajar lalu generate ulang kalau mau diganti." : undefined}
                         className={`px-4 py-3 flex items-start justify-between group hover:bg-gray-50 ${locked ? "bg-primary-50/30" : ""}`}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-xs font-bold text-primary-700 font-mono">Ke-{period.order}: {s.startTime}–{s.endTime}</span>
+                            {spanPeriods > 1 && <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{spanPeriods} JP</span>}
                             {s.room && <span className="text-xs text-gray-400">{s.room}</span>}
                             {locked ? (
                               <span className="flex items-center gap-1 text-[10px] font-bold text-primary-700 bg-primary-100 px-1.5 py-0.5 rounded-full">

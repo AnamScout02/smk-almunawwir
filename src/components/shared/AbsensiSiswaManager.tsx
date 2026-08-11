@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CheckSquare, Loader2, Calendar, Users } from "lucide-react";
+import Link from "next/link";
+import { CheckSquare, Loader2, Calendar, Users, Printer } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
 import DatePicker from "@/components/shared/DatePicker";
+import MonthlyAttendanceCalendar, { type CalendarRow } from "@/components/shared/MonthlyAttendanceCalendar";
 
 interface ClassOption { id: string; name: string; grade: number; major: { name: string } }
 interface AttendanceRecord { id: string; date: string; status: string; student: { id: string; nis: string; user: { name: string } } }
@@ -23,7 +25,7 @@ const STATUS_COLOR: Record<string, string> = {
  * CLAUDE.md). Read-only murni — tidak ada tombol input/ubah di sini, input absensi resmi tetap
  * khusus wali kelas lewat halaman terpisah. */
 export default function AbsensiSiswaManager() {
-  const [tab, setTab] = useState<"tanggal" | "siswa">("tanggal");
+  const [tab, setTab] = useState<"tanggal" | "siswa" | "kalender">("tanggal");
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [classId, setClassId] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -38,6 +40,12 @@ export default function AbsensiSiswaManager() {
   const [summaryMonth, setSummaryMonth] = useState(""); // kosong = sepanjang waktu (perilaku lama)
   const [summaryFrom, setSummaryFrom] = useState(""); // rentang custom (mis. per minggu) — mengalahkan summaryMonth kalau diisi
   const [summaryTo, setSummaryTo] = useState("");
+
+  const [calMonth, setCalMonth] = useState(today.slice(0, 7));
+  const [calDays, setCalDays] = useState(0);
+  const [calSundays, setCalSundays] = useState<number[]>([]);
+  const [calRows, setCalRows] = useState<CalendarRow[]>([]);
+  const [loadingCal, setLoadingCal] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/classes").then(r => r.json()).then((d: ClassOption[]) => {
@@ -73,6 +81,21 @@ export default function AbsensiSiswaManager() {
       .catch(() => {}).finally(() => setLoadingSummary(false));
   }, [classId, tab, summaryMonth, summaryFrom, summaryTo]);
 
+  useEffect(() => {
+    if (!classId || tab !== "kalender") return;
+    setLoadingCal(true);
+    fetch(`/api/teacher/attendance/monthly-grid?classId=${classId}&month=${calMonth}`)
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d.students)) {
+          setCalRows(d.students);
+          setCalDays(d.daysInMonth ?? 0);
+          setCalSundays(d.sundays ?? []);
+        }
+      })
+      .catch(() => {}).finally(() => setLoadingCal(false));
+  }, [classId, tab, calMonth]);
+
   function startOfWeekISO(): string {
     const now = new Date();
     const day = now.getDay();
@@ -92,6 +115,12 @@ export default function AbsensiSiswaManager() {
         icon={<CheckSquare size={22} />}
         title="Rekap Absensi Siswa"
         description="Lihat rekap absensi digital yang diinput guru — per tanggal maupun per siswa, semua kelas"
+        actions={
+          <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-form?classId=${classId}` : "/dashboard/admin/absensi-siswa/cetak-form"} target="_blank"
+            className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition">
+            <Printer size={15} /> Cetak Form Absensi
+          </Link>
+        }
       />
 
       {loadingClasses ? (
@@ -114,6 +143,10 @@ export default function AbsensiSiswaManager() {
               <button onClick={() => setTab("siswa")}
                 className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "siswa" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
                 <Users size={14} /> Per Siswa
+              </button>
+              <button onClick={() => setTab("kalender")}
+                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "kalender" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
+                <Calendar size={14} /> Kalender Bulanan
               </button>
             </div>
           </div>
@@ -164,7 +197,7 @@ export default function AbsensiSiswaManager() {
                 )}
               </div>
             </>
-          ) : (
+          ) : tab === "siswa" ? (
             <>
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-end gap-3 flex-wrap">
                 <div>
@@ -229,6 +262,22 @@ export default function AbsensiSiswaManager() {
                     </table>
                   </div>
                 )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <label className="label-field mb-0 whitespace-nowrap">Bulan:</label>
+                  <input type="month" value={calMonth} onChange={e => setCalMonth(e.target.value)} className="input-field w-auto" />
+                </div>
+                <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-kalender?classId=${classId}&month=${calMonth}` : "#"} target="_blank"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">
+                  <Printer size={14} /> Cetak Kalender Ini
+                </Link>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <MonthlyAttendanceCalendar rows={calRows} days={calDays} sundays={calSundays} loading={loadingCal} />
               </div>
             </>
           )}

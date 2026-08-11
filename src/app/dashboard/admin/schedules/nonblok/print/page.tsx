@@ -32,14 +32,25 @@ export default async function NonBlokMasterPrintPage() {
   const subjectInfo = new Map<string, { code: number; maxShared: number }>();
   for (const s of subjects) subjectInfo.set(`${s.grade}|${s.name}`, { code: s.code, maxShared: s.maxSharedTeacher });
 
+  const periodsByDay = new Map<string, typeof periods>();
+  for (const day of DAYS) periodsByDay.set(day, periods.filter(p => p.day === day));
+  const periodStartsByDay = new Map<string, string[]>();
+  for (const day of DAYS) periodStartsByDay.set(day, (periodsByDay.get(day) ?? []).filter(p => !p.isBreak).map(p => p.startTime));
+
+  // PERBAIKAN 2026-08-11 (akar masalah sama dgn tabel gabungan BLOK) — sebar tiap baris ke SEMUA
+  // periode yg tercakup rentang [startTime,endTime)-nya, bukan cuma exact-match startTime|endTime.
+  function periodsCoveredByRow(day: string, startTime: string, endTime: string): string[] {
+    const starts = (periodStartsByDay.get(day) ?? []).filter(t => t >= startTime && t < endTime);
+    return starts.length > 0 ? starts : [startTime];
+  }
+
   const cellMap = new Map<string, { subjectCode: string; teacherCode: string }>();
   for (const s of schedules) {
-    const key = `${s.classId}|${s.day}|${s.startTime}|${s.endTime}`;
     const info = subjectInfo.get(`${s.class.grade}|${s.subject}`);
-    cellMap.set(key, {
-      subjectCode: info ? String(info.code) : s.subject.slice(0, 3),
-      teacherCode: s.teacher?.shortCode ?? "-",
-    });
+    const cellValue = { subjectCode: info ? String(info.code) : s.subject.slice(0, 3), teacherCode: s.teacher?.shortCode ?? "-" };
+    for (const pStart of periodsCoveredByRow(s.day, s.startTime, s.endTime)) {
+      cellMap.set(`${s.classId}|${s.day}|${pStart}`, cellValue);
+    }
   }
 
   // Tandai sel bentrok: guru sama muncul di >1 kelas pada jam yang sama, di luar batas
@@ -51,9 +62,11 @@ export default async function NonBlokMasterPrintPage() {
   const conflictCells = new Set<string>();
   const bySlot = new Map<string, typeof schedules>();
   for (const s of schedules) {
-    const key = `${s.day}|${s.startTime}|${s.endTime}`;
-    if (!bySlot.has(key)) bySlot.set(key, []);
-    bySlot.get(key)!.push(s);
+    for (const pStart of periodsCoveredByRow(s.day, s.startTime, s.endTime)) {
+      const key = `${s.day}|${pStart}`;
+      if (!bySlot.has(key)) bySlot.set(key, []);
+      bySlot.get(key)!.push(s);
+    }
   }
   for (const group of bySlot.values()) {
     const byTeacher = new Map<string, typeof schedules>();
@@ -69,13 +82,12 @@ export default async function NonBlokMasterPrintPage() {
       const maxShared = subjectInfo.get(`${entries[0].class.grade}|${entries[0].subject}`)?.maxShared ?? 1;
       const allowed = (majors.size === 1 && subjectNames.size === 1) || (subjectNames.size === 1 && entries.length <= maxShared);
       if (!allowed) {
-        for (const e of entries) conflictCells.add(`${e.classId}|${e.day}|${e.startTime}|${e.endTime}`);
+        for (const e of entries) {
+          for (const pStart of periodsCoveredByRow(e.day, e.startTime, e.endTime)) conflictCells.add(`${e.classId}|${e.day}|${pStart}`);
+        }
       }
     }
   }
-
-  const periodsByDay = new Map<string, typeof periods>();
-  for (const day of DAYS) periodsByDay.set(day, periods.filter(p => p.day === day));
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
@@ -133,8 +145,8 @@ export default async function NonBlokMasterPrintPage() {
                         </td>
                       ) : (
                         classes.map(c => {
-                          const cell = cellMap.get(`${c.id}|${day}|${p.startTime}|${p.endTime}`);
-                          const isConflict = conflictCells.has(`${c.id}|${day}|${p.startTime}|${p.endTime}`);
+                          const cell = cellMap.get(`${c.id}|${day}|${p.startTime}`);
+                          const isConflict = conflictCells.has(`${c.id}|${day}|${p.startTime}`);
                           if (isConflict) {
                             return (
                               <td key={c.id} className="border border-gray-300 px-0.5 py-0.5 text-center bg-red-200 text-red-900 font-bold">!</td>

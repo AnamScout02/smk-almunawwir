@@ -57,9 +57,16 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
 
   const periodsByDay = new Map<string, typeof periods>();
   for (const day of DAYS) periodsByDay.set(day, periods.filter(p => p.day === day));
+  const periodStartsByDay = new Map<string, string[]>();
+  for (const day of DAYS) periodStartsByDay.set(day, (periodsByDay.get(day) ?? []).filter(p => !p.isBreak).map(p => p.startTime));
 
+  // PERBAIKAN 2026-08-11 (akar masalah sama dgn tabel gabungan/print-class BLOK) — daftarkan baris
+  // ke SEMUA periode yg tercakup rentangnya, bukan cuma startTime-nya sendiri.
   const scheduleIndex = new Map<string, (typeof schedules)[number]>();
-  for (const s of schedules) scheduleIndex.set(`${s.day}|${s.startTime}`, s);
+  for (const s of schedules) {
+    const starts = (periodStartsByDay.get(s.day) ?? []).filter(t => t >= s.startTime && t < s.endTime);
+    for (const st of (starts.length > 0 ? starts : [s.startTime])) scheduleIndex.set(`${s.day}|${st}`, s);
+  }
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
