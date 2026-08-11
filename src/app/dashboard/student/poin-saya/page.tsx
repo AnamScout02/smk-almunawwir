@@ -35,8 +35,13 @@ export default function PoinSayaPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <PageHeader icon={<ShieldAlert size={22} />} title="Poin Saya" description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik"
-        actions={<Link href="/dashboard/student/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition"><BookOpenCheck size={15} /> Baca Tata Tertib Lengkap</Link>} />
+      <PageHeader icon={<ShieldAlert size={22} />} title="Poin Saya" description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/student/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+          <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
+        </Link>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>

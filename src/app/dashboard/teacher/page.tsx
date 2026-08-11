@@ -76,7 +76,7 @@ export default async function TeacherDashboard() {
     <div className="min-h-screen">
 
       {/* ── Header ── */}
-      <div className="relative overflow-hidden"
+      <div className="relative overflow-hidden sticky top-14 lg:top-0 z-30"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 50%, #1B2B6B 100%)" }}>
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />

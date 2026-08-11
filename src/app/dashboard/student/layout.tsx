@@ -27,7 +27,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
       <div className="flex min-h-screen">
         <StudentSidebar logoEmblem={s["logo.emblem"]} logoFullWhite={s["logo.full_white"]} hasPendingBiodata={!!pendingEdit} isKelasAdmin={isKelasAdmin} overdueBooks={overdueBooks} />
-        <main className="flex-1 min-w-0 lg:ml-56 pt-14 lg:pt-0 min-h-screen">
+        <main className="flex-1 min-w-0 pt-14 lg:pt-0 min-h-screen">
           {children}
         </main>
       </div>

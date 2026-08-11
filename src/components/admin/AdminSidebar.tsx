@@ -15,7 +15,6 @@ import { logout } from "@/app/actions/auth";
 import NotificationBell from "@/components/shared/NotificationBell";
 
 const COLLAPSE_KEY = "admin-sidebar-collapsed";
-const OPEN_GROUPS_KEY = "admin-sidebar-open-groups";
 
 // Grup dipecah lebih kecil & spesifik (dulu SEMUA 28 item ini numplek jadi satu grup "Akademik"
 // raksasa — makin lama makin tidak rapi tiap kali fitur baru ditambah). Tiap grup sekarang
@@ -332,16 +331,14 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   const [search, setSearch] = useState("");
 
   // Accordion SATU-PER-SATU — buka grup lain otomatis menutup grup yang sedang terbuka (bukan
-  // numpuk semua kebuka bareng). Muat preferensi grup terakhir dari sesi sebelumnya, TAPI grup
-  // halaman yang lagi aktif selalu menang (menimpa preferensi tersimpan) — supaya tidak
-  // membingungkan begitu halaman dibuka.
+  // numpuk semua kebuka bareng). Setiap awal login/muat halaman, SEMUA grup WAJIB tertutup
+  // kecuali grup halaman yang sedang aktif — sengaja TIDAK me-restore preferensi grup terbuka
+  // dari sesi sebelumnya (localStorage), supaya sidebar selalu mulai rapi & konsisten. Keputusan
+  // eksplisit user — jangan tambah restore-from-localStorage lagi di sini.
   useEffect(() => {
     if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
     const active = activeGroupLabel(window.location.pathname);
-    if (active) { setOpenGroups(new Set([active])); return; }
-    let saved: string[] = [];
-    try { saved = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) ?? "[]"); } catch {}
-    setOpenGroups(new Set(saved.slice(0, 1)));
+    setOpenGroups(active ? new Set([active]) : new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -361,11 +358,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   }
 
   function toggleGroup(label: string) {
-    setOpenGroups(prev => {
-      const next = prev.has(label) ? new Set<string>() : new Set([label]);
-      localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify([...next]));
-      return next;
-    });
+    setOpenGroups(prev => (prev.has(label) ? new Set<string>() : new Set([label])));
   }
 
   const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions, pendingProfileEdits, overdueBooks };

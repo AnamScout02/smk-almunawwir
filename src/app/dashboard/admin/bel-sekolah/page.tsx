@@ -98,16 +98,15 @@ export default function BelSekolahPage() {
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Bell size={22} />} title="Bel Sekolah Otomatis"
-        description="Jadwal bel otomatis — dimainkan lewat halaman Player yang dibuka di PC TU/Piket"
-        actions={
-          <>
-            <Link href="/dashboard/admin/bel-sekolah/player" target="_blank"
-              className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition">
-              <MonitorPlay size={15} /> Buka Player
-            </Link>
-            <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm"><Plus size={15} /> Tambah Jadwal</button>
-          </>
-        } />
+        description="Jadwal bel otomatis — dimainkan lewat halaman Player yang dibuka di PC TU/Piket" />
+
+      <div className="flex flex-wrap justify-end gap-2 mb-5">
+        <Link href="/dashboard/admin/bel-sekolah/player" target="_blank"
+          className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+          <MonitorPlay size={15} /> Buka Player
+        </Link>
+        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm"><Plus size={15} /> Tambah Jadwal</button>
+      </div>
 
       <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-4 text-sm mb-6">
         Buka halaman <strong>Player</strong> di PC yang tersambung ke speaker sekolah, biarkan terbuka sepanjang jam sekolah (mode layar penuh) — bel akan otomatis berbunyi sesuai jadwal di bawah. Tidak perlu hardware tambahan.

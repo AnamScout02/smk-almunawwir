@@ -271,8 +271,6 @@ interface TasSidebarProps {
   isFullTas?: boolean;
 }
 
-const OPEN_GROUPS_KEY = "tas-sidebar-open-groups";
-
 export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true }: TasSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -303,13 +301,11 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
   }
 
   // Accordion satu-per-satu (lihat komentar lengkap di AdminSidebar.tsx) — buka grup lain otomatis
-  // menutup yang sedang terbuka.
+  // menutup yang sedang terbuka. Setiap awal login/muat halaman SEMUA grup tertutup kecuali grup
+  // halaman aktif — sengaja tidak restore dari localStorage (keputusan eksplisit user).
   useEffect(() => {
     const active = activeGroupLabel();
-    if (active) { setOpenGroups(new Set([active])); return; }
-    let saved: string[] = [];
-    try { saved = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) ?? "[]"); } catch {}
-    setOpenGroups(new Set(saved.slice(0, 1)));
+    setOpenGroups(active ? new Set([active]) : new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -321,11 +317,7 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
   }, [pathname]);
 
   function toggleGroup(label: string) {
-    setOpenGroups(prev => {
-      const next = prev.has(label) ? new Set<string>() : new Set([label]);
-      localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify([...next]));
-      return next;
-    });
+    setOpenGroups(prev => (prev.has(label) ? new Set<string>() : new Set([label])));
   }
 
   const q = search.trim().toLowerCase();

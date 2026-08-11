@@ -63,8 +63,13 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <div className="print:hidden">
         <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
-          description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik"
-          actions={<Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition"><BookOpenCheck size={15} /> Baca Tata Tertib Lengkap</Link>} />
+          description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" />
+      </div>
+
+      <div className="flex justify-end mb-5 print:hidden">
+        <Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+          <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
+        </Link>
       </div>
 
       <div className="flex gap-2 mb-6 flex-wrap print:hidden">

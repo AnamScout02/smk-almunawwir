@@ -5,7 +5,7 @@ import EmptyState from "@/components/admin/EmptyState";
 export interface CalendarRow { id: string; nis: string; name: string; cells: Record<number, string>; SAKIT: number; IZIN: number; ALPHA: number }
 
 const CELL_COLOR: Record<string, string> = {
-  H: "text-emerald-600",
+  H: "text-emerald-600 font-bold",
   I: "text-blue-600",
   S: "text-amber-600",
   A: "text-red-600 font-bold",
@@ -47,8 +47,8 @@ export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading
                 {row.name} <span className="text-gray-400 font-mono text-[0.65rem]">({row.nis})</span>
               </td>
               {dayList.map(d => (
-                <td key={d} className={`px-1.5 py-1.5 text-center font-semibold ${sundays.includes(d) ? "bg-red-50" : ""} ${CELL_COLOR[row.cells[d] ?? ""] ?? "text-gray-200"}`}>
-                  {row.cells[d] ?? "·"}
+                <td key={d} className={`px-1.5 py-1.5 text-center ${sundays.includes(d) ? "bg-red-50" : ""} ${CELL_COLOR[row.cells[d] ?? ""] ?? "text-gray-200"}`}>
+                  {row.cells[d] === "H" ? "•" : (row.cells[d] ?? "·")}
                 </td>
               ))}
               <td className="px-2 py-1.5 text-center font-bold text-amber-700 bg-amber-50/50">{row.SAKIT}</td>

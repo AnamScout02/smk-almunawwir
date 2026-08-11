@@ -71,8 +71,13 @@ export default function PiketPoinSiswaPage() {
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<ShieldAlert size={22} />} title="Catat Poin Siswa (Piket)"
-        description="Khusus Terlambat & seragam/atribut tidak sesuai ketentuan — jenis pelanggaran lain hubungi BK/Wakasek Kesiswaan"
-        actions={<Link href="/dashboard/teacher/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl transition"><BookOpenCheck size={15} /> Baca Tata Tertib Lengkap</Link>} />
+        description="Khusus Terlambat & seragam/atribut tidak sesuai ketentuan — jenis pelanggaran lain hubungi BK/Wakasek Kesiswaan" />
+
+      <div className="flex justify-end mb-5">
+        <Link href="/dashboard/teacher/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+          <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
+        </Link>
+      </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl space-y-5">
         <div>

@@ -17,7 +17,12 @@ const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "
  * kelas — dimaksudkan sbg pengganti cetak arsip fisik kalau input kertas manual via ketua kelas/
  * sekretaris kelak ditiadakan (data tetap bisa dicetak dari sini). Guard scope kelas sama persis
  * /api/teacher/attendance/monthly-grid (wali kelas → kelas walinya saja; Kesiswaan/BK & ADMIN →
- * bebas kelas manapun via ?classId=). */
+ * bebas kelas manapun via ?classId=).
+ *
+ * Gaya cetak SENGAJA disamakan dgn lembar "Absensi Siswa"/"Rekap Absensi Bulanan" di
+ * /dashboard/admin/absensi-jurnal/cetak-kelas (kop 3-baris, InfoRow, header tabel primary-900,
+ * blok Ket + tanda tangan wali kelas) — bedanya di sini landscape (kolom tanggal bisa sampai 31)
+ * & datanya hidup dari Attendance digital, bukan kertas kosong. */
 export default async function CetakKalenderAbsensiPage({ searchParams }: { searchParams: Promise<{ classId?: string; month?: string }> }) {
   const session = await verifyRole(["ADMIN", "TEACHER"]);
   const { classId: qClassId, month: qMonth } = await searchParams;
@@ -27,6 +32,8 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
   const [y, m] = month.split("-").map(Number);
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const dateFilter = { gte: new Date(Date.UTC(y, m - 1, 1)), lt: new Date(Date.UTC(y, m, 1)) };
+  const tahunPelajaran = m >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+  const semester = m >= 7 ? "GANJIL" : "GENAP";
 
   let allowedClassIds: string[] | null = null; // null = bebas (ADMIN/Kesiswaan/BK)
   if (session.role === "TEACHER") {
@@ -42,7 +49,7 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
 
   const classes = await prisma.class.findMany({
     where: allowedClassIds ? { id: { in: allowedClassIds } } : undefined,
-    include: { major: { select: { name: true } } },
+    include: { major: { select: { name: true } }, homeroom: { select: { user: { select: { name: true } } } } },
     orderBy: [{ grade: "asc" }, { name: "asc" }],
   });
   const activeClass = qClassId ? classes.find(c => c.id === qClassId) : classes[0];
@@ -67,12 +74,17 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
     return {
       nis: s.nis,
       name: s.user.name,
+      gender: s.gender,
       cells,
       SAKIT: s.attendance.filter(a => a.status === "SAKIT").length,
       IZIN: s.attendance.filter(a => a.status === "IZIN").length,
       ALPHA: s.attendance.filter(a => a.status === "ALPHA").length,
     };
   });
+  const jumlahL = rows.filter(r => r.gender === "L").length;
+  const jumlahP = rows.filter(r => r.gender === "P").length;
+  const monthLabel = `${BULAN[m - 1]} ${y}`;
+  const homeroomName = activeClass?.homeroom?.user.name ?? "";
 
   return (
     <>
@@ -103,38 +115,45 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
         <div className="p-8 text-center text-gray-400">Belum ada kelas yang bisa diakses.</div>
       ) : (
         <div className="print-doc p-6 print:p-2">
-          <div className="text-center mb-4">
-            <h1 className="font-bold text-lg text-primary-900">KALENDER ABSENSI SISWA SMK AL MUNAWWIR IIBS</h1>
-            <p className="font-semibold text-sm text-primary-900">{activeClass.name} — {activeClass.major.name}</p>
-            <p className="font-semibold text-sm text-primary-900">{BULAN[m - 1]} {y}</p>
+          <div className="text-center mb-2">
+            <p className="font-bold leading-tight text-sm text-primary-900">REKAP ABSENSI SISWA SMK AL MUNAWWIR IIBS</p>
+            <p className="font-bold leading-tight text-xs text-primary-900">TAHUN PELAJARAN {tahunPelajaran}</p>
+            <p className="font-bold leading-tight text-xs text-primary-900">SEMESTER {semester}</p>
+          </div>
+          <div className="mb-2 space-y-0">
+            <div className="flex text-xs text-primary-700"><span className="w-40 shrink-0">Kelas</span><span>: {activeClass.name}</span></div>
+            <div className="flex text-xs text-primary-700"><span className="w-40 shrink-0">Kompetensi Keahlian</span><span>: {activeClass.major.name}</span></div>
+            <div className="flex text-xs text-primary-700"><span className="w-40 shrink-0">Bulan</span><span>: {monthLabel}</span></div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="border-collapse w-full text-[9px] print:text-[7px]">
+            <table className="border-collapse table-fixed text-[9px] print:text-[7px]">
               <thead>
                 <tr className="bg-primary-900 text-white">
-                  <th className="border border-gray-300 px-1 py-1 w-6">No</th>
-                  <th className="border border-gray-300 px-1 py-1 w-16">NIS</th>
-                  <th className="border border-gray-300 px-2 py-1 text-left">Nama</th>
+                  <th className="border border-primary-800 px-1 py-1 w-6">No</th>
+                  <th className="border border-primary-800 px-1 py-1 w-14">NIS</th>
+                  <th className="border border-primary-800 px-2 py-1 w-24 text-left">Nama</th>
+                  <th className="border border-primary-800 px-1 py-1 w-5">L/P</th>
                   {days.map(d => (
-                    <th key={d} className={`border border-gray-300 px-0.5 py-1 w-5 ${sundays.includes(d) ? "bg-red-700" : ""}`}>{d}</th>
+                    <th key={d} className={`border border-primary-800 px-0.5 py-1 w-5 ${sundays.includes(d) ? "bg-red-800" : ""}`}>{d}</th>
                   ))}
-                  <th className="border border-gray-300 px-1 py-1 w-6 bg-amber-700">S</th>
-                  <th className="border border-gray-300 px-1 py-1 w-6 bg-blue-700">I</th>
-                  <th className="border border-gray-300 px-1 py-1 w-6 bg-red-700">A</th>
+                  <th className="border border-primary-800 px-1 py-1 w-6 bg-amber-700">S</th>
+                  <th className="border border-primary-800 px-1 py-1 w-6 bg-blue-700">I</th>
+                  <th className="border border-primary-800 px-1 py-1 w-6 bg-red-700">A</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={6 + days.length} className="border border-gray-300 px-2 py-4 text-center text-gray-400">Belum ada siswa aktif di kelas ini.</td></tr>
+                  <tr><td colSpan={7 + days.length} className="border border-gray-300 px-2 py-4 text-center text-gray-400">Belum ada siswa aktif di kelas ini.</td></tr>
                 ) : rows.map((r, i) => (
                   <tr key={r.nis}>
-                    <td className="border border-gray-300 px-1 py-1 text-center">{i + 1}</td>
-                    <td className="border border-gray-300 px-1 py-1 text-center font-mono">{r.nis}</td>
-                    <td className="border border-gray-300 px-2 py-1 whitespace-nowrap">{r.name}</td>
+                    <td className="border border-gray-300 text-center h-5">{i + 1}</td>
+                    <td className="border border-gray-300 px-1 font-mono text-primary-700 overflow-hidden text-ellipsis whitespace-nowrap">{r.nis}</td>
+                    <td className="border border-gray-300 px-2 font-semibold text-gray-800 overflow-hidden text-ellipsis whitespace-nowrap" title={r.name}>{r.name}</td>
+                    <td className="border border-gray-300 text-center">{r.gender ?? ""}</td>
                     {days.map(d => (
-                      <td key={d} className={`border border-gray-300 px-0.5 py-1 text-center font-bold ${sundays.includes(d) ? "bg-red-50" : ""}`}>
-                        {r.cells[d] ?? ""}
+                      <td key={d} className={`border border-gray-300 px-0.5 py-1 text-center ${r.cells[d] ? "font-bold" : "text-gray-300"} ${sundays.includes(d) ? "bg-red-50" : ""}`}>
+                        {r.cells[d] === "H" ? "•" : (r.cells[d] ?? "·")}
                       </td>
                     ))}
                     <td className="border border-gray-300 px-1 py-1 text-center font-bold bg-amber-50">{r.SAKIT || ""}</td>
@@ -146,12 +165,26 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
             </table>
           </div>
 
-          <p className="text-[9px] text-gray-400 mt-3">Keterangan: H = Hadir, I = Izin, S = Sakit, A = Alpha. Kolom bertanda merah = hari Minggu.</p>
+          <div className="flex items-start justify-between mt-3 text-[10px] text-primary-700">
+            <div>
+              <p className="font-semibold">Ket:</p>
+              <p>Laki-Laki : {jumlahL}</p>
+              <p>Perempuan : {jumlahP}</p>
+              <p>Jumlah : {jumlahL + jumlahP}</p>
+              <p className="mt-1">H = Hadir &nbsp; I = Izin &nbsp; S = Sakit &nbsp; A = Alfa &nbsp; · = Belum ada data. Kolom tanggal merah = hari Minggu.</p>
+            </div>
+            <div className="text-xs text-primary-700 text-center">
+              <p>Singojuruh, {monthLabel}</p>
+              <p>Wali Kelas</p>
+              <div className="h-12" />
+              <p className="font-bold underline text-primary-900">{homeroomName || "—"}</p>
+            </div>
+          </div>
         </div>
       )}
 
       <style>{`
-        @page { size: A4 landscape; margin: 10mm 6mm; }
+        @page { size: A4 landscape; margin: 1cm 2cm; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
       `}</style>
     </>

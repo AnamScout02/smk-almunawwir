@@ -4,10 +4,13 @@ interface PageHeaderProps {
   icon: React.ReactNode;
   title: string;
   description?: React.ReactNode;
-  actions?: React.ReactNode;
 }
 
-export default function PageHeader({ icon, title, description, actions }: PageHeaderProps) {
+// SENGAJA tidak ada prop actions/tombol/dropdown di sini — header HANYA boleh berisi icon, judul,
+// dan keterangan judul. Tombol/aksi/filter apapun ditaruh di baris terpisah DI BAWAH header ini,
+// bukan di dalamnya. Aturan eksplisit dari user, sudah berulang kali dilanggar — jangan tambah
+// prop actions lagi ke komponen ini.
+export default function PageHeader({ icon, title, description }: PageHeaderProps) {
   return (
     <header
       className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 -mx-6 lg:-mx-8 -mt-16 lg:-mt-8 mb-8 px-6 lg:px-8 pt-[4.5rem] lg:pt-5 pb-5 sticky top-0 z-30"
@@ -27,10 +30,6 @@ export default function PageHeader({ icon, title, description, actions }: PageHe
           {description && <p className="text-white/60 text-sm mt-0.5">{description}</p>}
         </div>
       </div>
-
-      {actions && (
-        <div className="relative flex flex-wrap items-center gap-2 sm:gap-3 sm:shrink-0 sm:ml-4 card-fade-up" style={{ animationDelay: "60ms" }}>{actions}</div>
-      )}
     </header>
   );
 }

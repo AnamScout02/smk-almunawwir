@@ -252,6 +252,20 @@
     margin: 0;
     size: A4;
   }
+  /* PERBAIKAN 2026-08-11 (temuan user, screenshot: tekstur garis diagonal muncul di area kosong
+     halaman ke-2 hasil cetak) — body punya background dekoratif (garis diagonal + animasi) yang
+     dipakai di SELURUH dashboard. -webkit-print-color-adjust:exact di bawah ini sengaja memaksa
+     semua warna latar tetap tercetak (supaya kop/header tabel gelap ikut tercetak) — TAPI itu jadi
+     ikut memaksa background dekoratif body ini tercetak juga di ruang kosong bawah halaman kalau
+     kontennya cuma sisa dikit di halaman terakhir. Body WAJIB polos putih saat print, di SEMUA
+     halaman cetak manapun (jangan hapus blok ini kalau nambah halaman cetak baru).
+     Aturan cetak lain: JANGAN ubah margin/@page yang sudah ditentukan tiap halaman cetak — halaman
+     yang punya <style>@page{...}</style> sendiri tetap menang (cascade override blok global ini). */
+  body {
+    background: white !important;
+    background-image: none !important;
+    animation: none !important;
+  }
   /* Browser default menyembunyikan warna latar saat print (mis. banner navy kop, header tabel gelap)
      kecuali user manual centang "Print backgrounds" — paksa selalu tampil supaya WYSIWYG. */
   * {
