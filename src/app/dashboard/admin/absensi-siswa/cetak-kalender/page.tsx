@@ -88,33 +88,31 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
 
   return (
     <>
-      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/admin/absensi-siswa" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
             <ArrowLeft size={16} />
           </Link>
           <div>
-            <h1 className="font-heading font-bold">Cetak Kalender Absensi Bulanan</h1>
+            <h1 className="font-heading font-bold">Cetak Kalender Absensi Bulanan{activeClass ? ` — ${activeClass.name}` : ""}</h1>
             <p className="text-white/50 text-xs">Rekap digital 1 bulan — kolom tanggal, Minggu diwarnai, rekap S/I/A</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex gap-1 flex-wrap max-w-lg">
-            {classes.map(c => (
-              <Link key={c.id} href={`/dashboard/admin/absensi-siswa/cetak-kalender?classId=${c.id}&month=${month}`}
-                className={`text-[11px] font-semibold px-2 py-1 rounded-full ${c.id === activeClass?.id ? "bg-white text-primary-900" : "bg-white/10 hover:bg-white/20"}`}>
-                {c.name}
-              </Link>
-            ))}
-          </div>
-          <PrintButton />
-        </div>
+        <PrintButton />
+      </div>
+      <div className="print:hidden bg-primary-700 px-6 py-2.5 flex gap-1.5 flex-wrap">
+        {classes.map(c => (
+          <Link key={c.id} href={`/dashboard/admin/absensi-siswa/cetak-kalender?classId=${c.id}&month=${month}`}
+            className={`text-[11px] font-semibold px-2 py-1 rounded-full ${c.id === activeClass?.id ? "bg-white text-primary-900" : "bg-white/10 hover:bg-white/20 text-white"}`}>
+            {c.name}
+          </Link>
+        ))}
       </div>
 
       {!activeClass ? (
         <div className="p-8 text-center text-gray-400">Belum ada kelas yang bisa diakses.</div>
       ) : (
-        <div className="print-doc p-6 print:p-2">
+        <div className="print-doc bg-white p-6 print:p-2">
           <div className="text-center mb-2">
             <p className="font-bold leading-tight text-sm text-primary-900">REKAP ABSENSI SISWA SMK AL MUNAWWIR IIBS</p>
             <p className="font-bold leading-tight text-xs text-primary-900">TAHUN PELAJARAN {tahunPelajaran}</p>
@@ -184,7 +182,7 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
       )}
 
       <style>{`
-        @page { size: A4 landscape; margin: 1cm 2cm; }
+        @page { size: A4 landscape; margin: 2cm; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
       `}</style>
     </>

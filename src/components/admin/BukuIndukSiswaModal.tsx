@@ -13,7 +13,6 @@ import Field from "@/components/admin/BukuIndukField";
 import Section from "@/components/admin/BukuIndukSection";
 import Alert from "@/components/admin/Alert";
 import Modal from "@/components/admin/Modal";
-import { KEAHLIAN_MAP, keahlianForKompetensi } from "@/lib/keahlian-map";
 import { toProperCaseName } from "@/lib/text";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,7 +99,10 @@ export interface BukuIndukModalStudent {
 }
 
 interface MasterEntry { category: string; items: string[] }
-interface MajorOption { id: string; name: string; code: string }
+interface MajorOption {
+  id: string; name: string; code: string;
+  bidangKeahlian: string | null; programKeahlian: string | null; kompetensiKeahlian: string | null;
+}
 interface ClassOption { id: string; name: string; grade: number; majorId: string }
 
 const dateInput = (v?: string | Date | null): string => {
@@ -195,6 +197,9 @@ export default function BukuIndukSiswaModal({
 
   const open = isNew || student !== null;
   const md = (cat: string): string[] => masterData.find(m => m.category === cat)?.items ?? [];
+  // Live dari tabel Major (Kelola Jurusan) — dulu dari kategori Master Data statis
+  // "kompetensi_keahlian" yang terpisah & tidak otomatis update kalau jurusan baru ditambah.
+  const kompetensiOptions = majors.map(m => m.kompetensiKeahlian).filter((v): v is string => !!v);
 
   useEffect(() => {
     fetch("/api/admin/master-data").then(r => r.json()).then(d => { if (Array.isArray(d)) setMasterData(d); }).catch(() => {});
@@ -470,14 +475,23 @@ export default function BukuIndukSiswaModal({
                 onChange={v => {
                   const major = majors.find(m => m.id === v);
                   setAccountForm(p => ({ ...p, majorId: v, classId: "" }));
-                  const k = major ? KEAHLIAN_MAP[major.code] : undefined;
-                  if (k) setBukuForm(p => ({ ...p, bidangKeahlian: k.bidang, programKeahlian: k.program, kompetensiKeahlian: k.kompetensi }));
-                  else if (major) setBukuForm(p => ({ ...p, kompetensiKeahlian: major.name }));
+                  if (major?.kompetensiKeahlian) {
+                    setBukuForm(p => ({ ...p, bidangKeahlian: major.bidangKeahlian ?? "", programKeahlian: major.programKeahlian ?? "", kompetensiKeahlian: major.kompetensiKeahlian ?? "" }));
+                  } else if (major) {
+                    setBukuForm(p => ({ ...p, kompetensiKeahlian: major.name }));
+                  }
                   if (major && !accountForm.nis) {
+                    // PERBAIKAN 2026-08-12 (temuan user: "NIS otomatis tidak terisi, tanpa pesan
+                    // error") — dulu .catch(() => {}) menelan SEMUA kegagalan diam-diam (response
+                    // gagal/non-JSON, jurusan belum punya nisCode, dll), field NIS cuma diam kosong
+                    // tanpa petunjuk kenapa. Sekarang kegagalan ditampilkan lewat saveError.
                     fetch(`/api/admin/buku-induk/siswa/next-nis?majorCode=${major.code}`)
-                      .then(r => r.json())
-                      .then(d => { if (d.nis) setAccountForm(p => ({ ...p, nis: d.nis })); })
-                      .catch(() => {});
+                      .then(async r => {
+                        const d = await r.json().catch(() => null);
+                        if (!r.ok || !d?.nis) { setSaveError(d?.error || "Gagal generate NIS otomatis — isi NIS manual."); return; }
+                        setAccountForm(p => ({ ...p, nis: d.nis }));
+                      })
+                      .catch(() => setSaveError("Gagal generate NIS otomatis (jaringan bermasalah) — isi NIS manual."));
                   }
                 }}
                 options={majors.map(m => ({ value: m.id, label: `${m.name} (${m.code})` }))}
@@ -537,13 +551,13 @@ export default function BukuIndukSiswaModal({
         <Field label="Diterima di Tingkat" value={f("tingkatMasuk")} options={md("tingkat_masuk")} onChange={setF("tingkatMasuk")} />
         <Field label="Rombel" value={f("rombel")} onChange={setF("rombel")} />
         <Field label="Konsentrasi Keahlian" value={f("kompetensiKeahlian")}
-          options={!f("kompetensiKeahlian") || md("kompetensi_keahlian").includes(f("kompetensiKeahlian"))
-            ? md("kompetensi_keahlian")
-            : [f("kompetensiKeahlian"), ...md("kompetensi_keahlian")]}
+          options={!f("kompetensiKeahlian") || kompetensiOptions.includes(f("kompetensiKeahlian"))
+            ? kompetensiOptions
+            : [f("kompetensiKeahlian"), ...kompetensiOptions]}
           onChange={v => {
             setF("kompetensiKeahlian")(v);
-            const k = keahlianForKompetensi(v);
-            if (k) setBukuForm(p => ({ ...p, bidangKeahlian: k.bidang, programKeahlian: k.program }));
+            const major = majors.find(m => m.kompetensiKeahlian === v);
+            if (major) setBukuForm(p => ({ ...p, bidangKeahlian: major.bidangKeahlian ?? "", programKeahlian: major.programKeahlian ?? "" }));
           }} />
         <Field label="Bidang Keahlian" value={f("bidangKeahlian")} readOnly
           placeholder="Otomatis dari Konsentrasi Keahlian" onChange={() => {}} />

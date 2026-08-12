@@ -119,13 +119,12 @@ export default async function RekapSiswaPage() {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
-      <div className="print:hidden">
-        <PageHeader
-          icon={<BarChart3 size={22} />}
-          title="Rekapitulasi Jumlah Siswa"
-          description="Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — hanya siswa berstatus Aktif"
-        />
-      </div>
+      <PageHeader
+        icon={<BarChart3 size={22} />}
+        title="Rekapitulasi Jumlah Siswa"
+        description="Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — hanya siswa berstatus Aktif"
+        printHidden
+      />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
         <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">

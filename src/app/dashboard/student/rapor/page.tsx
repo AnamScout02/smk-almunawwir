@@ -75,14 +75,12 @@ export default async function RaporPage() {
 
   return (
     <div className="p-6 lg:p-8 print:p-0">
-      {/* Tombol aksi — tidak ikut print */}
-      <div className="print:hidden">
-        <PageHeader
-          icon={<FileText size={22} />}
-          title="Rapor Nilai"
-          description="Laporan hasil belajar & rekap kehadiran"
-        />
-      </div>
+      <PageHeader
+        icon={<FileText size={22} />}
+        title="Rapor Nilai"
+        description="Laporan hasil belajar & rekap kehadiran"
+        printHidden
+      />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
         <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
@@ -92,7 +90,7 @@ export default async function RaporPage() {
       </div>
 
       {/* Konten rapor — ikut print */}
-      <div className="print-doc max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
+      <div className="print-doc bg-white max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
         {/* Header rapor */}
         <PrintKop title="Laporan Hasil Belajar Siswa" subtitle="SMK Al Munawwir IIBS" logoUrl={settings["logo.full_white"]} />
         <p className="text-center text-gray-400 text-xs mb-6 -mt-2">Singojuruh, Banyuwangi, Jawa Timur · NPSN 69896523</p>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Printer, ArrowLeft, Loader2, ClipboardCheck, Pencil } from "lucide-react";
 import Select from "@/components/admin/Select";
 import PrintKop from "@/components/shared/PrintKop";
+import MonthPicker from "@/components/shared/MonthPicker";
 import { CoverTemplate, COVER_TEMPLATE_KEY, resolveCoverText, DEFAULT_WIDTH_PCT } from "@/lib/cover-template";
 
 const MM_PX = 3.7795275591;
@@ -127,8 +128,7 @@ export default function CetakAbsensiJurnalPage() {
               </button>
             ))}
           </div>
-          <input type="month" value={monthValue} onChange={e => setMonthValue(e.target.value)}
-            className="input-field !w-40 text-sm" />
+          <MonthPicker value={monthValue} onChange={setMonthValue} className="w-40" />
           <div className="w-32">
             <Select value={semester} onChange={v => setSemester(v as "GANJIL" | "GENAP")}
               options={[{ value: "GANJIL", label: "Ganjil" }, { value: "GENAP", label: "Genap" }]} />

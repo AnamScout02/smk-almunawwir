@@ -6,6 +6,7 @@ import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface TeachClass {
   classId: string; className: string; grade: number; subjectId: string; subjectName: string;
@@ -149,7 +150,7 @@ export default function TeacherJournalPage() {
         <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className="label-field">Tanggal Pertemuan</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-field" />
+            <DatePicker value={date} onChange={setDate} />
           </div>
           {classes.length > 0 && (
             <div>
@@ -236,7 +237,7 @@ export default function TeacherJournalPage() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan — {semester}</h3>
           {selected && (
-            <Link href={printHref} target="_blank" className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+            <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
               <Printer size={13} /> Cetak Rekap
             </Link>
           )}

@@ -6,6 +6,7 @@ import { ArrowLeft, FileQuestion, Loader2, Plus, Save, Trash2, Eye, EyeOff, KeyR
 import PageHeader from "@/components/admin/PageHeader";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface QuestionForm { id?: string; question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctAnswer: string }
 interface BankItem { id: string; question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctAnswer: string }
@@ -209,14 +210,14 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
           <div>
             <label className="label-field">Mulai</label>
             <div className="flex gap-2">
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input-field" />
+              <DatePicker value={startDate} onChange={setStartDate} />
               <input type="time" value={startTimeStr} onChange={e => setStartTimeStr(e.target.value)} className="input-field" />
             </div>
           </div>
           <div>
             <label className="label-field">Selesai</label>
             <div className="flex gap-2">
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field" />
+              <DatePicker value={endDate} onChange={setEndDate} />
               <input type="time" value={endTimeStr} onChange={e => setEndTimeStr(e.target.value)} className="input-field" />
             </div>
           </div>

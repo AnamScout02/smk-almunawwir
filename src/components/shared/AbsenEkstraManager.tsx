@@ -339,11 +339,11 @@ function RekapTab({ ekskulId }: { ekskulId: string }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-wrap items-end gap-3">
         <div>
           <label className="label-field">Dari Tanggal</label>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input-field w-auto" />
+          <DatePicker value={from} onChange={setFrom} />
         </div>
         <div>
           <label className="label-field">Sampai Tanggal</label>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input-field w-auto" />
+          <DatePicker value={to} onChange={setTo} />
         </div>
         {classOptions.length > 1 && (
           <div className="w-48">

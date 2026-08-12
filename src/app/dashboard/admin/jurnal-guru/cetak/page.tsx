@@ -59,7 +59,7 @@ function CetakJurnalGuruContent() {
         </button>
       </div>
 
-      <div className="print-doc max-w-[1150px] mx-auto">
+      <div className="print-doc bg-white max-w-[1150px] mx-auto">
         <PrintKop title="Rekap Jurnal Mengajar" subtitle="SMK Al Munawwir IIBS" logoUrl={logoUrl} />
         <div className="mb-3 space-y-0.5 text-xs text-primary-700">
           <div className="flex"><span className="w-32 shrink-0">Kelas</span><span>: {className}</span></div>

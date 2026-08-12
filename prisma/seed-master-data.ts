@@ -36,9 +36,9 @@ const masterData = [
   { category: "pekerjaan", label: "Pekerjaan", items: ["Wirausaha","Wiraswasta","Buruh","Petani","Buruh Tani","Nelayan","Tidak Bekerja","Ibu Rumah Tangga","PNS","TNI/Polri","Karyawan Swasta"] },
   { category: "pengeluaran", label: "Pengeluaran Bulanan", items: ["Kurang Dari Rp.1.000.000","Rp.1.000.000 s/d Rp.1.500.000","Rp.1.500.000 s/d Rp.2.000.000","Rp.2.000.000 s/d Rp.2.500.000","Rp.2.500.000 s/d Rp.3.000.000","Lebih Dari Rp.3.000.000"] },
   { category: "alasan_pindah", label: "Alasan Pindah", items: ["Permintaan Orang Tua","Kurang Cocok dengan Lingkungan","Jarak Terlalu Jauh","Tidak Mampu Biaya"] },
-  { category: "bidang_keahlian", label: "Bidang Keahlian", items: ["Teknologi Informasi dan Komunikasi","Bisnis dan Manajemen","Agribisnis dan Agroteknologi","Seni dan Industri Kreatif","Teknologi Konstruksi dan Bangunan"] },
-  { category: "program_keahlian", label: "Program Keahlian", items: ["Teknologi Komputer dan Informatika","Akuntansi dan Keuangan","Agribisnis Ternak","Seni Rupa","Desain Pemodelan dan Informasi Bangunan"] },
-  { category: "kompetensi_keahlian", label: "Konsentrasi Keahlian", items: ["Teknik Komputer dan Jaringan","Akuntansi dan Keuangan Lembaga","Agribisnis Ternak Unggas","Desain Komunikasi Visual","Desain Pemodelan dan Informasi Bangunan"] },
+  // bidang_keahlian/program_keahlian/kompetensi_keahlian SENGAJA dihapus dari sini 2026-08-12 —
+  // dulu daftar statis terpisah dari tabel Major, sekarang live dari kolom bidangKeahlian/
+  // programKeahlian/kompetensiKeahlian di Major (isi lewat Kelola Jurusan). Jangan tambah lagi.
   { category: "pendidikan_guru", label: "Pendidikan (Guru)", items: ["D3","S1","S2","S3","Lainnya"] },
   { category: "status_kepegawaian", label: "Status Kepegawaian (Guru)", items: ["Guru Tetap Yayasan","Guru Tidak Tetap (GTT)","PNS","PPPK","Honorer"] },
 ];

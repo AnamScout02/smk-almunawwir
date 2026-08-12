@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
-import { KEAHLIAN_MAP } from "@/lib/keahlian-map";
 import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import * as XLSX from "xlsx";
 
@@ -51,8 +50,9 @@ export async function POST(req: NextRequest) {
 
   const results = { created: 0, updated: 0, errors: [] as string[] };
 
-  const majors = await prisma.major.findMany({ select: { id: true, code: true } });
+  const majors = await prisma.major.findMany({ select: { id: true, code: true, bidangKeahlian: true, programKeahlian: true, kompetensiKeahlian: true } });
   const majorMap = Object.fromEntries(majors.map(m => [m.code.toUpperCase(), m.id]));
+  const majorByCode = Object.fromEntries(majors.map(m => [m.code.toUpperCase(), m]));
 
   const classesAll = await prisma.class.findMany({ select: { id: true, name: true, majorId: true } });
   const classMap = Object.fromEntries(classesAll.map(c => [`${c.majorId}::${c.name.toUpperCase()}`, c.id]));
@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
     const kecamatan = s(row["Kecamatan"]) || null;
     const kabupaten = s(row["Kabupaten/Kota"]) || null;
     const province = s(row["Provinsi"]) || null;
-    const keahlian = KEAHLIAN_MAP[kodeJurusan];
+    const majorRow = majorByCode[kodeJurusan];
+    const keahlian = majorRow ? { bidang: majorRow.bidangKeahlian, program: majorRow.programKeahlian, kompetensi: majorRow.kompetensiKeahlian } : null;
 
     const bukuIndukData = {
       nik:              s(row["NIK"]) || null,

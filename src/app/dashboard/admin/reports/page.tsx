@@ -4,6 +4,7 @@ import { Download, FileSpreadsheet, ClipboardList, Users, CalendarDays, BookOpen
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Alert from "@/components/admin/Alert";
+import MonthPicker from "@/components/shared/MonthPicker";
 
 interface ClassItem { id: string; name: string; grade: number }
 
@@ -119,8 +120,7 @@ export default function AdminReportsPage() {
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <div>
                 <label className="label-field">Filter bulan (opsional):</label>
-                <input type="month" value={attMonth} onChange={e => setAttMonth(e.target.value)}
-                  className="input-field w-auto" />
+                <MonthPicker value={attMonth} onChange={setAttMonth} />
               </div>
               <button onClick={() => { window.location.href = "/api/admin/export/attendance"; }}
                 className="text-xs text-gray-500 hover:text-primary-700 border border-gray-200 hover:border-primary-200 rounded-xl px-3 py-2 transition-colors">

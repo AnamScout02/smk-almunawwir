@@ -315,7 +315,7 @@ export default function PerpustakaanManager() {
       <div className="flex flex-wrap justify-end gap-2 mb-5">
         {tab === "katalog" ? (
           <>
-            <a href={`${basePath}/perpustakaan/cetak-barcode`} target="_blank" rel="noopener noreferrer"
+            <a href={`${basePath}/perpustakaan/cetak-barcode`}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
               <QrCode size={15} /> Cetak Semua Barcode
             </a>

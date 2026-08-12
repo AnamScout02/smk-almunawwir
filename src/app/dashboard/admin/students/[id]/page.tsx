@@ -62,7 +62,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
           <ArrowLeft size={18} />
         </Link>
-        <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`} target="_blank" rel="noopener noreferrer"
+        <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`}
           className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-50 border border-primary-100 hover:bg-primary-100 text-primary-700 rounded-xl font-semibold transition-colors whitespace-nowrap">
           <Printer size={14} /> Lihat Buku Induk
         </Link>

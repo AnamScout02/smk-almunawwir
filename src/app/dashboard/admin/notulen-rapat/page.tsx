@@ -74,7 +74,7 @@ export default function NotulenRapatPage() {
               <div className="flex items-start justify-between mb-2">
                 <p className="font-heading font-bold text-primary-900">{m.topic || "Rapat"}</p>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Link href={`/dashboard/admin/notulen-rapat/${m.id}/cetak`} target="_blank"
+                  <Link href={`/dashboard/admin/notulen-rapat/${m.id}/cetak`}
                     className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Cetak">
                     <Printer size={14} />
                   </Link>

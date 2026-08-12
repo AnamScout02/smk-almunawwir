@@ -206,7 +206,7 @@ export default function BukuIndukSiswaPage() {
           {groupedByClass.map(({ name, items, classId }) => (
             <GroupedSection key={name} title={name} count={items.length} icon={GraduationCap}
               headerActions={classId && (
-                <a href={`/dashboard/admin/buku-induk/siswa/cetak-kelas/${classId}`} target="_blank" rel="noopener noreferrer"
+                <a href={`/dashboard/admin/buku-induk/siswa/cetak-kelas/${classId}`}
                   title="Cetak Buku Induk Sekelas"
                   className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-white/15 hover:bg-white/25 text-white rounded-lg border border-white/20 font-medium transition-colors">
                   <Printer size={12} /> Cetak Kelas
@@ -263,7 +263,7 @@ function BukuIndukSiswaTable({ items, onEdit }: { items: Student[]; onEdit: (s: 
               </td>
               <td className="px-5 py-3.5 text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  <a href={`/dashboard/admin/buku-induk/siswa/${s.id}/cetak`} target="_blank" rel="noopener noreferrer"
+                  <a href={`/dashboard/admin/buku-induk/siswa/${s.id}/cetak`}
                     title="Cetak Buku Induk"
                     className="p-1.5 text-gray-400 hover:text-primary-700 hover:bg-primary-50 rounded-lg border border-transparent hover:border-primary-100 transition-colors">
                     <Printer size={14} />

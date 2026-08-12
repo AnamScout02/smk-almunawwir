@@ -6,6 +6,7 @@ import FileUpload from "@/components/shared/FileUpload";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface JournalEntry {
   id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null;
@@ -194,7 +195,7 @@ export default function StudentPklPage() {
                 {error && <p className="error-msg">{error}</p>}
                 <div>
                   <label className="label-field">Tanggal</label>
-                  <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-field" />
+                  <DatePicker value={date} onChange={setDate} />
                 </div>
                 <div>
                   <label className="label-field">Kegiatan Hari Ini</label>

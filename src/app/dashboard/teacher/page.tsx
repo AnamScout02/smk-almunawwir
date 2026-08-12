@@ -41,8 +41,10 @@ export default async function TeacherDashboard() {
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       take: 5,
     }),
+    // Widget "Jadwal Mengajar" di dashboard sengaja TIDAK menampilkan kelas XII (keputusan
+    // eksplisit user) — jadwal kelas XII belum ikut proses verifikasi/reimport yang sama dgn X/XI.
     prisma.schedule.findMany({
-      where: { teacher: { user: { email: session.email } }, weekType: { in: ["SEMUA", currentWeekType] }, scheduleType: "BLOK" },
+      where: { teacher: { user: { email: session.email } }, weekType: { in: ["SEMUA", currentWeekType] }, scheduleType: "BLOK", class: { grade: { not: 12 } } },
       include: { class: { include: { major: true } } },
       orderBy: [{ day: "asc" }, { startTime: "asc" }],
     }),

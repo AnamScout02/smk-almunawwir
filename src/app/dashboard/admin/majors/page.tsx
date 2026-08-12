@@ -21,6 +21,9 @@ interface Major {
   icon: string | null;
   logoUrl: string | null;
   themeColor: string | null;
+  bidangKeahlian: string | null;
+  programKeahlian: string | null;
+  kompetensiKeahlian: string | null;
   _count: { students: number; classes: number };
 }
 
@@ -31,9 +34,12 @@ interface FormState {
   nisCode: string;
   description: string;
   logoUrl: string;
+  bidangKeahlian: string;
+  programKeahlian: string;
+  kompetensiKeahlian: string;
 }
 
-const emptyForm: FormState = { name: "", code: "", nisCode: "", description: "", logoUrl: "" };
+const emptyForm: FormState = { name: "", code: "", nisCode: "", description: "", logoUrl: "", bidangKeahlian: "", programKeahlian: "", kompetensiKeahlian: "" };
 
 export default function AdminMajorsPage() {
   const confirmDialog = useConfirm();
@@ -62,7 +68,10 @@ export default function AdminMajorsPage() {
   }
 
   function openEdit(m: Major) {
-    setForm({ id: m.id, name: m.name, code: m.code, nisCode: m.nisCode ?? "", description: m.description, logoUrl: m.logoUrl ?? "" });
+    setForm({
+      id: m.id, name: m.name, code: m.code, nisCode: m.nisCode ?? "", description: m.description, logoUrl: m.logoUrl ?? "",
+      bidangKeahlian: m.bidangKeahlian ?? "", programKeahlian: m.programKeahlian ?? "", kompetensiKeahlian: m.kompetensiKeahlian ?? "",
+    });
     setError("");
     setModal(true);
   }
@@ -210,6 +219,30 @@ export default function AdminMajorsPage() {
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               rows={3} placeholder="Deskripsi singkat program keahlian..."
               className="input-field resize-none" />
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Terminologi Resmi Dapodik (Buku Induk)</p>
+          </div>
+          <div>
+            <label className="label-field">Bidang Keahlian</label>
+            <input value={form.bidangKeahlian} onChange={e => setForm(f => ({ ...f, bidangKeahlian: e.target.value }))}
+              placeholder="cth: Teknologi Informasi dan Komunikasi"
+              className="input-field" />
+          </div>
+          <div>
+            <label className="label-field">Program Keahlian</label>
+            <input value={form.programKeahlian} onChange={e => setForm(f => ({ ...f, programKeahlian: e.target.value }))}
+              placeholder="cth: Teknologi Komputer dan Informatika"
+              className="input-field" />
+          </div>
+          <div>
+            <label className="label-field">Kompetensi Keahlian</label>
+            <input value={form.kompetensiKeahlian} onChange={e => setForm(f => ({ ...f, kompetensiKeahlian: e.target.value }))}
+              placeholder="cth: Teknik Komputer dan Jaringan"
+              className="input-field" />
+            <p className="text-xs text-gray-400 mt-1">
+              Dipakai sbg pilihan dropdown &quot;Kompetensi Keahlian&quot; di Buku Induk Siswa — isi ketiganya supaya jurusan ini otomatis muncul di sana.
+            </p>
           </div>
         </form>
       </Modal>

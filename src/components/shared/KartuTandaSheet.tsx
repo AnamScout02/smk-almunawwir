@@ -199,9 +199,7 @@ export default function KartuTandaSheet({ classes, template, logoEmblem, signatu
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <style>{"@page { size: A4; margin: 1cm; }"}</style>
 
-      <div className="print:hidden">
-        <PageHeader icon={<IdCard size={22} />} title="Kartu Tanda" description="Cetak kartu identitas resmi 2 sisi — siswa, guru, dan pegawai" />
-      </div>
+      <PageHeader icon={<IdCard size={22} />} title="Kartu Tanda" description="Cetak kartu identitas resmi 2 sisi — siswa, guru, dan pegawai" printHidden />
 
       <div className="flex flex-wrap items-end gap-3 mb-5 print:hidden">
         <div>

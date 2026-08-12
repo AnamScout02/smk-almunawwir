@@ -462,6 +462,13 @@ model Major {
   tagline     String?
   longDesc    String?
   skills      String[]  @default([])
+  // Terminologi resmi Dapodik/Buku Induk — dulu hardcode terpisah di src/lib/keahlian-map.ts +
+  // 3 kategori Master Data (bidang_keahlian/program_keahlian/kompetensi_keahlian), TIDAK terhubung
+  // ke tabel ini sama sekali (jurusan baru lewat Kelola Jurusan tidak otomatis muncul di Buku
+  // Induk). Sekarang jadi kolom di sini — satu-satunya sumber, sama seperti nisCode di atas.
+  bidangKeahlian      String?
+  programKeahlian     String?
+  kompetensiKeahlian  String?
   career      String[]  @default([])
   cert        String?
   features    String[]  @default([])

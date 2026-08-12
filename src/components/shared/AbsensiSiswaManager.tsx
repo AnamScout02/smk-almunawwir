@@ -7,6 +7,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
 import DatePicker from "@/components/shared/DatePicker";
+import MonthPicker from "@/components/shared/MonthPicker";
 import MonthlyAttendanceCalendar, { type CalendarRow } from "@/components/shared/MonthlyAttendanceCalendar";
 
 interface ClassOption { id: string; name: string; grade: number; major: { name: string } }
@@ -123,12 +124,6 @@ export default function AbsensiSiswaManager() {
         <EmptyState icon={CheckSquare} title="Belum Ada Kelas" description="Tambahkan kelas terlebih dahulu." />
       ) : (
         <>
-          <div className="flex justify-end mb-5">
-            <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-form?classId=${classId}` : "/dashboard/admin/absensi-siswa/cetak-form"}
-              className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
-              <Printer size={15} /> Cetak Form Absensi
-            </Link>
-          </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <label className="label-field">Kelas</label>
@@ -202,15 +197,15 @@ export default function AbsensiSiswaManager() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-end gap-3 flex-wrap">
                 <div>
                   <label className="label-field">Filter bulan (opsional)</label>
-                  <input type="month" value={summaryMonth} onChange={e => { setSummaryMonth(e.target.value); setSummaryFrom(""); setSummaryTo(""); }} className="input-field w-auto" />
+                  <MonthPicker value={summaryMonth} onChange={v => { setSummaryMonth(v); setSummaryFrom(""); setSummaryTo(""); }} />
                 </div>
                 <div>
                   <label className="label-field">Dari Tanggal</label>
-                  <input type="date" value={summaryFrom} onChange={e => { setSummaryFrom(e.target.value); setSummaryMonth(""); }} className="input-field w-auto" />
+                  <DatePicker value={summaryFrom} onChange={v => { setSummaryFrom(v); setSummaryMonth(""); }} />
                 </div>
                 <div>
                   <label className="label-field">Sampai Tanggal</label>
-                  <input type="date" value={summaryTo} onChange={e => { setSummaryTo(e.target.value); setSummaryMonth(""); }} className="input-field w-auto" />
+                  <DatePicker value={summaryTo} onChange={v => { setSummaryTo(v); setSummaryMonth(""); }} />
                 </div>
                 <button onClick={() => { setSummaryFrom(startOfWeekISO()); setSummaryTo(today); setSummaryMonth(""); }}
                   className="text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">Minggu Ini</button>
@@ -269,7 +264,7 @@ export default function AbsensiSiswaManager() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <label className="label-field mb-0 whitespace-nowrap">Bulan:</label>
-                  <input type="month" value={calMonth} onChange={e => setCalMonth(e.target.value)} className="input-field w-auto" />
+                  <MonthPicker value={calMonth} onChange={setCalMonth} />
                 </div>
                 <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-kalender?classId=${classId}&month=${calMonth}` : "#"}
                   className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">

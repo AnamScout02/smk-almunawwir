@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await verifyTasAccess();
-    const { name, code, description, icon, logoUrl, nisCode } = await req.json();
+    const { name, code, description, icon, logoUrl, nisCode, bidangKeahlian, programKeahlian, kompetensiKeahlian } = await req.json();
     if (!name?.trim() || !code?.trim() || !description?.trim()) {
       return Response.json({ error: "Nama, kode, dan deskripsi wajib diisi." }, { status: 400 });
     }
@@ -32,6 +32,9 @@ export async function POST(req: Request) {
         icon: icon?.trim() || null,
         logoUrl: logoUrl?.trim() || null,
         nisCode: nisCode?.trim() || null,
+        bidangKeahlian: bidangKeahlian?.trim() || null,
+        programKeahlian: programKeahlian?.trim() || null,
+        kompetensiKeahlian: kompetensiKeahlian?.trim() || null,
       },
     });
     return Response.json(major, { status: 201 });

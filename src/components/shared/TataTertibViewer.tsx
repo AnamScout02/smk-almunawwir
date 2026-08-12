@@ -40,9 +40,7 @@ export default function TataTertibViewer({ backHref }: { backHref: string }) {
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
-      <div className="print:hidden">
-        <PageHeader icon={<BookOpenCheck size={22} />} title="Tata Tertib Peserta Didik" description="SMK Al Munawwir IIBS — Tahun Pelajaran 2026/2027" />
-      </div>
+      <PageHeader icon={<BookOpenCheck size={22} />} title="Tata Tertib Peserta Didik" description="SMK Al Munawwir IIBS — Tahun Pelajaran 2026/2027" printHidden />
       <div className="flex items-center gap-2 mb-5 print:hidden">
         <Link href={backHref} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"><ArrowLeft size={18} /></Link>
         <PrintButton />

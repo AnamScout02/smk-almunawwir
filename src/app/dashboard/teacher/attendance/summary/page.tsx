@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2, BarChart2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import MonthPicker from "@/components/shared/MonthPicker";
 
 interface StudentSummary {
   id: string;
@@ -76,7 +77,7 @@ export default function AttendanceSummaryPage() {
         )}
         <div>
           <label className="text-sm font-semibold text-gray-600 block mb-1.5">Filter bulan (opsional):</label>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="input-field w-auto" />
+          <MonthPicker value={month} onChange={setMonth} />
         </div>
         {month && (
           <button onClick={() => setMonth("")} className="text-xs font-semibold text-primary-600 hover:text-primary-800 pb-2.5">

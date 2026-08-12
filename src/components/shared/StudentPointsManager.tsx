@@ -10,6 +10,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import PrintKop from "@/components/shared/PrintKop";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface ViolationType { id: string; category: string; name: string; pointsMin: number; pointsMax: number; piketAllowed: boolean; active: boolean }
 interface AchievementType { id: string; name: string; pointsMin: number; pointsMax: number; active: boolean }
@@ -61,10 +62,8 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
-      <div className="print:hidden">
-        <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
-          description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" />
-      </div>
+      <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
+        description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" printHidden />
 
       <div className="flex justify-end mb-5 print:hidden">
         <Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
@@ -297,11 +296,11 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
         </div>
         <div>
           <label className="label-field">Dari Tanggal</label>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input-field" />
+          <DatePicker value={from} onChange={setFrom} />
         </div>
         <div>
           <label className="label-field">Sampai Tanggal</label>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input-field" />
+          <DatePicker value={to} onChange={setTo} />
         </div>
         <button onClick={() => { setFrom(startOfWeekISO()); setTo(todayISO()); }}
           className="text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">Minggu Ini</button>

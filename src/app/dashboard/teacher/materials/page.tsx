@@ -6,6 +6,7 @@ import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import FileUpload from "@/components/shared/FileUpload";
+import DatePicker from "@/components/shared/DatePicker";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface TeachClass { classId: string; className: string; grade: number; subjectId: string; subjectName: string }
@@ -155,7 +156,7 @@ export default function TeacherMaterialsPage() {
               {tab === "tugas" && (
                 <div className="max-w-[220px]">
                   <label className="label-field">Batas Waktu (opsional)</label>
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="input-field" />
+                  <DatePicker value={dueDate} onChange={setDueDate} />
                 </div>
               )}
               <FileUpload value={fileUrl} onChange={setFileUrl} folder={tab === "materi" ? "materi" : "tugas"}

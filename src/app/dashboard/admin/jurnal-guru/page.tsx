@@ -105,7 +105,7 @@ export default function AdminJurnalGuruPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan</h3>
               {selected && (
-                <Link href={printHref} target="_blank" className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
                   <Printer size={13} /> Cetak Rekap
                 </Link>
               )}

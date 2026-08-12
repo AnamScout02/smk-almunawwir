@@ -145,10 +145,8 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
     <div className="p-6 lg:p-8 print:p-0">
       <style>{"@page { size: A4 landscape; margin: 1cm; }"}</style>
 
-      <div className="print:hidden">
-        <PageHeader icon={<ClipboardList size={22} />} title="DKN — Daftar Kumpulan Nilai"
-          description={data ? `${data.class.name} · ${data.class.major?.name ?? "—"}` : "Memuat..."} />
-      </div>
+      <PageHeader icon={<ClipboardList size={22} />} title="DKN — Daftar Kumpulan Nilai"
+        description={data ? `${data.class.name} · ${data.class.major?.name ?? "—"}` : "Memuat..."} printHidden />
       <div className="flex flex-wrap items-center gap-2 mb-5 print:hidden">
         <div className="w-56">
           <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
