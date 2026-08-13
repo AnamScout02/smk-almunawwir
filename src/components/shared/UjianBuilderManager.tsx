@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileQuestion, Loader2, Plus, Save, Trash2, Eye, EyeOff, KeyRound, BookMarked, Users2, Clock, CheckCircle2, PlayCircle } from "lucide-react";
+import EmptyState from "@/components/admin/EmptyState";
 import PageHeader from "@/components/admin/PageHeader";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -202,7 +203,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
           <label className="label-field">Deskripsi (opsional)</label>
           <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="input-field" />
         </div>
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="label-field">Durasi (menit)</label>
             <input type="number" min={1} value={duration} onChange={e => setDuration(e.target.value)} className="input-field" />
@@ -294,7 +295,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
             </p>
           </div>
           {detail.monitoring.length === 0 ? (
-            <div className="py-10 text-center text-gray-400 text-sm">Belum ada siswa di kelas ini.</div>
+            <EmptyState icon={Users2} title="Belum Ada Siswa di Kelas Ini" />
           ) : (
             <div className="divide-y divide-gray-50">
               {detail.monitoring.map(m => {

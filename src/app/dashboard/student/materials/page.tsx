@@ -93,7 +93,7 @@ export default function StudentMaterialsPage() {
         quizzes.length === 0 ? (
           <EmptyState icon={HelpCircle} title="Belum Ada Kuis" description="Kuis dari guru akan muncul di sini." />
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {quizzes.map(q => (
               <Link key={q.id} href={`/dashboard/student/quizzes/${q.id}`}
                 className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
@@ -123,7 +123,7 @@ export default function StudentMaterialsPage() {
         materials.length === 0 ? (
           <EmptyState icon={FileText} title="Belum Ada Materi" description="Materi pembelajaran dari guru akan muncul di sini." />
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {materials.map(m => (
               <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <p className="text-xs text-primary-600 font-semibold mb-1">{m.subject}</p>
@@ -131,12 +131,12 @@ export default function StudentMaterialsPage() {
                 {m.description && <p className="text-sm text-gray-500 mb-2">{m.description}</p>}
                 <div className="flex items-center gap-3 text-xs">
                   {m.fileUrl && (
-                    <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                    <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                       <FileText size={12} /> Lampiran
                     </a>
                   )}
                   {m.linkUrl && (
-                    <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                    <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                       <Link2 size={12} /> Link
                     </a>
                   )}
@@ -177,7 +177,7 @@ export default function StudentMaterialsPage() {
               <div className="flex items-center gap-3 text-xs text-gray-400 mt-2">
                 {a.dueDate && <span className="flex items-center gap-1"><Calendar size={12} /> Batas: {fmt(a.dueDate)}</span>}
                 {a.fileUrl && (
-                  <a href={a.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                  <a href={a.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                     <FileText size={12} /> Lihat soal
                   </a>
                 )}
@@ -205,7 +205,7 @@ export default function StudentMaterialsPage() {
                   </div>
                 </div>
               ) : (
-                <button onClick={() => startSubmit(a)} className="mt-3 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                <button onClick={() => startSubmit(a)} className="mt-3 text-xs text-primary-600 hover:text-primary-900 font-semibold">
                   {a.mySubmission ? "Ubah pengumpulan" : "Kumpulkan tugas"}
                 </button>
               )}

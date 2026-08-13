@@ -83,7 +83,7 @@ export default function AdminJurnalGuruPage() {
       ) : (
         <>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label-field">Guru</label>
                 <Select value={teacherId} onChange={setTeacherId} options={teachers.map(t => ({ value: t.teacherId, label: t.name }))} />
@@ -105,7 +105,7 @@ export default function AdminJurnalGuruPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan</h3>
               {selected && (
-                <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-900 font-semibold">
                   <Printer size={13} /> Cetak Rekap
                 </Link>
               )}

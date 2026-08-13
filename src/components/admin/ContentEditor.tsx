@@ -289,7 +289,7 @@ export default function ContentEditor({ initialSettings }: { initialSettings: Re
                     className={`shrink-0 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                       saved === field.key
                         ? "bg-emerald-500 text-white"
-                        : "bg-primary-700 text-white hover:bg-primary-800"
+                        : "bg-primary-700 text-white hover:bg-primary-900"
                     } disabled:opacity-60`}
                   >
                     {saving === field.key ? (

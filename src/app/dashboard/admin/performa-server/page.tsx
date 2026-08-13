@@ -79,7 +79,7 @@ export default function PerformaServerPage() {
         <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-sm">{error || "Data tidak tersedia"}</div>
       ) : (
         <div className="space-y-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Gauge icon={MemoryStick} label="RAM" pct={stats.memory.pct}
               sub={`${stats.memory.usedGb} / ${stats.memory.totalGb} GB terpakai`} accent="bg-gradient-to-br from-blue-500 to-blue-700" />
             <Gauge icon={Cpu} label="CPU" pct={Math.min(stats.cpu.loadPct1, 999)}
@@ -90,7 +90,7 @@ export default function PerformaServerPage() {
             )}
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="font-heading font-semibold text-navy text-sm mb-3 flex items-center gap-2"><Cpu size={15} className="text-primary-500" /> Detail CPU</h3>
               <dl className="space-y-2 text-sm">

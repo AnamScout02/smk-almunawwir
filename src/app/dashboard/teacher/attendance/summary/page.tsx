@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2, BarChart2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 import MonthPicker from "@/components/shared/MonthPicker";
 
 interface StudentSummary {
@@ -69,10 +70,8 @@ export default function AttendanceSummaryPage() {
         {classes.length > 1 && (
           <div>
             <label className="text-sm font-semibold text-gray-600 block mb-1.5">Kelas:</label>
-            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-              className="input-field w-auto">
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <Select value={selectedClass} onChange={setSelectedClass} className="w-auto min-w-[10rem]"
+              options={classes.map(c => ({ value: c.id, label: c.name }))} />
           </div>
         )}
         <div>
@@ -80,7 +79,7 @@ export default function AttendanceSummaryPage() {
           <MonthPicker value={month} onChange={setMonth} />
         </div>
         {month && (
-          <button onClick={() => setMonth("")} className="text-xs font-semibold text-primary-600 hover:text-primary-800 pb-2.5">
+          <button onClick={() => setMonth("")} className="text-xs font-semibold text-primary-600 hover:text-primary-900 pb-2.5">
             Reset ke sepanjang waktu
           </button>
         )}

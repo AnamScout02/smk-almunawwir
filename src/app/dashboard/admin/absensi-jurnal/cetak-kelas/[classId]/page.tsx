@@ -115,7 +115,7 @@ export default function CetakAbsensiJurnalPage() {
             Absensi & Jurnal — {cls.name} ({cls.students.length} siswa)
           </h1>
           <button onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm hover:bg-primary-800 shrink-0">
+            className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm hover:bg-primary-900 shrink-0">
             <Printer size={15} /> Cetak / Simpan PDF
           </button>
         </div>
@@ -135,7 +135,7 @@ export default function CetakAbsensiJurnalPage() {
           </div>
           {tab === "cover" && (
             <Link href="/dashboard/admin/absensi-jurnal/cover-editor"
-              className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+              className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-900 font-semibold">
               <Pencil size={13} /> Edit Desain Cover
             </Link>
           )}
@@ -343,15 +343,15 @@ function AbsensiSheet({ cls, monthLabel, tahunPelajaran, semester, homeroomName,
       <table className="w-full border-collapse text-[10px]">
         <thead>
           <tr className="bg-primary-900 text-white">
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-6">No</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-16">NIS</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-36">Nama</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-6">L/P</th>
-            <th colSpan={JAM} className="border border-primary-800 px-1 py-1">Jam Pelajaran</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-16">TTD Guru Mapel</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-6">No</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-16">NIS</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-36">Nama</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-6">L/P</th>
+            <th colSpan={JAM} className="border border-primary-900 px-1 py-1">Jam Pelajaran</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-16">TTD Guru Mapel</th>
           </tr>
           <tr className="bg-primary-900 text-white">
-            {Array.from({ length: JAM }).map((_, j) => <th key={j} className="border border-primary-800 w-5">{j + 1}</th>)}
+            {Array.from({ length: JAM }).map((_, j) => <th key={j} className="border border-primary-900 w-5">{j + 1}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -410,13 +410,13 @@ function JurnalSheet({ cls, monthLabel, tahunPelajaran, semester, homeroomName, 
       <table className="w-full border-collapse text-[10px]">
         <thead>
           <tr className="bg-primary-900 text-white">
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5 w-6">No</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5 w-40">Nama Guru</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5 w-32">Mata Pelajaran</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5">Materi Pembelajaran</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5 w-24">TP</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1.5 w-28">Catatan</th>
-            <th colSpan={2} className="border border-primary-800 px-1 py-1.5 w-28">Tanda Tangan</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5 w-6">No</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5 w-40">Nama Guru</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5 w-32">Mata Pelajaran</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5">Materi Pembelajaran</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5 w-24">TP</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1.5 w-28">Catatan</th>
+            <th colSpan={2} className="border border-primary-900 px-1 py-1.5 w-28">Tanda Tangan</th>
           </tr>
         </thead>
         <tbody>
@@ -473,16 +473,16 @@ function RekapSheet({ cls, monthLabel, tahunPelajaran, semester, homeroomName, t
       <table className="w-full border-collapse text-[9px]">
         <thead>
           <tr className="bg-primary-900 text-white">
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-6">No</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-16">NIS</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-32">Nama</th>
-            <th rowSpan={2} className="border border-primary-800 px-1 py-1 w-6">L/P</th>
-            {weeks.map(w => <th key={w} colSpan={3} className="border border-primary-800 px-1 py-1">Minggu {w}</th>)}
-            <th colSpan={3} className="border border-primary-800 px-1 py-1 bg-purple-800">Jumlah</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-6">No</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-16">NIS</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-32">Nama</th>
+            <th rowSpan={2} className="border border-primary-900 px-1 py-1 w-6">L/P</th>
+            {weeks.map(w => <th key={w} colSpan={3} className="border border-primary-900 px-1 py-1">Minggu {w}</th>)}
+            <th colSpan={3} className="border border-primary-900 px-1 py-1 bg-purple-800">Jumlah</th>
           </tr>
           <tr className="bg-primary-900 text-white">
-            {weeks.map(w => ["S", "I", "A"].map(l => <th key={`${w}-${l}`} className="border border-primary-800 w-4">{l}</th>))}
-            {["S", "I", "A"].map(l => <th key={`t-${l}`} className="border border-primary-800 w-4 bg-purple-800">{l}</th>)}
+            {weeks.map(w => ["S", "I", "A"].map(l => <th key={`${w}-${l}`} className="border border-primary-900 w-4">{l}</th>))}
+            {["S", "I", "A"].map(l => <th key={`t-${l}`} className="border border-primary-900 w-4 bg-purple-800">{l}</th>)}
           </tr>
         </thead>
         <tbody>

@@ -5,17 +5,20 @@ import { prisma } from "@/lib/prisma";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
 
 const STATUS_LETTER: Record<string, string> = { HADIR: "H", IZIN: "I", SAKIT: "S", ALPHA: "A" };
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-/** Cetak kalender absensi 1 bulan penuh per siswa (kolom = tanggal, Minggu diwarnai, rekap S/I/A
- * di ujung) — versi cetak dari tab "Kalender Bulanan" AbsensiSiswaManager. Beda dari cetak-form
- * (yang KOSONG/kertas manual), halaman ini terisi data digital SUNGGUHAN yang sudah diinput wali
- * kelas — dimaksudkan sbg pengganti cetak arsip fisik kalau input kertas manual via ketua kelas/
- * sekretaris kelak ditiadakan (data tetap bisa dicetak dari sini). Guard scope kelas sama persis
+/** Kalender absensi 1 bulan penuh per siswa (kolom = tanggal, Minggu diwarnai, rekap S/I/A di
+ * ujung) — SATU-SATUNYA tempat lihat rekap bulanan (2026-08-12: dulu ada juga tab "Kalender
+ * Bulanan" terpisah di AbsensiSiswaManager yg isinya dobel persis, sudah dihapus — link dari sana
+ * sekarang cuma mengarah ke sini). Halaman ini WYSIWYG di layar (bisa dipakai lihat-lihat biasa)
+ * SEKALIGUS cetak — tidak perlu 2 tempat terpisah utk 2 kebutuhan itu. Beda dari cetak-form (yang
+ * KOSONG/kertas manual), halaman ini terisi data digital SUNGGUHAN yang sudah diinput wali kelas —
+ * dimaksudkan sbg pengganti cetak arsip fisik kalau input kertas manual via ketua kelas/sekretaris
+ * kelak ditiadakan (data tetap bisa dicetak dari sini). Guard scope kelas sama persis
  * /api/teacher/attendance/monthly-grid (wali kelas → kelas walinya saja; Kesiswaan/BK & ADMIN →
  * bebas kelas manapun via ?classId=).
  *
@@ -63,8 +66,12 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
     : [];
 
   const sundays: number[] = [];
+  const todayUTC = new Date(); todayUTC.setUTCHours(0, 0, 0, 0);
+  const suspiciousDays = new Set<number>(); // hari sekolah (bukan Minggu) yg sudah lewat — dipakai per-sel di bawah kalau datanya kosong
   for (let d = 1; d <= daysInMonth; d++) {
-    if (new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0) sundays.push(d);
+    const dUTC = new Date(Date.UTC(y, m - 1, d));
+    if (dUTC.getUTCDay() === 0) sundays.push(d);
+    else if (dUTC.getTime() <= todayUTC.getTime()) suspiciousDays.add(d);
   }
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -86,27 +93,48 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
   const monthLabel = `${BULAN[m - 1]} ${y}`;
   const homeroomName = activeClass?.homeroom?.user.name ?? "";
 
+  const prevMonthDate = new Date(Date.UTC(y, m - 2, 1));
+  const nextMonthDate = new Date(Date.UTC(y, m, 1));
+  const prevMonth = `${prevMonthDate.getUTCFullYear()}-${String(prevMonthDate.getUTCMonth() + 1).padStart(2, "0")}`;
+  const nextMonth = `${nextMonthDate.getUTCFullYear()}-${String(nextMonthDate.getUTCMonth() + 1).padStart(2, "0")}`;
+  const classIdQuery = activeClass ? `classId=${activeClass.id}&` : "";
+
   return (
     <>
-      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/admin/absensi-siswa" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="font-heading font-bold">Cetak Kalender Absensi Bulanan{activeClass ? ` — ${activeClass.name}` : ""}</h1>
-            <p className="text-white/50 text-xs">Rekap digital 1 bulan — kolom tanggal, Minggu diwarnai, rekap S/I/A</p>
+      <div className="print:hidden sticky top-0 z-30">
+        <div className="bg-primary-900 text-white px-6 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/admin/absensi-siswa" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+              <ArrowLeft size={16} />
+            </Link>
+            <div>
+              <h1 className="font-heading font-bold">Cetak Kalender Absensi Bulanan{activeClass ? ` — ${activeClass.name}` : ""}</h1>
+              <p className="text-white/50 text-xs">Rekap digital 1 bulan — kolom tanggal, Minggu diwarnai, rekap S/I/A</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-white/10 rounded-full px-1 py-1">
+              <Link href={`/dashboard/admin/absensi-siswa/cetak-kalender?${classIdQuery}month=${prevMonth}`}
+                className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center transition" title="Bulan sebelumnya">
+                <ChevronLeft size={14} />
+              </Link>
+              <span className="text-xs font-semibold px-1 whitespace-nowrap">{monthLabel}</span>
+              <Link href={`/dashboard/admin/absensi-siswa/cetak-kalender?${classIdQuery}month=${nextMonth}`}
+                className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center transition" title="Bulan berikutnya">
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+            <PrintButton />
           </div>
         </div>
-        <PrintButton />
-      </div>
-      <div className="print:hidden bg-primary-700 px-6 py-2.5 flex gap-1.5 flex-wrap">
-        {classes.map(c => (
-          <Link key={c.id} href={`/dashboard/admin/absensi-siswa/cetak-kalender?classId=${c.id}&month=${month}`}
-            className={`text-[11px] font-semibold px-2 py-1 rounded-full ${c.id === activeClass?.id ? "bg-white text-primary-900" : "bg-white/10 hover:bg-white/20 text-white"}`}>
-            {c.name}
-          </Link>
-        ))}
+        <div className="bg-primary-700 px-6 py-2.5 flex gap-1.5 flex-wrap">
+          {classes.map(c => (
+            <Link key={c.id} href={`/dashboard/admin/absensi-siswa/cetak-kalender?classId=${c.id}&month=${month}`}
+              className={`text-[11px] font-semibold px-2 py-1 rounded-full ${c.id === activeClass?.id ? "bg-white text-primary-900" : "bg-white/10 hover:bg-white/20 text-white"}`}>
+              {c.name}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {!activeClass ? (
@@ -128,16 +156,16 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
             <table className="border-collapse table-fixed text-[9px] print:text-[7px]">
               <thead>
                 <tr className="bg-primary-900 text-white">
-                  <th className="border border-primary-800 px-1 py-1 w-6">No</th>
-                  <th className="border border-primary-800 px-1 py-1 w-14">NIS</th>
-                  <th className="border border-primary-800 px-2 py-1 w-24 text-left">Nama</th>
-                  <th className="border border-primary-800 px-1 py-1 w-5">L/P</th>
+                  <th className="border border-primary-900 px-1 py-1 w-6">No</th>
+                  <th className="border border-primary-900 px-1 py-1 w-14">NIS</th>
+                  <th className="border border-primary-900 px-2 py-1 w-24 text-left">Nama</th>
+                  <th className="border border-primary-900 px-1 py-1 w-5">L/P</th>
                   {days.map(d => (
-                    <th key={d} className={`border border-primary-800 px-0.5 py-1 w-5 ${sundays.includes(d) ? "bg-red-800" : ""}`}>{d}</th>
+                    <th key={d} className={`border border-primary-900 px-0.5 py-1 w-5 ${sundays.includes(d) ? "bg-red-800" : ""}`}>{d}</th>
                   ))}
-                  <th className="border border-primary-800 px-1 py-1 w-6 bg-amber-700">S</th>
-                  <th className="border border-primary-800 px-1 py-1 w-6 bg-blue-700">I</th>
-                  <th className="border border-primary-800 px-1 py-1 w-6 bg-red-700">A</th>
+                  <th className="border border-primary-900 px-1 py-1 w-6 bg-amber-700">S</th>
+                  <th className="border border-primary-900 px-1 py-1 w-6 bg-blue-700">I</th>
+                  <th className="border border-primary-900 px-1 py-1 w-6 bg-red-700">A</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,11 +177,15 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
                     <td className="border border-gray-300 px-1 font-mono text-primary-700 overflow-hidden text-ellipsis whitespace-nowrap">{r.nis}</td>
                     <td className="border border-gray-300 px-2 font-semibold text-gray-800 overflow-hidden text-ellipsis whitespace-nowrap" title={r.name}>{r.name}</td>
                     <td className="border border-gray-300 text-center">{r.gender ?? ""}</td>
-                    {days.map(d => (
-                      <td key={d} className={`border border-gray-300 px-0.5 py-1 text-center ${r.cells[d] ? "font-bold" : "text-gray-300"} ${sundays.includes(d) ? "bg-red-50" : ""}`}>
-                        {r.cells[d] === "H" ? "•" : (r.cells[d] ?? "·")}
-                      </td>
-                    ))}
+                    {days.map(d => {
+                      const empty = !r.cells[d];
+                      const suspicious = empty && suspiciousDays.has(d);
+                      return (
+                        <td key={d} className={`border border-gray-300 px-0.5 py-1 text-center ${r.cells[d] ? "font-bold" : suspicious ? "text-amber-600 font-bold" : "text-gray-300"} ${sundays.includes(d) ? "bg-red-50" : suspicious ? "bg-amber-100" : ""}`}>
+                          {r.cells[d] === "H" ? "•" : (r.cells[d] ?? "·")}
+                        </td>
+                      );
+                    })}
                     <td className="border border-gray-300 px-1 py-1 text-center font-bold bg-amber-50">{r.SAKIT || ""}</td>
                     <td className="border border-gray-300 px-1 py-1 text-center font-bold bg-blue-50">{r.IZIN || ""}</td>
                     <td className="border border-gray-300 px-1 py-1 text-center font-bold bg-red-50">{r.ALPHA || ""}</td>
@@ -169,7 +201,7 @@ export default async function CetakKalenderAbsensiPage({ searchParams }: { searc
               <p>Laki-Laki : {jumlahL}</p>
               <p>Perempuan : {jumlahP}</p>
               <p>Jumlah : {jumlahL + jumlahP}</p>
-              <p className="mt-1">H = Hadir &nbsp; I = Izin &nbsp; S = Sakit &nbsp; A = Alfa &nbsp; · = Belum ada data. Kolom tanggal merah = hari Minggu.</p>
+              <p className="mt-1">H = Hadir &nbsp; I = Izin &nbsp; S = Sakit &nbsp; A = Alfa &nbsp; · = Belum ada data. Kolom tanggal merah = hari Minggu. Sel kuning = hari sekolah sudah lewat tapi belum ada data (kemungkinan wali kelas belum absen).</p>
             </div>
             <div className="text-xs text-primary-700 text-center">
               <p>Singojuruh, {monthLabel}</p>

@@ -205,9 +205,15 @@ export default function TeacherSidebar({
           { href: "/dashboard/teacher/dkn", label: "DKN Kelas", icon: ClipboardList },
         ] : []),
         { href: "/dashboard/teacher/materials", label: "Materi & Tugas", icon: BookOpen },
-        // Read-only lintas kelas (bukan cuma kelas wali) — Kesiswaan/BK butuh pantau kehadiran siswa
-        // sekolah utk keperluan pembinaan/konseling. Input absensi resmi tetap khusus wali kelas.
-        ...(kesiswaanBkAccess ? [{ href: "/dashboard/teacher/kesiswaan/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare }] : []),
+        // Read-only. Kesiswaan/BK lintas kelas (bukan cuma kelas wali) — butuh pantau kehadiran
+        // siswa sekolah utk keperluan pembinaan/konseling. Wali kelas biasa (bukan Kesiswaan/BK)
+        // tetap dapat menu ini tapi dibatasi ke kelas walinya sendiri (lihat AbsensiSiswaManager
+        // classesEndpoint). Input absensi resmi tetap khusus wali kelas lewat menu Absensi di atas.
+        ...(kesiswaanBkAccess
+          ? [{ href: "/dashboard/teacher/kesiswaan/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare }]
+          : hasHomeroom
+          ? [{ href: "/dashboard/teacher/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare }]
+          : []),
       ],
     },
     {

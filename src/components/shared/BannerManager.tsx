@@ -93,7 +93,7 @@ export default function BannerManager() {
                 {b.imageUrl ? (
                   <Image src={b.imageUrl} alt={b.title} fill sizes="(max-width: 640px) 100vw, 192px" className="object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary-800 to-primary-600 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
                     <span className="text-white/40 text-xs">Tanpa Foto</span>
                   </div>
                 )}

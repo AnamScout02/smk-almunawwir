@@ -59,7 +59,7 @@ export default function AbsensiJurnalPage() {
                         <Users size={12} /> {cls.students.length}
                       </span>
                       <Link href={`/dashboard/admin/absensi-jurnal/cetak-kelas/${cls.id}`}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-xs font-semibold transition-colors">
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-700 hover:bg-primary-900 text-white rounded-lg text-xs font-semibold transition-colors">
                         <Printer size={13} /> Cetak
                       </Link>
                     </div>

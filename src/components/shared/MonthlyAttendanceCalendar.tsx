@@ -15,15 +15,28 @@ const CELL_COLOR: Record<string, string> = {
  * dari /api/teacher/attendance/monthly-grid. Dipakai di tab "Kalender Bulanan" AbsensiSiswaManager
  * (read-only, lintas kelas) DAN di panel kanan halaman Input Absensi wali kelas (live, refresh
  * begitu wali kelas simpan absensi hari itu di panel kiri) — satu komponen, dua pemakai, no.14
- * CLAUDE.md (reuse lintas halaman). */
-export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading, compact = false }: {
-  rows: CalendarRow[]; days: number; sundays: number[]; loading: boolean; compact?: boolean;
+ * CLAUDE.md (reuse lintas halaman).
+ *
+ * `viewMonth` ("YYYY-MM") dipakai buat bedain sel kosong yg WAJAR (hari sekolah belum lewat /
+ * hari Minggu, tetap titik abu-abu polos) vs sel kosong yg PATUT DICURIGAI (hari sekolah SUDAH
+ * lewat tapi datanya nihil — kemungkinan wali kelas lupa absen) — yg terakhir diberi latar kuning
+ * supaya kelihatan beda tanpa harus scroll manual satu-satu. */
+export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading, compact = false, viewMonth }: {
+  rows: CalendarRow[]; days: number; sundays: number[]; loading: boolean; compact?: boolean; viewMonth?: string;
 }) {
   if (loading) return <div className="py-16 text-center text-gray-400 text-sm">Memuat...</div>;
   if (rows.length === 0) {
     return <EmptyState icon={Calendar} title="Belum Ada Data" description="Belum ada data absensi untuk kelas & bulan ini." />;
   }
   const dayList = Array.from({ length: days }, (_, i) => i + 1);
+
+  const [vy, vm] = (viewMonth ?? "").split("-").map(Number);
+  const todayUTC = new Date(); todayUTC.setUTCHours(0, 0, 0, 0);
+  function isPastSchoolDay(day: number): boolean {
+    if (!vy || !vm) return false;
+    const d = new Date(Date.UTC(vy, vm - 1, day));
+    return d.getTime() <= todayUTC.getTime();
+  }
   return (
     <div className="overflow-x-auto">
       <table className={`w-full border-collapse ${compact ? "text-[10px]" : "text-xs"}`}>
@@ -46,11 +59,16 @@ export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading
               <td className="px-3 py-1.5 font-semibold text-primary-900 whitespace-nowrap sticky left-0 bg-white z-10">
                 {row.name} <span className="text-gray-400 font-mono text-[0.65rem]">({row.nis})</span>
               </td>
-              {dayList.map(d => (
-                <td key={d} className={`px-1.5 py-1.5 text-center ${sundays.includes(d) ? "bg-red-50" : ""} ${CELL_COLOR[row.cells[d] ?? ""] ?? "text-gray-200"}`}>
-                  {row.cells[d] === "H" ? "•" : (row.cells[d] ?? "·")}
-                </td>
-              ))}
+              {dayList.map(d => {
+                const empty = !row.cells[d];
+                const suspicious = empty && !sundays.includes(d) && isPastSchoolDay(d);
+                return (
+                  <td key={d} className={`px-1.5 py-1.5 text-center ${sundays.includes(d) ? "bg-red-50" : suspicious ? "bg-amber-100" : ""} ${CELL_COLOR[row.cells[d] ?? ""] ?? (suspicious ? "text-amber-500 font-bold" : "text-gray-200")}`}
+                    title={suspicious ? "Belum ada data absensi — kemungkinan wali kelas belum mengisi" : undefined}>
+                    {row.cells[d] === "H" ? "•" : (row.cells[d] ?? "·")}
+                  </td>
+                );
+              })}
               <td className="px-2 py-1.5 text-center font-bold text-amber-700 bg-amber-50/50">{row.SAKIT}</td>
               <td className="px-2 py-1.5 text-center font-bold text-blue-700 bg-blue-50/50">{row.IZIN}</td>
               <td className="px-2 py-1.5 text-center font-bold text-red-700 bg-red-50/50">{row.ALPHA}</td>

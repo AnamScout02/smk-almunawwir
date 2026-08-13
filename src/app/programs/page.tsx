@@ -81,10 +81,10 @@ export default async function ProgramsPage() {
               const career = m.career?.length ? m.career : p?.career ?? [];
               const customColor = m.themeColor;
               const gradientStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
-              const fallbackClass = p?.color ?? "from-primary-600 to-primary-800";
+              const fallbackClass = p?.color ?? "from-primary-600 to-primary-900";
               return (
                 <div key={m.id} id={slug}
-                  className="grid lg:grid-cols-2 gap-8 items-center">
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                   <div className={i % 2 === 1 ? "lg:order-2" : ""}>
                     <div className={`inline-flex items-center gap-2 ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`} text-white px-4 py-2 rounded-full text-sm font-bold mb-4`}
                       style={gradientStyle}>

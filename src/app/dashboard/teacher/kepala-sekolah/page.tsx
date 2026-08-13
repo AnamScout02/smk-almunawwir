@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Gauge, Loader2, CheckCircle2, Briefcase, TrendingUp, Building2, FileCheck, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 
 interface Summary {
   attendancePct: number;
@@ -56,7 +57,7 @@ export default function KepalaSekolahDashboard() {
         description={`Ringkasan kesehatan sekolah secara real-time — Semester ${data.semester}`}
       />
 
-      <div className="grid sm:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <Link href="/dashboard/teacher/kepala-sekolah/rapor"
           className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
           <div className="w-12 h-12 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
@@ -92,37 +93,19 @@ export default function KepalaSekolahDashboard() {
         </Link>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-emerald-500 to-emerald-600 ring-1 ring-emerald-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><CheckCircle2 size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kehadiran Siswa (30 hari)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.attendancePct}%</p>
-            <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
-              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendancePct, 100)}%` }} />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="emerald" icon={CheckCircle2} label="Kehadiran Siswa (30 hari)" value={`${data.attendancePct}%`}>
+          <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
+            <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendancePct, 100)}%` }} />
           </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-blue-500 to-blue-600 ring-1 ring-blue-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Briefcase size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Siswa Sedang PKL</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.pklByStatus.ONGOING}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><TrendingUp size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Rata-rata Nilai Tertinggi</p>
-            <p className="font-heading font-bold text-3xl text-white">
-              {data.academicByMajor[0] ? `${data.academicByMajor[0].avg}` : "—"}
-            </p>
-            {data.academicByMajor[0] && <p className="text-xs text-white/80 mt-0.5">{data.academicByMajor[0].major}</p>}
-          </div>
-        </div>
+        </StatTile>
+        <StatTile color="blue" icon={Briefcase} label="Siswa Sedang PKL" value={data.pklByStatus.ONGOING} />
+        <StatTile color="primary" icon={TrendingUp} label="Rata-rata Nilai Tertinggi"
+          value={data.academicByMajor[0] ? `${data.academicByMajor[0].avg}` : "—"}
+          sublabel={data.academicByMajor[0]?.major} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Tren Kehadiran Siswa</h3>
           {data.attendanceTrend.length === 0 ? (
@@ -169,7 +152,7 @@ export default function KepalaSekolahDashboard() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Rata-rata Nilai per Jurusan — {data.semester}</h3>
           {data.academicByMajor.length === 0 ? (

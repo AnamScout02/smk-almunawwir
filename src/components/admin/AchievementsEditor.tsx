@@ -96,7 +96,7 @@ export default function AchievementsEditor({ initialValue }: { initialValue: str
         <button
           type="button"
           onClick={addRow}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 hover:text-primary-800"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 hover:text-primary-900"
         >
           <Plus size={16} /> Tambah Prestasi
         </button>
@@ -106,7 +106,7 @@ export default function AchievementsEditor({ initialValue }: { initialValue: str
           onClick={handleSave}
           disabled={status === "saving"}
           className={`inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-60 ${
-            status === "saved" ? "bg-emerald-600 text-white" : status === "error" ? "bg-red-500 text-white" : "bg-primary-700 hover:bg-primary-800 text-white"
+            status === "saved" ? "bg-emerald-600 text-white" : status === "error" ? "bg-red-500 text-white" : "bg-primary-700 hover:bg-primary-900 text-white"
           }`}
         >
           {status === "saving" ? <Loader2 size={14} className="animate-spin" /> : status === "saved" ? <CheckCircle2 size={14} /> : <Save size={14} />}

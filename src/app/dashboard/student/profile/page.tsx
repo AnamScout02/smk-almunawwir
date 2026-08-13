@@ -42,7 +42,7 @@ export default async function StudentProfilePage() {
             <span className="text-xs bg-primary-50 text-primary-700 font-semibold px-2.5 py-1 rounded-full border border-primary-100">Siswa</span>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="flex items-start gap-3">
               <Mail size={16} className="text-gray-400 mt-0.5 shrink-0" />
               <div>

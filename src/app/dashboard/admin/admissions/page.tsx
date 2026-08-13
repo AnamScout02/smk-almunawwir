@@ -67,7 +67,7 @@ function DocLink({ url, label }: { url?: string | null; label: string }) {
   if (!url) return <span className="text-gray-300 text-xs">—</span>;
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 hover:underline">
+      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 hover:underline">
       <FileText size={11} />
       {label}
       <ExternalLink size={10} />
@@ -295,7 +295,7 @@ export default function AdminAdmissionsPage() {
                     {item.status !== "PENDING" && (
                       <button onClick={() => updateStatus(item.id, "PENDING")}
                         disabled={updating === item.id + "PENDING"}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 text-xs font-medium disabled:opacity-60">
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 text-xs font-medium disabled:opacity-60">
                         <Clock size={12} /> Reset
                       </button>
                     )}
@@ -358,7 +358,7 @@ export default function AdminAdmissionsPage() {
                             className="input-field w-24 text-center" placeholder="0-100" />
                         </div>
                         <button onClick={() => handleHitungSkor(item)} disabled={updating === item.id + "skor"}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-primary-700 text-white rounded-xl text-xs font-semibold hover:bg-primary-800 disabled:opacity-60">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-primary-700 text-white rounded-xl text-xs font-semibold hover:bg-primary-900 disabled:opacity-60">
                           {updating === item.id + "skor" ? <Loader2 size={12} className="animate-spin" /> : <Calculator size={12} />} Hitung Skor
                         </button>
                         {item.skorAkhir != null && (
@@ -417,7 +417,7 @@ export default function AdminAdmissionsPage() {
                         <button
                           onClick={() => saveNotes(item.id)}
                           disabled={updating === item.id + "notes"}
-                          className="px-4 py-2 bg-primary-700 text-white rounded-xl text-xs font-semibold hover:bg-primary-800 disabled:opacity-60 flex items-center gap-1.5 transition-colors">
+                          className="px-4 py-2 bg-primary-700 text-white rounded-xl text-xs font-semibold hover:bg-primary-900 disabled:opacity-60 flex items-center gap-1.5 transition-colors">
                           {updating === item.id + "notes" ? <Loader2 size={12} className="animate-spin" /> : null}
                           Simpan
                         </button>

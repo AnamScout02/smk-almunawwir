@@ -75,12 +75,12 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
                 <div className="mt-5 pt-4 border-t border-gray-100">
                   {isAdmin ? (
                     <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`}
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold transition">
+                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold transition">
                       <FileText size={16} /> Lihat Buku Induk Lengkap
                     </Link>
                   ) : isOwnStudent ? (
                     <Link href="/dashboard/student/rapor"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold transition">
+                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold transition">
                       <FileText size={16} /> Lihat Rapor Lengkap
                     </Link>
                   ) : (

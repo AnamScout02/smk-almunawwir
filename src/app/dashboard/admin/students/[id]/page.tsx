@@ -83,7 +83,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
             <p className="text-gray-400 text-sm">{student.class?.name ?? "Belum ada kelas"} · {student.major.name}</p>
           </div>
         </div>
-        <div className="grid sm:grid-cols-3 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <div className="flex items-start gap-2.5">
             <IdCard size={15} className="text-gray-400 mt-0.5 shrink-0" />
             <div><p className="text-gray-400 text-xs">NIS</p><p className="font-mono font-medium">{student.nis}</p></div>
@@ -162,7 +162,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
               const subjects = [...new Set(sg.map(g => g.subject))];
               return (
                 <div key={sem}>
-                  <p className="font-semibold text-sm text-primary-800 mb-2">{sem}</p>
+                  <p className="font-semibold text-sm text-primary-900 mb-2">{sem}</p>
                   <div className="overflow-x-auto rounded-xl border border-gray-100 overflow-hidden">
                     <table className="w-full text-sm">
                       <thead>
@@ -214,7 +214,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
           <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
             <Briefcase size={16} className="text-primary-700" /> PKL
           </h3>
-          <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div><span className="text-gray-400 text-xs block">Perusahaan</span><strong>{student.internship.company}</strong></div>
             <div><span className="text-gray-400 text-xs block">Posisi</span><strong>{student.internship.position}</strong></div>
             <div><span className="text-gray-400 text-xs block">Supervisor</span><strong>{student.internship.supervisor}</strong></div>

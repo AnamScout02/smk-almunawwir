@@ -20,13 +20,15 @@ interface StatTileProps {
   color?: StatColor;
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Konten tambahan di bawah label (mis. progress bar `.segmented-bar`) — opsional. */
+  children?: React.ReactNode;
 }
 
 /** Kartu ringkasan angka seragam gradasi warna (mis. "Total Siswa", "Sudah Berkelas") — dipakai di seluruh panel admin.
  * `size="sm"` dipakai kalau `value` bisa berupa teks panjang (mis. nama identitas router) — biar tidak
  * bikin kartu itu lebih tinggi dari kartu angka di sebelahnya dalam satu baris grid. `truncate` juga
  * dipasang selalu sebagai jaring pengaman di layar sempit. */
-export default function StatTile({ value, label, sublabel, icon: Icon, color = "primary", size = "lg", className = "" }: StatTileProps) {
+export default function StatTile({ value, label, sublabel, icon: Icon, color = "primary", size = "lg", className = "", children }: StatTileProps) {
   const s = COLOR_STYLES[color];
   // size="sm" dibiarkan bisa turun ke 2 baris (line-clamp, bukan truncate 1 baris) supaya teks
   // panjang seperti nama identitas router tidak terpotong jadi "...IIBS" -> "II..." yang aneh dibaca.
@@ -44,6 +46,7 @@ export default function StatTile({ value, label, sublabel, icon: Icon, color = "
         <p className={valueClass}>{value}</p>
         <p className="text-white/75 text-xs mt-0.5">{label}</p>
         {sublabel && <p className="text-white/60 text-xs">{sublabel}</p>}
+        {children}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
 import Field from "@/components/admin/BukuIndukField";
 import Section from "@/components/admin/BukuIndukSection";
 import WilayahSelect from "@/components/admin/WilayahSelect";
+import Select from "@/components/admin/Select";
 import ImageUpload from "@/components/admin/ImageUpload";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
@@ -286,10 +287,8 @@ export default function StudentBiodataPage() {
                     </div>
                     <div>
                       <label className="label-field">Tingkat</label>
-                      <select className="input-field" value={a.level} onChange={e => updateAchievement(idx, "level", e.target.value)}>
-                        <option value="">— Pilih —</option>
-                        {TINGKAT_PENGHARGAAN.map(l => <option key={l} value={l}>{l}</option>)}
-                      </select>
+                      <Select value={a.level} onChange={v => updateAchievement(idx, "level", v)}
+                        options={TINGKAT_PENGHARGAAN.map(l => ({ value: l, label: l }))} />
                     </div>
                     <div className="col-span-2">
                       <label className="label-field">Diberikan Oleh</label>
@@ -297,7 +296,7 @@ export default function StudentBiodataPage() {
                     </div>
                   </div>
                 ))}
-                <button type="button" onClick={addAchievement} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-800 font-medium">
+                <button type="button" onClick={addAchievement} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-900 font-medium">
                   <Plus size={14} /> Tambah Penghargaan
                 </button>
               </div>

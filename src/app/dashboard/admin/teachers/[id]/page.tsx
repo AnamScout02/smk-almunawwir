@@ -94,7 +94,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
             <p className="text-gray-400 text-sm">{mataPelajaran}</p>
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="flex items-start gap-2.5">
             <Hash size={15} className="text-gray-400 mt-0.5 shrink-0" />
             <div>
@@ -159,7 +159,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
           <div className="space-y-5">
             {gradesBySemester.map(({ semester, subjects }) => (
               <div key={semester}>
-                <p className="font-semibold text-sm text-primary-800 mb-2 flex items-center gap-2">
+                <p className="font-semibold text-sm text-primary-900 mb-2 flex items-center gap-2">
                   <span className="text-xs bg-primary-50 text-primary-600 border border-primary-100 px-2.5 py-0.5 rounded-full font-medium">{semester}</span>
                 </p>
                 <div className="rounded-xl overflow-hidden border border-gray-100">
@@ -217,7 +217,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
               {cls.students.length === 0 ? (
                 <p className="text-gray-400 text-sm text-center py-4">Belum ada siswa di kelas ini</p>
               ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {cls.students.map((s, i) => (
                     <div key={s.id} className="flex items-center gap-2.5 text-sm bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
                       <span className="text-xs text-gray-300 w-5 text-center">{i + 1}</span>

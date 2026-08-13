@@ -131,11 +131,11 @@ export default async function RaporPage() {
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-primary-900 text-white">
-                      <th className="border border-primary-800 px-3 py-2.5 text-left font-medium">Mata Pelajaran</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Pengetahuan</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Keterampilan</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-20">Rata-rata</th>
-                      <th className="border border-primary-800 px-3 py-2.5 text-center font-medium w-24">Predikat</th>
+                      <th className="border border-primary-900 px-3 py-2.5 text-left font-medium">Mata Pelajaran</th>
+                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Pengetahuan</th>
+                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Keterampilan</th>
+                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-20">Rata-rata</th>
+                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Predikat</th>
                     </tr>
                   </thead>
                   <tbody>

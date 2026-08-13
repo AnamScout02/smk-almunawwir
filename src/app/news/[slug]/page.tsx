@@ -81,14 +81,14 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             {related.length > 0 && (
               <div className="mt-10">
                 <h2 className="font-heading text-xl font-bold text-primary-900 mb-5">{c.related}</h2>
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {related.map(n => (
                     <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
                       <div className="relative h-36 bg-gray-100">
                         {n.thumbnail ? (
                           <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary-800 to-primary-600 flex items-center justify-center">
+                          <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
                             <span className="font-arabic text-white/20 text-4xl">المنور</span>
                           </div>
                         )}

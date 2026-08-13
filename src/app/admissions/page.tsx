@@ -156,7 +156,7 @@ export default async function AdmissionsPage() {
         {/* Persyaratan & Form / Cek Status */}
         <section className="section-padding bg-cream">
           <div className="container-custom">
-            <div className="grid lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Kiri: Persyaratan */}
               <div>
                 <h2 className="font-heading text-2xl font-bold text-navy mb-6">{c.reqTitle}</h2>

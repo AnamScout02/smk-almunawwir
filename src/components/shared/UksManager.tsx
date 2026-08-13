@@ -353,7 +353,7 @@ export default function UksManager() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label-field mb-0">Obat Terpakai (opsional)</label>
-                <button type="button" onClick={addUsageRow} className="text-xs font-semibold text-primary-600 hover:text-primary-800 flex items-center gap-1">
+                <button type="button" onClick={addUsageRow} className="text-xs font-semibold text-primary-600 hover:text-primary-900 flex items-center gap-1">
                   <Plus size={12} /> Tambah Obat
                 </button>
               </div>

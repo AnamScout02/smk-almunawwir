@@ -223,7 +223,7 @@ export default function AbsensiPage() {
             <p className="text-sm font-semibold text-white">Jurnal Absensi Bulan Ini</p>
             <p className="text-white/50 text-xs">Live — otomatis update begitu absensi disimpan</p>
           </div>
-          <MonthlyAttendanceCalendar rows={calRows} days={calDays} sundays={calSundays} loading={loadingCal} compact />
+          <MonthlyAttendanceCalendar rows={calRows} days={calDays} sundays={calSundays} loading={loadingCal} viewMonth={month} compact />
         </div>
       </div>
     </div>

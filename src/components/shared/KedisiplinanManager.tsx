@@ -414,7 +414,7 @@ export default function KedisiplinanManager() {
       />
 
       <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
+        <button onClick={openAdd} className="btn-gold flex items-center gap-2 text-sm">
           <Plus size={15} /> Tambah Manual
         </button>
       </div>
@@ -443,7 +443,7 @@ export default function KedisiplinanManager() {
           <>
             {/* Dikelompokkan PER KELAS (bukan tabel flat diurut jam) — samakan dengan format
                 "Daftar Kehadiran Guru" manual yang sudah dipakai sekolah lewat WhatsApp. */}
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {Object.entries(
                 daySlots.reduce<Record<string, DaySlotItem[]>>((acc, s) => {
                   (acc[s.className] ??= []).push(s);
@@ -472,16 +472,14 @@ export default function KedisiplinanManager() {
                           <p className="text-xs font-semibold text-primary-900">{jamKeLabel(s)} · {s.subject}</p>
                           <p className="text-xs text-gray-500 -mt-1">{s.teacherName}</p>
                           <div className="grid grid-cols-2 gap-2">
-                            <select value={s.status} onChange={e => setDaySlotField(key, "status", e.target.value)}
-                              className={`text-xs font-semibold rounded-lg border px-2 py-1.5 ${STATUS_BADGE[s.status]}`}>
-                              {STATUS_OPTIONS_ROW.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </select>
-                            <select value={s.hasTugas === null ? "" : s.hasTugas ? "ya" : "tidak"}
+                            <Select value={s.status} onChange={v => setDaySlotField(key, "status", v)}
+                              options={STATUS_OPTIONS_ROW}
+                              buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer ${STATUS_BADGE[s.status]}`} />
+                            <Select value={s.hasTugas === null ? "" : s.hasTugas ? "ya" : "tidak"}
                               disabled={s.status === "HADIR"}
-                              onChange={e => setDaySlotField(key, "hasTugas", e.target.value === "" ? null : e.target.value === "ya")}
-                              className="text-xs rounded-lg border border-gray-200 px-2 py-1.5 disabled:opacity-40 disabled:bg-white bg-white">
-                              {TUGAS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </select>
+                              onChange={v => setDaySlotField(key, "hasTugas", v === "" ? null : v === "ya")}
+                              options={TUGAS_OPTIONS}
+                              buttonClassName="w-full flex items-center justify-between gap-1 text-xs rounded-lg border border-gray-200 px-2 py-1.5 disabled:opacity-40 disabled:bg-white bg-white cursor-pointer disabled:cursor-not-allowed" />
                           </div>
                           <input value={s.notes} onChange={e => setDaySlotField(key, "notes", e.target.value)}
                             className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
@@ -523,17 +521,16 @@ export default function KedisiplinanManager() {
           <p className="text-sm text-gray-400 py-4">Tidak ada guru/staf yang terjadwal piket pada tanggal ini.</p>
         ) : (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {dutyAttendance.map(d => (
                 <div key={d.userId} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
                   <div>
                     <p className="text-xs font-semibold text-primary-900">{d.userName}</p>
                     <p className="text-[11px] text-gray-400">{d.userNip ?? d.userRole}</p>
                   </div>
-                  <select value={d.status} onChange={e => setDutyField(d.userId, "status", e.target.value)}
-                    className={`text-xs font-semibold rounded-lg border px-2 py-1.5 w-full ${STATUS_BADGE[d.status]}`}>
-                    {STATUS_OPTIONS_ROW.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
+                  <Select value={d.status} onChange={v => setDutyField(d.userId, "status", v)}
+                    options={STATUS_OPTIONS_ROW}
+                    buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer ${STATUS_BADGE[d.status]}`} />
                   <input value={d.notes} onChange={e => setDutyField(d.userId, "notes", e.target.value)}
                     className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
                 </div>

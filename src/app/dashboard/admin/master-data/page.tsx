@@ -151,7 +151,7 @@ export default function MasterDataPage() {
                   </span>
                 ))}
                 {(item.items as string[]).length > 6 && (
-                  <span className="text-xs bg-gold/20 text-yellow-700 rounded-md px-2 py-0.5 font-medium">
+                  <span className="badge badge-gold normal-case tracking-normal">
                     +{(item.items as string[]).length - 6} lainnya
                   </span>
                 )}
@@ -256,7 +256,7 @@ export default function MasterDataPage() {
               <button
                 onClick={addItem}
                 disabled={!newItem.trim()}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-700 text-white text-sm font-medium hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-700 text-white text-sm font-medium hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus size={15} />
                 Tambah

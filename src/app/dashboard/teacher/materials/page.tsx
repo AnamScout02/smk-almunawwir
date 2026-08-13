@@ -116,7 +116,7 @@ export default function TeacherMaterialsPage() {
               options={classes.map(c => ({ value: `${c.classId}::${c.subjectName}`, label: `${c.className} — ${c.subjectName}` }))} />
           </div>
 
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
             <button onClick={() => setTab("materi")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "materi" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
               Materi
@@ -182,7 +182,7 @@ export default function TeacherMaterialsPage() {
             quizzes.length === 0 ? (
               <EmptyState icon={HelpCircle} title="Belum Ada Kuis" description="Buat kuis pilihan ganda untuk kelas ini — dinilai otomatis." />
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {quizzes.map(q => (
                   <Link key={q.id} href={`/dashboard/teacher/quizzes/${q.id}`}
                     className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
@@ -206,7 +206,7 @@ export default function TeacherMaterialsPage() {
             materials.length === 0 ? (
               <EmptyState icon={FileText} title="Belum Ada Materi" description="Tambahkan materi pembelajaran untuk kelas ini." />
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {materials.map(m => (
                   <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                     <div className="flex items-start justify-between mb-2">
@@ -218,12 +218,12 @@ export default function TeacherMaterialsPage() {
                     {m.description && <p className="text-sm text-gray-500 mb-2">{m.description}</p>}
                     <div className="flex items-center gap-3 text-xs">
                       {m.fileUrl && (
-                        <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                        <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                           <FileText size={12} /> Lampiran
                         </a>
                       )}
                       {m.linkUrl && (
-                        <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                        <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                           <Link2 size={12} /> Link
                         </a>
                       )}
@@ -236,7 +236,7 @@ export default function TeacherMaterialsPage() {
           ) : assignments.length === 0 ? (
             <EmptyState icon={ClipboardList} title="Belum Ada Tugas" description="Buat tugas untuk kelas ini." />
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {assignments.map(a => (
                 <Link key={a.id} href={`/dashboard/teacher/assignments/${a.id}`}
                   className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">

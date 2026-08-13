@@ -4,6 +4,7 @@ import { ShieldCheck, Loader2, CalendarCheck, AlertOctagon, Users } from "lucide
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import StatTile from "@/components/admin/StatTile";
 
 interface ClassRank { className: string; rate: number }
 interface WatchRow { studentId: string; nis: string; name: string; className: string; alphaCount: number }
@@ -37,36 +38,20 @@ export default function WakasekKesiswaanDashboard() {
         description="Pemantauan kehadiran & kedisiplinan siswa — 30 hari terakhir"
       />
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><CalendarCheck size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kehadiran Sekolah</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.attendanceRate !== null ? `${data.attendanceRate}%` : "—"}</p>
-            {data.attendanceRate !== null && (
-              <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
-                <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendanceRate, 100)}%` }} />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-red-500 to-red-600 ring-1 ring-red-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><AlertOctagon size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Alpha (30 hari)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.totalAlpha}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-amber-500 to-amber-600 ring-1 ring-amber-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Users size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Siswa Perlu Perhatian</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.watchListCount}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="primary" icon={CalendarCheck} label="Kehadiran Sekolah"
+          value={data.attendanceRate !== null ? `${data.attendanceRate}%` : "—"}>
+          {data.attendanceRate !== null && (
+            <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
+              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendanceRate, 100)}%` }} />
+            </div>
+          )}
+        </StatTile>
+        <StatTile color="red" icon={AlertOctagon} label="Total Alpha (30 hari)" value={data.totalAlpha} />
+        <StatTile color="amber" icon={Users} label="Siswa Perlu Perhatian" value={data.watchListCount} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Kehadiran per Kelas (Terendah Dulu)</h3>
           {data.classRanking.length === 0 ? (

@@ -18,7 +18,7 @@ function Bab({ no, title, children }: { no: string; title: string; children: Rea
   return (
     <section className="mb-8 break-inside-avoid-page">
       <h3 className="font-heading font-bold text-primary-900 text-base mb-1">{no}</h3>
-      <h3 className="font-heading font-bold text-primary-800 text-sm uppercase tracking-wide mb-4">{title}</h3>
+      <h3 className="font-heading font-bold text-primary-900 text-sm uppercase tracking-wide mb-4">{title}</h3>
       {children}
     </section>
   );

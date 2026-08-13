@@ -52,7 +52,7 @@ export default function TeacherPklPage() {
       ) : items.length === 0 ? (
         <EmptyState icon={Briefcase} title="Belum Ada Siswa Bimbingan" description="Anda belum ditugaskan sebagai guru pembimbing PKL untuk siswa manapun." />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map(item => (
             <Link key={item.id} href={`/dashboard/teacher/pkl/${item.studentId}`}
               className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md hover:-translate-y-0.5 transition-all">

@@ -684,7 +684,7 @@ export default function SchedulesManager({
             <button
               disabled={generating}
               onClick={() => runGenerate("all")}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-semibold text-sm transition disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary-700 hover:bg-primary-900 text-white font-semibold text-sm transition disabled:opacity-60"
             >
               {generating && <Loader2 size={15} className="animate-spin" />}
               Generate untuk semua kelas

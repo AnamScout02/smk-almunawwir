@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { FileCheck, Loader2, ArrowLeft, Users, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 
 interface StudentRow { studentId: string; nis: string; name: string; className: string; score: number | null }
@@ -56,28 +57,10 @@ export default function RekapUkkPage() {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Users size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Siswa Kelas XII</p>
-            <p className="font-heading font-bold text-3xl text-white">{major.totalCount}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-emerald-500 to-emerald-600 ring-1 ring-emerald-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><CheckCircle2 size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Sudah Ada Nilai UKK</p>
-            <p className="font-heading font-bold text-3xl text-white">{major.completedCount}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-blue-500 to-blue-600 ring-1 ring-blue-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><FileCheck size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Rata-rata UKK Jurusan</p>
-            <p className="font-heading font-bold text-3xl text-white">{major.classAvg ?? "—"}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="primary" icon={Users} label="Total Siswa Kelas XII" value={major.totalCount} />
+        <StatTile color="emerald" icon={CheckCircle2} label="Sudah Ada Nilai UKK" value={major.completedCount} />
+        <StatTile color="blue" icon={FileCheck} label="Rata-rata UKK Jurusan" value={major.classAvg ?? "—"} />
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

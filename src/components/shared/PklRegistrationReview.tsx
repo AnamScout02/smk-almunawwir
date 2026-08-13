@@ -92,13 +92,13 @@ export default function PklRegistrationReview() {
 
   return (
     <div>
-      <div className="flex items-center gap-1 mb-5 rounded-xl border border-gray-100 p-1 w-max bg-white shadow-sm">
+      <div className="flex items-center flex-wrap gap-1 mb-5 rounded-xl border border-gray-100 p-1 w-max max-w-full bg-white shadow-sm">
         <button onClick={() => setTab("pendaftaran")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${tab === "pendaftaran" ? "bg-primary-800 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${tab === "pendaftaran" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
           <FileCheck2 size={14} /> Pendaftaran PKL
         </button>
         <button onClick={() => setTab("syarat")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${tab === "syarat" ? "bg-primary-800 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${tab === "syarat" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
           <Settings size={14} /> Dokumen Syarat
         </button>
       </div>
@@ -108,7 +108,7 @@ export default function PklRegistrationReview() {
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {["PENDING", "APPROVED", "REJECTED"].map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${statusFilter === s ? "bg-primary-800 text-white border-primary-800" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}>
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${statusFilter === s ? "bg-primary-900 text-white border-primary-900" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}>
                 {STATUS_META[s].label}
               </button>
             ))}

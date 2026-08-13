@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Save, User, Home, GraduationCap, Users, Smile,
-  Heart, Award, Briefcase, LogOut, Trash2, Printer, Plus, KeyRound,
+  Heart, Award, Briefcase, LogOut, Trash2, Printer, Plus, KeyRound, Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DatePicker from "@/components/shared/DatePicker";
@@ -190,6 +190,11 @@ export default function BukuIndukSiswaModal({
   const [sections, setSections] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  // Melacak proses generate NIS otomatis (async, dipicu saat pilih Jurusan di Section D) — dipakai
+  // utk tampilkan spinner di field NIS (Section A) DAN cegah submit prematur sebelum fetch selesai
+  // (temuan user 2026-08-12: submit sebelum NIS otomatis kelar bikin "NIS wajib diisi" padahal
+  // Jurusan sudah dipilih — race condition, bukan gagal generate).
+  const [nisGenerating, setNisGenerating] = useState(false);
   const [masterData, setMasterData] = useState<MasterEntry[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
@@ -265,6 +270,10 @@ export default function BukuIndukSiswaModal({
     ].filter(Boolean).join(", ");
 
     if (isNew) {
+      if (nisGenerating) {
+        setSaveError("NIS otomatis masih dibuat, tunggu sebentar lalu coba Simpan lagi.");
+        setSections({ a: true }); return;
+      }
       if (!accountForm.name || !accountForm.nis) {
         setSaveError("Nama Lengkap & NIS wajib diisi (Section A)");
         setSections({ a: true }); return;
@@ -396,8 +405,15 @@ export default function BukuIndukSiswaModal({
             </div>
             <div>
               <label className="label-field">NIS <span className="text-red-500">*</span></label>
-              <input className="input-field" type="text" placeholder="Otomatis tersaran setelah pilih Jurusan (bisa diubah)" value={accountForm.nis}
-                onChange={e => setAccountForm(p => ({ ...p, nis: e.target.value }))} />
+              <div className="relative">
+                <input className="input-field" type="text" disabled={nisGenerating}
+                  placeholder={nisGenerating ? "Membuat NIS otomatis..." : "Otomatis tersaran setelah pilih Jurusan (bisa diubah)"}
+                  value={accountForm.nis}
+                  onChange={e => setAccountForm(p => ({ ...p, nis: e.target.value }))} />
+                {nisGenerating && (
+                  <Loader2 size={15} className="animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-primary-500" />
+                )}
+              </div>
             </div>
           </>
         ) : (
@@ -485,13 +501,15 @@ export default function BukuIndukSiswaModal({
                     // error") — dulu .catch(() => {}) menelan SEMUA kegagalan diam-diam (response
                     // gagal/non-JSON, jurusan belum punya nisCode, dll), field NIS cuma diam kosong
                     // tanpa petunjuk kenapa. Sekarang kegagalan ditampilkan lewat saveError.
+                    setNisGenerating(true);
                     fetch(`/api/admin/buku-induk/siswa/next-nis?majorCode=${major.code}`)
                       .then(async r => {
                         const d = await r.json().catch(() => null);
                         if (!r.ok || !d?.nis) { setSaveError(d?.error || "Gagal generate NIS otomatis — isi NIS manual."); return; }
                         setAccountForm(p => ({ ...p, nis: d.nis }));
                       })
-                      .catch(() => setSaveError("Gagal generate NIS otomatis (jaringan bermasalah) — isi NIS manual."));
+                      .catch(() => setSaveError("Gagal generate NIS otomatis (jaringan bermasalah) — isi NIS manual."))
+                      .finally(() => setNisGenerating(false));
                   }
                 }}
                 options={majors.map(m => ({ value: m.id, label: `${m.name} (${m.code})` }))}
@@ -660,7 +678,7 @@ export default function BukuIndukSiswaModal({
             </div>
           ))}
           <button type="button" onClick={addAchievement}
-            className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-800 font-medium">
+            className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-900 font-medium">
             <Plus size={14} /> Tambah Penghargaan
           </button>
         </div>

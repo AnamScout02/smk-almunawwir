@@ -121,7 +121,7 @@ export default function AdminAnnouncementsPage() {
       {/* Info Banner */}
       <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
         <Bell size={18} className="text-primary-700 shrink-0 mt-0.5" />
-        <p className="text-sm text-primary-800">
+        <p className="text-sm text-primary-900">
           Pengumuman aktif akan tampil di dashboard siswa dan/atau guru sesuai target penerima.
           Pengumuman berprioritas <strong>URGENT</strong> ditampilkan dengan warna merah mencolok.
         </p>

@@ -78,7 +78,7 @@ function LogoCard({ settingKey, currentUrl, label, description, isSquare, darkPr
               ? "bg-emerald-600 text-white"
               : status === "error"
               ? "bg-red-500 text-white"
-              : "bg-primary-700 hover:bg-primary-800 text-white"
+              : "bg-primary-700 hover:bg-primary-900 text-white"
           }`}
         >
           {isLoading ? (

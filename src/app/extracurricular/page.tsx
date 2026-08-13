@@ -284,7 +284,7 @@ export default async function ExtracurricularPage() {
             <div className="flex justify-center mb-6">
               <div className="flex -space-x-2">
                 {[Heart, Trophy, Globe, Music, Users].map((Icon, i) => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-white/10 border-2 border-primary-800 flex items-center justify-center">
+                  <div key={i} className="w-10 h-10 rounded-full bg-white/10 border-2 border-primary-900 flex items-center justify-center">
                     <Icon size={14} className="text-gold" />
                   </div>
                 ))}

@@ -102,7 +102,7 @@ export default async function ProgramDetailPage({ params }: Props) {
 
   const logoUrl = dbMajor.logoUrl ?? undefined;
   const customColor = dbMajor.themeColor;
-  const fallbackClass = program?.color ?? "from-primary-600 to-primary-800";
+  const fallbackClass = program?.color ?? "from-primary-600 to-primary-900";
   const heroStyle = customColor ? { background: themeGradient(customColor) } : undefined;
   const rightStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
 
@@ -162,7 +162,7 @@ export default async function ProgramDetailPage({ params }: Props) {
         {/* Main Content */}
         <section className="section-padding bg-cream">
           <div className="container-custom">
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left - Main Info */}
               <div className="lg:col-span-2 space-y-8">
                 {/* Deskripsi */}
@@ -174,7 +174,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                 {/* Kompetensi */}
                 <div className="bg-white rounded-2xl p-7 shadow-sm">
                   <h2 className="font-heading text-2xl font-bold text-navy mb-6">{c.skillsTitle}</h2>
-                  <ul className="grid sm:grid-cols-2 gap-3">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {skills.map((skill) => (
                       <li key={skill} className="flex items-start gap-3">
                         <CheckCircle2 size={18} className={`mt-0.5 shrink-0 text-emerald-500`} />
@@ -317,12 +317,12 @@ export default async function ProgramDetailPage({ params }: Props) {
                 {c.otherProgramsTitle}
               </h2>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {otherMajors.map((m) => {
                 const otherSlug = m.code.toLowerCase();
                 const otherStatic = staticBySlug[otherSlug];
                 const OtherIcon = icons[otherSlug] ?? GraduationCap;
-                const otherFallback = otherStatic?.color ?? "from-primary-600 to-primary-800";
+                const otherFallback = otherStatic?.color ?? "from-primary-600 to-primary-900";
                 return (
                   <Link key={m.id} href={`/programs/${otherSlug}`}
                     className="group block bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">

@@ -134,7 +134,7 @@ export default function CoverEditorPage() {
         {/* Canvas */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <label className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm cursor-pointer transition-colors">
+            <label className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-900 text-white rounded-lg text-sm cursor-pointer transition-colors">
               {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
               {imageUrl ? "Ganti Gambar" : "Upload Gambar"}
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />

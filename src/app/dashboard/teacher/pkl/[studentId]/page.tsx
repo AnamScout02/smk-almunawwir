@@ -110,7 +110,7 @@ export default function TeacherPklDetailPage() {
             {STATUS_LABEL[data.status]?.label ?? data.status}
           </span>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div><span className="text-gray-400 text-xs">Perusahaan</span><p className="font-semibold text-navy">{data.company}</p></div>
           <div><span className="text-gray-400 text-xs">Posisi</span><p className="font-semibold text-navy">{data.position}</p></div>
           <div><span className="text-gray-400 text-xs">Pembimbing Industri</span><p className="font-semibold text-navy">{data.supervisor}</p></div>

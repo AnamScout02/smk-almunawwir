@@ -630,7 +630,7 @@ export default function PerpustakaanManager() {
                             {l.finePaid ? (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Lunas</span>
                             ) : (
-                              <button onClick={() => handleMarkPaid(l)} className="text-[10px] font-semibold text-primary-600 hover:text-primary-800 underline">
+                              <button onClick={() => handleMarkPaid(l)} className="text-[10px] font-semibold text-primary-600 hover:text-primary-900 underline">
                                 Tandai Lunas
                               </button>
                             )}

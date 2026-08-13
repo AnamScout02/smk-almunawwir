@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/site-settings";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { verifyAdminLayoutAccess, isFullTasJabatan } from "@/lib/tas-access-guard";
 import { getOverdueLoanCount } from "@/lib/perpustakaan-notif";
+import { getClassesMissingAttendance } from "@/lib/attendance-gaps";
 import { getImpersonatorSession } from "@/lib/session";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import TasSidebar from "@/components/admin/TasSidebar";
@@ -45,11 +46,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   // Role ADMIN: load badge counts and show full AdminSidebar
-  const [unreadMessages, pendingAdmissions, pendingProfileEdits, overdueBooks] = await Promise.all([
+  const now = new Date();
+  const todayMidnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const [unreadMessages, pendingAdmissions, pendingProfileEdits, overdueBooks, missingAttendance] = await Promise.all([
     prisma.contactMessage.count({ where: { isRead: false } }),
     prisma.admission.count({ where: { status: "PENDING" } }),
     prisma.profileEditRequest.count({ where: { status: "PENDING" } }),
     getOverdueLoanCount(session.userId),
+    getClassesMissingAttendance(todayMidnightUTC),
   ]);
 
   return (
@@ -61,6 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           pendingAdmissions={pendingAdmissions}
           pendingProfileEdits={pendingProfileEdits}
           overdueBooks={overdueBooks}
+          missingAttendanceClasses={missingAttendance.length}
           logoEmblem={logoEmblem}
           logoFullWhite={logoFullWhite}
         />

@@ -62,7 +62,7 @@ export default function AvatarUpload({ currentAvatar, name }: Props) {
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary-700 hover:bg-primary-800 text-white rounded-full flex items-center justify-center shadow-md transition disabled:opacity-60"
+          className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary-700 hover:bg-primary-900 text-white rounded-full flex items-center justify-center shadow-md transition disabled:opacity-60"
         >
           {uploading ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
         </button>

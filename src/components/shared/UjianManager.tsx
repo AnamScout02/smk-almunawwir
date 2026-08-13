@@ -5,6 +5,7 @@ import { FileQuestion, Loader2, Plus, Trash2, Users2, ChevronRight, Eye, EyeOff,
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import StatTile from "@/components/admin/StatTile";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 
@@ -172,30 +173,14 @@ export default function UjianManager({ basePath }: { basePath: string }) {
             <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
           ) : tab === "ringkasan" ? (
             <div className="space-y-6">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm bg-gradient-to-br from-primary-500 to-primary-700">
-                  <div className="absolute -right-3 -bottom-3 opacity-15"><FileQuestion size={56} className="text-white" /></div>
-                  <p className="text-white/70 text-xs font-medium mb-1 relative">Total Ujian</p>
-                  <p className="font-heading font-bold text-3xl text-white relative">{exams.length}</p>
-                </div>
-                <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm bg-gradient-to-br from-amber-500 to-amber-600">
-                  <div className="absolute -right-3 -bottom-3 opacity-15"><PlayCircle size={56} className="text-white" /></div>
-                  <p className="text-white/70 text-xs font-medium mb-1 relative">Sedang Berlangsung</p>
-                  <p className="font-heading font-bold text-3xl text-white relative">{berlangsung.length}</p>
-                </div>
-                <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm bg-gradient-to-br from-emerald-500 to-emerald-600">
-                  <div className="absolute -right-3 -bottom-3 opacity-15"><Trophy size={56} className="text-white" /></div>
-                  <p className="text-white/70 text-xs font-medium mb-1 relative">Rata-rata Nilai</p>
-                  <p className="font-heading font-bold text-3xl text-white relative">{avgScoreAll ?? "—"}</p>
-                </div>
-                <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600">
-                  <div className="absolute -right-3 -bottom-3 opacity-15"><BookMarked size={56} className="text-white" /></div>
-                  <p className="text-white/70 text-xs font-medium mb-1 relative">Soal di Bank</p>
-                  <p className="font-heading font-bold text-3xl text-white relative">{bankItems.length || "—"}</p>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatTile color="primary" icon={FileQuestion} label="Total Ujian" value={exams.length} />
+                <StatTile color="amber" icon={PlayCircle} label="Sedang Berlangsung" value={berlangsung.length} />
+                <StatTile color="emerald" icon={Trophy} label="Rata-rata Nilai" value={avgScoreAll ?? "—"} />
+                <StatTile color="purple" icon={BookMarked} label="Soal di Bank" value={bankItems.length || "—"} />
               </div>
 
-              <div className="grid lg:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                   <h3 className="font-heading font-semibold text-navy text-sm mb-3 flex items-center gap-2"><PlayCircle size={15} className="text-amber-500" /> Sedang Berlangsung</h3>
                   {berlangsung.length === 0 ? (
@@ -326,7 +311,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
           ) : exams.length === 0 ? (
             <EmptyState icon={FileQuestion} title="Belum Ada Ujian" description="Buat ujian online untuk kelas ini." />
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {exams.map(e => {
                 const status = examStatus(e);
                 return (

@@ -130,7 +130,7 @@ export default async function NewsPage({
                       {news[0].thumbnail ? (
                         <Image src={news[0].thumbnail} alt={news[0].title} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-800 to-primary-600 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
                           <span className="font-arabic text-white/20 text-8xl">المنور</span>
                         </div>
                       )}
@@ -150,14 +150,14 @@ export default async function NewsPage({
 
                 {/* Grid berita lainnya */}
                 {news.length > 1 && (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {news.slice(1).map(n => (
                       <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
                         <div className="relative h-48 bg-gray-100">
                           {n.thumbnail ? (
                             <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-primary-800 to-primary-600 flex items-center justify-center">
+                            <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
                               <span className="font-arabic text-white/20 text-6xl">المنور</span>
                             </div>
                           )}

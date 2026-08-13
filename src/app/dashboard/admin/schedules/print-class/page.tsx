@@ -28,7 +28,7 @@ export default async function ClassSchedulePrintPage({ searchParams }: { searchP
   if (!activeClass) {
     return (
       <div className="p-8">
-        <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center gap-3 -mx-8 -mt-8 mb-6">
+        <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center gap-3 -mx-8 -mt-8 mb-6">
           <Link href="/dashboard/admin/schedules" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
             <ArrowLeft size={16} />
           </Link>
@@ -79,7 +79,7 @@ export default async function ClassSchedulePrintPage({ searchParams }: { searchP
 
   return (
     <>
-      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
+      <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/admin/schedules" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
             <ArrowLeft size={16} />

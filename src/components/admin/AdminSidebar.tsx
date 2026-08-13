@@ -319,11 +319,12 @@ interface AdminSidebarProps {
   pendingAdmissions?: number;
   pendingProfileEdits?: number;
   overdueBooks?: number;
+  missingAttendanceClasses?: number;
   logoEmblem?: string;
   logoFullWhite?: string;
 }
 
-export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, pendingProfileEdits = 0, overdueBooks = 0, logoEmblem = "/images/logo-emblem.png", logoFullWhite }: AdminSidebarProps) {
+export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0, pendingProfileEdits = 0, overdueBooks = 0, missingAttendanceClasses = 0, logoEmblem = "/images/logo-emblem.png", logoFullWhite }: AdminSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -367,6 +368,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
     { label: "Pendaftaran PPDB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
     { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
     { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
+    { label: "Kelas belum absen hari ini", count: missingAttendanceClasses, href: "/dashboard/admin/absensi-siswa" },
   ];
 
   function getBadge(item: { badge?: number; badgeKey?: BadgeKey }): number {

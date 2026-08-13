@@ -50,7 +50,7 @@ export default async function TeachingLoadPrintSheet({ backHref }: { backHref: s
 
   return (
     <>
-      <div className="print:hidden bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
+      <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href={backHref} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
             <ArrowLeft size={16} />
@@ -74,7 +74,7 @@ export default async function TeachingLoadPrintSheet({ backHref }: { backHref: s
                 <th colSpan={classes.length} className="border border-gray-300 px-1 py-1">Jumlah Jam / Kelas</th>
                 <th rowSpan={2} className="border border-gray-300 px-1 py-1 w-10">JJM</th>
               </tr>
-              <tr className="bg-primary-800 text-white">
+              <tr className="bg-primary-900 text-white">
                 {classes.map(c => (
                   <th key={c.id} className="border border-gray-300 px-1 py-1 whitespace-nowrap">{c.name}</th>
                 ))}

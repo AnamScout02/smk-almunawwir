@@ -154,7 +154,7 @@ export default function IndustryPartnersManager() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Building2} title="Belum Ada Mitra Industri" description="Tambahkan perusahaan yang bekerja sama untuk PKL siswa." />
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map(p => {
             const status = getStatus(p.mouEndDate);
             const pklCount = companyCounts[p.name.trim().toLowerCase()] ?? 0;
@@ -179,7 +179,7 @@ export default function IndustryPartnersManager() {
                   )}
                   <p className="flex items-center gap-1.5"><Users size={12} className="text-gray-400" /> {pklCount} siswa PKL saat ini{p.quota != null && ` (kuota ${p.quota})`}</p>
                   {p.mouDocumentUrl && (
-                    <a href={p.mouDocumentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary-600 hover:text-primary-800 font-semibold">
+                    <a href={p.mouDocumentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary-600 hover:text-primary-900 font-semibold">
                       <FileText size={12} /> Lihat Dokumen MoU
                     </a>
                   )}

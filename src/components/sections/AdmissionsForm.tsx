@@ -2,6 +2,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
+import Select from "@/components/admin/Select";
 import type { Lang } from "@/lib/lang";
 
 const inputClass =
@@ -273,7 +274,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
         </p>
         <p className="font-arabic text-primary-700 text-xl mb-6">جَزَاكُمُ اللَّهُ خَيْرًا</p>
         <button onClick={() => { setForm(EMPTY); setDocUrls({}); setSuccess(false); }}
-          className="text-sm text-primary-600 hover:text-primary-800 underline underline-offset-2 transition-colors">
+          className="text-sm text-primary-600 hover:text-primary-900 underline underline-offset-2 transition-colors">
           {t.registerAgain}
         </button>
       </div>
@@ -309,11 +310,9 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
         {/* Jenis Kelamin */}
         <div>
           <label className={labelClass}>{t.gender} {req}</label>
-          <select value={form.gender} onChange={e => setField("gender", e.target.value)} required className={inputClass}>
-            <option value="">{t.selectPlaceholder}</option>
-            <option value="Laki-laki">{t.male}</option>
-            <option value="Perempuan">{t.female}</option>
-          </select>
+          <Select value={form.gender} onChange={v => setField("gender", v)} placeholder={t.selectPlaceholder}
+            options={[{ value: "Laki-laki", label: t.male }, { value: "Perempuan", label: t.female }]}
+            buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
         </div>
 
         {/* NIK */}
@@ -378,21 +377,16 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
         {/* Konsentrasi Keahlian */}
         <div>
           <label className={labelClass}>{t.major}</label>
-          <select value={form.chosenMajor} onChange={e => setField("chosenMajor", e.target.value)} className={inputClass}>
-            <option value="">{t.selectPlaceholder}</option>
-            {majors.map(m => {
-              const label = `${m.name} (${m.code})`;
-              return <option key={m.code} value={label}>{label}</option>;
-            })}
-          </select>
+          <Select value={form.chosenMajor} onChange={v => setField("chosenMajor", v)} placeholder={t.selectPlaceholder}
+            options={majors.map(m => { const label = `${m.name} (${m.code})`; return { value: label, label }; })}
+            buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
         </div>
 
         {/* Jalur Pendaftaran */}
         <div>
           <label className={labelClass}>Jalur Pendaftaran</label>
-          <select value={form.jalur} onChange={e => setField("jalur", e.target.value)} className={inputClass}>
-            {JALUR_OPTIONS.map(j => <option key={j.value} value={j.value}>{j.label}</option>)}
-          </select>
+          <Select value={form.jalur} onChange={v => setField("jalur", v)} options={JALUR_OPTIONS}
+            buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
         </div>
 
         {/* Dokumen Pendukung */}

@@ -14,11 +14,14 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Override total className tombol trigger (default styling `.input-field`) — dipakai kalau
+   * dropdown perlu tampilan khusus (mis. pewarnaan status per baris), bukan style form biasa. */
+  buttonClassName?: string;
 }
 
 const SEARCHABLE_THRESHOLD = 8;
 
-export default function Select({ value, onChange, options, placeholder = "Pilih...", className = "", disabled = false }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder = "Pilih...", className = "", disabled = false, buttonClassName }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [query, setQuery] = useState("");
@@ -100,7 +103,7 @@ export default function Select({ value, onChange, options, placeholder = "Pilih.
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`input-field flex items-center justify-between gap-2 text-left cursor-pointer disabled:cursor-not-allowed ${!selected ? "text-gray-400" : ""}`}
+        className={buttonClassName ?? `input-field flex items-center justify-between gap-2 text-left cursor-pointer disabled:cursor-not-allowed ${!selected ? "text-gray-400" : ""}`}
       >
         <span className="truncate">{selected ? selected.label : placeholder}</span>
         <ChevronDown size={16} className={`shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />

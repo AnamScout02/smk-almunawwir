@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Award, TrendingUp, Upload, CheckCircle2, XCircle, Clock, Loader2, Users, ClipboardCheck, Trophy, Crown, Sparkles, Maximize2, Minimize2, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import FileUpload from "@/components/shared/FileUpload";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -268,7 +269,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
 
       {fullscreen && (
         <button onClick={toggleFullscreen}
-          className="fixed top-4 right-4 z-50 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-primary-900/90 text-white shadow-lg hover:bg-primary-800 transition-all">
+          className="fixed top-4 right-4 z-50 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-primary-900/90 text-white shadow-lg hover:bg-primary-900 transition-all">
           <Minimize2 size={15} /> Keluar Layar Penuh
         </button>
       )}
@@ -277,12 +278,8 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       <>
       <div className="mb-5 -mt-2 flex items-center gap-2">
         <label className="text-xs text-gray-400 font-semibold shrink-0">Jabatan</label>
-        <select value={jabatanFilter} onChange={e => setJabatanFilter(e.target.value)}
-          className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium bg-white shadow-sm">
-          {JABATAN_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <Select value={jabatanFilter} onChange={setJabatanFilter} options={JABATAN_OPTIONS} className="w-auto min-w-[12rem]"
+          buttonClassName="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium bg-white shadow-sm flex items-center justify-between gap-2 cursor-pointer" />
       </div>
 
       {reviewQueue.length > 0 && (
@@ -317,13 +314,9 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
           {!fullscreen && (
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <label className="text-xs text-gray-400 font-semibold shrink-0">Urutkan berdasarkan</label>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium">
-              <option value="final">Skor Total</option>
-              {leaders[0].breakdown.map(b => (
-                <option key={b.indicatorId} value={b.name}>{b.name}</option>
-              ))}
-            </select>
+            <Select value={sortBy} onChange={setSortBy} className="w-auto min-w-[10rem]"
+              options={[{ value: "final", label: "Skor Total" }, ...leaders[0].breakdown.map(b => ({ value: b.name, label: b.name }))]}
+              buttonClassName="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium bg-white flex items-center justify-between gap-2 cursor-pointer" />
             <div className="relative flex-1 min-w-48 ml-auto">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}

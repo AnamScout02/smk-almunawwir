@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { BadgeCheck, Loader2, BookOpen, CalendarCheck, Briefcase, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 
 interface DataGap { label: string; count: number; href: string }
 interface Summary {
@@ -34,45 +35,25 @@ export default function WakasekPenjaminMutuDashboard() {
         description={`Ringkasan KPI lintas-bidang sekolah — Semester ${data.semester}`}
       />
 
-      <div className="grid sm:grid-cols-4 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><BookOpen size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Rata-rata Nilai Sekolah</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.schoolAvg ?? "—"}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-blue-500 to-blue-600 ring-1 ring-blue-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><CalendarCheck size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kehadiran Sekolah (30 hari)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.attendanceRate !== null ? `${data.attendanceRate}%` : "—"}</p>
-            {data.attendanceRate !== null && (
-              <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
-                <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendanceRate, 100)}%` }} />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-emerald-500 to-emerald-600 ring-1 ring-emerald-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Briefcase size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Penempatan PKL Kelas XII</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.pklRate !== null ? `${data.pklRate}%` : "—"}</p>
-            {data.pklRate !== null && (
-              <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
-                <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.pklRate, 100)}%` }} />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-amber-500 to-amber-600 ring-1 ring-amber-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><AlertTriangle size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Data Belum Lengkap</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.totalGaps}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+        <StatTile color="primary" icon={BookOpen} label="Rata-rata Nilai Sekolah" value={data.schoolAvg ?? "—"} />
+        <StatTile color="blue" icon={CalendarCheck} label="Kehadiran Sekolah (30 hari)"
+          value={data.attendanceRate !== null ? `${data.attendanceRate}%` : "—"}>
+          {data.attendanceRate !== null && (
+            <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
+              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.attendanceRate, 100)}%` }} />
+            </div>
+          )}
+        </StatTile>
+        <StatTile color="emerald" icon={Briefcase} label="Penempatan PKL Kelas XII"
+          value={data.pklRate !== null ? `${data.pklRate}%` : "—"}>
+          {data.pklRate !== null && (
+            <div className="mt-2 h-1.5 bg-white/25 rounded-full overflow-hidden segmented-bar">
+              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${Math.min(data.pklRate, 100)}%` }} />
+            </div>
+          )}
+        </StatTile>
+        <StatTile color="amber" icon={AlertTriangle} label="Total Data Belum Lengkap" value={data.totalGaps} />
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

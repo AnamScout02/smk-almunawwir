@@ -5,6 +5,7 @@ import { CheckSquare, ChevronRight, Users, Calendar, Loader2, BarChart2, Downloa
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import Select from "@/components/admin/Select";
 
 interface ClassInfo {
   id: string;
@@ -86,13 +87,13 @@ export default function AttendancePage() {
 
       {/* Kelas wali — akses cepat input */}
       <div className="mb-8">
-        <h2 className="font-heading font-semibold text-lg text-primary-800 mb-4">Input Absensi per Kelas</h2>
+        <h2 className="font-heading font-semibold text-lg text-primary-900 mb-4">Input Absensi per Kelas</h2>
         {loadingClasses ? (
           <div className="flex items-center justify-center py-10 text-gray-400">
             <Loader2 size={20} className="animate-spin mr-2" /> Memuat kelas...
           </div>
         ) : classes.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {classes.map((cls) => (
               <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`}
                 className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-4">
@@ -118,7 +119,7 @@ export default function AttendancePage() {
       {/* Rekap absensi per tanggal */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading font-semibold text-lg text-primary-800">
+          <h2 className="font-heading font-semibold text-lg text-primary-900">
             <Calendar size={18} className="inline mr-2 text-primary-700" />
             Rekap Absensi per Tanggal
           </h2>
@@ -135,11 +136,8 @@ export default function AttendancePage() {
           </div>
           <div className="flex items-center gap-3">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kelas:</label>
-            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-              className="input-field w-auto">
-              <option value="ALL">Semua Kelas</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <Select value={selectedClass} onChange={setSelectedClass} className="w-auto min-w-[10rem]"
+              options={[{ value: "ALL", label: "Semua Kelas" }, ...classes.map(c => ({ value: c.id, label: c.name }))]} />
           </div>
           <div className="flex gap-2 flex-wrap sm:ml-auto">
             {summary.map(s => (

@@ -72,7 +72,7 @@ export default function AdminReportsPage() {
             <p className="text-gray-400 text-sm mt-0.5">Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — siap cetak.</p>
           </div>
           <a href="/dashboard/admin/reports/rekap-siswa"
-            className="shrink-0 inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            className="shrink-0 inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
             Lihat
           </a>
         </div>

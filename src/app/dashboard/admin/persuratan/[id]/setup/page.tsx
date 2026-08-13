@@ -112,7 +112,7 @@ export default function SuratKeluarSetupPage() {
       {error && <p className="error-msg mb-4">{error}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl mx-auto space-y-4">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="label-field">Klasifikasi / Kode Jenis Surat</label>
             <input list="klasifikasi-list" value={klasifikasi} onChange={e => setKlasifikasi(e.target.value)} className="input-field" placeholder="cth: A.2" />

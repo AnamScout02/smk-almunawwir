@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { GraduationCap, Loader2, AlertTriangle, BookOpen, School } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 
 interface Summary {
@@ -38,31 +39,13 @@ export default function WakasekKurikulumDashboard() {
         description={`Pemantauan kelengkapan jurnal, jadwal, dan capaian akademik — Semester ${data.semester}`}
       />
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-amber-500 to-amber-600 ring-1 ring-amber-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><AlertTriangle size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Belum Isi Jurnal (7 hari)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.missingJournal.length}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><BookOpen size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Rata-rata Nilai Sekolah</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.schoolAvg ?? "—"}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-red-500 to-red-600 ring-1 ring-red-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><School size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kelas Tanpa Jadwal</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.classesWithoutSchedule.length}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="amber" icon={AlertTriangle} label="Belum Isi Jurnal (7 hari)" value={data.missingJournal.length} />
+        <StatTile color="primary" icon={BookOpen} label="Rata-rata Nilai Sekolah" value={data.schoolAvg ?? "—"} />
+        <StatTile color="red" icon={School} label="Kelas Tanpa Jadwal" value={data.classesWithoutSchedule.length} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Rata-rata Nilai per Mata Pelajaran</h3>
           {data.avgBySubject.length === 0 ? (

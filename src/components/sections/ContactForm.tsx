@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { Send, CheckCircle2 } from "lucide-react";
 import type { Lang } from "@/lib/lang";
+import Select from "@/components/admin/Select";
 
 const ui = {
   id: {
@@ -94,11 +95,9 @@ export default function ContactForm({ lang = "id" }: { lang?: Lang }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1.5">{t.subject}</label>
-          <select value={form.subject} onChange={e => set("subject", e.target.value)} required
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-primary-500 outline-none transition text-gray-700">
-            <option value="">{t.subjectPh}</option>
-            {t.subjects.map(s => <option key={s}>{s}</option>)}
-          </select>
+          <Select value={form.subject} onChange={v => set("subject", v)} placeholder={t.subjectPh}
+            options={t.subjects.map(s => ({ value: s, label: s }))}
+            buttonClassName="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-primary-500 outline-none transition text-gray-700 flex items-center justify-between gap-2 cursor-pointer" />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1.5">{t.message}</label>

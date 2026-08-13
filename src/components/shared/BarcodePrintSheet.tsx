@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, CheckSquare, Square, Printer } from "lucide-react";
+import { ArrowLeft, Loader2, CheckSquare, Square, Printer, QrCode } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
+import PageHeader from "@/components/admin/PageHeader";
 
 interface Book { id: string; title: string; barcode: string | null; barcodeQr: string | null; stock: number }
 interface BarcodeCell { key: string; title: string; barcode: string; qr: string }
@@ -56,14 +57,9 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <style>{"@page { size: A4; margin: 1cm; }"}</style>
 
+      <PageHeader icon={<QrCode size={22} />} title="Cetak Barcode Buku" description="Pilih buku & jumlah label yang mau dicetak per buku" printHidden />
       <div className="flex items-center justify-between mb-5 print:hidden">
-        <div className="flex items-center gap-3">
-          <Link href={backHref} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><ArrowLeft size={18} /></Link>
-          <div>
-            <h1 className="font-heading text-lg font-bold text-primary-900">Cetak Barcode Buku</h1>
-            <p className="text-sm text-gray-400">Pilih buku & jumlah label yang mau dicetak per buku</p>
-          </div>
-        </div>
+        <Link href={backHref} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><ArrowLeft size={18} /></Link>
         {showPreview && (
           <button onClick={() => setShowPreview(false)}
             className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">

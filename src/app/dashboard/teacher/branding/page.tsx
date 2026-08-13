@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, Loader2, Newspaper, Image as ImageIcon, Clock, GalleryHorizontal } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 
 interface NewsRow { id: string; title: string; category: string; createdAt: string; published: boolean }
 interface CategoryCount { category: string; count: number }
@@ -53,31 +54,15 @@ export default function BrandingDashboard() {
         </Link>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Newspaper size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Berita ({data.publishedNews} tayang · {data.draftNews} draf)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.totalNews}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-purple-500 to-purple-600 ring-1 ring-purple-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><ImageIcon size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Foto Galeri</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.totalGallery}</p>
-          </div>
-        </div>
-        <div className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${isStale ? "from-red-500 to-red-600 ring-red-100" : "from-emerald-500 to-emerald-600 ring-emerald-100"} ring-1`}>
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Clock size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Hari Sejak Update Terakhir</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.daysSinceLastPublish ?? "—"}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="primary" icon={Newspaper} value={data.totalNews}
+          label={`Total Berita (${data.publishedNews} tayang · ${data.draftNews} draf)`} />
+        <StatTile color="purple" icon={ImageIcon} label="Total Foto Galeri" value={data.totalGallery} />
+        <StatTile color={isStale ? "red" : "emerald"} icon={Clock} label="Hari Sejak Update Terakhir"
+          value={data.daysSinceLastPublish ?? "—"} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">5 Berita Terbaru</h3>
           {data.latestNews.length === 0 ? (

@@ -51,7 +51,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
           <p className="text-sm font-semibold text-primary-900">Pilih kelas yang akan dicetak ({selectedClasses.length}/{classes.length} dipilih)</p>
           <div className="flex gap-2">
             <button onClick={() => setSelected(new Set(classes.map(c => c.id)))}
-              className="text-xs font-semibold text-primary-600 hover:text-primary-800 px-3 py-1.5 rounded-lg hover:bg-primary-50 transition">
+              className="text-xs font-semibold text-primary-600 hover:text-primary-900 px-3 py-1.5 rounded-lg hover:bg-primary-50 transition">
               Pilih Semua
             </button>
             <button onClick={() => setSelected(new Set())}
@@ -68,7 +68,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
             return (
               <div key={grade}>
                 <button onClick={() => toggleGrade(ids, allSelected)}
-                  className="flex items-center gap-2 text-xs font-bold text-primary-800 uppercase tracking-wide mb-2 hover:text-gold transition">
+                  className="flex items-center gap-2 text-xs font-bold text-primary-900 uppercase tracking-wide mb-2 hover:text-gold transition">
                   {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
                   Tingkat {GRADE_LABEL[grade] ?? grade}
                 </button>
@@ -76,7 +76,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
                   {items.map(c => (
                     <label key={c.id}
                       className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border cursor-pointer transition ${
-                        selected.has(c.id) ? "bg-primary-50 border-primary-200 text-primary-800" : "bg-gray-50 border-gray-200 text-gray-500"
+                        selected.has(c.id) ? "bg-primary-50 border-primary-200 text-primary-900" : "bg-gray-50 border-gray-200 text-gray-500"
                       }`}>
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="accent-primary-700" />
                       {c.name}
@@ -114,7 +114,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
               <div><span className="text-gray-500">Dicetak</span><span className="mx-2">:</span><strong>{new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</strong></div>
             </div>
 
-            <p className="text-xs font-bold text-primary-800 uppercase tracking-wide mb-2">Daftar Akun Login Siswa</p>
+            <p className="text-xs font-bold text-primary-900 uppercase tracking-wide mb-2">Daftar Akun Login Siswa</p>
             {cls.students.length === 0 ? (
               <p className="text-sm text-gray-400 italic">Belum ada siswa aktif di kelas ini.</p>
             ) : (
@@ -122,10 +122,10 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-primary-900 text-white print:bg-gray-100 print:text-primary-900">
-                      <th className="border border-primary-800 print:border-gray-300 px-3 py-2 text-left w-10">No</th>
-                      <th className="border border-primary-800 print:border-gray-300 px-3 py-2 text-left">Nama</th>
-                      <th className="border border-primary-800 print:border-gray-300 px-3 py-2 text-left">NIS</th>
-                      <th className="border border-primary-800 print:border-gray-300 px-3 py-2 text-left">Username (Email)</th>
+                      <th className="border border-primary-900 print:border-gray-300 px-3 py-2 text-left w-10">No</th>
+                      <th className="border border-primary-900 print:border-gray-300 px-3 py-2 text-left">Nama</th>
+                      <th className="border border-primary-900 print:border-gray-300 px-3 py-2 text-left">NIS</th>
+                      <th className="border border-primary-900 print:border-gray-300 px-3 py-2 text-left">Username (Email)</th>
                     </tr>
                   </thead>
                   <tbody>

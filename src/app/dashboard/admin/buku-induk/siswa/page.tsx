@@ -177,7 +177,7 @@ export default function BukuIndukSiswaPage() {
           className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-sm font-semibold transition-colors">
           <Download size={15} /> Template
         </a>
-        <label className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 hover:bg-primary-900 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">
           <Upload size={15} />
           {importLoading ? "Mengimpor..." : "Import Excel"}
           <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} disabled={importLoading} />

@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Award, Loader2, Users, TrendingUp, CheckCircle2, FileCheck } from "lucide-react";
+import { Award, Loader2, Users, TrendingUp, CheckCircle2, FileCheck, Briefcase } from "lucide-react";
+import EmptyState from "@/components/admin/EmptyState";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 
 interface ClassStat { className: string; avg: number | null; attPct: number | null; studentCount: number }
 interface MajorSummary {
@@ -63,35 +65,16 @@ export default function KaprogliDashboard() {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Users size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Siswa Aktif</p>
-            <p className="font-heading font-bold text-3xl text-white">{major.totalStudents}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-emerald-500 to-emerald-600 ring-1 ring-emerald-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><TrendingUp size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Rata-rata Nilai Jurusan</p>
-            <p className="font-heading font-bold text-3xl text-white">
-              {major.classStats.some(c => c.avg !== null)
-                ? Math.round((major.classStats.filter(c => c.avg !== null).reduce((a, c) => a + (c.avg ?? 0), 0) / major.classStats.filter(c => c.avg !== null).length) * 10) / 10
-                : "—"}
-            </p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-blue-500 to-blue-600 ring-1 ring-blue-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><CheckCircle2 size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Siswa Sedang PKL</p>
-            <p className="font-heading font-bold text-3xl text-white">{major.pklByStatus.ONGOING}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="primary" icon={Users} label="Total Siswa Aktif" value={major.totalStudents} />
+        <StatTile color="emerald" icon={TrendingUp} label="Rata-rata Nilai Jurusan"
+          value={major.classStats.some(c => c.avg !== null)
+            ? Math.round((major.classStats.filter(c => c.avg !== null).reduce((a, c) => a + (c.avg ?? 0), 0) / major.classStats.filter(c => c.avg !== null).length) * 10) / 10
+            : "—"} />
+        <StatTile color="blue" icon={CheckCircle2} label="Siswa Sedang PKL" value={major.pklByStatus.ONGOING} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Nilai & Kehadiran per Kelas</h3>
           <div className="overflow-x-auto">
@@ -121,7 +104,7 @@ export default function KaprogliDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Status PKL Jurusan</h3>
           {totalPkl === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-12">Belum ada data PKL.</p>
+            <EmptyState icon={Briefcase} title="Belum Ada Data PKL" />
           ) : (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width="100%" height={180}>

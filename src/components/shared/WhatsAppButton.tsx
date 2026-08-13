@@ -1,12 +1,20 @@
 "use client";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { X, MessageCircle } from "lucide-react";
 
 const WA_NUMBER = "6283878203670";
 const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir IIBS.";
 
+/** Widget kontak WhatsApp — HANYA untuk halaman publik (beranda, tentang, kontak, dll), bukan
+ * portal internal. Dipasang di root layout (dipakai semua halaman), jadi disaring sendiri di sini
+ * lewat pathname — sembunyi total di /dashboard/** (admin/guru/siswa) supaya tidak nyangkut/tumpang
+ * tindih dengan UI internal (temuan user 2026-08-13: bubble WA nongol di atas dashboard). */
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/dashboard")) return null;
 
   const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 

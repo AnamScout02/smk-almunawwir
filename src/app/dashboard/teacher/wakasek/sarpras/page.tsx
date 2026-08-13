@@ -4,6 +4,7 @@ import { Building2, Loader2, DoorOpen, AlertTriangle, HelpCircle, Boxes } from "
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 
 interface RoomUsage { room: string; count: number }
@@ -46,31 +47,13 @@ export default function WakasekSarprasDashboard() {
         </Link>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-primary-500 to-primary-700 ring-1 ring-primary-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><DoorOpen size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Total Ruangan Terpakai</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.totalRooms}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-red-500 to-red-600 ring-1 ring-red-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><AlertTriangle size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Bentrok Ruangan</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.conflictCount}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-amber-500 to-amber-600 ring-1 ring-amber-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><HelpCircle size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Jadwal Belum Ada Ruangan</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.withoutRoomCount}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="primary" icon={DoorOpen} label="Total Ruangan Terpakai" value={data.totalRooms} />
+        <StatTile color="red" icon={AlertTriangle} label="Bentrok Ruangan" value={data.conflictCount} />
+        <StatTile color="amber" icon={HelpCircle} label="Jadwal Belum Ada Ruangan" value={data.withoutRoomCount} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-navy text-sm mb-3">Pemanfaatan Ruangan (Jumlah Slot Jadwal)</h3>
           {data.roomUtilization.length === 0 ? (

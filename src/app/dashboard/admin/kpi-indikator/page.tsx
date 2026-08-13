@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Sliders, Save, Loader2, ChevronDown } from "lucide-react";
+import EmptyState from "@/components/admin/EmptyState";
 import PageHeader from "@/components/admin/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
 
@@ -78,9 +79,9 @@ export default function KpiIndikatorPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
       ) : jabatanNames.length === 0 ? (
-        <p className="text-center py-16 text-gray-400 text-sm">Belum ada indikator KPI.</p>
+        <EmptyState icon={Sliders} title="Belum Ada Indikator KPI" />
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
           {jabatanNames.map(jabatanName => {
             const items = grouped[jabatanName];
             const total = items.reduce((a, i) => a + (i.active ? i.weight : 0), 0);

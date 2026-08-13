@@ -242,13 +242,14 @@ export default function AbsenEkstraManager() {
                                 </button>
                               ))}
                             </div>
-                            <select value={attendance[r.studentId] ?? ""} onChange={e => setStatus(r.studentId, e.target.value as AttendanceStatus)}
-                              className={`sm:hidden shrink-0 text-xs font-semibold rounded-lg border pl-2 pr-6 py-1.5 outline-none ${
-                                attendance[r.studentId] ? STATUS_COLOR[attendance[r.studentId]] : "bg-white border-gray-200 text-gray-400"
-                              }`}>
-                              <option value="" disabled>— Pilih —</option>
-                              {STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
-                            </select>
+                            <div className="sm:hidden shrink-0 w-28">
+                              <Select value={attendance[r.studentId] ?? ""} onChange={v => setStatus(r.studentId, v as AttendanceStatus)}
+                                placeholder="— Pilih —"
+                                options={STATUSES.map(status => ({ value: status, label: status }))}
+                                buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border pl-2 pr-2 py-1.5 outline-none cursor-pointer ${
+                                  attendance[r.studentId] ? STATUS_COLOR[attendance[r.studentId]] : "bg-white border-gray-200 text-gray-400"
+                                }`} />
+                            </div>
                           </div>
                         ))}
                       </div>

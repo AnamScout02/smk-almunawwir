@@ -8,7 +8,6 @@ import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
 import DatePicker from "@/components/shared/DatePicker";
 import MonthPicker from "@/components/shared/MonthPicker";
-import MonthlyAttendanceCalendar, { type CalendarRow } from "@/components/shared/MonthlyAttendanceCalendar";
 
 interface ClassOption { id: string; name: string; grade: number; major: { name: string } }
 interface AttendanceRecord { id: string; date: string; status: string; student: { id: string; nis: string; user: { name: string } } }
@@ -21,12 +20,16 @@ const STATUS_COLOR: Record<string, string> = {
   ALPHA: "bg-red-50 text-red-600 border border-red-200",
 };
 
-/** Rekap absensi siswa (semua kelas) — dipakai Admin/TAS DAN guru berjabatan Wakasek
- * Kesiswaan/Guru BK (lihat src/lib/kesiswaan-guard.ts, pola komponen manager lintas portal no.14
- * CLAUDE.md). Read-only murni — tidak ada tombol input/ubah di sini, input absensi resmi tetap
- * khusus wali kelas lewat halaman terpisah. */
-export default function AbsensiSiswaManager() {
-  const [tab, setTab] = useState<"tanggal" | "siswa" | "kalender">("tanggal");
+/** Rekap absensi siswa — dipakai Admin/TAS, guru berjabatan Wakasek Kesiswaan/Guru BK (akses semua
+ * kelas, lihat src/lib/kesiswaan-guard.ts), DAN sekarang juga wali kelas biasa (akses kelas walinya
+ * saja) — pola komponen manager lintas portal no.14 CLAUDE.md. Read-only murni — tidak ada tombol
+ * input/ubah di sini, input absensi resmi tetap khusus wali kelas lewat halaman terpisah.
+ *
+ * `classesEndpoint` menentukan cakupan: default `/api/admin/classes` (Admin/TAS/Kesiswaan/BK —
+ * bebas kelas manapun). Wali kelas biasa pakai `/api/teacher/classes?scope=homeroom` (dikirim dari
+ * wrapper page-nya sendiri) karena `/api/admin/classes` menolak guru tanpa jabatan relevan. */
+export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/classes" }: { classesEndpoint?: string } = {}) {
+  const [tab, setTab] = useState<"tanggal" | "siswa">("tanggal");
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [classId, setClassId] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -42,20 +45,14 @@ export default function AbsensiSiswaManager() {
   const [summaryFrom, setSummaryFrom] = useState(""); // rentang custom (mis. per minggu) — mengalahkan summaryMonth kalau diisi
   const [summaryTo, setSummaryTo] = useState("");
 
-  const [calMonth, setCalMonth] = useState(today.slice(0, 7));
-  const [calDays, setCalDays] = useState(0);
-  const [calSundays, setCalSundays] = useState<number[]>([]);
-  const [calRows, setCalRows] = useState<CalendarRow[]>([]);
-  const [loadingCal, setLoadingCal] = useState(false);
-
   useEffect(() => {
-    fetch("/api/admin/classes").then(r => r.json()).then((d: ClassOption[]) => {
+    fetch(classesEndpoint).then(r => r.json()).then((d: ClassOption[]) => {
       if (Array.isArray(d)) {
         setClasses(d);
         if (d.length > 0) setClassId(d[0].id);
       }
     }).catch(() => {}).finally(() => setLoadingClasses(false));
-  }, []);
+  }, [classesEndpoint]);
 
   useEffect(() => {
     if (!classId || tab !== "tanggal") return;
@@ -81,21 +78,6 @@ export default function AbsensiSiswaManager() {
       .then(d => { if (Array.isArray(d.students)) setSummary(d.students); })
       .catch(() => {}).finally(() => setLoadingSummary(false));
   }, [classId, tab, summaryMonth, summaryFrom, summaryTo]);
-
-  useEffect(() => {
-    if (!classId || tab !== "kalender") return;
-    setLoadingCal(true);
-    fetch(`/api/teacher/attendance/monthly-grid?classId=${classId}&month=${calMonth}`)
-      .then(r => r.json())
-      .then(d => {
-        if (Array.isArray(d.students)) {
-          setCalRows(d.students);
-          setCalDays(d.daysInMonth ?? 0);
-          setCalSundays(d.sundays ?? []);
-        }
-      })
-      .catch(() => {}).finally(() => setLoadingCal(false));
-  }, [classId, tab, calMonth]);
 
   function startOfWeekISO(): string {
     const now = new Date();
@@ -130,7 +112,7 @@ export default function AbsensiSiswaManager() {
               <Select value={classId} onChange={setClassId}
                 options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))} />
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 flex-wrap">
               <button onClick={() => setTab("tanggal")}
                 className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "tanggal" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
                 <Calendar size={14} /> Per Tanggal
@@ -139,10 +121,13 @@ export default function AbsensiSiswaManager() {
                 className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "siswa" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
                 <Users size={14} /> Per Siswa
               </button>
-              <button onClick={() => setTab("kalender")}
-                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "kalender" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
-                <Calendar size={14} /> Kalender Bulanan
-              </button>
+              {/* Kalender Bulanan SENGAJA bukan tab di sini (2026-08-12, temuan user: dobel dgn
+                  halaman cetak-kalender) — link langsung ke halaman itu, yang sudah WYSIWYG di
+                  layar (bisa dilihat & dicetak dari tempat yang sama), bukan diduplikasi di sini. */}
+              <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-kalender?classId=${classId}` : "#"}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition bg-gray-50 text-gray-500 hover:bg-gray-100">
+                <Printer size={14} /> Kalender Bulanan
+              </Link>
             </div>
           </div>
 
@@ -259,23 +244,7 @@ export default function AbsensiSiswaManager() {
                 )}
               </div>
             </>
-          ) : (
-            <>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <label className="label-field mb-0 whitespace-nowrap">Bulan:</label>
-                  <MonthPicker value={calMonth} onChange={setCalMonth} />
-                </div>
-                <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-kalender?classId=${classId}&month=${calMonth}` : "#"}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">
-                  <Printer size={14} /> Cetak Kalender Ini
-                </Link>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <MonthlyAttendanceCalendar rows={calRows} days={calDays} sundays={calSundays} loading={loadingCal} />
-              </div>
-            </>
-          )}
+          ) : null}
         </>
       )}
     </div>

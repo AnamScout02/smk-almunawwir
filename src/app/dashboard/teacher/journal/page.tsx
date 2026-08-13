@@ -147,7 +147,7 @@ export default function TeacherJournalPage() {
       {/* Tanggal & Semester SELALU tampil di luar — supaya guru tetap bisa ganti tanggal walau
           hari yang lagi dipilih kebetulan tidak ada jadwal mengajar sama sekali. */}
       <div ref={formRef} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 scroll-mt-6">
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="label-field">Tanggal Pertemuan</label>
             <DatePicker value={date} onChange={setDate} />
@@ -237,7 +237,7 @@ export default function TeacherJournalPage() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan — {semester}</h3>
           {selected && (
-            <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+            <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-900 font-semibold">
               <Printer size={13} /> Cetak Rekap
             </Link>
           )}
@@ -269,7 +269,7 @@ export default function TeacherJournalPage() {
                     <td className="py-2 pr-3 text-xs text-gray-400">{h.catatanCount > 0 ? `${h.catatanCount} siswa` : "—"}</td>
                     <td className="py-2 pr-3 text-right">
                       <button onClick={() => editHistoryRow(h)}
-                        className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                        className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold">
                         <Pencil size={12} /> Edit
                       </button>
                     </td>

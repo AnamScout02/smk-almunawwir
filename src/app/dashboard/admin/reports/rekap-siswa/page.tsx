@@ -149,12 +149,12 @@ export default async function RekapSiswaPage() {
               const maxTotal = Math.max(1, ...majorRows.map(m => m.total));
               const tintAlpha: Record<number, number> = { 10: 0.35, 11: 0.65, 12: 1 };
               return majorRows.map(({ major, total, totalL, totalP, perGradeTotal, color }) => (
-                <div key={major.id} className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 w-56 shrink-0">
+                <div key={major.id} className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2 w-24 sm:w-56 shrink-0">
                     <CrestBadge url={major.logoUrl} code={major.code} color={color} size={30} />
                     <div className="min-w-0 text-xs font-bold text-primary-900 truncate">{major.name}</div>
                   </div>
-                  <div className="flex-1 h-7 flex items-center">
+                  <div className="flex-1 min-w-0 h-7 flex items-center">
                     <div
                       className="h-full flex items-center gap-[2px] rounded-md overflow-hidden"
                       style={{ width: `${Math.max((total / maxTotal) * 100, total > 0 ? 4 : 0)}%` }}
@@ -178,7 +178,7 @@ export default async function RekapSiswaPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="w-28 text-right shrink-0">
+                  <div className="w-14 sm:w-28 text-right shrink-0">
                     <div className="font-heading font-bold text-primary-900 text-lg leading-none">{total}</div>
                     <div className="text-[10px] text-gray-400 mt-0.5">Total &middot; L {totalL} &middot; P {totalP}</div>
                   </div>

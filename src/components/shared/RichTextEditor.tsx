@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
+import Select from "@/components/admin/Select";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -98,6 +99,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
   toolbarSlot?: HTMLElement | null;
 }) {
   const [tab, setTab] = useState<TabKey>("Beranda");
+  const [fontSizeChoice, setFontSizeChoice] = useState("");
   const [showTextColor, setShowTextColor] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -180,6 +182,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
     }
   }
   function setFontSize(v: string) {
+    setFontSizeChoice(v);
     if (!v) editor!.chain().focus().unsetMark("textStyle").run();
     else editor!.chain().focus().setMark("textStyle", { fontSize: v }).run();
   }
@@ -318,14 +321,12 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
         {tab === "Beranda" && (
           <>
             <Group label="Gaya">
-              <select onChange={e => applyStyle(e.target.value)} value={currentStyle()}
-                className="text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white text-gray-600 shrink-0" title="Gaya Paragraf">
-                {STYLE_OPTIONS.map(h => <option key={h.key} value={h.key}>{h.label}</option>)}
-              </select>
-              <select onChange={e => setFontSize(e.target.value)} defaultValue=""
-                className="text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white text-gray-600 shrink-0" title="Ukuran Font">
-                {FONT_SIZES.map(f => <option key={f.label} value={f.value}>{f.label}</option>)}
-              </select>
+              <Select onChange={applyStyle} value={currentStyle()} className="w-28 shrink-0"
+                options={STYLE_OPTIONS.map(h => ({ value: h.key, label: h.label }))}
+                buttonClassName="w-full flex items-center justify-between gap-1 text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white text-gray-600 cursor-pointer" />
+              <Select onChange={setFontSize} value={fontSizeChoice} className="w-24 shrink-0"
+                options={FONT_SIZES}
+                buttonClassName="w-full flex items-center justify-between gap-1 text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white text-gray-600 cursor-pointer" />
             </Group>
             <Divider />
 

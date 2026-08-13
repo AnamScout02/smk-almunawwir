@@ -643,7 +643,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                                 await addPreferenceBlock(current.id, d.day, d.startTime, hours, d.weekType);
                                 setDraft(prev => { const cp = { ...prev }; delete cp[s.id]; return cp; });
                               }}
-                              className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-800 text-white disabled:opacity-30 shrink-0">
+                              className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-900 text-white disabled:opacity-30 shrink-0">
                               + Tambah
                             </button>
                           </div>

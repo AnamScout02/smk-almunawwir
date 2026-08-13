@@ -214,7 +214,7 @@ export default async function AboutPage() {
         {/* Profil & Identitas */}
         <section className="section-padding bg-white">
           <div className="container-custom">
-            <div className="grid md:grid-cols-2 gap-12 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
               <div>
                 <span className="text-gold font-semibold text-sm uppercase tracking-widest">{c.profilLabel}</span>
                 <h2 className="font-heading text-3xl font-bold text-navy mt-2 mb-6">{c.profilTitle}</h2>
@@ -286,7 +286,7 @@ export default async function AboutPage() {
         {/* Visi & Misi */}
         <section className="section-padding bg-cream">
           <div className="container-custom">
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
               <div className="relative rounded-3xl p-8 text-white overflow-hidden bg-primary-700">
                 <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
                   style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }}

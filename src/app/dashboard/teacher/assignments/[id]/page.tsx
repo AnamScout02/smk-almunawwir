@@ -89,7 +89,7 @@ export default function TeacherAssignmentDetailPage() {
         <div className="flex items-center gap-4 text-xs text-gray-400">
           {data.dueDate && <span className="flex items-center gap-1"><Calendar size={12} /> Batas waktu: {fmt(data.dueDate)}</span>}
           {data.fileUrl && (
-            <a href={data.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+            <a href={data.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
               <FileText size={12} /> Lihat lampiran soal
             </a>
           )}
@@ -115,7 +115,7 @@ export default function TeacherAssignmentDetailPage() {
                     <div className="flex-1 min-w-0 text-xs text-gray-500">
                       {sub.note && <p className="mb-1">{sub.note}</p>}
                       {sub.fileUrl && (
-                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                           <FileText size={12} /> Lihat file
                         </a>
                       )}

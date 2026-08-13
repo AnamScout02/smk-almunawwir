@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { HeartHandshake, Loader2, Clock, TrendingDown, AlertOctagon } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import StatTile from "@/components/admin/StatTile";
 
 interface StudentRow {
   studentId: string; nis: string; name: string; className: string;
@@ -36,28 +37,10 @@ export default function BkDashboard() {
         description={`Siswa yang perlu perhatian berdasarkan kehadiran & nilai — Semester ${data.semester}`}
       />
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-amber-500 to-amber-600 ring-1 ring-amber-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><Clock size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kehadiran Rendah (&lt;75%)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.lowAttendanceCount}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-red-500 to-red-600 ring-1 ring-red-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><TrendingDown size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Nilai Rendah (&lt;75)</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.lowGradeCount}</p>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br from-purple-500 to-purple-600 ring-1 ring-purple-100">
-          <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"><AlertOctagon size={56} className="text-white" /></div>
-          <div className="relative">
-            <p className="text-white/70 text-xs font-medium mb-1">Kedua-duanya</p>
-            <p className="font-heading font-bold text-3xl text-white">{data.bothCount}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatTile color="amber" icon={Clock} label="Kehadiran Rendah (<75%)" value={data.lowAttendanceCount} />
+        <StatTile color="red" icon={TrendingDown} label="Nilai Rendah (<75)" value={data.lowGradeCount} />
+        <StatTile color="purple" icon={AlertOctagon} label="Kedua-duanya" value={data.bothCount} />
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

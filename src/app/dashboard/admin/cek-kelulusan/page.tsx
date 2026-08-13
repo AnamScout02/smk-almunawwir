@@ -45,7 +45,7 @@ export default function AdminCekKelulusanPage() {
             Kosongkan salah satu/keduanya untuk selalu terbuka. Siswa/orang tua cek status kelulusan lewat halaman publik{" "}
             <code className="font-mono">/cek-kelulusan</code>.
           </p>
-          <div className="grid sm:grid-cols-3 gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
             <div>
               <label className="label-field">Tanggal Buka</label>
               <DatePicker value={tanggalBuka} onChange={setTanggalBuka} />

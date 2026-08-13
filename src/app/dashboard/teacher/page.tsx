@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekType } from "@/lib/schedule-week.server";
 import { getWakilKepalaAgenda } from "@/lib/agenda";
+import { getClassesMissingAttendance } from "@/lib/attendance-gaps";
 import AgendaCalendar from "@/components/shared/AgendaCalendar";
 import {
   Users, BookOpen, ClipboardList, CheckSquare, Bell, Calendar,
@@ -64,10 +65,15 @@ export default async function TeacherDashboard() {
     }),
   ]) : [0, []];
 
+  // Pengingat "belum absen hari ini" — cuma dicek utk kelas wali guru ini sendiri (bukan lintas
+  // kelas), dan cuma kalau hari ini hari sekolah (getClassesMissingAttendance sendiri sudah balikin
+  // array kosong kalau hari Minggu). Lihat src/lib/attendance-gaps.ts.
+  const todayMidnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const missingAttendanceClasses = teacher?.homeroomOf.length
+    ? await getClassesMissingAttendance(todayMidnightUTC, teacher.homeroomOf.map(c => c.id))
+    : [];
+
   const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
-  const mataPelajaran = teacher?.teachingLoad.length
-    ? teacher.teachingLoad.map(t => t.subject.name).join(", ")
-    : (teacher?.subject && teacher.subject !== "—" ? teacher.subject : "Belum ada penugasan mengajar");
 
   const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
   const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
@@ -83,32 +89,14 @@ export default async function TeacherDashboard() {
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-        <div className="relative px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={14} className="text-gold" />
-              <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
-            </div>
             <p className="font-arabic text-gold text-2xl mb-1" style={{ lineHeight: 1.8 }}>اَلسَّلَامُ عَلَيْكُمْ</p>
             <h1 className="font-heading text-2xl font-bold text-white">{session.name}</h1>
-            <p className="text-white/50 text-sm mt-0.5">
-              Mata Pelajaran: <span className="text-white/70">{mataPelajaran}</span>
-              {teacher?.nip && <span> · NIP: {teacher.nip}</span>}
-            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard/teacher/journal"
-              className="flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gold/30 transition-colors">
-              <ClipboardList size={14} />
-              Jurnal Mengajar
-            </Link>
-            {!!teacher?.homeroomOf.length && (
-              <Link href="/dashboard/teacher/attendance"
-                className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-emerald-500/30 transition-colors">
-                <CheckSquare size={14} />
-                Absensi
-              </Link>
-            )}
+          <div className="flex items-center gap-2 shrink-0">
+            <Sparkles size={14} className="text-gold" />
+            <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
           </div>
         </div>
       </div>
@@ -132,6 +120,23 @@ export default async function TeacherDashboard() {
                   <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">{ann.content}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Pengingat Belum Absen ── */}
+        {missingAttendanceClasses.length > 0 && (
+          <div className="space-y-2">
+            {missingAttendanceClasses.map(cls => (
+              <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`}
+                className="flex items-center gap-3 p-4 rounded-2xl border bg-amber-50 border-amber-200 hover:bg-amber-100 transition-colors">
+                <CheckSquare size={15} className="shrink-0 text-amber-600" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-amber-900">Absensi {cls.name} hari ini belum diisi</p>
+                  <p className="text-xs text-amber-700/80">Klik untuk isi sekarang, sebelum kelupaan.</p>
+                </div>
+                <ArrowRight size={14} className="shrink-0 text-amber-600" />
+              </Link>
             ))}
           </div>
         )}
@@ -162,7 +167,7 @@ export default async function TeacherDashboard() {
             <h3 className="font-heading font-semibold text-navy">Kelas Wali Saya</h3>
           </div>
           {teacher?.homeroomOf.length ? (
-            <div className="p-5 grid md:grid-cols-2 gap-4">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
               {teacher.homeroomOf.map((cls) => (
                 <div key={cls.id} className="border border-gray-100 rounded-2xl p-5 min-w-0 hover:border-primary-200 hover:shadow-sm transition-all">
                   <div className="flex items-start justify-between mb-4">
@@ -176,7 +181,7 @@ export default async function TeacherDashboard() {
                   </div>
                   <div className="flex gap-2">
                     <Link href={`/dashboard/teacher/dkn/${cls.id}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
                       <ClipboardList size={14} /> DKN Kelas
                     </Link>
                     <Link href={`/dashboard/teacher/attendance/${cls.id}`}
@@ -196,7 +201,7 @@ export default async function TeacherDashboard() {
         </div>
 
         {/* ── Jadwal + Nilai Terakhir ── */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Jadwal Mengajar */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -279,7 +284,7 @@ export default async function TeacherDashboard() {
         </div>
 
         {/* ── Agenda Wakil Kepala ── */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <AgendaCalendar agenda={agenda} />
         </div>
 
@@ -288,7 +293,7 @@ export default async function TeacherDashboard() {
           <h3 className="font-heading font-semibold text-navy text-sm mb-4">Akses Cepat</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Jurnal Mengajar", href: "/dashboard/teacher/journal", icon: ClipboardList, color: "bg-primary-700 hover:bg-primary-800" },
+              { label: "Jurnal Mengajar", href: "/dashboard/teacher/journal", icon: ClipboardList, color: "bg-primary-700 hover:bg-primary-900" },
               // Absensi khusus wali kelas — sembunyikan tombolnya dari guru mapel biasa.
               ...(teacher?.homeroomOf.length ? [{ label: "Absensi", href: "/dashboard/teacher/attendance", icon: CheckSquare, color: "bg-emerald-600 hover:bg-emerald-700" }] : []),
               { label: "Daftar Siswa", href: "/dashboard/teacher/students",   icon: Users,         color: "bg-blue-600 hover:bg-blue-700" },

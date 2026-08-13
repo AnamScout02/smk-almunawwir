@@ -428,7 +428,7 @@ export default function JaringanManager() {
             <div className="flex items-center gap-1 mb-3 rounded-xl border border-gray-100 p-1 w-max">
               {([["live", "Live"], ["1h", "1 Jam"], ["24h", "24 Jam"], ["7d", "7 Hari"], ["30d", "30 Hari"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => setChartRange(val)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${chartRange === val ? "bg-primary-800 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${chartRange === val ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                   {label}
                 </button>
               ))}
@@ -476,7 +476,7 @@ export default function JaringanManager() {
             </ResponsiveContainer>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm flex items-center gap-1.5">
                 <Trophy size={15} className="text-gold" /> Pemakai Terbesar Saat Ini
@@ -711,7 +711,7 @@ export default function JaringanManager() {
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">Profil Hotspot ({profiles.length})</span>
               <button onClick={openAddProfile}
-                className="inline-flex items-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100">
+                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
                 <Plus size={13} /> Tambah Profil
               </button>
             </div>
@@ -736,7 +736,7 @@ export default function JaringanManager() {
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => openEditProfile(p)}
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100">
+                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100">
                             <Edit2 size={12} /> Edit
                           </button>
                           {p.name !== "default" && (
@@ -758,7 +758,7 @@ export default function JaringanManager() {
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">IP Binding ({ipBindings.length})</span>
               <button onClick={openAddBinding}
-                className="inline-flex items-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100">
+                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
                 <Plus size={13} /> Tambah Binding
               </button>
             </div>

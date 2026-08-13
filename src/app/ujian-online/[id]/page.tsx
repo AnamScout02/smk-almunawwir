@@ -143,7 +143,7 @@ export default function StudentExamPage() {
                     className={`w-full flex items-center gap-3 text-left px-4 py-2.5 rounded-xl border text-sm transition-colors ${
                       isCorrect ? "bg-emerald-50 border-emerald-300 text-emerald-800" :
                       isWrongPick ? "bg-red-50 border-red-300 text-red-700" :
-                      isSelected ? "bg-primary-50 border-primary-300 text-primary-800" :
+                      isSelected ? "bg-primary-50 border-primary-300 text-primary-900" :
                       "bg-white border-gray-200 text-gray-600 hover:border-primary-200"
                     } ${exam.submitted ? "cursor-default" : "cursor-pointer"}`}
                   >

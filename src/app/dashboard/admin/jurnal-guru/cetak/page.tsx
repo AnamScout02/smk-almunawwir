@@ -54,7 +54,7 @@ function CetakJurnalGuruContent() {
           <ArrowLeft size={16} /> Kembali
         </button>
         <h1 className="text-sm font-semibold text-gray-700">Cetak Rekap Jurnal Mengajar — {className} · {subject}</h1>
-        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm hover:bg-primary-800">
+        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm hover:bg-primary-900">
           <Printer size={15} /> Cetak / Simpan PDF
         </button>
       </div>
@@ -74,16 +74,16 @@ function CetakJurnalGuruContent() {
           <table className="w-full border-collapse text-[10px]">
             <thead>
               <tr className="bg-primary-900 text-white">
-                <th className="border border-primary-800 px-2 py-1.5 w-8">No</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-24">Tanggal</th>
-                <th className="border border-primary-800 px-2 py-1.5">Materi yang Diajarkan</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-12">Hadir</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-12">Izin</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-12">Sakit</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-12">Alfa</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-20">Rata Pengetahuan</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-20">Rata Keterampilan</th>
-                <th className="border border-primary-800 px-2 py-1.5 w-24">Catatan Siswa</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-8">No</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-24">Tanggal</th>
+                <th className="border border-primary-900 px-2 py-1.5">Materi yang Diajarkan</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-12">Hadir</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-12">Izin</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-12">Sakit</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-12">Alfa</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-20">Rata Pengetahuan</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-20">Rata Keterampilan</th>
+                <th className="border border-primary-900 px-2 py-1.5 w-24">Catatan Siswa</th>
               </tr>
             </thead>
             <tbody>

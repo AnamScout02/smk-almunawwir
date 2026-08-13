@@ -1,8 +1,13 @@
 @AGENTS.md
+@DESIGN_SYSTEM.md
 
 # CLAUDE.md
 
 Panduan ini membantu Claude Code saat bekerja di repositori ini.
+
+**`DESIGN_SYSTEM.md`** (di-include otomatis di atas) adalah patokan WAJIB untuk font, warna,
+layout, komponen, tabel, dropdown, tombol, pagination, dan cetak — dipakai di SETIAP pembuatan
+atau perubahan halaman, bukan cuma referensi opsional.
 
 ## Apa ini
 

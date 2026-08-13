@@ -172,7 +172,7 @@ export default function StudentPklPage() {
                 {STATUS_LABEL[internship.status]?.label ?? internship.status}
               </span>
             </div>
-            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-400 text-xs">Perusahaan</span><p className="font-semibold text-navy">{internship.company}</p></div>
               <div><span className="text-gray-400 text-xs">Posisi</span><p className="font-semibold text-navy">{internship.position}</p></div>
               <div><span className="text-gray-400 text-xs">Pembimbing</span><p className="font-semibold text-navy">{internship.supervisor}</p></div>

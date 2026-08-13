@@ -197,7 +197,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
 
         {fullscreen && (
           <button onClick={toggleFullscreen}
-            className="fixed top-4 right-4 z-50 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-primary-900/90 text-white shadow-lg hover:bg-primary-800 transition-all">
+            className="fixed top-4 right-4 z-50 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-primary-900/90 text-white shadow-lg hover:bg-primary-900 transition-all">
             <Minimize2 size={15} /> Keluar Layar Penuh
           </button>
         )}
@@ -207,7 +207,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
         ) : !data || (data.topDisiplin.length === 0 && data.perluPerhatian.length === 0) ? (
           <EmptyState icon={Trophy} title="Belum Ada Data Periode Ini" description="Papan peringkat akan terisi begitu Buku Piket mulai dicatat pada periode ini." />
         ) : (
-          <div className="grid lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden card-fade-up podium-glow">
               <div className="relative px-5 py-4 flex items-center gap-2 border-b border-gray-50 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
                 {/* Partikel mengambang halus di header — hidup tapi tidak mengganggu keterbacaan */}

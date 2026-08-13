@@ -3,7 +3,7 @@ import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
 
 const items = [
-  { icon: Building2, titleKey: "why_1_title", descKey: "why_1_desc", accent: "from-primary-600 to-primary-800" },
+  { icon: Building2, titleKey: "why_1_title", descKey: "why_1_desc", accent: "from-primary-600 to-primary-900" },
   { icon: BookOpenCheck, titleKey: "why_2_title", descKey: "why_2_desc", accent: "from-gold to-gold-dark" },
   { icon: GraduationCap, titleKey: "why_3_title", descKey: "why_3_desc", accent: "from-emerald-500 to-emerald-700" },
   { icon: Briefcase, titleKey: "why_4_title", descKey: "why_4_desc", accent: "from-blue-500 to-blue-700" },

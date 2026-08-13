@@ -248,7 +248,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* ── Messages + Admissions Row ── */}
-        <div className="grid lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
           {/* Pesan Masuk Panel */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -369,7 +369,7 @@ export default async function AdminDashboard() {
             </div>
             <span className="text-xs text-gray-400">{newsCount} dipublikasi</span>
           </div>
-          <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 divide-gray-50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 divide-gray-50">
             {recentNews.length ? recentNews.map(n => (
               <Link key={n.id} href="/dashboard/admin/news"
                 className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors group">

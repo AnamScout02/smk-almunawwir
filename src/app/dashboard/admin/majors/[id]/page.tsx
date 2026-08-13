@@ -160,7 +160,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
         </button>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy">Konten Utama</h2>

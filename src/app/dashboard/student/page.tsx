@@ -232,7 +232,7 @@ export default async function StudentDashboard() {
         </div>
 
         {/* ── Attendance + Schedule Row ── */}
-        <div className="grid md:grid-cols-2 gap-5 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
 
           {/* Absensi bulan ini */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
@@ -333,7 +333,7 @@ export default async function StudentDashboard() {
         </div>
 
         {/* ── Agenda Wakil Kepala ── */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <AgendaCalendar agenda={agenda} />
         </div>
 
@@ -350,7 +350,7 @@ export default async function StudentDashboard() {
                 return (
                   <div key={sem}>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-primary-800 bg-primary-50 px-3 py-1 rounded-full">{sem}</span>
+                      <span className="text-sm font-semibold text-primary-900 bg-primary-50 px-3 py-1 rounded-full">{sem}</span>
                       <span className={`text-sm font-bold ${scoreColor(semAvg)}`}>
                         Rata-rata: {semAvg.toFixed(1)}
                       </span>
@@ -413,7 +413,7 @@ export default async function StudentDashboard() {
         )}
 
         {/* ── PKL + News Row ── */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
           {/* PKL */}
           {student?.internship ? (

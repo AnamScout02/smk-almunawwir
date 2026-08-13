@@ -81,7 +81,7 @@ export default async function ContactPage() {
 
         <section className="section-padding bg-cream">
           <div className="container-custom">
-            <div className="grid lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Info kontak */}
               <div className="space-y-6">
                 <h2 className="font-heading text-2xl font-bold text-navy">{c.infoTitle}</h2>

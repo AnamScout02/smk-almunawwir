@@ -96,7 +96,7 @@ export default function AdminMessagesPage() {
                   </div>
                   <div className="flex gap-2">
                     <a href={`mailto:${item.email}?subject=Re: ${item.subject}`}
-                      className="inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+                      className="inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
                       Balas via Email
                     </a>
                     <button onClick={() => markRead(item.id, !item.isRead)}

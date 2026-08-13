@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import { CheckSquare } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 
 interface Student {
@@ -163,16 +164,14 @@ export default function AbsensiKelasPage() {
                         </button>
                       ))}
                     </div>
-                    <select
-                      value={attendance[s.id] ?? ""}
-                      onChange={e => setStatus(s.id, e.target.value as AttendanceStatus)}
-                      className={`sm:hidden shrink-0 text-xs font-semibold rounded-lg border pl-2 pr-6 py-1.5 outline-none ${
-                        attendance[s.id] ? STATUS_COLOR[attendance[s.id]] : "bg-white border-gray-200 text-gray-400"
-                      }`}
-                    >
-                      <option value="" disabled>— Pilih —</option>
-                      {STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
-                    </select>
+                    <div className="sm:hidden shrink-0 w-28">
+                      <Select value={attendance[s.id] ?? ""} onChange={v => setStatus(s.id, v as AttendanceStatus)}
+                        placeholder="— Pilih —"
+                        options={STATUSES.map(status => ({ value: status, label: status }))}
+                        buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border pl-2 pr-2 py-1.5 outline-none cursor-pointer ${
+                          attendance[s.id] ? STATUS_COLOR[attendance[s.id]] : "bg-white border-gray-200 text-gray-400"
+                        }`} />
+                    </div>
                   </div>
                 ))}
               </div>

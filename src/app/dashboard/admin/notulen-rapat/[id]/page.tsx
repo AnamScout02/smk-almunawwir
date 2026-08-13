@@ -162,7 +162,7 @@ export default function NotulenRapatFormPage() {
         <h1 className="text-center font-bold text-base uppercase underline mb-6 text-primary-900">Notulen Rapat</h1>
 
         <div className="space-y-3 mb-6">
-          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
             <FieldRow label="Hari/Tanggal">
               <DatePicker value={date} onChange={setDate} />
             </FieldRow>
@@ -199,7 +199,7 @@ export default function NotulenRapatFormPage() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setGreetings(g => [...g, ""])} className="mt-1.5 ml-6 text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1">
+                <button onClick={() => setGreetings(g => [...g, ""])} className="mt-1.5 ml-6 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
                   <Plus size={11} /> Tambah Sambutan
                 </button>
               </div>
@@ -231,7 +231,7 @@ export default function NotulenRapatFormPage() {
         <LetterheadImage url={kopAtas} alt="Kop Surat" />
         <div className="a4-page-body">
         <p className="font-heading font-bold text-primary-900 text-sm mb-3 flex items-center gap-2"><ImagePlus size={16} /> Dokumentasi Rapat</p>
-        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {photos.map((p, i) => (
             <div key={i} className="flex items-start gap-2">
               <div className="flex-1"><FileUpload value={p} onChange={v => updateAt(setPhotos, i, v)} folder="notulen-rapat" label={`Foto ${i + 1}`} accept="image/jpeg,image/png,image/webp" hint="JPG, PNG, WEBP — maks. 5MB" /></div>
@@ -239,7 +239,7 @@ export default function NotulenRapatFormPage() {
             </div>
           ))}
         </div>
-        <button onClick={() => setPhotos(p => [...p, ""])} className="mb-6 text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1">
+        <button onClick={() => setPhotos(p => [...p, ""])} className="mb-6 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
           <Plus size={12} /> Tambah Foto
         </button>
 
@@ -271,7 +271,7 @@ export default function NotulenRapatFormPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => setExtraNames(a => [...a, ""])} className="mt-2 text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1">
+              <button onClick={() => setExtraNames(a => [...a, ""])} className="mt-2 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
                 <Plus size={11} /> Tambah Nama Tamu
               </button>
             </div>

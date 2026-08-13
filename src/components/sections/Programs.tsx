@@ -39,7 +39,7 @@ export default async function Programs() {
           {majors.map((m) => {
             const customColor = m.themeColor;
             const Icon = iconByCode[m.code.toUpperCase()] ?? GraduationCap;
-            const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-600 to-primary-800";
+            const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-600 to-primary-900";
             const desc = m.tagline || m.description;
             const features = m.features?.length ? m.features : [];
             return (

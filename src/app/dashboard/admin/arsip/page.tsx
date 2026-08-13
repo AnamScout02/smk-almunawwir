@@ -208,7 +208,7 @@ function ArsipTable({ items, onEdit, onDelete }: {
               <td className="px-5 py-3.5">
                 {a.fileUrl ? (
                   <a href={a.fileUrl} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold">
+                    className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold">
                     <ExternalLink size={11} /> Lihat
                   </a>
                 ) : (

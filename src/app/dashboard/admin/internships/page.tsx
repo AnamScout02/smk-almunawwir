@@ -381,7 +381,7 @@ function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
                       </button>
                     )}
                     <button onClick={() => onEdit(s)}
-                      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
+                      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
                       <Edit2 size={12} /> {pkl ? "Edit" : "Tambah"}
                     </button>
                     {pkl && (

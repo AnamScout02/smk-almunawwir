@@ -68,7 +68,7 @@ export default function NotulenRapatPage() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada notulen yang cocok dengan pencarian." />
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map(m => (
             <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-start justify-between mb-2">

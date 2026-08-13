@@ -224,7 +224,7 @@ export default async function AlumniPage() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="/contact"
-                className="inline-flex px-8 py-3 rounded-full bg-primary-700 hover:bg-primary-800 text-white font-semibold transition">
+                className="inline-flex px-8 py-3 rounded-full bg-primary-700 hover:bg-primary-900 text-white font-semibold transition">
                 {c.ctaAlumniBtn}
               </Link>
               <Link href="/tracer-study"

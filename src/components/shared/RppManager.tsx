@@ -133,7 +133,7 @@ export default function RppManager() {
           ) : filteredPlans.length === 0 ? (
             <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada RPP yang cocok dengan pencarian." />
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {filteredPlans.map(p => {
                 const isMine = p.teacher.id === myTeacherId;
                 return (
@@ -158,7 +158,7 @@ export default function RppManager() {
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>Diperbarui {fmt(p.updatedAt)}</span>
                       {p.fileUrl && (
-                        <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-800 font-semibold">
+                        <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
                           <Download size={12} /> Dokumen
                         </a>
                       )}

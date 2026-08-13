@@ -25,13 +25,13 @@ const statusConfig: Record<Lang, Record<string, {
   desc: string;
 }>> = {
   id: {
-    PENDING: { label: "Menunggu Verifikasi", icon: Clock, bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200", desc: "Berkas Anda sedang dalam proses verifikasi oleh panitia. Harap tunggu 3 hari kerja." },
+    PENDING: { label: "Menunggu Verifikasi", icon: Clock, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "Berkas Anda sedang dalam proses verifikasi oleh panitia. Harap tunggu 3 hari kerja." },
     WAWANCARA: { label: "Tahap Wawancara", icon: CalendarCheck, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Selamat! Anda lolos seleksi administrasi. Panitia akan menghubungi Anda untuk jadwal wawancara." },
     ACCEPTED: { label: "Diterima", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Segera lakukan daftar ulang." },
     REJECTED: { label: "Tidak Diterima", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "Mohon maaf, pendaftaran Anda belum bisa kami terima saat ini. Silakan hubungi panitia untuk informasi lebih lanjut." },
   },
   en: {
-    PENDING: { label: "Awaiting Verification", icon: Clock, bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200", desc: "Your documents are being verified by the committee. Please wait 3 working days." },
+    PENDING: { label: "Awaiting Verification", icon: Clock, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "Your documents are being verified by the committee. Please wait 3 working days." },
     WAWANCARA: { label: "Interview Stage", icon: CalendarCheck, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Congratulations! You passed the administrative selection. The committee will contact you for an interview schedule." },
     ACCEPTED: { label: "Accepted", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! You have been ACCEPTED at SMK Al Munawwir IIBS. Please complete re-registration soon." },
     REJECTED: { label: "Not Accepted", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "We're sorry, we are unable to accept your registration at this time. Please contact the committee for more information." },
@@ -145,7 +145,7 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="shrink-0 flex items-center gap-2 bg-primary-700 hover:bg-primary-800 disabled:opacity-60 text-white font-semibold px-5 py-3.5 rounded-xl text-sm transition-colors"
+          className="shrink-0 flex items-center gap-2 bg-primary-700 hover:bg-primary-900 disabled:opacity-60 text-white font-semibold px-5 py-3.5 rounded-xl text-sm transition-colors"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
           {loading ? t.searching : t.check}
@@ -173,7 +173,7 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
               <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
                 {t.notFoundDesc}
               </p>
-              <button onClick={reset} className="mt-4 text-sm text-primary-600 hover:text-primary-800 underline underline-offset-2">
+              <button onClick={reset} className="mt-4 text-sm text-primary-600 hover:text-primary-900 underline underline-offset-2">
                 {t.tryAgain}
               </button>
             </div>
