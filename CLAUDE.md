@@ -819,3 +819,14 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     rapor gabungan (cadangan: rata-rata DKN bagian lama), tampil miring; ketikan wali (Grade DKN bernama grup) menimpa, mengosongkan
     sel = DELETE → kembali otomatis. Kolom DKN lain tetap murni manual. Tempat baru yang menampilkan mapel per kelas di dokumen
     rapor/rekap WAJIB memakai `namaGabungan`/`grupMapel`, jangan menampilkan bagian satu per satu.
+78. **Aplikasi Ujian Android (22 September 2026) — pengganti Exambro.** Sumber di `android-ujian/` (WebView Java tanpa pustaka:
+    layar disematkan `startLockTask`, `FLAG_SECURE`, tombol Kembali tidak menutup aplikasi, hanya domain `ALAMAT_APLIKASI`,
+    mikrofon & pemilih berkas didukung). APK dibangun `android-ujian/bangun-apk.sh` (Docker `ghcr.io/cirruslabs/android-sdk:34`
+    + Gradle 8.10.2 disinggahkan di /root/.cache/android-ujian/gradle-home) → `public/unduh/aplikasi-ujian-smk.apk` (tidak masuk git).
+    **Kunci rilis `/root/.cache/android-ujian/kunci-rilis.jks` + `sandi.txt` DI LUAR repo & WAJIB dicadangkan** — tanpa kunci yang
+    sama, versi baru tidak bisa dipasang menimpa versi lama. Situs mengenali aplikasi dari User-Agent `SMKUjianApp/<versi>`
+    (`src/lib/aplikasi-ujian.ts`): `Exam.wajibAplikasi` menolak join dari browser HP Android (komputer & iPhone lolos); keluar saat
+    halaman pengerjaan terbuka butuh PIN `ujian.pinAplikasi` (Pengaturan Ujian, dicek `/api/ujian/aplikasi/keluar`, dibatasi per IP).
+    Sebelum membuka pemilih berkas, aplikasi memanggil `window.__ujianAplikasi.tahan()` (src/lib/perangkat-ujian.ts) supaya tidak
+    tercatat pindah tab — tombol unggah di browser memakai tenggang yang sama. Rilis baru: naikkan versionCode/versionName
+    (app/build.gradle), `VERSI` (MainActivity) & `VERSI_APLIKASI`. Halaman unduh publik: /aplikasi-ujian.
