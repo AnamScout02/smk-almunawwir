@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckSquare, Loader2, Calendar, Users, Printer } from "lucide-react";
+import { CheckSquare, Loader2, Calendar, Users, Printer, ScanLine } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
@@ -27,8 +27,14 @@ const STATUS_COLOR: Record<string, string> = {
  *
  * `classesEndpoint` menentukan cakupan: default `/api/admin/classes` (Admin/TAS/Kesiswaan/BK —
  * bebas kelas manapun). Wali kelas biasa pakai `/api/teacher/classes?scope=homeroom` (dikirim dari
- * wrapper page-nya sendiri) karena `/api/admin/classes` menolak guru tanpa jabatan relevan. */
-export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/classes" }: { classesEndpoint?: string } = {}) {
+ * wrapper page-nya sendiri) karena `/api/admin/classes` menolak guru tanpa jabatan relevan.
+ * `scanHref` opsional — tombol "Scan Absensi" ke stasiun scan QR/barcode (src/components/shared/
+ * AbsensiScanStation.tsx), cuma dikirim dari wrapper Admin (belum ada halaman scan versi guru). */
+export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/classes", scanHref, kalenderHref = "/dashboard/admin/absensi-siswa/cetak-kalender" }: {
+  classesEndpoint?: string; scanHref?: string;
+  /** Halaman kalender bulanan di portal pembuka — guru tidak bisa membuka halaman Admin (temuan user 17 Sep 2026). */
+  kalenderHref?: string;
+} = {}) {
   const [tab, setTab] = useState<"tanggal" | "siswa">("tanggal");
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [classId, setClassId] = useState("");
@@ -106,39 +112,41 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
         <EmptyState icon={CheckSquare} title="Belum Ada Kelas" description="Tambahkan kelas terlebih dahulu." />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex-1 min-w-0">
+          {/* Satu baris alat: kelas + tab + aksi (§4.1) — sebelumnya tiga baris terpisah yang boros
+              ruang di HP (temuan user 18 Sep 2026: "tatanannya bisa dibenahi agar tidak menghabiskan ruang"). */}
+          <div className="panel p-4 mb-5 baris-alat items-end">
+            <div className="alat-saring">
               <label className="label-field">Kelas</label>
               <Select value={classId} onChange={setClassId}
                 options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))} />
             </div>
-            <div className="flex gap-2 shrink-0 flex-wrap">
+            <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
               <button onClick={() => setTab("tanggal")}
-                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "tanggal" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === "tanggal" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 <Calendar size={14} /> Per Tanggal
               </button>
               <button onClick={() => setTab("siswa")}
-                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === "siswa" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === "siswa" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 <Users size={14} /> Per Siswa
               </button>
-              {/* Kalender Bulanan SENGAJA bukan tab di sini (2026-08-12, temuan user: dobel dgn
-                  halaman cetak-kalender) — link langsung ke halaman itu, yang sudah WYSIWYG di
-                  layar (bisa dilihat & dicetak dari tempat yang sama), bukan diduplikasi di sini. */}
-              <Link href={classId ? `/dashboard/admin/absensi-siswa/cetak-kalender?classId=${classId}` : "#"}
-                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition bg-gray-50 text-gray-500 hover:bg-gray-100">
-                <Printer size={14} /> Kalender Bulanan
+            </div>
+            <div className="alat-aksi">
+              {/* Kalender Bulanan SENGAJA bukan tab (2026-08-12) — halaman tersendiri yang sudah WYSIWYG. */}
+              <Link href={classId ? `${kalenderHref}?classId=${classId}` : "#"} className="btn-modal-cancel btn-teks">
+                <Printer size={15} /> Kalender Bulanan
               </Link>
+              {scanHref && <Link href={scanHref} className="btn-modal-save btn-teks"><ScanLine size={15} /> Scan QR/Barcode</Link>}
             </div>
           </div>
 
           {tab === "tanggal" ? (
             <>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+              <div className="panel p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center [&>*]:max-w-full justify-between gap-4">
+                <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
                   <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
-                  <DatePicker value={date} onChange={setDate} />
+                  <div className="min-w-0 flex-1"><DatePicker value={date} onChange={setDate} /></div>
                 </div>
-                <div className="flex gap-3 text-sm">
+                <div className="flex flex-wrap gap-2 text-sm">
                   {dailySummary.map(s => (
                     <div key={s.status} className={`px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_COLOR[s.status]}`}>
                       {s.status}: {s.count}
@@ -146,28 +154,28 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
                   ))}
                 </div>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="panel overflow-hidden">
                 {loadingRecords ? (
-                  <div className="py-16 text-center text-gray-400 text-sm">Memuat...</div>
+                  <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
                 ) : records.length === 0 ? (
                   <EmptyState icon={CheckSquare} title="Belum Ada Absensi" description="Belum ada data absensi untuk kelas & tanggal ini." />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="data-table">
                       <thead>
-                        <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                        <tr>
                           {["Siswa", "NIS", "Status"].map(h => (
-                            <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                            <th key={h} className="whitespace-nowrap">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {records.map(r => (
-                          <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                            <td className="px-5 py-3.5 font-semibold text-primary-900">{r.student.user.name}</td>
-                            <td className="px-5 py-3.5 text-gray-400 text-xs font-mono">{r.student.nis}</td>
-                            <td className="px-5 py-3.5">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[r.status]}`}>{r.status}</span>
+                          <tr key={r.id}>
+                            <td className="font-semibold text-primary-900">{r.student.user.name}</td>
+                            <td className="text-gray-400 text-xs font-mono">{r.student.nis}</td>
+                            <td>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[r.status]}`}>{r.status}</span>
                             </td>
                           </tr>
                         ))}
@@ -179,7 +187,7 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
             </>
           ) : tab === "siswa" ? (
             <>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex items-end gap-3 flex-wrap">
+              <div className="panel p-5 mb-5 flex items-end gap-3 flex-wrap">
                 <div>
                   <label className="label-field">Filter bulan (opsional)</label>
                   <MonthPicker value={summaryMonth} onChange={v => { setSummaryMonth(v); setSummaryFrom(""); setSummaryTo(""); }} />
@@ -204,38 +212,38 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
                 </span>
               </div>
               {!loadingSummary && summary.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-                  <StatTile color="emerald" value={summary.reduce((a, s) => a + s.HADIR, 0)} label="Total Hadir" />
-                  <StatTile color="blue" value={summary.reduce((a, s) => a + s.IZIN, 0)} label="Total Izin" />
-                  <StatTile color="amber" value={summary.reduce((a, s) => a + s.SAKIT, 0)} label="Total Sakit" />
-                  <StatTile color="red" value={summary.reduce((a, s) => a + s.ALPHA, 0)} label="Total Alpha" />
+                <div className="kisi-kartu kisi-kartu-4 mb-5">
+                  <StatTile color="emerald" ikon="centang" value={summary.reduce((a, s) => a + s.HADIR, 0)} label="Total Hadir" />
+                  <StatTile color="blue" ikon="izin" value={summary.reduce((a, s) => a + s.IZIN, 0)} label="Total Izin" />
+                  <StatTile color="amber" ikon="sakit" value={summary.reduce((a, s) => a + s.SAKIT, 0)} label="Total Sakit" />
+                  <StatTile color="red" ikon="alpha" value={summary.reduce((a, s) => a + s.ALPHA, 0)} label="Total Alpha" />
                 </div>
               )}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="panel overflow-hidden">
                 {loadingSummary ? (
-                  <div className="py-16 text-center text-gray-400 text-sm">Memuat...</div>
+                  <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
                 ) : summary.length === 0 ? (
                   <EmptyState icon={Users} title="Belum Ada Data" description="Belum ada data absensi untuk kelas ini." />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="data-table">
                       <thead>
-                        <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                        <tr>
                           {["Siswa", "NIS", "Hadir", "Izin", "Sakit", "Alpha", "% Kehadiran"].map(h => (
-                            <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                            <th key={h} className="whitespace-nowrap">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {summary.map(s => (
-                          <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                            <td className="px-5 py-3.5 font-semibold text-primary-900">{s.name}</td>
-                            <td className="px-5 py-3.5 text-gray-400 text-xs font-mono">{s.nis}</td>
-                            <td className="px-5 py-3.5 text-emerald-600 font-semibold">{s.HADIR}</td>
-                            <td className="px-5 py-3.5 text-blue-600 font-semibold">{s.IZIN}</td>
-                            <td className="px-5 py-3.5 text-amber-600 font-semibold">{s.SAKIT}</td>
-                            <td className="px-5 py-3.5 text-red-600 font-semibold">{s.ALPHA}</td>
-                            <td className="px-5 py-3.5 font-semibold text-primary-900">{s.pct}%</td>
+                          <tr key={s.id}>
+                            <td className="font-semibold text-primary-900">{s.name}</td>
+                            <td className="text-gray-400 text-xs font-mono">{s.nis}</td>
+                            <td className="text-emerald-600 font-semibold">{s.HADIR}</td>
+                            <td className="text-blue-600 font-semibold">{s.IZIN}</td>
+                            <td className="text-amber-600 font-semibold">{s.SAKIT}</td>
+                            <td className="text-red-600 font-semibold">{s.ALPHA}</td>
+                            <td className="font-semibold text-primary-900">{s.pct}%</td>
                           </tr>
                         ))}
                       </tbody>

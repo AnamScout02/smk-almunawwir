@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { kirimLatar } from "@/lib/push-server";
+import { beritahuAlphaBeruntun, beritahuOrangTuaAlpha } from "@/lib/notifikasi-kejadian";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +79,10 @@ export async function POST(req: NextRequest) {
         await tx.attendance.create({ data: { studentId: r.studentId, date: d, status: r.status } });
       }
     });
+
+    // ALPHA → notifikasi orang tua; alpha ≥3 hari beruntun → wali kelas & BK. Tanpa menunggu, tidak menggagalkan simpan.
+    const catatan = records.map(r => ({ studentId: r.studentId, date: d, status: r.status }));
+    kirimLatar(async () => { await beritahuOrangTuaAlpha(catatan); await beritahuAlphaBeruntun(catatan); });
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (e) {

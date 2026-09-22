@@ -42,8 +42,8 @@ export default async function CetakDataKelasPage() {
       <PageHeader icon={<School size={22} />} title="Cetak Data Kelas" description="Info kelas + daftar akun login siswa, pilih kelas yang mau dicetak" printHidden />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
-        <Link href="/dashboard/admin/classes" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/classes" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <PrintButton />
       </div>

@@ -39,7 +39,7 @@ export default async function Programs() {
           {majors.map((m) => {
             const customColor = m.themeColor;
             const Icon = iconByCode[m.code.toUpperCase()] ?? GraduationCap;
-            const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-600 to-primary-900";
+            const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-700 to-primary-900";
             const desc = m.tagline || m.description;
             const features = m.features?.length ? m.features : [];
             return (
@@ -52,7 +52,7 @@ export default async function Programs() {
                   <div className={`w-11 h-11 rounded-xl ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white shrink-0 flex items-center justify-center overflow-hidden relative`}
                     style={customColor ? { background: themeGradient(customColor) } : undefined}>
                     {m.logoUrl ? (
-                      <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                      <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" />
                     ) : (
                       <Icon size={22} />
                     )}

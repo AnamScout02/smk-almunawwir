@@ -111,10 +111,10 @@ export default function AbsensiKelasPage() {
         <PageSkeleton />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="panel p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center [&>*]:max-w-full justify-between gap-4">
+            <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
               <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
-              <DatePicker value={date} onChange={setDate} />
+              <div className="min-w-0 flex-1"><DatePicker value={date} onChange={setDate} /></div>
             </div>
             <div className="flex gap-3 text-sm flex-wrap">
               {summary.map(s => (
@@ -130,11 +130,10 @@ export default function AbsensiKelasPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
-            <div className="flex items-center justify-between px-5 py-3"
-              style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-              <p className="text-sm font-semibold text-white">{students.length} Siswa</p>
-              <button onClick={setAllHadir} className="text-xs text-gold font-semibold hover:text-white transition">
+          <div className="panel overflow-hidden mb-5">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
+              <p className="text-sm font-semibold text-primary-900">{students.length} Siswa</p>
+              <button onClick={setAllHadir} className="text-xs text-primary-700 font-semibold hover:text-primary-900 transition">
                 Tandai Semua Hadir
               </button>
             </div>
@@ -181,7 +180,7 @@ export default function AbsensiKelasPage() {
           <div className="flex items-center justify-end gap-4">
             {saveError && <p className="text-red-600 text-sm font-semibold">{saveError}</p>}
             {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absensi berhasil disimpan!</p>}
-            <button onClick={handleSave} disabled={isPending} className="btn-gold flex items-center gap-2 text-sm">
+            <button onClick={handleSave} disabled={isPending} className="btn-modal-save">
               <CheckSquare size={16} /> {isPending ? "Menyimpan..." : "Simpan Absensi"}
             </button>
           </div>

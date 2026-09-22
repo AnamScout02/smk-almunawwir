@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Calendar, Search, Newspaper } from "lucide-react";
+import { Calendar, Search, Newspaper, CalendarDays } from "lucide-react";
 import { getLang } from "@/lib/lang";
 import { NEWS_CATEGORY_COLORS as CATEGORY_COLORS } from "@/lib/news-categories";
 
@@ -15,6 +15,12 @@ export const metadata = {
 };
 
 const CATEGORIES = ["Semua", "Prestasi", "Pengumuman", "Kegiatan", "SPMB", "Beasiswa", "Alumni", "Umum"];
+// Nilai kategori tetap bahasa Indonesia (dipakai sebagai filter & tersimpan di data berita) — hanya LABEL yang diterjemahkan.
+const LABEL_KATEGORI_EN: Record<string, string> = {
+  Semua: "All", Prestasi: "Achievements", Pengumuman: "Announcements", Kegiatan: "Activities",
+  SPMB: "Admissions", Beasiswa: "Scholarships", Alumni: "Alumni", Umum: "General",
+};
+const labelKategori = (kategori: string, lang: string) => (lang === "en" ? LABEL_KATEGORI_EN[kategori] ?? kategori : kategori);
 
 const content = {
   id: {
@@ -84,13 +90,13 @@ export default async function NewsPage({
             <div className="flex flex-col md:flex-row gap-4 mb-10">
               {/* Search */}
               <form method="GET" className="relative flex-1">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   name="q"
                   defaultValue={q}
                   placeholder={c.searchPh}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-primary-400"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-primary-500"
                 />
                 {category && <input type="hidden" name="category" value={category} />}
               </form>
@@ -107,7 +113,7 @@ export default async function NewsPage({
                         : "bg-white border text-gray-600 hover:border-primary-300 hover:text-primary-700"
                     }`}
                   >
-                    {cat}
+                    {labelKategori(cat, lang)}
                   </Link>
                 ))}
               </div>
@@ -118,7 +124,7 @@ export default async function NewsPage({
                 <Newspaper size={40} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
                 <p className="text-lg font-medium">{c.emptyTitle}</p>
                 <p className="text-sm mt-1">
-                  <Link href="/news" className="text-primary-600 hover:underline">{c.showAll}</Link>
+                  <Link href="/news" className="text-primary-700 hover:underline">{c.showAll}</Link>
                 </p>
               </div>
             ) : (
@@ -130,11 +136,11 @@ export default async function NewsPage({
                       {news[0].thumbnail ? (
                         <Image src={news[0].thumbnail} alt={news[0].title} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-700 flex items-center justify-center">
                           <span className="font-arabic text-white/20 text-8xl">المنور</span>
                         </div>
                       )}
-                      <span className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${CATEGORY_COLORS[news[0].category] || "bg-gray-100 text-gray-600"}`}>{news[0].category}</span>
+                      <span className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${CATEGORY_COLORS[news[0].category] || "bg-gray-100 text-gray-600"}`}>{labelKategori(news[0].category, lang)}</span>
                     </div>
                     <div className="p-8 flex flex-col justify-center">
                       <span className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
@@ -157,15 +163,15 @@ export default async function NewsPage({
                           {n.thumbnail ? (
                             <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
+                            <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-700 flex items-center justify-center">
                               <span className="font-arabic text-white/20 text-6xl">المنور</span>
                             </div>
                           )}
-                          <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${CATEGORY_COLORS[n.category] || "bg-gray-100 text-gray-600"}`}>{n.category}</span>
+                          <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${CATEGORY_COLORS[n.category] || "bg-gray-100 text-gray-600"}`}>{labelKategori(n.category, lang)}</span>
                         </div>
                         <div className="p-5">
                           <span className="text-xs text-gray-400 flex items-center gap-1 mb-2">
-                            <Calendar size={11} />
+                            <CalendarDays size={11} />
                             {new Date(n.createdAt).toLocaleDateString(c.locale, { day: "numeric", month: "short", year: "numeric" })}
                           </span>
                           <h3 className="font-heading font-bold text-primary-900 leading-snug mb-2 group-hover:text-gold transition-colors line-clamp-2">{n.title}</h3>

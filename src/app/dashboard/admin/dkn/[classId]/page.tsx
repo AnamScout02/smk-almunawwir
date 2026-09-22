@@ -15,5 +15,5 @@ export default async function AdminDknClassPage({ params }: { params: Promise<{ 
 
   const settings = await getSettings(["logo.full_white"]);
 
-  return <DknTable classId={classId} logoUrl={settings["logo.full_white"]} />;
+  return <DknTable classId={classId} logoUrl={settings["logo.full_white"]} backHref="/dashboard/admin/dkn" />;
 }

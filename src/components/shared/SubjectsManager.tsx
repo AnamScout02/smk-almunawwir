@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { BookMarked, Plus, Pencil, Trash2, Loader2, Save, CheckCircle2, AlertTriangle } from "lucide-react";
+import { useToast } from "@/components/shared/ToastProvider";
+import { BookMarked, Plus, Pencil, Trash2, Loader2, Save, CheckCircle2, AlertTriangle, Type } from "lucide-react";
+import FormSingkatanMapel from "@/components/shared/FormSingkatanMapel";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
@@ -13,11 +15,12 @@ interface MajorOption { id: string; name: string; code: string }
 interface Subject {
   id: string; code: number; name: string; category: string; grade: number;
   majorId: string | null; major: MajorOption | null; order: number; hoursPerWeek: number; weekGroup: string; maxSharedTeacher: number;
+  kkm: number | null; namaArab?: string | null; singkatan?: string | null;
 }
 
 const GRADE_LABEL: Record<number, string> = { 10: "Kelas X", 11: "Kelas XI", 12: "Kelas XII" };
 const TARGET_JP: Record<number, number> = { 10: 56, 11: 56, 12: 48 };
-const EMPTY_FORM = { code: "", name: "", category: "", grade: "10", majorId: "", order: "", hoursPerWeek: "2", weekGroup: "UMUM", maxSharedTeacher: "1" };
+const EMPTY_FORM = { code: "", name: "", category: "", grade: "10", majorId: "", order: "", hoursPerWeek: "2", weekGroup: "UMUM", maxSharedTeacher: "1", kkm: "", namaArab: "" };
 
 export default function SubjectsManager() {
   const confirmDialog = useConfirm();
@@ -30,6 +33,12 @@ export default function SubjectsManager() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [bukaSingkatan, setBukaSingkatan] = useState(false);
+  const toast = useToast();
+  // KKM bawaan sekolah — dipakai mapel yang KKM-nya dikosongkan (17 Sep 2026).
+  const [kkmBawaan, setKkmBawaan] = useState(75);
+  const [isiKkmBawaan, setIsiKkmBawaan] = useState("75");
+  const [simpanKkm, setSimpanKkm] = useState(false);
 
   const fetchSubjects = useCallback(async () => {
     setLoading(true);
@@ -47,11 +56,26 @@ export default function SubjectsManager() {
   useEffect(() => {
     fetchSubjects();
     fetch("/api/admin/majors").then(r => r.json()).then(setMajors).catch(() => {});
+    fetch("/api/admin/subjects/kkm-bawaan").then(r => r.json())
+      .then(d => { if (typeof d?.kkm === "number") { setKkmBawaan(d.kkm); setIsiKkmBawaan(String(d.kkm)); } })
+      .catch(() => {});
   }, [fetchSubjects]);
+
+  async function simpanKkmBawaan() {
+    setSimpanKkm(true);
+    const r = await fetch("/api/admin/subjects/kkm-bawaan", {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kkm: isiKkmBawaan }),
+    }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    setSimpanKkm(false);
+    if (!r?.ok) { toast.error(d?.error ?? "KKM bawaan gagal disimpan."); return; }
+    setKkmBawaan(d.kkm);
+    toast.success(`KKM bawaan sekolah: ${d.kkm}`);
+  }
 
   function openCreate() {
     setIsNew(true);
-    setSelected({ id: "", code: 0, name: "", category: "", grade: scope, majorId: null, major: null, order: 0, hoursPerWeek: 2, weekGroup: "UMUM", maxSharedTeacher: 1 });
+    setSelected({ id: "", code: 0, name: "", category: "", grade: scope, majorId: null, major: null, order: 0, hoursPerWeek: 2, weekGroup: "UMUM", maxSharedTeacher: 1, kkm: null });
     setForm({ ...EMPTY_FORM, grade: String(scope) });
     setSaveError("");
   }
@@ -63,6 +87,7 @@ export default function SubjectsManager() {
       code: String(s.code), name: s.name, category: s.category,
       grade: String(s.grade), majorId: s.majorId ?? "", order: String(s.order),
       hoursPerWeek: String(s.hoursPerWeek), weekGroup: s.weekGroup, maxSharedTeacher: String(s.maxSharedTeacher),
+      kkm: s.kkm === null ? "" : String(s.kkm), namaArab: s.namaArab ?? "",
     });
     setSaveError("");
   }
@@ -124,16 +149,33 @@ export default function SubjectsManager() {
         description="Daftar kode mapel Kurikulum Merdeka — tiap tingkat (X/XI/XII) bisa punya mapel & jam berbeda"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={15} /> Tambah Mapel
-        </button>
+      <div className="baris-alat items-end mb-5">
+        <div className="alat-saring">
+          <label htmlFor="kkm-bawaan" className="label-field">KKM bawaan sekolah</label>
+          <div className="flex items-center gap-2">
+            <input id="kkm-bawaan" className="input-field w-24" type="number" min={1} max={100} value={isiKkmBawaan}
+              onChange={e => setIsiKkmBawaan(e.target.value)} />
+            <button type="button" onClick={simpanKkmBawaan} disabled={simpanKkm || isiKkmBawaan === String(kkmBawaan)} className="btn-modal-cancel">
+              {simpanKkm ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan
+            </button>
+          </div>
+        </div>
+        <p className="alat-saring text-xs text-gray-500 max-w-md">Dipakai mapel yang KKM-nya dikosongkan. KKM tiap mapel diatur lewat tombol ubah di tabel.</p>
+        <div className="alat-aksi">
+          <button type="button" onClick={() => setBukaSingkatan(true)} className="btn-modal-cancel btn-teks">
+            <Type size={15} /> Singkatan Mapel
+          </button>
+          <button onClick={openCreate} className="btn-modal-save">
+            <Plus size={15} /> Tambah Mapel
+          </button>
+        </div>
       </div>
+      <FormSingkatanMapel open={bukaSingkatan} onClose={() => setBukaSingkatan(false)} onTersimpan={fetchSubjects} />
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5">
         {([10, 11, 12] as const).map(g => (
           <button key={g} onClick={() => setScope(g)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${scope === g ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${scope === g ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
             {GRADE_LABEL[g]}
           </button>
         ))}
@@ -179,7 +221,7 @@ export default function SubjectsManager() {
                   const ok = majorTotal === variesTarget;
                   return (
                     <span key={m.id}
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ok ? "text-emerald-300 bg-emerald-900/40" : "text-amber-300 bg-amber-900/40"}`}>
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${ok ? "text-emerald-300 bg-emerald-900/40" : "text-amber-300 bg-amber-900/40"}`}>
                       {m.code}: {majorTotal}/{variesTarget}
                       {!ok && ` (${majorTotal < variesTarget ? `-${variesTarget - majorTotal}` : `+${majorTotal - variesTarget}`})`}
                     </span>
@@ -187,13 +229,13 @@ export default function SubjectsManager() {
                 })}
               </div>
             ) : (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white/70 bg-white/10">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white/70 bg-white/10">
                 Total {categoryTotal} jam (sama semua jurusan)
               </span>
             );
             return (
               <GroupedSection key={category} title={category} count={items.length} icon={BookMarked} headerActions={headerActions}>
-                <SubjectTable items={items} onEdit={openEdit} onDelete={handleDelete} />
+                <SubjectTable items={items} kkmBawaan={kkmBawaan} onEdit={openEdit} onDelete={handleDelete} />
               </GroupedSection>
             );
           })}
@@ -207,7 +249,7 @@ export default function SubjectsManager() {
         footer={
           <>
             <button onClick={() => setSelected(null)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               <Save size={14} />
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -250,6 +292,20 @@ export default function SubjectsManager() {
             </datalist>
           </div>
           <div>
+            <label className="label-field">KKM / KKTP</label>
+            <input className="input-field" type="number" min={1} max={100} value={form.kkm} placeholder={`Bawaan sekolah (${kkmBawaan})`}
+              onChange={e => setForm(f => ({ ...f, kkm: e.target.value }))} />
+            <p className="text-xs text-gray-400 mt-1">Batas tuntas mapel ini di rapor. Kosongkan untuk memakai KKM bawaan sekolah ({kkmBawaan}).</p>
+          </div>
+          {/diniy/i.test(form.category) && (
+            <div>
+              <label className="label-field" htmlFor="nama-arab">Nama Arab (Rapor Diniyah)</label>
+              <input id="nama-arab" className="input-field font-arabic text-right" dir="rtl" maxLength={120} value={form.namaArab}
+                placeholder="مثال: الفقه - سفينة النجا" onChange={e => setForm(f => ({ ...f, namaArab: e.target.value }))} />
+              <p className="text-xs text-gray-400 mt-1">Ditulis di kolom مادة Rapor Diniyah. Kosong = memakai nama mapel.</p>
+            </div>
+          )}
+          <div>
             <label className="label-field">Jam per Minggu</label>
             <input className="input-field" type="number" min={1} value={form.hoursPerWeek}
               onChange={e => setForm(f => ({ ...f, hoursPerWeek: e.target.value }))} />
@@ -290,53 +346,59 @@ export default function SubjectsManager() {
   );
 }
 
-function SubjectTable({ items, onEdit, onDelete }: { items: Subject[]; onEdit: (s: Subject) => void; onDelete: (id: string, name: string) => void }) {
+function SubjectTable({ items, kkmBawaan, onEdit, onDelete }: { items: Subject[]; kkmBawaan: number; onEdit: (s: Subject) => void; onDelete: (id: string, name: string) => void }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-16">Kode</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
-            <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jam/Minggu</th>
-            <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Minggu</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th className="w-16">Kode</th>
+            <th>Mata Pelajaran</th>
+            <th>Jurusan</th>
+            <th className="text-center">KKM</th>
+            <th className="text-center">Jam/Minggu</th>
+            <th className="text-center">Minggu</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(s => (
-            <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{s.code}</td>
-              <td className="px-5 py-3.5 font-semibold text-primary-900">
+            <tr key={s.id}>
+              <td className="font-mono text-xs text-gray-500">{s.code}</td>
+              <td className="font-semibold text-primary-900">
                 {s.name}
+                {s.singkatan && <span className="ml-2 rounded-md border border-primary-100 bg-primary-50 px-1.5 py-0.5 text-xs font-bold text-primary-700 align-middle" title="Singkatan di DKN & leger">{s.singkatan}</span>}
                 {s.maxSharedTeacher > 1 && (
-                  <span className="ml-2 text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full align-middle">
+                  <span className="ml-2 text-xs font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full align-middle">
                     max {s.maxSharedTeacher} kelas/guru
                   </span>
                 )}
               </td>
-              <td className="px-5 py-3.5 text-xs">
+              <td className="text-xs">
                 {s.major
                   ? <span className="bg-gray-50 text-gray-600 font-semibold px-2 py-0.5 rounded-full border border-gray-200">{s.major.code}</span>
                   : <span className="text-gray-300">Semua jurusan</span>}
               </td>
-              <td className="px-5 py-3.5 text-center">
+              <td className="text-center tabular-nums">
+                {s.kkm !== null
+                  ? <span className="font-semibold text-primary-900">{s.kkm}</span>
+                  : <span className="text-gray-400" title="KKM bawaan sekolah">{kkmBawaan}</span>}
+              </td>
+              <td className="text-center">
                 <span className="text-xs font-semibold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">{s.hoursPerWeek} jam</span>
               </td>
-              <td className="px-5 py-3.5 text-center">
+              <td className="text-center">
                 {(s.grade === 10 || s.grade === 11) && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                     s.weekGroup === "PRODUKTIF" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"
                   }`}>
                     {s.weekGroup === "PRODUKTIF" ? "Produktif" : "Umum"}
                   </span>
                 )}
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"><Pencil size={14} /></button>
+                  <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition"><Pencil size={14} /></button>
                   <button onClick={() => onDelete(s.id, s.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={14} /></button>
                 </div>
               </td>

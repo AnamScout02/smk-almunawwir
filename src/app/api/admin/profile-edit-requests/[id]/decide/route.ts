@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { ChangeMap } from "@/lib/profile-edit-fields";
-import { normalizeBukuIndukText, toProperCase, toProperCaseName } from "@/lib/text";
+import { normalizeBukuIndukText, toProperCaseName, toProperCaseSchoolName } from "@/lib/text";
+import { syncParentAccountForStudent } from "@/lib/parent-account";
 import type { Prisma } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         let v = field === "birthDate" && entry.new ? new Date(entry.new as string) : (entry.new || null);
         if (typeof v === "string" && v.trim()) {
           if (field === "parentName") v = toProperCaseName(v);
-          else if (field === "previousSchool") v = toProperCase(v);
+          else if (field === "previousSchool") v = toProperCaseSchoolName(v);
         }
         topData[field] = v;
       } else if (scope === "buku") {
@@ -56,6 +57,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         data: { status: "APPROVED", reviewNote: body.note || null, reviewedAt: new Date(), reviewedBy: session.name },
       }),
     ]);
+
+    // Kalau pengajuan mengubah No. HP/Nama Orang Tua, sinkronkan akun Orang Tua otomatis —
+    // gagal-sync tidak boleh menggagalkan approval yang sudah tersimpan di atas.
+    if ("parentPhone" in topData || "parentName" in topData) {
+      const updated = await prisma.student.findUnique({ where: { id: request.student.id }, select: { parentPhone: true, parentName: true } });
+      if (updated) await syncParentAccountForStudent(request.student.id, updated.parentPhone, updated.parentName).catch(() => {});
+    }
 
     return Response.json({ success: true });
   } catch {

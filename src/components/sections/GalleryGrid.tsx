@@ -19,11 +19,13 @@ const ui = {
 
 export default function GalleryGrid({ items, lang = "id" }: { items: GalleryItem[]; lang?: Lang }) {
   const t = ui[lang];
-  const categories = [t.all, ...Array.from(new Set(items.map(i => i.category)))];
-  const [activeCategory, setActiveCategory] = useState(t.all);
+  // "" = semua kategori. Penanda netral, bukan teks "Semua"/"All": saat bahasa diganti halaman hanya di-refresh,
+  // state tidak dipasang ulang — teks lama tidak lagi cocok dan saringan jadi kosong.
+  const categories = ["", ...Array.from(new Set(items.map(i => i.category)))];
+  const [activeCategory, setActiveCategory] = useState("");
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
 
-  const filtered = activeCategory === t.all ? items : items.filter(i => i.category === activeCategory);
+  const filtered = activeCategory === "" ? items : items.filter(i => i.category === activeCategory);
 
   return (
     <section className="section-padding bg-cream">
@@ -32,7 +34,7 @@ export default function GalleryGrid({ items, lang = "id" }: { items: GalleryItem
         <div className="flex flex-wrap gap-2 justify-center mb-10">
           {categories.map(cat => (
             <button
-              key={cat}
+              key={cat || "semua"}
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                 activeCategory === cat
@@ -40,7 +42,7 @@ export default function GalleryGrid({ items, lang = "id" }: { items: GalleryItem
                   : "bg-white border text-gray-600 hover:border-primary-300 hover:text-primary-700"
               }`}
             >
-              {cat}
+              {cat || t.all}
             </button>
           ))}
         </div>

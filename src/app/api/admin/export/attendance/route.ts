@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { balasanExcel } from "@/lib/ekspor-excel";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -44,23 +45,10 @@ export async function GET(req: NextRequest) {
       r.status,
     ]);
 
-    const escape = (v: string | number) => {
-      const s = String(v);
-      return s.includes(",") || s.includes('"') || s.includes("\n")
-        ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-
-    const csv = [headers, ...rows].map(row => row.map(escape).join(",")).join("\n");
-    const bom = "﻿";
-    const filename = month
-      ? `absensi-${month}.csv`
-      : `absensi-${new Date().toISOString().slice(0, 10)}.csv`;
-
-    return new Response(bom + csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
+    return balasanExcel({
+      namaFile: month ? `absensi-${month}` : `absensi-${new Date().toISOString().slice(0, 10)}`,
+      namaSheet: "Absensi Siswa",
+      headers, rows,
     });
   } catch {
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });

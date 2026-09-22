@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { History, Search, Loader2, KeyRound, UserCog, UserPlus, UserX, Award, ClipboardCheck, Trash2 } from "lucide-react";
+import { History, Search, Loader2, KeyRound, UserCog, UserPlus, UserX, Award, ClipboardCheck, Trash2, BookOpen, DatabaseZap } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
@@ -8,11 +8,15 @@ import Select from "@/components/admin/Select";
 interface LogItem {
   id: string; userName: string; userRole: string; action: string;
   entity: string; entityId: string | null; description: string; createdAt: string;
+  /** Admin asli kalau aksi ini dilakukan lewat "Masuk Sebagai". */
+  impersonatorName?: string | null;
 }
 
 const ACTION_LABEL: Record<string, string> = {
   CHANGE_OWN_PASSWORD: "Ganti Password Sendiri",
   RESET_PASSWORD: "Reset Password",
+  CABUT_SESI: "Cabut Sesi Login",
+  UBAH_KEBIJAKAN_SESI: "Ubah Kebijakan Sesi",
   CREATE_USER: "Buat Akun",
   UPDATE_USER: "Ubah Akun",
   DELETE_USER: "Hapus Akun",
@@ -21,6 +25,9 @@ const ACTION_LABEL: Record<string, string> = {
   DELETE_STUDENT: "Hapus Siswa",
   DECIDE_ADMISSION: "Keputusan PPDB",
   DELETE_ADMISSION: "Hapus Pendaftar",
+  UPDATE_BUKU_INDUK: "Ubah Buku Induk",
+  TES_DAPODIK: "Tes Koneksi Dapodik",
+  EKSPOR_DAPODIK: "Unduh Daftar Dapodik",
 };
 
 const ACTION_ICON: Record<string, React.ElementType> = {
@@ -28,6 +35,8 @@ const ACTION_ICON: Record<string, React.ElementType> = {
   CREATE_USER: UserPlus, UPDATE_USER: UserCog, DELETE_USER: UserX,
   UPDATE_JABATAN: Award, UPDATE_STUDENT_NAME: UserCog,
   DELETE_STUDENT: Trash2, DECIDE_ADMISSION: ClipboardCheck, DELETE_ADMISSION: Trash2,
+  UPDATE_BUKU_INDUK: BookOpen,
+  TES_DAPODIK: DatabaseZap, EKSPOR_DAPODIK: DatabaseZap,
 };
 
 const ACTION_COLOR: Record<string, string> = {
@@ -41,6 +50,9 @@ const ACTION_COLOR: Record<string, string> = {
   DELETE_STUDENT: "bg-red-50 text-red-700 border-red-200",
   DECIDE_ADMISSION: "bg-emerald-50 text-emerald-700 border-emerald-200",
   DELETE_ADMISSION: "bg-red-50 text-red-700 border-red-200",
+  UPDATE_BUKU_INDUK: "bg-amber-50 text-amber-700 border-amber-200",
+  TES_DAPODIK: "bg-blue-50 text-blue-700 border-blue-200",
+  EKSPOR_DAPODIK: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 export default function LogAktivitasClient() {
@@ -90,11 +102,11 @@ export default function LogAktivitasClient() {
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={q} onChange={e => setQ(e.target.value)}
             placeholder="Cari nama pelaku atau deskripsi..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500"
           />
         </div>
         <div className="w-full sm:w-64">
@@ -106,12 +118,12 @@ export default function LogAktivitasClient() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
       ) : logs.length === 0 ? (
         <EmptyState icon={History} title="Belum ada log aktivitas" description="Aksi sensitif yang tercatat akan muncul di sini." />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+          <div className="panel divide-y divide-gray-50 overflow-hidden">
             {logs.map(log => {
               const Icon = ACTION_ICON[log.action] ?? History;
               return (
@@ -121,13 +133,18 @@ export default function LogAktivitasClient() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`inline-flex text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${ACTION_COLOR[log.action] ?? "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                      <span className={`inline-flex text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${ACTION_COLOR[log.action] ?? "bg-gray-50 text-gray-500 border-gray-200"}`}>
                         {ACTION_LABEL[log.action] ?? log.action}
                       </span>
-                      <span className="text-[11px] text-gray-400 shrink-0">{timeAgo(log.createdAt)}</span>
+                      <span className="text-xs text-gray-400 shrink-0">{timeAgo(log.createdAt)}</span>
                     </div>
                     <p className="text-sm text-navy mt-1.5 leading-snug">{log.description}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">oleh {log.userName} ({log.userRole})</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      oleh {log.userName} ({log.userRole})
+                      {log.impersonatorName && (
+                        <span className="text-amber-700 font-semibold"> · dilakukan {log.impersonatorName} lewat Masuk Sebagai</span>
+                      )}
+                    </p>
                   </div>
                 </div>
               );

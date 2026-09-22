@@ -98,16 +98,16 @@ export default function StudentBiodataPage() {
   const pending = data.profileEditRequests[0];
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<User size={22} />}
         title="Biodata Saya"
         description={`${data.class?.name ?? "—"} · ${data.major?.name ?? "—"} · NIS ${data.nis}`}
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/student" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
@@ -296,7 +296,7 @@ export default function StudentBiodataPage() {
                     </div>
                   </div>
                 ))}
-                <button type="button" onClick={addAchievement} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-900 font-medium">
+                <button type="button" onClick={addAchievement} className="flex items-center gap-2 text-sm text-primary-700 hover:text-primary-900 font-medium">
                   <Plus size={14} /> Tambah Penghargaan
                 </button>
               </div>
@@ -307,7 +307,7 @@ export default function StudentBiodataPage() {
         {!pending && (
           <div className="sticky bottom-4 flex justify-end">
             <button onClick={handleSubmit} disabled={submitting}
-              className="btn-gold flex items-center gap-2 text-sm shadow-lg">
+              className="btn-modal-save shadow-lg">
               {submitting ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Ajukan Perubahan
             </button>
           </div>

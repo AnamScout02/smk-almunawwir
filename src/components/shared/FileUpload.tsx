@@ -51,7 +51,7 @@ export default function FileUpload({
 
       {value ? (
         <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50/50">
-          <FileText size={18} className="text-primary-600 shrink-0" />
+          <FileText size={18} className="text-primary-700 shrink-0" />
           <span className="text-sm text-gray-700 truncate flex-1 min-w-0">{fileNameFromUrl(value)}</span>
           <button type="button" onClick={() => onChange("")} className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0">
             <X size={16} />

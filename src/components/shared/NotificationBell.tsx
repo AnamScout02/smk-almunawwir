@@ -103,7 +103,7 @@ export default function NotificationBell({ items, variant = "dark" }: Notificati
       >
         <Bell size={19} />
         {total > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[0.6rem] font-bold flex items-center justify-center leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center leading-none">
             {total > 99 ? "99+" : total}
           </span>
         )}

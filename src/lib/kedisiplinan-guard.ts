@@ -12,7 +12,7 @@ export async function isOnDutyToday(email: string): Promise<boolean> {
   const user = await prisma.user.findFirst({ where: { email }, select: { id: true } });
   if (!user) return false;
   const today = new Date();
-  const day = DAYS[today.getDay()];
+  const day = DAYS[new Date(today.getTime() + 7 * 3600_000).getUTCDay()]; // server UTC → hari WIB
   const weekType = await getWeekTypeForDate(today);
   const duty = await prisma.dutyRoster.findFirst({
     where: { userId: user.id, day, OR: [{ weekType: "SEMUA" }, { weekType }] },

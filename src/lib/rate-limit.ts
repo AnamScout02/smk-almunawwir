@@ -17,8 +17,19 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
   return true;
 }
 
-export function getClientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
+function parseForwardedIp(get: (name: string) => string | null): string {
+  const fwd = get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
+  return get("x-real-ip") ?? "unknown";
+}
+
+export function getClientIp(req: Request): string {
+  return parseForwardedIp(n => req.headers.get(n));
+}
+
+/** Sama seperti getClientIp, tapi terima objek headers langsung (bukan Request utuh) — dipakai di
+ * Server Action (mis. login()) yang tidak punya akses ke `Request`, cuma `await headers()` dari
+ * `next/headers`. */
+export function getClientIpFromHeaders(h: { get(name: string): string | null }): string {
+  return parseForwardedIp(n => h.get(n));
 }

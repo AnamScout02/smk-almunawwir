@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { jsonBesar } from "@/lib/json-besar";
 import { verifyRole } from "@/lib/dal";
 import { verifyTasAccess, TAS_JABATAN } from "@/lib/tas-access-guard";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
@@ -22,7 +23,7 @@ async function assertClassesReadAccess(session: { role: string; email: string })
   await assertKurikulum(session);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
     await assertClassesReadAccess(session);
@@ -40,7 +41,7 @@ export async function GET() {
       },
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     });
-    return Response.json(classes);
+    return jsonBesar(classes, req);
   } catch {
     return Response.json({ error: "Gagal memuat kelas" }, { status: 500 });
   }

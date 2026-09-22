@@ -145,31 +145,21 @@ export default function AdminClassesPage() {
         description="Buat dan atur kelas, jurusan, dan wali kelas"
       />
 
-      <div className="flex justify-end gap-2 mb-5">
-        <Link href="/dashboard/admin/classes/cetak"
-          className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 transition-colors">
-          <Printer size={16} /> Cetak Data Kelas
-        </Link>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={16} /> Tambah Kelas
-        </button>
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : classes.length === 0 ? (
-        <div className="bg-white rounded-2xl border p-16 text-center text-gray-400">
+        <div className="panel p-16 text-center text-gray-400">
           <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
           <p className="font-semibold text-navy mb-1">Belum Ada Kelas</p>
           <p className="text-sm mb-4">Tambahkan kelas untuk mulai mengelola siswa dan nilai.</p>
-          <button onClick={openCreate} className="btn-gold text-sm">Tambah Kelas Pertama</button>
+          <button onClick={openCreate} className="btn-modal-save">Tambah Kelas Pertama</button>
         </div>
       ) : (
         <>
           {/* Pencarian & Filter */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="baris-alat mb-6">
+            <div className="alat-cari">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -177,13 +167,22 @@ export default function AdminClassesPage() {
                 className="input-field pl-10"
               />
             </div>
-            <div className="sm:w-56">
+            <div className="alat-saring">
               <Select
                 value={majorFilter}
                 onChange={setMajorFilter}
                 options={majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }))}
                 placeholder="Semua Jurusan"
               />
+            </div>
+            <div className="alat-aksi">
+              <Link href="/dashboard/admin/classes/cetak"
+                className="btn-modal-cancel">
+                <Printer size={16} /> Cetak Data Kelas
+              </Link>
+              <button onClick={openCreate} className="btn-modal-save">
+                <Plus size={16} /> Tambah Kelas
+              </button>
             </div>
           </div>
 
@@ -265,7 +264,7 @@ export default function AdminClassesPage() {
                   options={editingStudents.map(s => ({ value: s.id, label: `${s.user.name} (${s.nis})` }))}
                   placeholder="— Belum ditentukan —"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
+                <p className="text-xs text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
               </div>
               <div>
                 <label className="label-field">Sekretaris</label>
@@ -275,7 +274,7 @@ export default function AdminClassesPage() {
                   options={editingStudents.map(s => ({ value: s.id, label: `${s.user.name} (${s.nis})` }))}
                   placeholder="— Belum ditentukan —"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
+                <p className="text-xs text-gray-400 mt-1">Bisa input absensi kelas ini.</p>
               </div>
             </div>
           )}
@@ -291,25 +290,24 @@ function ClassTable({ items, onEdit, onDelete }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Wali Kelas</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Kelas</th>
+            <th>Jurusan</th>
+            <th>Wali Kelas</th>
+            <th>Siswa</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(cls => (
-            <tr key={cls.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5 font-semibold text-navy">{cls.name}</td>
-              <td className="px-5 py-3.5">
+            <tr key={cls.id}>
+              <td className="font-semibold text-navy">{cls.name}</td>
+              <td>
                 <span
                   className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    cls.major.themeColor ? "" : "bg-primary-50 text-primary-700 border-primary-200"
+                    cls.major.themeColor ? "" : "bg-primary-50 text-primary-700 border-primary-100"
                   }`}
                   style={cls.major.themeColor
                     ? { color: cls.major.themeColor, borderColor: withAlpha(cls.major.themeColor, 25), background: withAlpha(cls.major.themeColor, 6) }
@@ -319,18 +317,18 @@ function ClassTable({ items, onEdit, onDelete }: {
                   {cls.major.code}
                 </span>
               </td>
-              <td className={`px-5 py-3.5 ${cls.homeroom ? "text-primary-700 font-medium" : "text-amber-500"}`}>
+              <td className={`${cls.homeroom ? "text-primary-700 font-medium" : "text-amber-500"}`}>
                 {cls.homeroom?.user.name ?? "Belum ditentukan"}
               </td>
-              <td className="px-5 py-3.5">
+              <td>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700">
                   <Users size={12} /> {cls.students.length}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   <button onClick={() => onEdit(cls)}
-                    className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                    className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
                     <Edit2 size={14} />
                   </button>
                   <button onClick={() => onDelete(cls.id, cls.name)}

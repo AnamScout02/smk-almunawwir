@@ -122,11 +122,25 @@ export default function AdminMajorsPage() {
         description="Program keahlian yang tersedia di SMK Al Munawwir"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={16} />
-          Tambah Jurusan
-        </button>
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026). */}
+      <div className="baris-alat mb-5">
+        {majors.length > 0 && (
+          <div className="alat-cari">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Cari nama atau kode jurusan..."
+              className="input-field pl-10"
+            />
+          </div>
+        )}
+        <div className="alat-aksi">
+          <button onClick={openCreate} className="btn-modal-save">
+            <Plus size={16} />
+            Tambah Jurusan
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -137,15 +151,6 @@ export default function AdminMajorsPage() {
         <EmptyState icon={BookOpen} title="Belum ada jurusan" description={'Klik "Tambah Jurusan" untuk mulai menambah program keahlian.'} />
       ) : (
         <>
-          <div className="relative mb-6">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Cari nama atau kode jurusan..."
-              className="input-field pl-10"
-            />
-          </div>
         {filteredMajors.length === 0 ? (
           <EmptyState icon={Search} title="Tidak ada jurusan ditemukan" />
         ) : (
@@ -255,28 +260,27 @@ function MajorTable({ items, onEdit, onDelete }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kode</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Deskripsi</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Jurusan</th>
+            <th>Kode</th>
+            <th>Deskripsi</th>
+            <th>Siswa</th>
+            <th>Kelas</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map((m) => (
-            <tr key={m.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5">
+            <tr key={m.id}>
+              <td>
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-9 h-9 rounded-xl border border-primary-100 flex items-center justify-center shrink-0 overflow-hidden relative ${!m.themeColor ? "bg-primary-50" : ""}`}
                     style={{ background: m.themeColor ? themeGradient(m.themeColor) : undefined }}>
                     {m.logoUrl ? (
-                      <Image src={m.logoUrl} alt={m.name} fill sizes="36px" className="object-contain p-1" unoptimized />
+                      <Image src={m.logoUrl} alt={m.name} fill sizes="36px" className="object-contain p-1" />
                     ) : (
                       <BookOpen size={16} className={m.themeColor ? "text-white" : "text-primary-700"} />
                     )}
@@ -284,29 +288,29 @@ function MajorTable({ items, onEdit, onDelete }: {
                   <span className="font-semibold text-navy">{m.name}</span>
                 </div>
               </td>
-              <td className="px-5 py-3.5">
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${!m.themeColor ? "bg-primary-50 text-primary-700 border-primary-200" : ""}`}
+              <td>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${!m.themeColor ? "bg-primary-50 text-primary-700 border-primary-100" : ""}`}
                   style={m.themeColor ? { color: m.themeColor, borderColor: withAlpha(m.themeColor, 25), background: withAlpha(m.themeColor, 6) } : undefined}>
                   {m.code}
                 </span>
-                <p className={`text-[10px] font-mono mt-1 ${m.nisCode ? "text-gray-400" : "text-amber-500 font-semibold"}`}>
+                <p className={`text-xs font-mono mt-1 ${m.nisCode ? "text-gray-400" : "text-amber-500 font-semibold"}`}>
                   {m.nisCode ? `NIS: ${m.nisCode}` : "Kode NIS belum diisi"}
                 </p>
               </td>
-              <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{m.description}</td>
-              <td className="px-5 py-3.5">
+              <td className="text-gray-500 max-w-xs truncate">{m.description}</td>
+              <td>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700">
                   <Users size={12} /> {m._count.students}
                 </span>
               </td>
-              <td className="px-5 py-3.5">
+              <td>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700">
                   <School size={12} /> {m._count.classes}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  <button onClick={() => onEdit(m)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                  <button onClick={() => onEdit(m)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
                     <Edit2 size={14} />
                   </button>
                   <Link href={`/dashboard/admin/majors/${m.id}`} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors inline-flex" title="Konten Halaman Publik">

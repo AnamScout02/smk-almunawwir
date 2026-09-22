@@ -38,7 +38,7 @@ export default function TeacherPklPage() {
   }, []);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Briefcase size={22} />}
         title="PKL Pembimbingan"
@@ -55,7 +55,7 @@ export default function TeacherPklPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map(item => (
             <Link key={item.id} href={`/dashboard/teacher/pkl/${item.studentId}`}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              className="panel group p-5 hover:border-primary-100 hover:shadow-md hover:-translate-y-0.5 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="min-w-0">
                   <p className="font-heading font-bold text-primary-900 truncate">{item.student.user.name}</p>

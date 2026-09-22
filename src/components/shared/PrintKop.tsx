@@ -1,13 +1,29 @@
 // Kop surat untuk halaman cetak — banner navy + pattern SMK + judul (kiri) + logo full putih
 // (kanan), gaya sama persis dengan yang dipakai di BukuIndukPrintSheet. Diekstrak jadi komponen
 // bersama supaya halaman cetak lain (jadwal, dll) pakai kop yang konsisten tanpa duplikasi.
-export default function PrintKop({ title, subtitle, logoUrl, edgeClassName = "-mx-8 print:-mx-2" }: {
+export default function PrintKop({
+  title, subtitle, logoUrl,
+  edgeClassName = "-mx-8 print:-mx-2",
+  spacingClassName = "mb-4 px-10 py-6",
+  titleClassName = "text-lg",
+  subtitleClassName = "text-sm",
+  logoClassName = "h-12",
+}: {
   title: string; subtitle: string; logoUrl?: string;
   /** Kelas margin negatif untuk bleed penuh ke tepi kertas — sesuaikan kalau halaman punya padding kiri/kanan asimetris (mis. ruang jilid). */
   edgeClassName?: string;
+  /** Jarak & padding kop. Dipisah dari `edgeClassName` supaya pemanggil bisa MENGGANTINYA, bukan
+   * menambahkan kelas yang bertabrakan — dua utility Tailwind untuk properti yang sama (mis.
+   * `px-10` vs `px-[6mm]`) punya kekhususan sama, jadi yang menang ditentukan urutan di berkas CSS
+   * hasil build, bukan urutan penulisan di className. Dipakai kartu QR Buku Tamu yang ukurannya
+   * A6 sehingga butuh padding jauh lebih kecil. */
+  spacingClassName?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
+  logoClassName?: string;
 }) {
   return (
-    <div className={`print-doc relative ${edgeClassName} mb-4 px-10 py-6 overflow-hidden flex items-center justify-between gap-4`}
+    <div className={`print-doc relative ${edgeClassName} ${spacingClassName} overflow-hidden flex items-center justify-between gap-4`}
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat", filter: "invert(1)" }}
@@ -38,12 +54,12 @@ export default function PrintKop({ title, subtitle, logoUrl, edgeClassName = "-m
         />
       ))}
       <div className="relative">
-        <p className="font-bold text-lg uppercase tracking-wide text-white">{title}</p>
-        <p className="font-bold text-sm uppercase text-gold">{subtitle}</p>
+        <p className={`font-bold uppercase tracking-wide text-white ${titleClassName}`}>{title}</p>
+        <p className={`font-bold uppercase text-gold ${subtitleClassName}`}>{subtitle}</p>
       </div>
       {logoUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="Logo SMK Al Munawwir IIBS" className="relative h-12 w-auto object-contain shrink-0" />
+        <img src={logoUrl} alt="Logo SMK Al Munawwir IIBS" className={`relative w-auto object-contain shrink-0 ${logoClassName}`} />
       )}
     </div>
   );

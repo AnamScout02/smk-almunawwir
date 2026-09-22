@@ -25,14 +25,14 @@ export async function POST(req: NextRequest) {
   try {
     await verifyTasAccess();
     const body = await req.json();
-    const { judul, kategori, nomor, tanggal, keterangan, fileUrl } = body;
+    const { judul, kategori, nomor, tanggal, keterangan, fileUrl, berlakuSampai } = body;
 
     if (!judul || !kategori || !tanggal) {
       return NextResponse.json({ error: "Judul, kategori, dan tanggal wajib diisi" }, { status: 400 });
     }
 
     const arsip = await prisma.arsip.create({
-      data: { judul, kategori, nomor: nomor || null, tanggal: new Date(tanggal), keterangan: keterangan || null, fileUrl: fileUrl || null },
+      data: { judul, kategori, nomor: nomor || null, tanggal: new Date(tanggal), keterangan: keterangan || null, fileUrl: fileUrl || null, berlakuSampai: berlakuSampai ? new Date(berlakuSampai) : null },
     });
     return NextResponse.json(arsip, { status: 201 });
   } catch (e) {

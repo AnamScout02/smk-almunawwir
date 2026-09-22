@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { adalahKategoriDiniyah, kunciNamaMapel, namaMapelDiniyah } from "@/lib/mapel-diniyah";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { petaSingkatanMapel } from "@/lib/singkatan-mapel-server";
+import { adalahNamaGrup, namaGabungan } from "@/lib/mapel-gabungan";
+import { susunRaporKelas } from "@/lib/rapor-cetak";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +70,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
     const studentIds = students.map(s => s.id);
 
     const [assignments, grades] = await Promise.all([
-      prisma.teachingAssignment.findMany({ where: { classId }, select: { subject: { select: { name: true, order: true } } }, orderBy: { subject: { order: "asc" } } }),
+      prisma.teachingAssignment.findMany({ where: { classId }, select: { subject: { select: { name: true, order: true, category: true } } }, orderBy: { subject: { order: "asc" } } }),
       // Cuma nilai bertipe DKN — DKN murni input manual wali kelas, TIDAK dihitung/di-default
       // dari nilai komponen mapel (Tugas/UH/UTS/UAS) manapun. Kosong berarti memang belum diisi.
       prisma.grade.findMany({
@@ -77,16 +81,35 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
 
     // Daftar mapel dari Penugasan Mengajar kelas ini (urut sesuai Kode Mata Pelajaran) — fallback ke
     // mapel yang punya nilai DKN tercatat kalau penugasan belum lengkap, supaya nilai lama tetap terlihat.
-    const subjectSet = new Set(assignments.map(a => a.subject.name));
-    for (const g of grades) subjectSet.add(g.subject);
+    // Mapel DINIYAH TIDAK tampil di DKN sama sekali — mapel tambahan (keputusan user 21 Sep 2026, src/lib/mapel-diniyah.ts).
+    const diniyah = await namaMapelDiniyah();
+    const bukanDiniyah = (nama: string) => !diniyah.has(kunciNamaMapel(nama));
+    // Bagian DPK 1–4 / KK 1–4 menjadi SATU kolom gabungan (keputusan user 22 Sep 2026, src/lib/mapel-gabungan.ts).
+    const subjectSet = new Set(assignments.filter(a => !adalahKategoriDiniyah(a.subject.category) && bukanDiniyah(a.subject.name)).map(a => namaGabungan(a.subject.name)));
+    for (const g of grades) if (bukanDiniyah(g.subject)) subjectSet.add(namaGabungan(g.subject));
     const subjects = [...subjectSet];
+    const gabungan = subjects.filter(adalahNamaGrup);
+
+    // Kolom gabungan TERISI OTOMATIS dari nilai rapor gabungan (Form Nilai Rapor yang sudah dikirim) — keputusan user;
+    // nilai yang diketik wali kelas (Grade DKN bernama grup) menimpanya, dan bila belum ada rapor dipakai rata-rata nilai
+    // DKN lama per bagian. Kolom lain tetap murni input manual.
+    const rapor = gabungan.length ? await susunRaporKelas(classId, semester).catch(() => null) : null;
+    const nilaiRapor = new Map<string, number>();
+    for (const r of rapor?.siswa ?? []) for (const b of r.kejuruan.concat(r.umum)) if (b.anggota && typeof b.hasil?.hpa === "number") nilaiRapor.set(`${r.id}|${b.mapel}`, b.hasil.hpa);
 
     const scores: Record<string, Record<string, number | null>> = {};
-    for (const s of students) scores[s.id] = {};
+    const otomatis: Record<string, Record<string, "rapor" | "bagian">> = {};
+    for (const s of students) { scores[s.id] = {}; otomatis[s.id] = {}; }
 
     for (const student of students) {
       for (const subject of subjects) {
-        scores[student.id][subject] = grades.find(g => g.studentId === student.id && g.subject === subject)?.score ?? null;
+        const manual = grades.find(g => g.studentId === student.id && g.subject === subject)?.score ?? null;
+        if (manual !== null || !gabungan.includes(subject)) { scores[student.id][subject] = manual; continue; }
+        const dariRapor = nilaiRapor.get(`${student.id}|${subject}`);
+        if (dariRapor !== undefined) { scores[student.id][subject] = dariRapor; otomatis[student.id][subject] = "rapor"; continue; }
+        const lama = grades.filter(g => g.studentId === student.id && g.subject !== subject && namaGabungan(g.subject) === subject).map(g => g.score);
+        scores[student.id][subject] = lama.length ? Math.round((lama.reduce((a, b) => a + b, 0) / lama.length) * 100) / 100 : null;
+        if (lama.length) otomatis[student.id][subject] = "bagian";
       }
     }
 
@@ -94,6 +117,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
       class: cls,
       students,
       subjects,
+      singkatan: await petaSingkatanMapel(subjects), // kepala kolom (Data Mapel → Singkatan Mapel)
+      gabungan, otomatis,
       scores,
     });
   } catch {
@@ -154,6 +179,27 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ clas
     }, { timeout: 30000 });
 
     return NextResponse.json({ success: true, count: updates.length });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}
+
+/** Hapus nilai DKN yang diketik untuk kolom GABUNGAN (DPK/KK) — sel kembali terisi otomatis dari nilai rapor gabungan. */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
+  try {
+    const session = await verifyRole(["TEACHER", "ADMIN"]);
+    const { classId } = await params;
+    if (!(await assertHomeroomOwner(session.email, session.role, classId))) {
+      return NextResponse.json({ error: "Khusus Wali Kelas kelas ini." }, { status: 403 });
+    }
+    const b = await req.json().catch(() => ({})) as { studentId?: string; subject?: string; semester?: string };
+    if (!b.studentId || !b.subject || !b.semester || !adalahNamaGrup(b.subject)) {
+      return NextResponse.json({ error: "Hanya kolom gabungan yang bisa dikembalikan ke nilai otomatis." }, { status: 400 });
+    }
+    const roster = await getClassRoster(classId, b.semester);
+    if (!roster.some(s => s.id === b.studentId)) return NextResponse.json({ error: "Siswa tidak ditemukan di kelas ini." }, { status: 404 });
+    await prisma.grade.deleteMany({ where: { studentId: b.studentId, subject: b.subject, type: "DKN", semester: b.semester } });
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

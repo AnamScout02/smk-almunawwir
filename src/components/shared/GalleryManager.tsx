@@ -67,20 +67,22 @@ export default function GalleryManager() {
         description={`${items.length} foto tersimpan`}
       />
 
-      <div className="flex justify-end mb-4">
-        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={18} /> Upload Foto Baru
-        </button>
-      </div>
-
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Cari judul foto..."
-          className="input-field pl-10"
-        />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026); di HP tombol turun ke kanan bawah. */}
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari judul foto..."
+            className="input-field pl-10"
+          />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={openNew} className="btn-modal-save btn-teks">
+            <Plus size={18} /> Upload Foto Baru
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -104,7 +106,7 @@ export default function GalleryManager() {
         footer={
           <>
             <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1">
               {saving && <Loader2 size={14} className="animate-spin" />}
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -141,29 +143,28 @@ function GalleryTable({ items, onEdit, onDelete }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Foto</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Judul</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Keterangan</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Foto</th>
+            <th>Judul</th>
+            <th>Keterangan</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(item => (
-            <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5">
+            <tr key={item.id}>
+              <td>
                 <div className="w-14 h-14 rounded-lg border border-gray-100 overflow-hidden relative shrink-0">
                   <Image src={item.imageUrl} alt={item.title} fill sizes="56px" className="object-cover" />
                 </div>
               </td>
-              <td className="px-5 py-3.5 font-medium text-gray-800">{item.title}</td>
-              <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{item.caption || "-"}</td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="font-medium text-gray-800">{item.title}</td>
+              <td className="text-gray-500 max-w-xs truncate">{item.caption || "-"}</td>
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  <button onClick={() => onEdit(item)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                  <button onClick={() => onEdit(item)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
                     <Pencil size={14} />
                   </button>
                   <button onClick={() => onDelete(item.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">

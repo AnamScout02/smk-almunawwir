@@ -64,7 +64,8 @@ import React, { useState } from "react"; // bukan: import { useState } from "rea
 Didefinisikan via `@theme` di `globals.css`. **JANGAN PERNAH** pakai `primary-800` — token itu
 TIDAK ADA (insiden nyata: elemen jadi invisible karena Tailwind diam-diam tidak generate class
 untuk token yang tidak terdaftar). Token primary yang valid: `50, 100, 300, 500, 700, 900` saja
-(loncat, bukan skala 100-900 penuh).
+(loncat, bukan skala 100-900 penuh). Disapu 15 Sep 2026: 207 pemakaian `primary-200/400/600/800` di 118 berkas diganti
+`100/500/700/900` (gejala nyata: ikon kartu "Boarding 24 Jam" di beranda tampak berkilau karena ujung gradiennya kosong).
 
 | Token | Hex | Pemakaian umum |
 |---|---|---|
@@ -80,7 +81,7 @@ untuk token yang tidak terdaftar). Token primary yang valid: `50, 100, 300, 500,
 | `cream` | `#F8F7F2` | Background dasar body |
 | `navy` | `#0F1A45` | Sama dengan primary-900 (alias semantik) |
 
-**Gradient navy standar** (header `PageHeader`, `Modal`, `GroupedSection` non-warning) — SELALU
+**Gradient navy standar** (header `PageHeader`, `Modal`, bottom navbar) — SELALU
 pakai gradient 3-stop ini, jangan bikin gradient navy baru yang beda:
 ```css
 linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)
@@ -151,14 +152,37 @@ dalamnya, dan JANGAN bungkus `<PageHeader/>` sendirian dalam `<div className="pr
 <PageHeader icon={<Icon size={22}/>} title="..." printHidden />
 ```
 
-### 3.3 Header "hero" landing tiap portal
-`/dashboard/admin/page.tsx`, `/dashboard/teacher/page.tsx`, `/dashboard/student/page.tsx` —
-header sapaan gradient WAJIB `sticky top-14 lg:top-0 z-30` (sesuaikan `top-*` dengan tinggi
-topbar mobile portal masing-masing — Admin pakai `top-16`), supaya konsisten dengan
-`PageHeader` yang sudah sticky di semua halaman lain.
+### 3.3 Header landing tiap portal — SAMA dengan `PageHeader` biasa (bukan "hero" custom lagi)
+**Keputusan eksplisit user 2026-08-23, MEMBALIK pola lama** yang pernah didokumentasikan di sini:
+`/dashboard/admin/page.tsx`, `/dashboard/teacher/page.tsx`, `/dashboard/student/page.tsx` DULU
+punya header custom lebih besar ("hero" — gradient + sapaan + tanggal + badge notifikasi,
+`sticky top-14 lg:top-0 z-30` manual). User menilai ini keliatan "tidak sama seperti halaman
+lain" dibanding `PageHeader` yang dipakai semua halaman fitur (mis. Buku Mutasi Siswa) — jadi
+SEKARANG ketiga halaman dashboard ini WAJIB pakai `<PageHeader icon={...} title="..."
+description={...} />` yang PERSIS SAMA seperti halaman lain (§3.2), bukan blok custom lagi:
+```tsx
+<div className="p-6 lg:p-8 pt-16 lg:pt-8">
+  <PageHeader icon={<LayoutDashboard size={22}/>} title="Dashboard Administrator"
+    description={<>Selamat datang, <span className="font-medium">{session.name}</span> — {dateStr}</>} />
+  <div className="space-y-5">{/* ...konten... */}</div>
+</div>
+```
+- `title` tetap pola "nama fitur" (mis. "Dashboard Administrator"/"Dashboard Guru"/"Dashboard
+  Siswa"), BUKAN nama orang — nama/salam/tanggal/identitas kelas dipindah ke `description`.
+- Badge notifikasi interaktif yang dulu nempel di header (mis. "X pesan baru" bisa diklik) HARUS
+  DIHAPUS dari sini (bukan kehilangan fungsi — count yang sama sudah ada di badge sidebar) krn
+  `PageHeader` sengaja tidak boleh punya elemen interaktif (gotcha #16).
+- Salam Arab (mis. `اَلسَّلَامُ عَلَيْكُمْ`) boleh tetap ada di `description` (pakai `font-arabic`
+  + `lineHeight: 2.2` inline di span-nya) ATAU di section terpisah DI BAWAH header kalau memang
+  konten berbeda (bukan duplikat) — lihat `dashboard/student/page.tsx` (section "Greeting" tetap
+  ada terpisah, cuma bagian navy hero-nya yang diganti `PageHeader`).
+- Karena sekarang pakai `PageHeader` yang sudah `sticky top-0` bawaan (bukan `top-14`/`top-16`
+  manual lagi), TIDAK PERLU lagi override `top-*` khusus per-portal — cukup ikuti wrapper standar
+  `p-6 lg:p-8 pt-16 lg:pt-8` (§3.1) apa adanya di ketiga halaman ini juga.
 
-### 3.4 Sidebar
-`AdminSidebar`, `TasSidebar`, `TeacherSidebar`, `StudentSidebar` — semua:
+### 3.4 Sidebar (DESKTOP — `lg:` ke atas)
+`AdminSidebar`, `TasSidebar`, `TeacherSidebar`, `StudentSidebar` — semua, KHUSUS tampilan
+`<aside>` desktop (mobile pakai `MobileBottomNav`, lihat §3.6 — bukan lagi hamburger+drawer):
 - `<aside>` desktop: **`sticky top-0 h-screen shrink-0`** — JANGAN `fixed` (melepas dari alur
   dokumen, bikin overlap dengan `ImpersonationBanner` pita oranye). Kalau `sticky`, JANGAN
   tambah `lg:ml-<lebar>` kompensasi di `<main>` (itu hanya perlu untuk `fixed`).
@@ -182,8 +206,54 @@ topbar mobile portal masing-masing — Admin pakai `top-16`), supaya konsisten d
 | `.stat-card` | Kartu statistik dengan hover accent bar gradient navy→gold di atas |
 | `.card-glass` | Kartu efek glass/blur (backdrop-blur, dipakai di section publik/hero) |
 | `.card-premium` | Kartu putih premium dengan hover lift (section publik) |
-| `GroupedSection` | Kartu grup tabel dgn header bar navy + badge jumlah — dipakai HAMPIR SEMUA tabel admin yang dikelompokkan (lihat §5) |
+| `GroupedSection` | Kartu grup tabel dgn kepala TERANG (chip ikon + judul navy + chip jumlah, sejak 15 Sep 2026) — dipakai HAMPIR SEMUA tabel admin yang dikelompokkan (lihat §5) |
 | `EmptyState` | Kondisi "belum ada data" (ikon abu-abu + teks tengah, py-16) |
+
+### 3.6 Navigasi MOBILE — bottom navbar 5 slot + kisi menu di dashboard (18 September 2026)
+**Keputusan user 18 September 2026 (contoh yang dikirim: Livin' by Mandiri & BRImo), MEMBALIK pola
+"4 slot + BottomSheet" 22 Agustus 2026:** di HP tidak ada lagi laci menu. Yang berlaku sekarang:
+
+- **`MobileBottomNav`** (`src/components/shared/MobileBottomNav.tsx`) — bar `fixed bottom-0` (`z-50`,
+  `lg:hidden`), LATAR PUTIH (bukan navy lagi) dengan garis atas tipis: `items` = **4 tautan langsung**
+  (dua kiri, dua kanan) + **`beranda`** = tombol BULAT MENONJOL di tengah (lingkaran navy bergradien,
+  cincin putih) menuju dashboard portal. Tidak ada prop `slots`/`kind: "sheet"` lagi — jangan
+  dihidupkan kembali.
+- **Seluruh menu ada di dashboard** sebagai kisi ikon (`MenuLengkap`, §5.8) + halaman
+  `/dashboard/<portal>/menu` ("Lihat semua", berisi kotak **Cari menu** dan semua grup).
+- **Satu sumber menu**: tiap Sidebar mengekspor pembangun grupnya (`grupMenuSiswa`, `grupMenuGuru`,
+  `grupMenuOrtu`, `menuGroups` Admin, `menuGroupsTas`) — sidebar desktop, bottom nav, dan kisi menu
+  memakai daftar yang sama. Keadaan akun (jabatan, wali kelas, buku terlambat) dari
+  `src/lib/menu-konteks.ts` (`konteksMenuGuru/Siswa/Tas`, `cache()`-d) supaya layout & halaman menu
+  tidak pernah beda isi.
+- **Portal di luar /dashboard** (Pusat Perpustakaan, Perpustakaan Digital, Pusat Ujian, peserta ujian):
+  `NavPortal` memakai pola yang sama — menu pertama jadi tombol tengah, empat berikutnya jadi tab,
+  dan SELURUH menu tampil di beranda portal lewat `KisiMenuPortal`. Daftar menunya di
+  `src/lib/menu-portal.ts` (dipakai bar tab, bottom nav, dan kisi).
+- Top bar mobile TETAP ADA (logo + lonceng + `MenuAkunMobile`) — `MenuAkunMobile` masih memakai
+  `BottomSheet` (Profil, Kartu Identitas, Pencarian Cepat, Keluar); yang dihapus hanyalah sheet BERISI
+  DAFTAR MENU di bottom nav.
+- `<main>` tetap `pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0` (bar tetap setinggi 4rem).
+- **Menu portal di layar lebar = kotak segmen putih** (tidak berubah): `flex w-fit gap-1 rounded-xl
+  border border-gray-100 bg-white p-1`, item aktif `bg-primary-900 text-white`.
+- **Satu pintu notifikasi** (15 Sep 2026): `KotakNotifikasiTombol` dengan `tindakan={[...]}`; jangan
+  memasang lonceng terpisah berdampingan.
+- **Tombol WhatsApp** hanya di situs publik.
+- **Halaman di dalam `PortalShell` memakai `PageHeader`** dengan wrapper `p-6 lg:p-8 pt-16 lg:pt-8`. **Header itu NAVY seperti
+  halaman lain dan pita menu tab portal berada DI BAWAHNYA** (keputusan user 21 Sep 2026, membalik aturan "header terang di portal"
+  18 Sep): kepala portal (menempel) → `PageHeader` (menempel di bawahnya) → `PitaPortal` (menempel di bawah header). `PortalShell`
+  menerima `menu` (daftar item, bukan elemen) dan memasang `PitaPortalProvider`; `PageHeader` merender `<PitaPortal />` sendiri, jadi
+  halaman portal tidak perlu diubah. Halaman portal TANPA PageHeader memasang `<PitaPortal mandiri />` di paling atas. Judul beranda
+  portal jangan mengulang nama portal (Pusat Ujian Online → "Daftar Ujian").
+
+### 3.7 Pengelompokan menu = alur kerja (keputusan user 15 Sep 2026)
+Menu yang dipakai berurutan berada dalam satu grup; nama menu tidak berubah. Urutan grup Admin: Dashboard → **Data Siswa & Guru**
+(SPMB, Siswa, Kelas, Jurusan, Guru, Jabatan, Tahun Ajaran) → **Kurikulum & Pembelajaran** (Kalender Pendidikan, Jam, Mapel, Penugasan,
+Jadwal, Pemeriksa Jadwal, RPP, Jurnal Guru, CBT, DKN) → **Kehadiran Siswa** → **Kesiswaan & BK** (Poin, Tata Tertib, Rekam BK, Peringatan
+Dini, Ekstrakurikuler, Absen Ekstra, UKS, Bantuan & Beasiswa) → **Kepegawaian & Kinerja** → **PKL & Alumni** → **TU — Buku Induk & Data** →
+**TU — Persuratan** → **TU — Layanan & Dokumen** → **Sarana & Perpustakaan** → **Keuangan** → **Website & Informasi** → **Sistem & Akun**.
+TAS memakai nama grup yang sama (disaring jabatan). Guru: Dashboard Jabatan → **Mengajar** → **Wali Kelas & Siswa** → **Kesiswaan & BK** →
+**Kinerja & Piket** → **PKL & Alumni** → **Sarana & Perpustakaan** → Tata Usaha → Akun Saya. Siswa: Akademik → **Kehadiran & Kedisiplinan** →
+Perpustakaan → Akun Saya. Menu baru masuk ke grup yang sesuai alurnya; slot bottom nav dibangun dari nama grup yang sama (ubah bersamaan).
 
 ---
 
@@ -198,8 +268,9 @@ manual dari nol:
 | `.btn-gold` | gold solid | Aksi utama premium (CTA publik) |
 | `.btn-gold-shimmer` | gold dengan animasi shimmer sapuan | CTA hero/unggulan |
 | `.btn-outline` | border putih transparan | Aksi sekunder di atas background gelap |
-| `.btn-modal-save` | `primary-700`→`primary-900` hover, `disabled:opacity-50` | Tombol simpan di footer `Modal`/form admin |
-| `.btn-modal-cancel` | putih, border abu, hover abu muda | Tombol batal di footer `Modal`/form admin |
+| `.btn-modal-save` | navy `primary-700` padat → `primary-900` hover | **Aksi utama portal**: Tambah / Simpan / Buat / Kirim / Unggah (juga footer `Modal`) |
+| `.btn-modal-cancel` | putih, garis abu, teks abu tua | **Aksi kedua portal**: Batal / Cetak / Ekspor / Impor / Unduh Excel / tautan ke halaman terkait |
+| `.btn-hapus` | merah `red-600` padat | Hapus / aksi berbahaya berteks (ikon hapus di baris tabel tetap pola §15.2) |
 
 Semua tombol: `border-radius` besar (`9999px` untuk CTA publik, `0.75rem` untuk tombol
 modal/admin), `transition: all 0.3s` atau `0.15s` untuk yang kecil. Ikon di dalam tombol pakai
@@ -209,14 +280,43 @@ Tombol "Cetak" / link ke halaman print: **JANGAN PERNAH `target="_blank"`** kecu
 pengecualian sah (`bel-sekolah/player`, `persuratan/[id]/edit-word` — lihat gotcha #19). Semua
 halaman cetak lain WAJIB navigasi tab yang sama + punya tombol "Kembali" (`ArrowLeft`) sendiri.
 
+### 4.1 Standar tombol aksi portal — SATU gaya per jenis aksi (keputusan user 15 Sep 2026)
+- Tiga kelas di atas berukuran SAMA: tinggi minimal 40px (44px di layar sentuh), padding `0.5rem 1rem`, sudut 12px, huruf 14px
+  tebal 600, ikon lucide di dalamnya otomatis 16px (CSS), jarak ikon–teks 8px. **Jangan menambah** `text-sm`, `px-4`, `py-2.5`,
+  `gap-2`, `flex items-center`, `rounded-xl` — sudah diurus kelasnya. Kelas tata letak (`w-full`, `flex-1`, `sm:ml-auto`, `shrink-0`) boleh.
+- **Baris alat = kotak cari/saringan/tab + tombol aksi BERSANDING dalam satu baris** (permintaan user 15 Sep 2026) — kelas bersama di
+  globals.css, bukan racikan utility per halaman:
+  ```tsx
+  <div className="baris-alat mb-5">            {/* bisa juga di dalam kartu: className="page-card p-4 mb-5 baris-alat" */}
+    <div className="alat-cari"><Search className="absolute left-3.5 …" /><input className="input-field pl-10" … /></div>
+    <div className="alat-saring"><Select … /></div>      {/* DatePicker/MonthPicker/Select/label centang */}
+    <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">…tab…</div>
+    <div className="alat-aksi"><button className="btn-modal-cancel"><Printer /> Cetak</button><button className="btn-modal-save"><Plus /> Tambah</button></div>
+  </div>
+  ```
+  Perilaku: layar lebar satu baris (aksi rata kanan). **HP: kotak cari + tombol tetap sebaris** — tombol berikon tampil ikon saja (teks tetap
+  dibaca pembaca layar); saringan/tab turun ke baris berikutnya; tombol ≥3 mengambil barisnya sendiri dan tetap berteks. Kolom berlabel
+  (label di atas isian) pakai `baris-alat items-end`. Baris `flex justify-end` terpisah (§3.1) HANYA untuk halaman tanpa cari/saringan/tab.
+  Kotak cari bersyarat (`data.length > 0 &&`) diletakkan DI DALAM baris alat supaya tombol Tambah tetap tampil saat data kosong.
+- **Tombol ikon-saja hanya untuk KATA KERJA UMUM** (20 September 2026). `.alat-aksi` menyembunyikan teks tombol
+  (`font-size: 0`) demi hemat ruang — jelas untuk Tambah, Cetak, Kembali, Simpan, Unduh, Ekspor. Tombol yang NAMANYA
+  membawa arti sendiri ("Kalender Bulanan", "Lapor Kerusakan", "Denah Ruang Ujian", "Pinjamkan Buku") jadi tidak bisa
+  ditemukan karena ikonnya terbaca sebagai aksi umum — beri **`.btn-teks`** pada tombol itu, atau `.alat-teks` pada
+  wadahnya bila semua tombolnya wajib berteks. Temuan user: "rekap absensi perkalender kok hilang?" — tombolnya ada,
+  teksnya yang disembunyikan.
+- **Tombol Kembali** (`ArrowLeft`) = `btn-modal-cancel`; **`PrintButton`** (Cetak / Simpan PDF) = `btn-modal-cancel` — disapu 63 tombol
+  Kembali bergaya "hantu" abu-abu & 21 tombol racikan bergaris (15 Sep 2026). Pengecualian: tombol kembali di kepala navy `PortalShell`.
+- `.btn-gold` HANYA untuk situs publik (CTA emas berbentuk pil). Di portal sudah disapu: 83 `btn-gold` → `btn-modal-save`, 29+ tombol
+  racikan (emas, hijau "Unduh Excel", biru muda "Cetak") → kelas standar.
+- Tombol di kepala `GroupedSection` (mis. "Cetak Kelas") memakai `btn-modal-cancel px-3 text-xs` — kepala grup kini terang.
+
 ---
 
 ## 5. Tabel & Data Display
 
 ### 5.1 Tabel data
-`.data-table` (utility class siap pakai): header gradient navy (`linear-gradient(135deg,
-#0F1A45 0%, #1B2B6B 100%)`), teks header putih 70% opacity, uppercase, `letter-spacing: 0.08em`,
-`font-size: 0.7rem`; body `text-sm`, hover row `#f8f9fc`, border antar baris `#f1f3f7`, sudut
+`.data-table` (utility class siap pakai): header TERANG di layar (latar `#f5f6fa`, teks navy 62% — §5.7; saat CETAK tetap gradient navy `linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)`, teks putih 70%), uppercase, `letter-spacing: 0.06em`,
+`font-size: 0.7rem` (di LAYAR 0.75rem = 12px sejak Pola v2, di HP padding sel lebih rapat; nilai CETAK tidak berubah); body `text-sm`, hover row `#f8f9fc`, border antar baris `#f1f3f7`, sudut
 membulat di `th:first-child`/`th:last-child` saja (bukan `border-radius` tabel keseluruhan).
 ```tsx
 <table className="data-table">
@@ -235,7 +335,7 @@ Pola standar untuk tabel yang dipecah per grup (per kelas, per jurusan, dll):
   <table className="data-table">...</table>
 </GroupedSection>
 ```
-`variant="warning"` (bar oranye solid, bukan gradient navy) khusus untuk grup yang perlu
+`variant="warning"` (kepala amber lembut + chip ikon amber) khusus untuk grup yang perlu
 perhatian, mis. "Belum Ada Kelas" / "Belum Absen". `headerActions` untuk tombol kecil di header
 grup (mis. "Cetak Kelas Ini") — TETAP ikuti aturan §3.2 kalau ini di level halaman (bukan di
 dalam grup), tapi di dalam `GroupedSection` per-grup memang disediakan slot resminya sendiri.
@@ -246,6 +346,12 @@ dalam grup), tapi di dalam `GroupedSection` per-grup memang disediakan slot resm
 ```
 `size="sm"` kalau `value` berpotensi teks panjang (bukan angka pendek) — supaya tidak
 memaksa tinggi kartu tetangga di grid yang sama.
+**Grid kartu angka WAJIB `.kisi-kartu`** (+ `kisi-kartu-3` … `kisi-kartu-7` sesuai jumlah kartu, tanpa pengubah = 2 kolom): SELALU 2 kolom
+di HP (kartu ganjil terakhir melebar penuh), kolom bertambah di layar lebar. Jangan racik `grid grid-cols-1 sm:grid-cols-3` lagi — temuan user
+15 Sep 2026: kartu 1 kolom memanjang (Presensi Pegawai), 3 kolom sempit (PKL), 2 kolom di halaman lain. 50 grid + kartu angka racikan
+(Legalisir, Bantuan Siswa, Kenaikan Kelas, Poin siswa & orang tua) sudah dipindah.
+Sejak 15 Sep 2026 tampilan bawaannya **berwarna lembut** (§17.2); dari halaman SERVER kirim `ikon="nama"`, bukan
+`icon={<X />}` (CLAUDE.md #35).
 
 ### 5.4 Kondisi kosong → `EmptyState`
 ```tsx
@@ -266,34 +372,62 @@ Untuk status semantik (HADIR/IZIN/SAKIT/ALPHA, PENDING/APPROVED/REJECTED, dll), 
 (itu khusus aksen dekoratif/kategori, bukan status).
 
 ### 5.6 Pagination
-**Tidak ada komponen `Pagination` shared** — mayoritas tabel di aplikasi ini memakai
-strategi "load semua + filter/cari di client" (dataset per sekolah relatif kecil: puluhan
-siswa per kelas, ratusan total). Baru pakai pagination betulan kalau dataset memang besar dan
-bertumbuh tanpa batas alami (contoh nyata satu-satunya: **Log Aktivitas**,
-`src/components/admin/LogAktivitasClient.tsx`). Kalau perlu menambah pagination di halaman
-baru, ikuti pola nyata ini (bukan bikin gaya baru):
+**Komponen bersama (sejak 14 September 2026, permintaan user): `usePaginasi` + `<Paginasi>`.**
+Mayoritas tabel memakai strategi "load semua + filter/cari di client"; daftar yang bisa panjang
+(akun pengguna, siswa, orang tua, surat, buku, pinjaman) WAJIB dipotong per halaman supaya layar
+tidak berisi ribuan baris. Jangan racik tombol Sebelumnya/Berikutnya sendiri lagi:
 ```tsx
-const pageSize = 50;
-const totalPages = Math.max(1, Math.ceil(total / pageSize));
-// ...
-{totalPages > 1 && (
-  <div className="flex items-center justify-between mt-4 text-sm">
-    <p className="text-gray-400">Halaman {page} dari {totalPages} · {total} total data</p>
-    <div className="flex gap-2">
-      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-        className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">
-        Sebelumnya
-      </button>
-      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-        className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">
-        Berikutnya
-      </button>
-    </div>
-  </div>
-)}
+import Paginasi from "@/components/shared/Paginasi";
+import { usePaginasi } from "@/lib/use-paginasi";
+
+const tersaring = data.filter(/* cari & saringan */);
+const hal = usePaginasi(tersaring, 50, `${cari}|${saringan}`); // kunci berubah → kembali ke halaman 1
+
+<tbody>{hal.potongan.map((row, i) => <tr key={row.id}><td>{hal.awal + i}</td>…</tr>)}</tbody>
+<Paginasi hal={hal} satuan="siswa" className="border-t border-gray-100" />
 ```
-Server-side: kirim `total` + slice `skip`/`take` dari Prisma, jangan paginate di client dari
-dataset yang sudah di-fetch penuh kalau datanya memang besar (percuma).
+- Ukuran halaman: 50 untuk tabel admin, 25 untuk tabel perpustakaan, 24 untuk kartu/grid (habis dibagi 2/3/4 kolom).
+- `<Paginasi>` tidak tampil kalau hanya satu halaman; di HP nomor halaman disembunyikan (cukup Sebelumnya/Berikutnya).
+- Untuk grid/kartu panjang beri `idGulir` (+ `scroll-mt-*` di elemen tujuan) supaya layar kembali ke awal daftar.
+- Dataset yang benar-benar besar & tumbuh tanpa batas (contoh: **Log Aktivitas**,
+  `src/components/admin/LogAktivitasClient.tsx`) tetap dipaginasi di SERVER: kirim `total` + `skip`/`take` dari
+  Prisma — memotong di klien dari data yang sudah diambil penuh percuma untuk data sebesar itu.
+
+### 5.7 Kepala tabel terang & FREEZE (15 Sep 2026)
+- **Kepala `.data-table` di layar terang** seperti panel dashboard (latar `#f5f6fa`, teks navy 62%, garis bawah tipis) — CETAK tetap navy.
+  Tabel racikan sebaiknya dipindah ke `.data-table` (contoh: UKS).
+- **Freeze otomatis di SEMUA tabel layar** lewat `PembekuTabel` (dipasang sekali di `Providers`): judul tabel menempel saat digulir ke bawah
+  (wadah tabel dibatasi setinggi layar), kolom pertama — dan kolom kedua bila kolom pertama "No"/"#"/kotak centang — menempel saat digeser
+  ke samping (hanya bila tabel lebih lebar dari wadahnya dan kolom beku ≤ 55% lebar). Syarat: tabel punya `<thead>` dan dibungkus wadah
+  `overflow-x-auto`/`overflow-auto` (maks 3 tingkat di atasnya) — **setiap tabel layar baru WAJIB dibungkus wadah itu**. Dilewati:
+  `.print-doc`/`.a4-page`, tabel yang sudah memakai `sticky` sendiri (Buku Induk, jadwal), dan `data-beku="tidak"`.
+- **Sapuan 15 Sep 2026 (malam):** 36 tabel racikan berkepala gradien tipis → `.data-table`; 15 tab/segmen aktif putih-bayangan & emas →
+  **navy padat** (`bg-primary-900 text-white`) — satu gaya tab aktif untuk semua portal; 207 kartu racikan
+  `bg-white rounded-2xl border border-gray-100 shadow-sm` → `.panel`. Kartu/tab/tabel baru langsung pakai pola ini.
+- **Audit sisa 15 Sep 2026 (build 13):** kepala kartu navy racikan (16) → kepala terang `border-b border-gray-100 bg-white`, kepala hari
+  jadwal → `bg-[#f5f6fa]`; 9 tabel racikan → `.data-table`; kalender absensi bulanan → kepala terang + freeze sendiri (judul & kolom nama);
+  semua pil status `text-[0.7rem]` → `text-xs`; teks "Memuat..." polos → `Loader2`; kartu filter Pendaftaran berwarna lembut.
+  **Pengecualian yang SENGAJA tetap khusus** (jangan "diseragamkan"): layar ujian siswa `/ujian-online` & Buku Tamu publik (gaya bersih
+  sendiri), layar kiosk/QR/pindai berlatar gelap, editor Word, popup DatePicker/MonthPicker, kalkulator & kertas coretan ujian, matriks
+  bersticky (jadwal non-blok, Buku Induk, Nominatif, Pembagian Mengajar), dan `<select>` di lembar jawaban menjodohkan (`SoalTampil` —
+  pemilih bawaan HP paling andal saat ujian).
+
+### 5.8 Kisi menu ala aplikasi bank → `MenuLengkap` (18 September 2026)
+Permintaan user dengan contoh Livin' & BRImo: fitur dikumpulkan sebagai kisi ikon berwarna, bukan
+daftar teks di laci.
+```tsx
+<MenuSiswa ringkas={12} hrefSemua="/dashboard/student/menu" judul="Menu Cepat" {...konteksMenu} />  // dashboard
+<MenuGuru {...konteksMenu} />                                                                        // halaman /menu
+```
+- `ringkas={n}` → n−1 menu terpakai + kartu "Lihat Semua"; tanpa `ringkas` → kotak **Cari menu** +
+  semua grup berjudul.
+- `pintasan` = pita navy bergradien berisi maksimal 4 aksi utama portal (padanan baris
+  Transfer/BRIVA/E-Wallet/Pulsa di BRImo) — isinya sama dengan 4 tautan bottom navbar.
+- Ikon memakai **delapan gradasi bergilir** (biru, hijau, kuning, ungu, merah muda, toska, nila, navy)
+  — warna per menu ditentukan URUTAN supaya selalu konsisten. Warna dasar aplikasi tetap navy.
+- Kelas bersama di `globals.css`: `.kartu-menu` (+ `.ikon-menu`), `.pita-pintasan`/`.pintasan-item`,
+  animasi masuk `.kisi-menu > *`. Menekan kartu = mengecil 6% (`:active`), dimatikan saat
+  `prefers-reduced-motion: reduce`. Jangan meracik kartu menu sendiri di luar komponen ini.
 
 ---
 
@@ -325,6 +459,8 @@ OS/browser, gotcha #23). Pakai:
 <DatePicker value={value} onChange={setValue} />   {/* format "YYYY-MM-DD" */}
 <MonthPicker value={value} onChange={setValue} />  {/* format "YYYY-MM" */}
 ```
+Jam: `<TimePicker value={jam} onChange={setJam} />` (format `"HH:MM"` 24 jam, `ringkas` untuk sel tabel) —
+**JANGAN `<input type="time">`** (tampil AM/PM di perangkat berbahasa Inggris; CLAUDE.md #70).
 Keduanya custom popup kalender, `onChange` menerima string langsung (bukan event). Form yang
 sudah pakai komponen `Field` dari `BukuIndukField.tsx` otomatis render `DatePicker` untuk
 `type="date"` — tidak perlu diubah manual.
@@ -505,10 +641,11 @@ Kedua model ini TIDAK punya unique constraint DB — cegah duplikat dengan trans
 delete-then-create (lihat CLAUDE.md, jangan `createMany({skipDuplicates:true})`, tidak akan
 bekerja tanpa constraint).
 
-### 11.5 Export CSV
-Selalu BOM UTF-8 di awal (`"﻿"` / `"﻿"`) + quote tiap field + escape `"` ganda — lihat
-pola lengkap di CLAUDE.md bagian Export CSV. Tanpa BOM, Excel Indonesia salah baca karakter
-khusus.
+### 11.5 Export data → Excel (.xlsx)
+**Tidak ada ekspor CSV baru.** Pakai `balasanExcel()` / `balasanExcelBanyakSheet()` dari
+`src/lib/ekspor-excel.ts` — lihat pola lengkap & alasannya di CLAUDE.md bagian "Export data →
+Excel". Ringkasnya: CSV koma bikin Excel Indonesia menumpuk semua data di satu kolom; .xlsx
+tidak. Angka dikirim sebagai `number` (bukan string) supaya bisa langsung dihitung di Excel.
 
 ---
 
@@ -569,6 +706,7 @@ Sebelum menganggap halaman baru "selesai", cek semua ini:
 - [ ] Sidebar baru (kalau ada menu baru) → masuk grup yang sesuai, ikuti pola accordion+sticky
 - [ ] Halaman cetak baru → `.print-doc bg-white`, `@page` sendiri (lihat tabel §10.1), tombol Cetak tab yang sama + tombol Kembali, `<PrintKop>`/`<PrintButton>`, JANGAN sentuh `@page`/body-background rule milik halaman lain
 - [ ] Daftar jurusan di halaman publik mana pun → query live `prisma.major.findMany()`, jangan hardcode
+- [ ] Tombol unduh data → endpoint `.xlsx` lewat `balasanExcel()`, bukan CSV rakitan sendiri
 - [ ] `npx tsc --noEmit` bersih sebelum dianggap selesai
 
 ---
@@ -614,6 +752,10 @@ strategi "load semua + cari di client" (§5.6):
     className="input-field pl-10" />
 </div>
 ```
+SATU gaya untuk SEMUA kotak cari (disapu 15 Sep 2026: 17 ikon & 6 isian): ikon `size={15}` di `left-3.5`, isian `input-field pl-10`
+(tanpa `text-sm`). Di dalam baris alat, bungkusnya `.alat-cari` (§4.1) — `relative` sudah termasuk di kelas itu.
+```tsx
+```
 
 ### 15.4 Upload file/gambar
 JANGAN racik `<input type="file">` + fetch upload manual dari nol — pakai komponen yang sudah
@@ -632,8 +774,9 @@ elemen lain, pilih dari skala ini (jangan asal angka acak):
 | `z-20` | Header tabel sticky / kolom beku (`sticky top-0`/`sticky left-0` di dalam kontainer scroll tabel lebar) |
 | `z-30` | Header halaman level-atas yang sticky (`PageHeader`, header "hero" landing portal, toolbar navy custom di halaman cetak) |
 | `z-40` | Spacer topbar mobile (`AdminTopBar`) |
-| `z-50` | `Modal` backdrop, sidebar overlay mobile, tombol mengambang `fixed` (mis. toggle layar penuh leaderboard, `WhatsAppButton`) |
-| `z-[60]` | Popup dropdown `Select` (harus di atas isi `Modal`, karena `Select` sering dipakai di dalam form modal) |
+| `z-50` | `Modal` backdrop, sidebar overlay mobile (kalau ada), tombol mengambang `fixed` (mis. toggle layar penuh leaderboard, `WhatsAppButton`), `MobileBottomNav` (bar navigasi bawah mobile — pengganti hamburger+drawer, lihat §3.6) |
+| `z-[60]` | Popup dropdown `Select`, panel `BottomSheet` (dipicu `MobileBottomNav`) — keduanya harus di atas `Modal`/`MobileBottomNav` (`Select` sering dipakai di dalam form Modal MAUPUN di dalam BottomSheet) |
+| `z-[70]` | Dialog **Konfirmasi** (`ConfirmProvider` → `Modal lapisanAtas`) — wajib di atas Modal mana pun, karena konfirmasi sering dipicu dari DALAM modal (jendela Tindakan papan pantau). Jangan beri modal biasa z di atas 50 |
 | `z-[100]` | `ToastProvider` — paling atas, harus selalu terlihat di atas apapun termasuk `Modal` |
 
 ---
@@ -642,3 +785,82 @@ elemen lain, pilih dari skala ini (jangan asal angka acak):
 
 - `CLAUDE.md` — 24 gotcha teknis (auth/session, Prisma, build Docker, dll) — WAJIB dibaca bersama dokumen ini, saling melengkapi bukan duplikat.
 - `AGENTS.md` — peringatan versi Next.js non-standar, cek `node_modules/next/dist/docs/` sebelum pakai API yang tidak yakin.
+
+---
+
+## 17. Pola Tampilan v2 — panel, kartu angka lembut, responsif (15 September 2026)
+
+Permintaan user: dashboard & halaman login dirapikan — layout, jarak, ukuran huruf, bentuk, grafik, animasi —
+modern dan responsif untuk semua perangkat, lalu diterapkan ke semua halaman. **Tahap 1 (sudah):** dashboard Admin/TAS,
+Guru, Siswa, Orang Tua, Bendahara, dan halaman Masuk. Halaman lain menyusul memakai pola yang SAMA di bawah ini.
+
+### 17.1 Token & kelas (globals.css, blok "POLA TAMPILAN v2")
+| Nama | Isi / pemakaian |
+|---|---|
+| `shadow-panel`, `shadow-panel-naik` | Bayangan halus bawaan panel / saat disorot (utility Tailwind dari `@theme`) |
+| `ease-halus` | `cubic-bezier(0.16, 1, 0.3, 1)` — satu kurva untuk semua gerak |
+| `.panel` | Wadah isi: putih, sudut 16px, garis `rgb(15 26 69 / .07)`, `shadow-panel` |
+| `.panel-kepala` / `.panel-judul` / `.panel-ikon` / `.panel-isi` / `.panel-tautan` | Kepala panel (judul 15px + chip ikon 32px + tautan "Lihat semua"), isi 16px (HP) / 20px (≥640px) |
+| `.panel-interaktif` | Kartu yang bisa diklik: naik 2px + bayangan menebal saat disorot, garis fokus emas |
+| `.masuk-halus` | Animasi masuk CSS murni (`@starting-style`, tanpa JavaScript) |
+| `.bar-tumbuh` / `.bar-bagian` | Batang grafik ringkas tumbuh saat dibuka |
+| `.angka` | `tabular-nums` — WAJIB untuk angka yang bersejajar (statistik, jam, tabel) |
+| `.label-kecil` | Label seksi 12px huruf kapital |
+| `.sentuh` | Tinggi minimal 44px di layar sentuh (`pointer: coarse`) |
+Semua animasi dimatikan saat `prefers-reduced-motion: reduce`.
+
+### 17.2 Komponen
+- **`Panel`** (`src/components/shared/Panel.tsx`) — `judul`, `ikon`, `tautan={{label, href}}`, `keterangan`, `isi={false}` untuk
+  daftar baris penuh (`divide-y`). `PanelKosong` = keadaan kosong RINGKAS di dalam panel (bukan `EmptyState` setinggi 16rem).
+  `DaftarPengumuman` = pengumuman aktif satu gaya untuk semua portal.
+- **`StatTile tampilan="lembut"`** — **BERWARNA LEMBUT (pilihan user 15 Sep 2026, patokan semua halaman):** latar gradasi
+  warna muda + garis senada, chip ikon berwarna penuh (ikon putih), angka navy. **Susunan: chip ikon + angka SEBARIS, label selebar kartu di bawahnya** (permintaan user 15 Sep 2026 — label & angka tidak lagi dipotong "…"; angka menyesuaikan lebar kartu lewat container query). Tiap kartu dalam satu baris boleh warna
+  sendiri (mis. Siswa biru, Guru hijau, Kelas ungu); kuning & merah dipakai untuk hal yang menunggu/bermasalah. `href` membuat
+  kartu bisa diklik, `sorot` menandai perlu perhatian (cincin kuning + titik berdenyut). Dari halaman server pakai `ikon="nama"`.
+  **Sejak 15 Sep 2026 `lembut` = BAWAAN `StatTile` di semua halaman.** `tampilan="gradien"` hanya untuk kartu yang ikut
+  TERCETAK (rekap kehadiran di rapor Siswa & Orang Tua) supaya hasil cetak tidak berubah.
+- **`DonatBagian`** — donat SVG komposisi (mis. siswa & guru L/P) dengan total di tengah dan keterangan angka + persen;
+  dipakai berdampingan (`grid grid-cols-2`) di panel Komposisi dashboard Admin (pilihan user 15 Sep 2026). `BarDaftar` menerima
+  `warna` per baris — batang per jurusan memakai `Major.themeColor`.
+- **`BarDaftar` / `BagianBar`** (`src/components/shared/GrafikRingkas.tsx`) — grafik ringkas HTML+CSS tanpa pustaka:
+  satu warna untuk besaran (per jurusan), warna berbeda hanya untuk bagian yang memang berbeda (L/P, status hadir).
+  Angka selalu tertulis langsung. Recharts tetap untuk grafik deret waktu (mis. tren tagihan Bendahara).
+- **`JadwalHariIni`** — garis waktu jadwal hari ini: yang berlangsung disorot + kemajuan jam, berikutnya ditandai,
+  yang lewat diredupkan; diperbarui tiap 30 detik. **`JadwalMingguan`** — tab per hari (bawaan hari ini), menggantikan
+  daftar enam hari yang memanjang.
+- **`AgendaCalendar`** — kini panel standar; tanggal berisi agenda bisa DIKETUK di HP (dulu hanya hover).
+- **Halaman Masuk** mengikuti pola halaman publik ringkas seperti Cek Kelulusan (permintaan user 15 Sep 2026: "bagian birunya
+  tidak banyak"): `Navbar` situs → pita biru pendek (label, judul, keterangan, ayat) → satu kartu formulir putih `max-w-md`
+  dengan `.label-field`/`.input-field` di latar krem. Tanpa panel biru setengah layar, statistik, atau animasi dekoratif.
+
+### 17.3 Tata letak dashboard
+- Urutan: header → pemberitahuan yang perlu tindakan (hanya bila ada) → kartu angka → isi.
+- Isi desktop dua kolom tumpuk bebas (`xl:grid-cols-12`, kiri `xl:col-span-7/8` + kanan `xl:col-span-5/4`, masing-masing
+  `space-y-6`, `items-start`) — panel tidak ikut ditarik setinggi tetangganya, tidak ada ruang kosong besar.
+- Kartu angka: `grid-cols-2` di HP → 3/4/6 kolom di layar lebar; jarak `gap-3 sm:gap-4`; antar-seksi `space-y-6`.
+- Tata letak DALAM panel memakai **container query** (`@container` + `@3xl:grid-cols-2`) — menyesuaikan lebar panelnya,
+  bukan lebar layar, jadi tetap rapi di kolom sempit maupun lebar.
+- Jangan menambah kartu/pita pengingat tugas di dashboard — sudah di lonceng (CLAUDE.md #31).
+
+### 17.4 Aturan wajib
+1. **Huruf minimal 12px** (`text-xs`) untuk teks yang dibaca; isi 14px (`text-sm`). `text-[10px]`/`text-[9px]` dilarang.
+   Disapu 15 Sep 2026: 366 pemakaian di 101 berkas layar (cetak tidak disentuh). Pengecualian 11px: angka di lingkaran
+   penghitung kecil (`min-w-[18px] h-[18px]`) dan matriks padat (jadwal, kalender absensi, pembagian mengajar, Buku Klapper).
+2. **Kolom isian 16px di HP** (`text-base sm:text-[0.9375rem]`) — di bawah 16px Safari iPhone memperbesar layar sendiri.
+3. **"Hari ini" dihitung di WIB**, bukan jam server (server UTC): `new Date(Date.now() + 7*3600_000)` + `getUTC*`, dan
+   `toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })`. Libur hari ini dari `cekLibur` (CLAUDE.md #40).
+4. Tinggi layar pakai `dvh` (`min-h-dvh`), bukan `vh` (bilah alamat HP).
+5. **Halaman server TIDAK mengoper elemen ikon lucide ke komponen klien** (CLAUDE.md #35 — dashboard Admin sempat 500 di
+   produksi): `StatTile ikon="siswa"` (nama, bukan `icon={<GraduationCap />}`), tautan berikon lewat `TautanIkon`/`TautanCepat`/
+   `KartuTautan` dari `src/components/shared/IkonNama.tsx`. Ikon di markup server murni (PageHeader, Panel) boleh, masing-masing
+   sekali. Panah tautan di `Panel` sengaja SVG polos. Cek: `node scripts/cek-ikon-kembar.mjs <berkas>`.
+6. Diuji di lebar **360, 390, 768, 1024, 1280, 1440, 1920px**: tidak ada gulir samping, tidak ada teks di bawah 12px.
+7. Gaya bersama lama sudah diselaraskan (berlaku semua halaman): `.input-field` 16px di HP & 44px di layar sentuh,
+   kepala `.data-table` & `.status-badge`/`.badge` 12px, `.page-card` = sudut & bayangan panel, `Paginasi` ramah sentuh.
+   Semua itu dibungkus `@media screen`: dokumen cetak resmi (Nominatif, Rekap Peserta Didik, barcode) memakai kelas yang
+   sama dan HARUS tercetak persis seperti sebelumnya — perubahan gaya bersama berikutnya juga wajib khusus layar.
+8. **Grid WAJIB punya kolom tegas di HP (`grid grid-cols-1 … md:grid-cols-2`) dan anak grid/kolom isi diberi `min-w-0`.**
+   `grid gap-6` tanpa `grid-cols-*` membuat kolom `auto` yang melebar mengikuti teks satu baris terpanjang (`truncate`) →
+   halaman bisa digeser ke samping (temuan user 15 Sep 2026: panel Komposisi dashboard Admin meluber di HP, menu bawah ikut
+   terpotong). Menguji luber: bandingkan `scrollWidth` dengan LEBAR LAYAR yang diset (bukan `innerWidth` — browser mode HP
+   ikut melebarkan area tampilan mengikuti isi yang meluber) dan ulangi dengan ukuran huruf 115% & 130% seperti setelan HP.

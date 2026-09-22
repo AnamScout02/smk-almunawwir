@@ -1,5 +1,5 @@
 "use client";
-import { Calendar } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import EmptyState from "@/components/admin/EmptyState";
 
 export interface CalendarRow { id: string; nis: string; name: string; cells: Record<number, string>; SAKIT: number; IZIN: number; ALPHA: number }
@@ -24,7 +24,7 @@ const CELL_COLOR: Record<string, string> = {
 export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading, compact = false, viewMonth }: {
   rows: CalendarRow[]; days: number; sundays: number[]; loading: boolean; compact?: boolean; viewMonth?: string;
 }) {
-  if (loading) return <div className="py-16 text-center text-gray-400 text-sm">Memuat...</div>;
+  if (loading) return <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>;
   if (rows.length === 0) {
     return <EmptyState icon={Calendar} title="Belum Ada Data" description="Belum ada data absensi untuk kelas & bulan ini." />;
   }
@@ -38,40 +38,43 @@ export default function MonthlyAttendanceCalendar({ rows, days, sundays, loading
     return d.getTime() <= todayUTC.getTime();
   }
   return (
-    <div className="overflow-x-auto">
-      <table className={`w-full border-collapse ${compact ? "text-[10px]" : "text-xs"}`}>
+    // Pola v2 (15 Sep 2026): kepala terang seperti .data-table, judul MENEMPEL saat digulir ke bawah (wadah setinggi layar) dan kolom
+    // nama menempel saat digeser ke samping. Freeze-nya ditulis sendiri di sini (bukan PembekuTabel) karena kolom nama selebar
+    // itu di HP melebihi batas 55% PembekuTabel. Huruf 11px = pengecualian matriks padat (DESIGN_SYSTEM §17.4).
+    <div className="overflow-auto max-h-[max(18rem,calc(100dvh-13rem))] overscroll-x-contain">
+      <table className={`w-full border-separate border-spacing-0 ${compact ? "text-[11px]" : "text-xs"}`}>
         <thead>
-          <tr style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-3 py-2 text-[0.65rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap sticky left-0 bg-white z-10">Siswa</th>
+          <tr>
+            <th className="sticky left-0 top-0 z-30 whitespace-nowrap border-b border-r border-gray-100 bg-[#f5f6fa] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-primary-900/60 shadow-[6px_0_8px_-6px_rgba(15,26,69,0.2)]">Siswa</th>
             {dayList.map(d => (
-              <th key={d} className={`px-1.5 py-2 text-[0.65rem] font-bold text-center w-7 ${sundays.includes(d) ? "bg-red-100 text-red-700" : "text-primary-500/70"}`}>
+              <th key={d} className={`sticky top-0 z-20 w-7 border-b border-gray-100 px-1.5 py-2 text-center text-[11px] font-bold ${sundays.includes(d) ? "bg-red-50 text-red-700" : "bg-[#f5f6fa] text-primary-900/60"}`}>
                 {d}
               </th>
             ))}
-            <th className="px-2 py-2 text-[0.65rem] font-bold text-center text-amber-700 bg-amber-50 w-8">S</th>
-            <th className="px-2 py-2 text-[0.65rem] font-bold text-center text-blue-700 bg-blue-50 w-8">I</th>
-            <th className="px-2 py-2 text-[0.65rem] font-bold text-center text-red-700 bg-red-50 w-8">A</th>
+            <th className="sticky top-0 z-20 w-8 border-b border-gray-100 bg-amber-50 px-2 py-2 text-center text-[11px] font-bold text-amber-700">S</th>
+            <th className="sticky top-0 z-20 w-8 border-b border-gray-100 bg-blue-50 px-2 py-2 text-center text-[11px] font-bold text-blue-700">I</th>
+            <th className="sticky top-0 z-20 w-8 border-b border-gray-100 bg-red-50 px-2 py-2 text-center text-[11px] font-bold text-red-700">A</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(row => (
-            <tr key={row.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-3 py-1.5 font-semibold text-primary-900 whitespace-nowrap sticky left-0 bg-white z-10">
-                {row.name} <span className="text-gray-400 font-mono text-[0.65rem]">({row.nis})</span>
+            <tr key={row.id} className="group/baris">
+              <td className="sticky left-0 z-10 whitespace-nowrap border-b border-r border-gray-100 bg-white px-3 py-1.5 font-semibold text-primary-900 shadow-[6px_0_8px_-6px_rgba(15,26,69,0.2)] group-hover/baris:bg-[#f8f9fc]">
+                {row.name} <span className="font-mono text-[11px] text-gray-400">({row.nis})</span>
               </td>
               {dayList.map(d => {
                 const empty = !row.cells[d];
                 const suspicious = empty && !sundays.includes(d) && isPastSchoolDay(d);
                 return (
-                  <td key={d} className={`px-1.5 py-1.5 text-center ${sundays.includes(d) ? "bg-red-50" : suspicious ? "bg-amber-100" : ""} ${CELL_COLOR[row.cells[d] ?? ""] ?? (suspicious ? "text-amber-500 font-bold" : "text-gray-200")}`}
+                  <td key={d} className={`border-b border-gray-50 px-1.5 py-1.5 text-center ${sundays.includes(d) ? "bg-red-50" : suspicious ? "bg-amber-100" : "group-hover/baris:bg-[#f8f9fc]"} ${CELL_COLOR[row.cells[d] ?? ""] ?? (suspicious ? "text-amber-500 font-bold" : "text-gray-200")}`}
                     title={suspicious ? "Belum ada data absensi — kemungkinan wali kelas belum mengisi" : undefined}>
                     {row.cells[d] === "H" ? "•" : (row.cells[d] ?? "·")}
                   </td>
                 );
               })}
-              <td className="px-2 py-1.5 text-center font-bold text-amber-700 bg-amber-50/50">{row.SAKIT}</td>
-              <td className="px-2 py-1.5 text-center font-bold text-blue-700 bg-blue-50/50">{row.IZIN}</td>
-              <td className="px-2 py-1.5 text-center font-bold text-red-700 bg-red-50/50">{row.ALPHA}</td>
+              <td className="border-b border-gray-50 bg-amber-50/50 px-2 py-1.5 text-center font-bold text-amber-700">{row.SAKIT}</td>
+              <td className="border-b border-gray-50 bg-blue-50/50 px-2 py-1.5 text-center font-bold text-blue-700">{row.IZIN}</td>
+              <td className="border-b border-gray-50 bg-red-50/50 px-2 py-1.5 text-center font-bold text-red-700">{row.ALPHA}</td>
             </tr>
           ))}
         </tbody>

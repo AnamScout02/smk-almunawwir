@@ -18,7 +18,7 @@ import { prisma } from "@/lib/prisma";
 export default async function HomePage() {
   const lang = await getLang();
   const [s, studentCount, majorCount] = await Promise.all([
-    getSettings(["stats.founded_year", "stats.graduation_rate"]),
+    getSettings(["stats.founded_year", "stats.graduation_rate", "school.tagline", "school.hero_subtitle"]),
     prisma.student.count({ where: { studentStatus: "AKTIF" } }).catch(() => 0),
     prisma.major.count().catch(() => 0),
   ]);
@@ -26,7 +26,7 @@ export default async function HomePage() {
     <>
       <Navbar transparent />
       <main>
-        <Hero lang={lang} stats={{
+        <Hero lang={lang} slideUtama={lang === "id" ? { title: s["school.tagline"], subtitle: s["school.hero_subtitle"] } : undefined} stats={{
           students: String(studentCount),
           majors: String(majorCount),
           foundedYear: s["stats.founded_year"],

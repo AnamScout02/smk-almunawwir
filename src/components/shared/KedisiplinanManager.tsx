@@ -42,6 +42,10 @@ interface DaySlotItem {
   startPeriod: number | null; endPeriod: number | null;
   teacherId: string | null; teacherName: string; teacherNip: string;
   status: string; hasTugas: boolean | null; notes: string; periodCount: number;
+  /** Presensi harian dari TU (Presensi Pegawai) pada tanggal itu — PETUNJUK saja, tidak pernah
+   *  mengisi status sendiri. Kalau TU sudah mencatat izin/sakit/dinas/cuti (artinya ada surat),
+   *  petugas piket bisa menerapkannya ke semua jam guru itu sekali klik. */
+  statusHarian: string | null; keteranganHarian: string | null;
 }
 
 function jamKeLabel(s: { startPeriod: number | null; endPeriod: number | null; startTime: string; endTime: string }) {
@@ -190,6 +194,21 @@ export default function KedisiplinanManager() {
     setDirtyDayKeys(prev => new Set(prev).add(key));
     setDaySaved(false);
   }
+  /** Terapkan status harian TU ke SEMUA blok jam guru tersebut pada tanggal ini. Dipicu manual
+   *  oleh petugas piket (bukan otomatis) — ia tetap melihat & menyetujui apa yang diisikan. Blok
+   *  yang jamnya belum tiba sengaja dilewati, sama seperti "Terapkan ke Semua". */
+  function terapkanStatusHarian(teacherId: string | null, status: string) {
+    if (!teacherId || !status) return;
+    const kena = new Set<string>();
+    setDaySlots(prev => prev.map(s2 => {
+      if (s2.teacherId !== teacherId || isFutureSlot(s2)) return s2;
+      kena.add(groupKey(s2.scheduleIds));
+      return { ...s2, status, hasTugas: s2.hasTugas };
+    }));
+    setDirtyDayKeys(prev => { const n = new Set(prev); kena.forEach(k => n.add(k)); return n; });
+    setDaySaved(false);
+  }
+
   // Jam yang BELUM MULAI (kalau viewDate = hari ini) tidak boleh dinilai kehadirannya — guru
   // piket belum bisa tahu guru itu masuk atau tidak kalau jamnya saja belum tiba. Baris begini
   // dikunci (tidak bisa diedit, tidak ikut kena "Terapkan ke Semua") sampai jamnya benar tiba.
@@ -413,18 +432,18 @@ export default function KedisiplinanManager() {
         description="Buku piket digital (kelas X & XI) — kehadiran guru per blok jam pelajaran, dicatat Wakil Kepala Penjamin Mutu atau Guru Piket"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="btn-gold flex items-center gap-2 text-sm">
+      <div className="alat-aksi justify-end mb-5">
+        <button onClick={openAdd} className="btn-modal-save">
           <Plus size={15} /> Tambah Manual
         </button>
       </div>
 
       {/* ===== Buku Piket — tabel semua kelas & guru per tanggal ===== */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
+      <div className="panel p-5 mb-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center [&>*]:max-w-full justify-between gap-4 mb-4">
+          <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
             <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
-            <DatePicker value={viewDate} onChange={setViewDate} />
+            <div className="min-w-0 flex-1"><DatePicker value={viewDate} onChange={setViewDate} /></div>
           </div>
           <div className="flex items-center gap-2">
             <Select value={dayBulkStatus} onChange={setDayBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
@@ -436,7 +455,7 @@ export default function KedisiplinanManager() {
         </div>
 
         {loadingDay ? (
-          <div className="py-16 text-center text-gray-400 text-sm">Memuat jadwal hari ini...</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat jadwal hari ini...</div>
         ) : daySlots.length === 0 ? (
           <EmptyState icon={CalendarClock} title="Tidak Ada Jadwal" description="Tidak ada jadwal mengajar kelas X/XI pada tanggal ini (libur/akhir pekan)." />
         ) : (
@@ -451,7 +470,7 @@ export default function KedisiplinanManager() {
                 }, {})
               ).sort(([a], [b]) => a.localeCompare(b)).map(([className, items]) => (
                 <div key={className} className="bg-gray-50/60 rounded-xl border border-gray-100 overflow-hidden">
-                  <div className="px-3 py-2 bg-primary-900 text-white text-xs font-bold">{className}</div>
+                  <div className="px-3 py-2 border-b border-gray-100 bg-[#f5f6fa] text-primary-900 text-xs font-bold">{className}</div>
                   <div className="divide-y divide-gray-100">
                     {items.map(s => {
                       const key = groupKey(s.scheduleIds);
@@ -461,7 +480,7 @@ export default function KedisiplinanManager() {
                           <div key={key} className="p-3 space-y-1 opacity-60">
                             <p className="text-xs font-semibold text-primary-900">{jamKeLabel(s)} · {s.subject}</p>
                             <p className="text-xs text-gray-500 -mt-1">{s.teacherName}</p>
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium pt-1">
+                            <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium pt-1">
                               <Clock size={11} /> Belum waktunya — mulai jam {s.startTime}
                             </div>
                           </div>
@@ -471,6 +490,20 @@ export default function KedisiplinanManager() {
                         <div key={key} className="p-3 space-y-2">
                           <p className="text-xs font-semibold text-primary-900">{jamKeLabel(s)} · {s.subject}</p>
                           <p className="text-xs text-gray-500 -mt-1">{s.teacherName}</p>
+                          {s.statusHarian && s.statusHarian !== "HADIR" && (
+                            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5">
+                              <span className="text-xs font-semibold text-blue-700">
+                                Catatan TU: {s.statusHarian.replace("_", " ")}
+                              </span>
+                              {s.keteranganHarian && <span className="text-xs text-blue-600/80">· {s.keteranganHarian}</span>}
+                              {s.status !== s.statusHarian && (
+                                <button type="button" onClick={() => terapkanStatusHarian(s.teacherId, s.statusHarian!)}
+                                  className="ml-auto rounded-lg bg-blue-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-blue-700">
+                                  Terapkan ke semua jam
+                                </button>
+                              )}
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-2">
                             <Select value={s.status} onChange={v => setDaySlotField(key, "status", v)}
                               options={STATUS_OPTIONS_ROW}
@@ -495,7 +528,7 @@ export default function KedisiplinanManager() {
               {!daySaved && dirtyDayKeys.size > 0 && (
                 <p className="text-amber-600 text-xs font-medium">{dirtyDayKeys.size} baris belum disimpan</p>
               )}
-              <button onClick={handleSaveDay} disabled={savingDay || dirtyDayKeys.size === 0} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              <button onClick={handleSaveDay} disabled={savingDay || dirtyDayKeys.size === 0} className="btn-modal-save disabled:opacity-40 disabled:cursor-not-allowed">
                 {savingDay ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Semua
               </button>
             </div>
@@ -504,7 +537,7 @@ export default function KedisiplinanManager() {
       </div>
 
       {/* ===== Kehadiran Guru Piket — petugas piket ITU SENDIRI, bukan absensi mengajar ===== */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+      <div className="panel p-5 mb-5">
         <h3 className="font-heading font-semibold text-primary-900 mb-1 flex items-center gap-2">
           <CalendarClock size={16} className="text-primary-700" /> Kehadiran Guru Piket
         </h3>
@@ -516,7 +549,7 @@ export default function KedisiplinanManager() {
             className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400" />
         </div>
         {loadingDuty ? (
-          <div className="py-8 text-center text-gray-400 text-sm">Memuat...</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
         ) : dutyAttendance.length === 0 ? (
           <p className="text-sm text-gray-400 py-4">Tidak ada guru/staf yang terjadwal piket pada tanggal ini.</p>
         ) : (
@@ -526,7 +559,7 @@ export default function KedisiplinanManager() {
                 <div key={d.userId} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
                   <div>
                     <p className="text-xs font-semibold text-primary-900">{d.userName}</p>
-                    <p className="text-[11px] text-gray-400">{d.userNip ?? d.userRole}</p>
+                    <p className="text-xs text-gray-400">{d.userNip ?? d.userRole}</p>
                   </div>
                   <Select value={d.status} onChange={v => setDutyField(d.userId, "status", v)}
                     options={STATUS_OPTIONS_ROW}
@@ -541,7 +574,7 @@ export default function KedisiplinanManager() {
               {!dutySaved && dirtyDutyUserIds.size > 0 && (
                 <p className="text-amber-600 text-xs font-medium">{dirtyDutyUserIds.size} belum disimpan</p>
               )}
-              <button onClick={handleSaveDuty} disabled={savingDuty || dirtyDutyUserIds.size === 0} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              <button onClick={handleSaveDuty} disabled={savingDuty || dirtyDutyUserIds.size === 0} className="btn-modal-save disabled:opacity-40 disabled:cursor-not-allowed">
                 {savingDuty ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan
               </button>
             </div>
@@ -554,16 +587,16 @@ export default function KedisiplinanManager() {
         <PageSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="kisi-kartu kisi-kartu-3 mb-6">
             <StatTile color="emerald" value={hadir} label="Hadir" icon={CheckCircle2} />
             <StatTile color="amber" value={terlambat} label="Terlambat" icon={Clock} />
             <StatTile color="red" value={alpha} label="Alpha" icon={XCircle} />
           </div>
           {combined.length > 0 && (
             <div className="relative max-w-sm mb-4">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={historySearch} onChange={e => setHistorySearch(e.target.value)}
-                placeholder="Cari nama guru, NIP, atau kelas..." className="input-field pl-9 text-sm" />
+                placeholder="Cari nama guru, NIP, atau kelas..." className="input-field pl-10" />
             </div>
           )}
           {combined.length === 0 ? (
@@ -571,33 +604,33 @@ export default function KedisiplinanManager() {
           ) : filteredCombined.length === 0 ? (
             <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada catatan yang cocok dengan pencarian." />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <tr>
                       {["Guru", "Tanggal", "Kelas / Jam", "Status", "Ada Tugas", "Catatan", ""].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                        <th key={h} className="whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCombined.map(r => (
-                      <tr key={`${r.kind}-${r.id}`} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                        <td className="px-5 py-3.5">
+                      <tr key={`${r.kind}-${r.id}`}>
+                        <td>
                           <p className="font-semibold text-primary-900">{r.teacherName}</p>
                           <p className="text-gray-400 text-xs font-mono">{r.teacherNip}</p>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(r.date)}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{r.detail}</td>
-                        <td className="px-5 py-3.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[r.status]}`}>
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(r.date)}</td>
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{r.detail}</td>
+                        <td>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[r.status]}`}>
                             {STATUS_OPTIONS.find(s => s.value === r.status)?.label}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{r.kind === "slot" ? tugasLabel(r.hasTugas) : "-"}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs">{r.notes || "-"}</td>
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{r.kind === "slot" ? tugasLabel(r.hasTugas) : "-"}</td>
+                        <td className="text-gray-500 text-xs">{r.notes || "-"}</td>
+                        <td className="text-right whitespace-nowrap">
                           <button
                             onClick={() => {
                               if (r.kind === "daily") handleDeleteDaily(records.find(x => x.id === r.id)!);
@@ -620,7 +653,7 @@ export default function KedisiplinanManager() {
 
       {/* ===== Pengaturan Poin — cuma tampil kalau berwenang (ADMIN / Wakasek Penjamin Mutu / Kurikulum) ===== */}
       {canEditPoints && pointConfig && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-6">
+        <div className="panel p-5 mt-6">
           <h3 className="font-heading font-semibold text-primary-900 mb-1 flex items-center gap-2">
             <Coins size={16} className="text-primary-700" /> Pengaturan Poin Kedisiplinan
           </h3>
@@ -643,7 +676,7 @@ export default function KedisiplinanManager() {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleSavePoints} disabled={savingPoints} className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40">
+            <button onClick={handleSavePoints} disabled={savingPoints} className="btn-modal-save disabled:opacity-40">
               {savingPoints ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Poin
             </button>
             {pointsSaved && <span className="text-emerald-600 text-xs font-semibold">Tersimpan.</span>}
@@ -658,7 +691,7 @@ export default function KedisiplinanManager() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -692,7 +725,7 @@ export default function KedisiplinanManager() {
                 <div className="flex items-center gap-2">
                   <Select value={bulkStatus} onChange={setBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
                   <button type="button" onClick={applyBulkStatus} disabled={!bulkStatus}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-200 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                     Terapkan ke Semua Jam
                   </button>
                 </div>

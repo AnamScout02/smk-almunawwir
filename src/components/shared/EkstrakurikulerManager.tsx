@@ -110,7 +110,7 @@ export default function EkstrakurikulerManager() {
       footer={
         <>
           <button type="button" onClick={() => setCategoryModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-          <button type="button" onClick={handleAddCategory} disabled={savingCategory} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+          <button type="button" onClick={handleAddCategory} disabled={savingCategory} className="btn-modal-save flex-1">
             {savingCategory ? <Loader2 size={14} className="animate-spin" /> : null} Simpan
           </button>
         </>
@@ -127,14 +127,14 @@ export default function EkstrakurikulerManager() {
 
   if (!loading && ekskulList.length === 0) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-8 pt-16 lg:pt-8">
         <PageHeader
           icon={<Flag size={22} />}
           title="Ekstrakurikuler"
           description="Data anggota ekstrakurikuler"
         />
-        <div className="flex justify-end mb-5">
-          <button onClick={openAddCategory} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+        <div className="alat-aksi justify-end mb-5">
+          <button onClick={openAddCategory} className="btn-modal-save">
             <Plus size={15} /> Tambah Ekstrakurikuler
           </button>
         </div>
@@ -147,43 +147,47 @@ export default function EkstrakurikulerManager() {
   const activeEkskul = ekskulList.find(e => e.id === active);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Flag size={22} />}
         title="Ekstrakurikuler"
         description={activeEkskul ? `Anggota ${activeEkskul.name}` : "Data anggota ekstrakurikuler"}
       />
 
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        <button onClick={openAddCategory} className="inline-flex items-center gap-2 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition whitespace-nowrap">
-          <Plus size={15} /> Tambah Ekstrakurikuler
-        </button>
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap sm:ml-auto">
-          <Plus size={15} /> Tambah Anggota
-        </button>
-      </div>
-
-      {ekskulList.length > 0 && (
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 flex-wrap">
-          {ekskulList.map(e => (
-            <button key={e.id} onClick={() => setActive(e.id)}
-              className={`group flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${active === e.id ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
-              {e.name} ({e._count.members})
-              <span onClick={(ev) => { ev.stopPropagation(); handleDeleteCategory(e); }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 hover:text-red-600 transition-opacity" title="Hapus ekstrakurikuler">
-                <X size={12} />
-              </span>
-            </button>
-          ))}
+      <div className="baris-alat mb-5">
+        {ekskulList.length > 0 && (
+          <div className="alat-tab flex flex-wrap gap-1.5" aria-label="Daftar ekstrakurikuler">
+            {ekskulList.map(e => (
+              <button key={e.id} onClick={() => setActive(e.id)}
+                aria-pressed={active === e.id}
+                className={`group sentuh flex max-w-full items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${active === e.id ? "border-primary-700 bg-primary-700 text-white" : "border-gray-200 bg-white text-gray-600 hover:border-primary-100 hover:text-primary-700"}`}>
+                <span className="truncate">{e.name}</span>
+                <span className={`angka text-xs ${active === e.id ? "text-white/70" : "text-gray-400"}`}>{e._count.members}</span>
+                <span onClick={(ev) => { ev.stopPropagation(); handleDeleteCategory(e); }}
+                  role="button" aria-label={`Hapus ekstrakurikuler ${e.name}`}
+                  className={`${active === e.id ? "inline-flex" : "hidden sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100"} -mr-1 p-0.5 rounded-full hover:bg-red-100 hover:text-red-600 transition-opacity`} title="Hapus ekstrakurikuler">
+                  <X size={12} />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="alat-aksi">
+          <button onClick={openAddCategory} className="btn-modal-cancel">
+            <Plus size={15} /> Tambah Ekstrakurikuler
+          </button>
+          <button onClick={openAdd} className="btn-modal-save">
+            <Plus size={15} /> Tambah Anggota
+          </button>
         </div>
-      )}
+      </div>
 
       {loading ? (
         <PageSkeleton />
       ) : members.length === 0 ? (
         <EmptyState icon={Flag} title="Belum Ada Anggota" description="Tambahkan siswa sebagai anggota ekstrakurikuler ini." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="divide-y divide-gray-50">
             {members.map(m => (
               <div key={m.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-primary-50/30 transition-colors">
@@ -191,7 +195,7 @@ export default function EkstrakurikulerManager() {
                   <p className="font-semibold text-primary-900">{m.student.user.name}</p>
                   <p className="text-gray-400 text-xs">{m.student.class?.name ?? "—"} · {m.student.nis}</p>
                 </div>
-                {m.role && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200 whitespace-nowrap">{m.role}</span>}
+                {m.role && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 whitespace-nowrap">{m.role}</span>}
                 <button onClick={() => handleRemove(m)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Keluarkan">
                   <Trash2 size={14} />
                 </button>
@@ -208,7 +212,7 @@ export default function EkstrakurikulerManager() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : null} Simpan
             </button>
           </>

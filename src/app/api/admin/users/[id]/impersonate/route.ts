@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { createSession, setImpersonatorCookie } from "@/lib/session";
+import { mulaiMasukSebagai } from "@/lib/sesi-server";
 import { logActivity } from "@/lib/activity-log";
 import type { Role } from "@/types";
 
@@ -10,13 +10,18 @@ const ROLE_DASHBOARD: Record<Role, string> = {
   TAS: "/dashboard/admin",
   TEACHER: "/dashboard/teacher",
   STUDENT: "/dashboard/student",
+  PARENT: "/dashboard/parent",
 };
 
 /** "Masuk sebagai" akun lain — KHUSUS ADMIN (superadmin), sengaja TIDAK diloloskan TAS sekalipun
  * TAS bisa membuka halaman Akun Pengguna (lihat tas-access-guard.ts) — impersonasi adalah aksi
  * paling sensitif di sistem ini (bisa bertindak sebagai siapa pun tanpa tahu passwordnya), jadi
  * dibatasi lebih ketat drpd CRUD akun biasa. Target juga tidak boleh sesama ADMIN — supaya satu
- * admin tidak diam-diam bisa bertindak sebagai admin lain tanpa sepengetahuannya. */
+ * admin tidak diam-diam bisa bertindak sebagai admin lain tanpa sepengetahuannya.
+ *
+ * Sesi admin TIDAK diganti: baris UserSession yang sama hanya ditandai `impersonatingUserId`, dan
+ * token akses berikutnya membawa identitas target + `imp` (admin asli). Semua log aktivitas selama
+ * itu otomatis mencatat nama admin (lihat logActivity). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await verifyRole(["ADMIN"]);
@@ -32,9 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Tidak bisa masuk sebagai sesama akun Admin." }, { status: 403 });
     }
 
-    // Simpan identitas admin ASLI dulu sebelum cookie sesi ditimpa.
-    await setImpersonatorCookie({ userId: session.userId, name: session.name, email: session.email, role: session.role });
-    await createSession({ userId: target.id, name: target.name, email: target.email, role: target.role as Role });
+    await mulaiMasukSebagai(session, target);
 
     await logActivity(session, {
       action: "IMPERSONATE_START",

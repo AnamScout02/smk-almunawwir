@@ -131,9 +131,9 @@ Server ini sudah expose SSH ke internet lewat port forwarding MikroTik:
 
 | Tujuan | Dari luar (IP publik) | Diteruskan ke |
 |---|---|---|
-| SSH / VS Code | `103.194.175.54:2233` | `172.15.0.3:22` (CT ini) |
+| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `172.15.0.3:22` (CT ini) |
 
-Jadi dari laptop mana pun (bukan cuma dari LAN sekolah), VS Code bisa connect langsung ke port **2233** di IP publik **103.194.175.54**.
+Jadi dari laptop mana pun (bukan cuma dari LAN sekolah), VS Code bisa connect langsung ke port **<PORT-SSH-SERVER>** di IP publik **<IP-PUBLIK-SERVER>**.
 
 ### Langkah 1 — Install extension Remote-SSH
 
@@ -155,7 +155,7 @@ echo "isi-public-key-anda" >> ~/.ssh/authorized_keys
 ```
 Atau lebih gampang, dari laptop langsung pakai `ssh-copy-id` (kalau masih login pakai password):
 ```bash
-ssh-copy-id -p 2233 root@103.194.175.54
+ssh-copy-id -p <PORT-SSH-SERVER> root@<IP-PUBLIK-SERVER>
 ```
 
 ### Langkah 4 — Buat SSH config di laptop
@@ -163,7 +163,7 @@ ssh-copy-id -p 2233 root@103.194.175.54
 Edit/tambahkan di `~/.ssh/config` (laptop, buat file kalau belum ada):
 ```
 Host smk-almunawwir
-    HostName 103.194.175.54
+    HostName <IP-PUBLIK-SERVER>
     Port 2233
     User root
     IdentityFile ~/.ssh/id_ed25519

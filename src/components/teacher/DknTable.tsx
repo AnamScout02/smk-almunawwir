@@ -1,15 +1,24 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ClipboardList, Loader2, ClipboardPaste } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList, Loader2, ClipboardPaste, ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { useToast } from "@/components/shared/ToastProvider";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
+import { keteranganSingkatan, labelMapel } from "@/lib/singkatan-mapel";
 
 interface StudentRow { id: string; nis: string; name: string }
-interface DknData { class: { name: string; grade: number; major: { name: string } | null }; students: StudentRow[]; subjects: string[]; scores: Record<string, Record<string, number | null>> }
+interface DknData {
+  class: { name: string; grade: number; major: { name: string } | null }; students: StudentRow[]; subjects: string[]; singkatan?: Record<string, string>;
+  scores: Record<string, Record<string, number | null>>;
+  /** Kolom gabungan DPK/KK & sel yang nilainya otomatis (rapor gabungan / rata-rata DKN bagian lama). */
+  gabungan?: string[]; otomatis?: Record<string, Record<string, "rapor" | "bagian">>;
+}
 
 function generateSemesters(): { list: string[]; currentIndex: number } {
   const now = new Date();
@@ -23,7 +32,7 @@ function generateSemesters(): { list: string[]; currentIndex: number } {
 }
 const { list: SEMESTERS, currentIndex: CURRENT_SEMESTER_INDEX } = generateSemesters();
 
-export default function DknTable({ classId, logoUrl }: { classId: string; logoUrl?: string }) {
+export default function DknTable({ classId, logoUrl, backHref }: { classId: string; logoUrl?: string; backHref: string }) {
   const toast = useToast();
   const [semester, setSemester] = useState(SEMESTERS[CURRENT_SEMESTER_INDEX]);
   const [data, setData] = useState<DknData | null>(null);
@@ -32,6 +41,8 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [pasting, setPasting] = useState(false);
   const tableRef = useRef<HTMLTableElement>(null);
+
+  usePrintTitle(data ? buildPrintFilename("DKN", data.class.name, semester) : null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -45,6 +56,17 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
   async function handleSave(studentId: string, subject: string, raw: string) {
     const key = `${studentId}::${subject}`;
     const current = data?.scores[studentId]?.[subject] ?? null;
+    const otomatis = !!data?.otomatis?.[studentId]?.[subject];
+    // Kolom gabungan (DPK/KK): mengosongkan nilai ketikan wali = kembali ke nilai otomatis dari rapor.
+    if (raw.trim() === "" && data?.gabungan?.includes(subject) && current !== null && !otomatis) {
+      setSavingKey(key);
+      const r = await fetch(`/api/teacher/dkn/${classId}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ studentId, subject, semester }) }).catch(() => null);
+      setSavingKey(null);
+      if (!r?.ok) { toast.error("Gagal mengembalikan ke nilai otomatis."); return; }
+      toast.success("Kembali ke nilai otomatis dari rapor.");
+      load();
+      return;
+    }
     if (raw.trim() === "" || raw === String(current ?? "")) { setEdits(p => { const n = { ...p }; delete n[key]; return n; }); return; }
     const score = Number(raw);
     if (isNaN(score) || score < 0 || score > 100) { toast.error("Nilai harus angka 0-100."); return; }
@@ -55,7 +77,10 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
     });
     setSavingKey(null);
     if (!res.ok) { const d = await res.json(); toast.error(d.error || "Gagal menyimpan nilai"); return; }
-    setData(prev => prev ? { ...prev, scores: { ...prev.scores, [studentId]: { ...prev.scores[studentId], [subject]: score } } } : prev);
+    setData(prev => prev ? {
+      ...prev, scores: { ...prev.scores, [studentId]: { ...prev.scores[studentId], [subject]: score } },
+      otomatis: { ...prev.otomatis, [studentId]: Object.fromEntries(Object.entries(prev.otomatis?.[studentId] ?? {}).filter(([k]) => k !== subject)) },
+    } : prev);
     setEdits(p => { const n = { ...p }; delete n[key]; return n; });
   }
 
@@ -129,8 +154,12 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
     setData(prev => {
       if (!prev) return prev;
       const merged = { ...prev.scores };
-      for (const sid of Object.keys(newScores)) merged[sid] = { ...merged[sid], ...newScores[sid] };
-      return { ...prev, scores: merged };
+      const oto = { ...prev.otomatis };
+      for (const sid of Object.keys(newScores)) {
+        merged[sid] = { ...merged[sid], ...newScores[sid] };
+        oto[sid] = Object.fromEntries(Object.entries(oto[sid] ?? {}).filter(([k]) => !(k in newScores[sid]))); // tempelan = nilai ketikan
+      }
+      return { ...prev, scores: merged, otomatis: oto };
     });
     toast.success(`${updates.length} nilai tersimpan dari tempelan.${skipped ? ` (${skipped} dilewati krn bukan 0-100)` : ""}`);
   }
@@ -142,12 +171,15 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
   }
 
   return (
-    <div className="p-6 lg:p-8 print:p-0">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <style>{"@page { size: A4 landscape; margin: 1cm; }"}</style>
 
       <PageHeader icon={<ClipboardList size={22} />} title="DKN — Daftar Kumpulan Nilai"
         description={data ? `${data.class.name} · ${data.class.major?.name ?? "—"}` : "Memuat..."} printHidden />
       <div className="flex flex-wrap items-center gap-2 mb-5 print:hidden">
+        <Link href={backHref} className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
+        </Link>
         <div className="w-56">
           <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
         </div>
@@ -155,12 +187,12 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
           <ClipboardPaste size={13} className="shrink-0" />
           Klik nilai untuk mengubah, panah/Enter utk pindah sel — bisa tempel (paste) blok nilai langsung dari Excel.
         </span>
-        {pasting && <span className="text-xs text-primary-600 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Menyimpan tempelan...</span>}
+        {pasting && <span className="text-xs text-primary-700 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Menyimpan tempelan...</span>}
         <div className="sm:ml-auto"><PrintButton /></div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
       ) : !data || data.students.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Belum Ada Siswa" description="Kelas ini belum punya siswa aktif." />
       ) : (
@@ -185,7 +217,7 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
                     <th className="border border-gray-200 px-3 py-2 text-left min-w-[160px]">Nama Siswa</th>
                     <th className="border border-gray-200 px-2 py-2 text-center w-24">NIS</th>
                     {data.subjects.map(s => (
-                      <th key={s} className="border border-gray-200 px-2 py-2 text-center text-xs whitespace-nowrap">{s}</th>
+                      <th key={s} title={s} className="border border-gray-200 px-2 py-2 text-center text-xs whitespace-nowrap">{labelMapel(s, data.singkatan)}</th>
                     ))}
                     <th className="border border-gray-200 px-2 py-2 text-center w-20">Rata-rata</th>
                   </tr>
@@ -213,9 +245,11 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
                                 onPaste={e => handlePaste(e, i, ci)}
                                 disabled={savingKey === key || pasting}
                                 placeholder="—"
-                                className={`w-14 text-center text-sm py-1 border-0 focus:ring-1 focus:ring-primary-400 rounded outline-none print:appearance-none ${
+                                className={`w-14 text-center text-sm py-1 border-0 focus:ring-1 focus:ring-primary-500 rounded outline-none print:appearance-none ${
                                   cell !== null && cell < 75 ? "text-red-600" : "text-gray-700"
-                                } ${savingKey === key ? "opacity-40" : ""}`}
+                                } ${data.otomatis?.[st.id]?.[subject] ? "italic !text-gray-500 print:!text-gray-900 print:not-italic" : ""} ${savingKey === key ? "opacity-40" : ""}`}
+                                title={data.otomatis?.[st.id]?.[subject] === "rapor" ? "Otomatis dari nilai rapor gabungan (Form Nilai Rapor) — ketik untuk menimpa"
+                                  : data.otomatis?.[st.id]?.[subject] === "bagian" ? "Rata-rata nilai DKN bagian yang lama — ketik untuk menimpa" : undefined}
                               />
                             </td>
                           );
@@ -229,6 +263,15 @@ export default function DknTable({ classId, logoUrl }: { classId: string; logoUr
             </div>
           )}
 
+          {!!data.gabungan?.length && (
+            <p className="text-xs text-gray-600 mt-3 print:hidden">
+              <span className="font-semibold">{data.gabungan.join(" & ")}</span> = satu kolom untuk semua bagiannya, terisi otomatis
+              (<i className="text-gray-500">miring</i>) dari nilai rapor gabungan di Form Nilai Rapor. Ketik untuk menimpa; kosongkan sel untuk kembali ke nilai otomatis.
+            </p>
+          )}
+          {keteranganSingkatan(data.subjects, data.singkatan) && (
+            <p className="text-xs text-gray-600 mt-3 print:text-[9pt]"><span className="font-semibold">Keterangan:</span> {keteranganSingkatan(data.subjects, data.singkatan)}</p>
+          )}
           <p className="text-[11px] text-gray-400 mt-3 print:hidden">
             Nilai bertanda merah &lt; 75. DKN murni input manual wali kelas — kolom kosong berarti memang belum diisi, tidak dihitung otomatis dari nilai manapun.
           </p>

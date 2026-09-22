@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/dal";
-import { createSession, getImpersonatorSession, clearImpersonatorCookie } from "@/lib/session";
+import { akhiriMasukSebagai } from "@/lib/sesi-server";
 import { logActivity } from "@/lib/activity-log";
 
 /** Kembali dari "Masuk sebagai" ke akun Admin asli. SENGAJA TIDAK pakai verifyRole(["ADMIN"]) —
- * sesi aktif saat ini adalah akun yang sedang diimpersonasi (bisa TEACHER/STUDENT/TAS), bukan
- * ADMIN. Otorisasi sebenarnya dari validitas cookie `impersonator` itu sendiri (cuma pernah diisi
- * oleh endpoint impersonate/start yang sudah membatasi ke ADMIN). */
+ * identitas aktif saat ini adalah akun yang sedang dimasuki (bisa TEACHER/STUDENT/TAS). Otorisasi
+ * sebenarnya dari baris UserSession: `imp` hanya pernah diisi endpoint impersonate yang sudah
+ * membatasi ke ADMIN, dan pemilik barisnya tetap akun admin tersebut. */
 export async function POST() {
-  const current = await verifySession(); // pastikan ada sesi aktif apa pun, bukan request nyasar
-  const admin = await getImpersonatorSession();
-  if (!admin?.userId) {
+  const current = await verifySession();
+  if (!current.imp) {
     return NextResponse.json({ error: "Tidak sedang masuk sebagai akun lain." }, { status: 400 });
   }
 
-  await createSession({ userId: admin.userId, name: admin.name, email: admin.email, role: admin.role });
-  await clearImpersonatorCookie();
+  const admin = await akhiriMasukSebagai(current);
+  if (!admin) return NextResponse.json({ error: "Sesi tidak dikenal." }, { status: 400 });
 
-  await logActivity(admin, {
+  await logActivity({ userId: admin.id, name: admin.name, role: admin.role }, {
     action: "IMPERSONATE_STOP",
     entity: "User",
     entityId: current.userId,

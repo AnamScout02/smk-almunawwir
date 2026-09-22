@@ -4,8 +4,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Loader2, Building2, Calendar, MessageSquare, Save, Star } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import PanelPklHumas from "@/components/pkl/PanelPklHumas";
 
-interface JournalEntry { id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null }
+interface JournalEntry { id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null; lat: number | null; lng: number | null; akurasi: number | null }
 
 interface InternshipDetail {
   id: string;
@@ -89,22 +90,22 @@ export default function TeacherPklDetailPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Briefcase size={22} />}
         title={data.student.user.name}
         description={`${data.student.class?.name ?? "—"} · ${data.student.major?.name ?? "—"} · NIS ${data.student.nis}`}
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/teacher/pkl" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/teacher/pkl" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="panel p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Building2 size={16} className="text-primary-600" />
+          <Building2 size={16} className="text-primary-700" />
           <h3 className="font-heading font-semibold text-navy">Informasi PKL</h3>
           <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_LABEL[data.status]?.badge ?? ""}`}>
             {STATUS_LABEL[data.status]?.label ?? data.status}
@@ -118,7 +119,7 @@ export default function TeacherPklDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="panel p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Star size={16} className="text-gold" />
           <h3 className="font-heading font-semibold text-navy">Nilai PKL</h3>
@@ -129,14 +130,16 @@ export default function TeacherPklDetailPage() {
             <input type="number" min={0} max={100} value={score} onChange={e => setScore(e.target.value)}
               placeholder="—" className="input-field" />
           </div>
-          <button onClick={saveScore} disabled={savingScore} className="btn-gold flex items-center gap-2 text-sm">
+          <button onClick={saveScore} disabled={savingScore} className="btn-modal-save">
             {savingScore ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Nilai
           </button>
           {scoreSaved && <p className="text-emerald-600 text-sm font-semibold self-center">✓ Tersimpan</p>}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <PanelPklHumas internshipId={data.id} siswa={data.student.user.name} perusahaan={data.company} sertifikatHref={`/dashboard/teacher/pkl/${studentId}/sertifikat`} />
+
+      <div className="panel p-5">
         <h3 className="font-heading font-semibold text-navy mb-4">Jurnal Harian</h3>
         {data.journal.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">Siswa belum mengisi jurnal harian.</p>
@@ -151,6 +154,11 @@ export default function TeacherPklDetailPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
                     <Calendar size={12} /> {fmt(entry.date)}
+                    {entry.lat != null && entry.lng != null && (
+                      <a href={`https://www.google.com/maps?q=${entry.lat},${entry.lng}`} target="_blank" rel="noopener noreferrer" className="ml-2 font-medium text-primary-700 hover:underline">
+                        Lokasi{entry.akurasi ? ` ±${entry.akurasi} m` : ""}
+                      </a>
+                    )}
                   </div>
                   <p className="text-sm text-gray-700 mb-2">{entry.activity}</p>
                   <div className="flex gap-2">

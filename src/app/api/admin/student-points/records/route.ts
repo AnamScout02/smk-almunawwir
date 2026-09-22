@@ -1,11 +1,14 @@
+import { periksaPanggilanOtomatis } from "@/lib/panggilan-ortu";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { kirimLatar } from "@/lib/push-server";
+import { beritahuPoin } from "@/lib/notifikasi-kejadian";
 import { assertStudentPointsFull, assertPiketOrKesiswaanBk } from "@/lib/kesiswaan-guard";
+import { bagianWib } from "@/lib/waktu-wib";
 
 function currentSemester(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const { tahun: year, bulan: month } = bagianWib(now); // WIB, bukan jam server (UTC)
   const isGanjil = month >= 7;
   const tahunAjaran = isGanjil ? `${year}/${year + 1}` : `${year - 1}/${year}`;
   return isGanjil ? `Ganjil ${tahunAjaran}` : `Genap ${tahunAjaran}`;
@@ -107,6 +110,9 @@ export async function POST(req: Request) {
         recordedByName: session.name, recordedByRole: session.role,
       },
     });
+    kirimLatar(() => beritahuPoin(record.id)); // notifikasi orang tua (pelanggaran/prestasi)
+    // Poin melewati ambang tingkat sanksi → draf panggilan orang tua otomatis (17 Sep 2026).
+    if (kind === "PELANGGARAN") kirimLatar(() => periksaPanggilanOtomatis(studentId));
     return Response.json(record, { status: 201 });
   } catch (e) {
     if (e instanceof Error && e.message === "FORBIDDEN") {

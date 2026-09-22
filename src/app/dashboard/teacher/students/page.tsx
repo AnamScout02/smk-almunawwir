@@ -30,7 +30,7 @@ export default async function TeacherStudentsPage() {
   const classes = teacher?.homeroomOf ?? [];
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Users size={22} />}
         title="Daftar Siswa"
@@ -48,25 +48,24 @@ export default async function TeacherStudentsPage() {
                 <div className="py-10 text-center text-gray-400 text-sm">Belum ada siswa di kelas ini.</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="data-table">
                     <thead>
-                      <tr className="border-b border-primary-100"
-                        style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-10">#</th>
-                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">NIS</th>
-                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
-                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">NISN</th>
-                        <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">Email</th>
+                      <tr>
+                        <th className="w-10">#</th>
+                        <th>NIS</th>
+                        <th>Nama Siswa</th>
+                        <th className="hidden md:table-cell">NISN</th>
+                        <th className="hidden lg:table-cell">Email</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cls.students.map((s, i) => (
-                        <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                          <td className="px-5 py-3.5 text-gray-400 text-xs">{i + 1}</td>
-                          <td className="px-5 py-3.5 font-mono text-xs text-gray-600">{s.nis}</td>
-                          <td className="px-5 py-3.5 font-semibold text-primary-900">{s.user.name}</td>
-                          <td className="px-5 py-3.5 font-mono text-xs text-gray-400 hidden md:table-cell">{s.nisn ?? "—"}</td>
-                          <td className="px-5 py-3.5 text-gray-400 text-xs hidden lg:table-cell">{s.user.email}</td>
+                        <tr key={s.id}>
+                          <td className="text-gray-400 text-xs">{i + 1}</td>
+                          <td className="font-mono text-xs text-gray-600">{s.nis}</td>
+                          <td className="font-semibold text-primary-900">{s.user.name}</td>
+                          <td className="font-mono text-xs text-gray-400 hidden md:table-cell">{s.nisn ?? "—"}</td>
+                          <td className="text-gray-400 text-xs hidden lg:table-cell">{s.user.email}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -7,6 +7,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import { buildPrintFilename } from "@/lib/print-filename";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ classId?: string }> }) {
+  const { classId } = await searchParams;
+  const cls = classId ? await prisma.class.findUnique({ where: { id: classId }, select: { name: true } }) : null;
+  return { title: { absolute: buildPrintFilename("Jadwal-NonBlok", cls?.name) } };
+}
 
 const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 const DAY_LABEL: Record<string, string> = {
@@ -26,11 +33,14 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
   if (!activeClass) {
     return (
       <div className="p-8">
-        <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center gap-3 -mx-8 -mt-8 mb-6">
-          <Link href="/dashboard/admin/schedules/nonblok" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowLeft size={16} />
+        <div className="print:hidden sticky top-0 z-30 relative overflow-hidden text-white px-6 py-4 flex items-center gap-3 -mx-8 -mt-8 mb-6"
+          style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+          <Link href="/dashboard/admin/schedules/nonblok" className="relative flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
+            <ArrowLeft size={16} /> Kembali
           </Link>
-          <h1 className="font-heading font-bold">Cetak Jadwal Non-Blok per Kelas</h1>
+          <h1 className="relative font-heading font-bold">Cetak Jadwal Non-Blok per Kelas</h1>
         </div>
         <p className="text-sm text-gray-500 mb-3">Pilih kelas yang mau dicetak:</p>
         <div className="flex flex-wrap gap-2">
@@ -72,10 +82,13 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
 
   return (
     <>
-      <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/admin/schedules/nonblok" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowLeft size={16} />
+      <div className="print:hidden sticky top-0 z-30 relative overflow-hidden text-white px-6 py-4 flex items-center justify-between"
+        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        <div className="relative flex items-center gap-3">
+          <Link href="/dashboard/admin/schedules/nonblok" className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
+            <ArrowLeft size={16} /> Kembali
           </Link>
           <div>
             <h1 className="font-heading font-bold">Cetak Jadwal Non-Blok — {activeClass.name}</h1>
@@ -85,7 +98,7 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
             </Link>
           </div>
         </div>
-        <PrintButton />
+        <div className="relative"><PrintButton /></div>
       </div>
 
       <div className="print-doc bg-white relative p-6 print:p-2">

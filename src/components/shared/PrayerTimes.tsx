@@ -92,7 +92,7 @@ export default function PrayerTimes() {
                   : "bg-white/5 border border-white/5 hover:bg-white/10"
               }`}>
               {isNext && (
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-primary-900 text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap leading-none">
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-primary-900 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap leading-none">
                   Berikutnya
                 </span>
               )}

@@ -1,36 +1,43 @@
+import type { Viewport } from "next";
+
+/** TAMPILAN APLIKASI DIKUNCI (18 September 2026, permintaan user): di dalam portal, halaman tidak
+ * bisa diperbesar/diperkecil dengan cubitan dua jari maupun ketuk ganda, supaya tata letaknya tidak
+ * bergeser saat dipakai bergantian di HP sekolah. Situs publik tidak dikunci. */
+export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, minimumScale: 1, userScalable: false };
+
 import { verifyRole } from "@/lib/dal";
 import { getSettings } from "@/lib/site-settings";
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import PortalShell from "@/components/ujian/PortalShell";
+import { MENU_PUSAT_UJIAN } from "@/lib/menu-portal";
+import { prisma } from "@/lib/prisma";
+import { bolehAturUjian } from "@/lib/kegiatan-ujian-server";
 
-// Portal khusus & mandiri untuk staf (Admin/TAS/Guru) mengelola Ujian Online (CBT) — dipisah dari
-// /dashboard/admin & /dashboard/teacher supaya jadi "aplikasi sendiri" yang lengkap (Ringkasan, Daftar
-// Ujian, Bank Soal, Hasil & Analitik), bukan sekadar 1 menu di antara puluhan menu dashboard lain.
+export const dynamic = "force-dynamic";
+
+/** PORTAL PETUGAS UJIAN — berdiri sendiri di luar /dashboard, supaya proktor/operator yang masuk
+ * ke sini langsung berada di "ruang ujian" tanpa menu dashboard lain. Lihat PortalShell. */
 export default async function PusatUjianLayout({ children }: { children: React.ReactNode }) {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  const s = await getSettings(["logo.emblem"]);
-  const backHref = session.role === "TEACHER" ? "/dashboard/teacher" : "/dashboard/admin";
+  const [s, aktif] = await Promise.all([
+    getSettings(["logo.full_white", "school.name"]),
+    prisma.kegiatanUjian.findMany({ where: { aktif: true }, select: { singkatan: true }, orderBy: { tanggalMulai: "asc" } }).catch(() => []),
+  ]);
+  const kembali = session.role === "TEACHER" ? "/dashboard/teacher" : "/dashboard/admin";
+  const pengatur = session.role === "TEACHER" && await bolehAturUjian(session).catch(() => false);
+  const peran = pengatur ? "Wakil Kepala Kurikulum" : session.role === "TEACHER" ? "Guru" : session.role === "TAS" ? "Tata Usaha" : "Administrator";
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
-      <header className="relative overflow-hidden px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg print:hidden"
-        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-        <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-        />
-        <div className="flex items-center gap-2.5 relative">
-          <Image src={s["logo.emblem"]} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
-          <div>
-            <span className="font-heading font-bold text-white text-sm block leading-tight">Pusat Ujian Online</span>
-            <span className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">CBT — SMK Al Munawwir IIBS</span>
-          </div>
-        </div>
-        <Link href={backHref} className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs font-semibold transition-colors relative">
-          <ArrowLeft size={14} /> Kembali ke Dashboard
-        </Link>
-      </header>
-      <main>{children}</main>
-    </div>
+    <PortalShell
+      logoUrl={s["logo.full_white"]}
+      judul="Pusat Ujian Online"
+      subjudul={`${s["school.name"] || "SMK Al Munawwir IIBS"} · ${aktif.length ? `Kegiatan aktif: ${aktif.map(k => k.singkatan).join(" · ")}` : "Computer Based Test"}`}
+      nama={session.name}
+      peran={`${peran} · ${pengatur || session.role === "ADMIN" ? "Pengatur Ujian" : "Proktor"}`}
+      kembaliHref={kembali}
+      kembaliLabel="Dashboard"
+      menu={MENU_PUSAT_UJIAN}
+    >
+      {children}
+    </PortalShell>
   );
 }

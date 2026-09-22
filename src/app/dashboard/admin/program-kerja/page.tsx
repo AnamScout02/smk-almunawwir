@@ -94,23 +94,27 @@ export default function ProgramKerjaAdminPage() {
   const selesai = items.filter(i => i.status === "SELESAI").length;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<ListChecks size={22} />}
         title="Program Kerja"
         description="Program kerja seluruh jabatan struktural — guru & staf"
       />
 
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <Select className="w-56" value={filterJabatan} onChange={setFilterJabatan}
-          options={[{ value: "", label: "Semua Jabatan" }, ...jabatanList.map(j => ({ value: j.id, label: j.name }))]} />
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap sm:ml-auto">
-          <Plus size={15} /> Tambah Program
-        </button>
+      <div className="baris-alat mb-5">
+        <div className="alat-saring">
+          <Select value={filterJabatan} onChange={setFilterJabatan}
+            options={[{ value: "", label: "Semua Jabatan" }, ...jabatanList.map(j => ({ value: j.id, label: j.name }))]} />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={openAdd} className="btn-modal-save">
+            <Plus size={15} /> Tambah Program
+          </button>
+        </div>
       </div>
 
       {!loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="kisi-kartu kisi-kartu-4 mb-6">
           <StatTile color="primary" value={total} label="Total Program" icon={ListChecks} />
           <StatTile color="gray" value={direncanakan} label="Direncanakan" icon={Clock} />
           <StatTile color="blue" value={berjalan} label="Berjalan" icon={PlayCircle} />
@@ -125,35 +129,35 @@ export default function ProgramKerjaAdminPage() {
       ) : items.length === 0 ? (
         <EmptyState icon={ListChecks} title="Belum Ada Program Kerja" description="Tambahkan program kerja untuk jabatan struktural." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                <tr>
                   {["Jabatan", "Judul", "Tanggal", "Status", "Dibuat oleh", ""].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                    <th key={h} className="whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map(item => (
-                  <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{item.jabatan.name}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={item.id}>
+                    <td className="text-gray-500 text-xs whitespace-nowrap">{item.jabatan.name}</td>
+                    <td>
                       <p className="font-semibold text-primary-900">{item.title}</p>
                       {item.description && <p className="text-gray-400 text-xs mt-0.5 line-clamp-1">{item.description}</p>}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="text-gray-500 text-xs whitespace-nowrap">
                       {fmt(item.tanggalMulai)}{item.tanggalSelesai ? ` – ${fmt(item.tanggalSelesai)}` : ""}
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.status] ?? STATUS_BADGE.DIRENCANAKAN}`}>
+                    <td>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.status] ?? STATUS_BADGE.DIRENCANAKAN}`}>
                         {STATUS_OPTIONS.find(s => s.value === item.status)?.label ?? item.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">{item.createdByName}</td>
-                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                    <td className="text-gray-400 text-xs whitespace-nowrap">{item.createdByName}</td>
+                    <td className="text-right whitespace-nowrap">
+                      <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                         <Edit2 size={14} />
                       </button>
                       <button onClick={() => handleDelete(item)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
@@ -175,7 +179,7 @@ export default function ProgramKerjaAdminPage() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>

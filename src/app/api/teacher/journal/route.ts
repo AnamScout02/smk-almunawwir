@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { pesanNilaiTerkunci } from "@/lib/rapor-verifikasi";
 
 async function getTeacherId(email: string) {
   const teacher = await prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
@@ -95,6 +96,12 @@ export async function POST(req: Request) {
       where: { teacherId, classId, subject: { name: subject } },
     });
     if (!assignment) return Response.json({ error: "Anda tidak mengajar kelas/mapel ini" }, { status: 403 });
+
+    // Nilai yang sudah dikunci wali kelas untuk rapor tidak boleh berubah — cek semester yang disimpan DAN semester jurnal lama
+    // pada tanggal itu (simpan ulang menghapus jurnal lama).
+    const lama = await prisma.teachingJournal.findMany({ where: { teacherId, classId, subject, date: { gte: date, lt: nextDay } }, select: { semester: true } });
+    const terkunci = await pesanNilaiTerkunci(classId, [semester, ...lama.map(j => j.semester)]);
+    if (terkunci) return Response.json({ error: terkunci }, { status: 409 });
 
     await prisma.$transaction(async (tx) => {
       await tx.teachingJournal.deleteMany({ where: { teacherId, classId, subject, date: { gte: date, lt: nextDay } } });

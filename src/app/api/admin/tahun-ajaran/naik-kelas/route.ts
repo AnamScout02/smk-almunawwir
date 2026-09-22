@@ -4,139 +4,146 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
-  await verifyRole(["ADMIN"]);
+interface PlanEntry {
+  studentId: string;
+  name: string;
+  action: "PROMOTE" | "GRADUATE" | "SKIP" | "ERROR";
+  fromClass: string | null;
+  toClassId?: string;
+  toClassName?: string;
+  reason?: string;
+  pklWarning?: boolean;
+}
 
-  // 1. Ambil tahun ajaran aktif
-  const activeYear = await prisma.academicYear.findFirst({
-    where: { isActive: true },
-  });
+/** Hitung RENCANA kenaikan kelas (siapa naik ke mana, siapa lulus, siapa gagal/dilewati) — TANPA
+ * menulis apapun ke database. Dipakai BERSAMA oleh GET (pratinjau/dry-run, boleh dipanggil
+ * berkali-kali dengan aman) dan POST (eksekusi sungguhan) supaya keduanya selalu konsisten satu
+ * sumber logika, tidak ada risiko preview bilang A tapi eksekusi lakukan B. */
+async function buildPlan() {
+  const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
+  if (!activeYear) return { activeYear: null, plan: [] as PlanEntry[] };
 
-  if (!activeYear) {
-    return NextResponse.json(
-      { error: "Tidak ada tahun ajaran aktif. Aktifkan tahun ajaran terlebih dahulu." },
-      { status: 400 }
-    );
-  }
-
-  // 2. Ambil semua siswa AKTIF beserta kelas dan jurusan
   const activeStudents = await prisma.student.findMany({
     where: { studentStatus: "AKTIF" },
-    include: {
-      class: {
-        include: { major: true },
-      },
-      user: { select: { name: true } },
-    },
+    include: { class: { include: { major: true } }, user: { select: { name: true } } },
   });
 
-  const promoted: string[] = [];
-  const graduated: string[] = [];
-  const skipped: string[] = [];
-  const errors: string[] = [];
-  // Sekadar PERINGATAN (bukan blokir) — siswa kelas XI yang naik ke XII tapi belum py
-  // PklRegistration berstatus APPROVED tetap dinaikkan seperti biasa, cuma dicatat di sini
-  // supaya admin/Wakasek Humas bisa tindak lanjuti manual.
-  const pklWarnings: string[] = [];
   const approvedPklStudentIds = new Set(
     (await prisma.pklRegistration.findMany({ where: { status: "APPROVED" }, select: { studentId: true } }))
       .map(r => r.studentId)
   );
 
-  // 3. Snapshot ke StudentClassHistory dalam satu transaction
+  const plan: PlanEntry[] = [];
+  for (const student of activeStudents) {
+    const base = { studentId: student.id, name: student.user.name, fromClass: student.class?.name ?? null };
+    if (!student.class) { plan.push({ ...base, action: "SKIP", reason: "Siswa tidak punya kelas" }); continue; }
+
+    const grade = student.class.grade;
+    const majorId = student.class.majorId;
+
+    if (grade === 12) {
+      plan.push({ ...base, action: "GRADUATE" });
+    } else if (grade === 11) {
+      const nextClass = await prisma.class.findFirst({ where: { grade: 12, majorId } });
+      if (nextClass) {
+        plan.push({ ...base, action: "PROMOTE", toClassId: nextClass.id, toClassName: nextClass.name, pklWarning: !approvedPklStudentIds.has(student.id) });
+      } else {
+        plan.push({ ...base, action: "ERROR", reason: `Kelas grade 12 untuk jurusan ini tidak ditemukan` });
+      }
+    } else if (grade === 10) {
+      const nextClass = await prisma.class.findFirst({ where: { grade: 11, majorId } });
+      if (nextClass) {
+        plan.push({ ...base, action: "PROMOTE", toClassId: nextClass.id, toClassName: nextClass.name });
+      } else {
+        plan.push({ ...base, action: "ERROR", reason: `Kelas grade 11 untuk jurusan ini tidak ditemukan` });
+      }
+    } else {
+      plan.push({ ...base, action: "SKIP", reason: `Grade ${grade} tidak diproses` });
+    }
+  }
+
+  return { activeYear, plan };
+}
+
+/** Pratinjau (dry-run) — hitung siapa akan naik/lulus/dilewati TANPA mengubah data apapun. Aman
+ * dipanggil berkali-kali (mis. tiap kali admin buka modal konfirmasi), supaya admin bisa cek dulu
+ * sebelum benar-benar menekan "Proses Sekarang". */
+export async function GET() {
+  await verifyRole(["ADMIN"]);
+  const { activeYear, plan } = await buildPlan();
+  if (!activeYear) {
+    return NextResponse.json({ error: "Tidak ada tahun ajaran aktif. Aktifkan tahun ajaran terlebih dahulu." }, { status: 400 });
+  }
+  return NextResponse.json({
+    dryRun: true,
+    promoted: plan.filter(p => p.action === "PROMOTE"),
+    graduated: plan.filter(p => p.action === "GRADUATE"),
+    skipped: plan.filter(p => p.action === "SKIP"),
+    errors: plan.filter(p => p.action === "ERROR").map(p => `${p.name}: ${p.reason}`),
+    pklWarnings: plan.filter(p => p.action === "PROMOTE" && p.pklWarning).map(p => p.name),
+  });
+}
+
+export async function POST() {
+  await verifyRole(["ADMIN"]);
+
+  const { activeYear, plan } = await buildPlan();
+  if (!activeYear) {
+    return NextResponse.json({ error: "Tidak ada tahun ajaran aktif. Aktifkan tahun ajaran terlebih dahulu." }, { status: 400 });
+  }
+
+  const promotedPlan = plan.filter(p => p.action === "PROMOTE");
+  const graduatedPlan = plan.filter(p => p.action === "GRADUATE");
+  const errors = plan.filter(p => p.action === "ERROR").map(p => `${p.name}: ${p.reason}`);
+  const pklWarnings = promotedPlan.filter(p => p.pklWarning).map(p => p.name);
+
+  // Snapshot SEMUA siswa aktif (termasuk yg di-skip/error) ke riwayat tahun ajaran aktif — perilaku
+  // sama seperti sebelumnya, tidak berubah.
+  const activeStudents = await prisma.student.findMany({
+    where: { studentStatus: "AKTIF" },
+    include: { class: { include: { major: true } } },
+  });
   await prisma.$transaction(
-    activeStudents.map((student) =>
+    activeStudents.map(student =>
       prisma.studentClassHistory.upsert({
-        where: {
-          studentId_academicYearId: {
-            studentId: student.id,
-            academicYearId: activeYear.id,
-          },
-        },
+        where: { studentId_academicYearId: { studentId: student.id, academicYearId: activeYear.id } },
         update: {
-          classId: student.classId,
-          status: student.studentStatus ?? "AKTIF",
-          grade: student.class?.grade ?? null,
-          majorName: student.class?.major?.name ?? null,
-          className: student.class?.name ?? null,
+          classId: student.classId, status: student.studentStatus ?? "AKTIF",
+          grade: student.class?.grade ?? null, majorName: student.class?.major?.name ?? null, className: student.class?.name ?? null,
         },
         create: {
-          studentId: student.id,
-          classId: student.classId,
-          academicYearId: activeYear.id,
-          status: student.studentStatus ?? "AKTIF",
-          grade: student.class?.grade ?? null,
-          majorName: student.class?.major?.name ?? null,
-          className: student.class?.name ?? null,
+          studentId: student.id, classId: student.classId, academicYearId: activeYear.id, status: student.studentStatus ?? "AKTIF",
+          grade: student.class?.grade ?? null, majorName: student.class?.major?.name ?? null, className: student.class?.name ?? null,
         },
       })
     )
   );
 
-  // 4. Proses naik kelas per siswa (di luar transaction, satu per satu)
-  for (const student of activeStudents) {
-    if (!student.class) {
-      skipped.push(student.id);
-      continue;
-    }
-
-    const grade = student.class.grade;
-    const majorId = student.class.majorId;
-
+  // Eksekusi promosi/kelulusan sesuai rencana yang SUDAH divalidasi buildPlan() di atas — per
+  // siswa dibungkus try/catch sendiri (bukan satu try besar) supaya SATU siswa gagal (mis. race
+  // condition data) tidak menggagalkan proses siswa lain yang seharusnya tetap bisa naik/lulus.
+  let promotedCount = 0, graduatedCount = 0;
+  for (const p of graduatedPlan) {
     try {
-      if (grade === 12) {
-        // Luluskan siswa grade 12
-        await prisma.student.update({
-          where: { id: student.id },
-          data: {
-            studentStatus: "LULUS",
-            exitDate: new Date(),
-          },
-        });
-        graduated.push(student.id);
-      } else if (grade === 11) {
-        // Cari kelas grade 12 dengan majorId sama
-        const nextClass = await prisma.class.findFirst({
-          where: { grade: 12, majorId },
-        });
-        if (nextClass) {
-          await prisma.student.update({
-            where: { id: student.id },
-            data: { classId: nextClass.id },
-          });
-          promoted.push(student.id);
-          if (!approvedPklStudentIds.has(student.id)) {
-            pklWarnings.push(student.user.name);
-          }
-        } else {
-          errors.push(`Kelas grade 12 untuk jurusan majorId ${majorId} tidak ditemukan (siswa ${student.id})`);
-        }
-      } else if (grade === 10) {
-        // Cari kelas grade 11 dengan majorId sama
-        const nextClass = await prisma.class.findFirst({
-          where: { grade: 11, majorId },
-        });
-        if (nextClass) {
-          await prisma.student.update({
-            where: { id: student.id },
-            data: { classId: nextClass.id },
-          });
-          promoted.push(student.id);
-        } else {
-          errors.push(`Kelas grade 11 untuk jurusan majorId ${majorId} tidak ditemukan (siswa ${student.id})`);
-        }
-      } else {
-        skipped.push(student.id);
-      }
+      await prisma.student.update({ where: { id: p.studentId }, data: { studentStatus: "LULUS", exitDate: new Date() } });
+      graduatedCount++;
     } catch (err) {
-      errors.push(`Error siswa ${student.id}: ${err instanceof Error ? err.message : String(err)}`);
+      errors.push(`Gagal meluluskan ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  for (const p of promotedPlan) {
+    try {
+      await prisma.student.update({ where: { id: p.studentId }, data: { classId: p.toClassId } });
+      promotedCount++;
+    } catch (err) {
+      errors.push(`Gagal menaikkan ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
   return NextResponse.json({
-    promoted: promoted.length,
-    graduated: graduated.length,
-    skipped: skipped.length,
+    promoted: promotedCount,
+    graduated: graduatedCount,
+    skipped: plan.filter(p => p.action === "SKIP").length,
     errors,
     pklWarnings,
   });

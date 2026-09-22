@@ -153,7 +153,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
         description="Konten ini tampil di halaman /programs di website"
       />
 
-      <div className="flex justify-end mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <button onClick={() => router.push("/dashboard/admin/majors")}
           className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
           <ArrowLeft size={16} /> Kembali
@@ -162,7 +162,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="panel p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy">Konten Utama</h2>
             {error && <p className="error-msg">{error}</p>}
             <div>
@@ -203,17 +203,17 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="panel p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy">Kompetensi yang Dipelajari</h2>
             <ListEditor label="" items={major.skills} onChange={v => update("skills", v)} placeholder="cth: Instalasi & Konfigurasi Jaringan Komputer" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="panel p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy">Peluang Karier</h2>
             <ListEditor label="" items={major.career} onChange={v => update("career", v)} placeholder="cth: Network Administrator" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="panel p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy">Keunggulan Program</h2>
             <ListEditor label="" items={major.features} onChange={v => update("features", v)} placeholder="cth: Lab Jaringan Cisco" />
           </div>
@@ -228,7 +228,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="panel p-6 space-y-4">
             <h2 className="font-heading font-bold text-navy flex items-center gap-2">
               <ImagePlus size={18} className="text-primary-700" /> Galeri Kegiatan
             </h2>
@@ -245,7 +245,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {major.gallery.map(g => (
                   <div key={g.id} className="relative rounded-xl overflow-hidden border border-gray-100 group aspect-video">
-                    <Image src={g.imageUrl} alt={g.caption ?? major.name} fill sizes="200px" className="object-cover" unoptimized />
+                    <Image src={g.imageUrl} alt={g.caption ?? major.name} fill sizes="200px" className="object-cover" />
                     <button
                       onClick={() => deletePhoto(g.id)}
                       className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"

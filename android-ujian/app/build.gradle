@@ -1,0 +1,34 @@
+plugins { id 'com.android.application' }
+
+// APLIKASI UJIAN SMK AL-MUNAWWIR (22 September 2026) — pengganti Exambro: WebView ke situs ujian + kunci layar.
+// Kunci penandatangan TIDAK di repo: /root/.cache/android-ujian/kunci-rilis.jks (WAJIB dicadangkan — tanpa kunci yang
+// sama, versi berikutnya tidak bisa dipasang menimpa versi lama di HP siswa).
+android {
+    namespace 'sch.almunawwir.ujian'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'sch.almunawwir.ujian'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        rilis {
+            storeFile file(System.getenv('KUNCI_JKS') ?: 'kunci-tidak-ada.jks')
+            storePassword System.getenv('KUNCI_SANDI')
+            keyAlias 'ujian'
+            keyPassword System.getenv('KUNCI_SANDI')
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.rilis
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

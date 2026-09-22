@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { HeartPulse, Loader2, Plus, Edit2, Trash2, Save, CalendarDays, Pill, X, Search, ScanLine } from "lucide-react";
+import Link from "next/link";
+import { HeartPulse, Loader2, Plus, Edit2, Trash2, Save, CalendarDays, Pill, X, Search, ScanLine, Ruler, FileSpreadsheet } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -14,14 +15,14 @@ import { PageSkeleton } from "@/components/shared/Skeleton";
 interface StudentOption { id: string; nis: string; name: string; className: string }
 interface MedicineUsage { quantity: number; medicine: { name: string; unit: string } }
 interface Visit {
-  id: string; visitDate: string; complaint: string; treatment: string | null; notes: string | null;
+  id: string; visitDate: string; complaint: string; treatment: string | null; notes: string | null; rujukan?: string | null;
   student: { nis: string; user: { name: string }; class: { name: string } | null };
   usages: MedicineUsage[];
 }
-interface Medicine { id: string; name: string; stock: number; unit: string; notes: string | null }
+interface Medicine { id: string; name: string; stock: number; unit: string; notes: string | null; kedaluwarsa: string | null; stokMinimum: number }
 
-const EMPTY_FORM = { studentId: "", visitDate: new Date().toISOString().slice(0, 10), complaint: "", treatment: "", notes: "" };
-const EMPTY_MED_FORM = { name: "", stock: "0", unit: "pcs", notes: "" };
+const EMPTY_FORM = { studentId: "", visitDate: new Date().toISOString().slice(0, 10), complaint: "", treatment: "", notes: "", rujukan: "", kabarOrtu: false };
+const EMPTY_MED_FORM = { name: "", stock: "0", unit: "pcs", notes: "", kedaluwarsa: "", stokMinimum: "5" };
 const TABS = [
   { key: "kunjungan", label: "Kunjungan" },
   { key: "obat", label: "Stok Obat" },
@@ -32,7 +33,7 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export default function UksManager() {
+export default function UksManager({ base = "/dashboard/teacher/uks" }: { base?: string }) {
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [tab, setTab] = useState<TabKey>("kunjungan");
@@ -94,7 +95,7 @@ export default function UksManager() {
   }
   function openEdit(v: Visit) {
     setEditing(v);
-    setForm({ studentId: "", visitDate: v.visitDate.slice(0, 10), complaint: v.complaint, treatment: v.treatment ?? "", notes: v.notes ?? "" });
+    setForm({ studentId: "", visitDate: v.visitDate.slice(0, 10), complaint: v.complaint, treatment: v.treatment ?? "", notes: v.notes ?? "", rujukan: v.rujukan ?? "", kabarOrtu: false });
     setUsageRows([]);
     setError(""); setModal(true);
   }
@@ -128,7 +129,7 @@ export default function UksManager() {
   function openAddMed() { setEditingMed(null); setMedForm(EMPTY_MED_FORM); setMedError(""); setMedModal(true); }
   function openEditMed(m: Medicine) {
     setEditingMed(m);
-    setMedForm({ name: m.name, stock: String(m.stock), unit: m.unit, notes: m.notes ?? "" });
+    setMedForm({ name: m.name, stock: String(m.stock), unit: m.unit, notes: m.notes ?? "", kedaluwarsa: m.kedaluwarsa ? new Date(new Date(m.kedaluwarsa).getTime() + 7 * 3600_000).toISOString().slice(0, 10) : "", stokMinimum: String(m.stokMinimum ?? 5) });
     setMedError(""); setMedModal(true);
   }
   async function handleSaveMed() {
@@ -165,56 +166,72 @@ export default function UksManager() {
   const filteredMedicines = medicines.filter(m => !q || m.name.toLowerCase().includes(q));
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<HeartPulse size={22} />}
         title="UKS"
         description="Catatan kunjungan & stok obat Usaha Kesehatan Sekolah"
       />
 
+      <div className="alat-aksi justify-end mb-4">
+        <Link href={`${base}/pemeriksaan`} className="btn-modal-cancel btn-teks"><Ruler size={15} /> Pemeriksaan TB/BB</Link>
+        <a href={`/api/uks/laporan?bulan=${new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 7)}`} className="btn-modal-cancel btn-teks"><FileSpreadsheet size={15} /> Laporan Bulan Ini</a>
+      </div>
+      {!loading && (() => {
+        const batas = Date.now() + 30 * 86400000;
+        const hampir = medicines.filter(m => m.kedaluwarsa && new Date(m.kedaluwarsa).getTime() <= batas);
+        const menipis = medicines.filter(m => m.stock <= (m.stokMinimum ?? 5));
+        if (!hampir.length && !menipis.length) return null;
+        return (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {hampir.length > 0 && <p><strong>Kedaluwarsa ≤30 hari / lewat:</strong> {hampir.map(m => m.name).join(", ")}</p>}
+            {menipis.length > 0 && <p><strong>Stok menipis:</strong> {menipis.map(m => `${m.name} (${m.stock})`).join(", ")}</p>}
+          </div>
+        );
+      })()}
+
       {tab === "kunjungan" && (
         <div className="flex items-center gap-2 bg-primary-50/60 border border-primary-100 rounded-xl px-3 py-2.5 mb-4">
           <ScanLine size={16} className="text-primary-700 shrink-0" />
           <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={handleScan}
-            placeholder="Scan Kartu Tanda siswa lalu Enter — form kunjungan otomatis terbuka & terisi..."
-            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400" />
+            placeholder="Pindai Kartu Tanda siswa lalu Enter — formulir kunjungan terbuka otomatis"
+            className="min-w-0 flex-1 bg-transparent border-0 outline-none text-base sm:text-sm placeholder:text-gray-400" />
         </div>
       )}
 
-      <div className="flex justify-end mb-5">
-        {tab === "kunjungan" ? (
-          <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Tambah Kunjungan
-          </button>
-        ) : (
-          <button onClick={openAddMed} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Tambah Obat
-          </button>
-        )}
-      </div>
-
       {!loading && tab === "kunjungan" && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="kisi-kartu kisi-kartu-3 mb-6">
           <StatTile color="primary" value={visits.length} label="Total Kunjungan" icon={HeartPulse} />
           <StatTile color="blue" value={thisMonth} label="Bulan Ini" icon={CalendarDays} />
           <StatTile color="amber" value={topComplaint ? topComplaint[1] : 0} label={topComplaint ? `Terbanyak: ${topComplaint[0]}` : "Belum Ada Data"} icon={HeartPulse} />
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="baris-alat mb-5">
+        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
               {t.label}
             </button>
           ))}
         </div>
-        <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder={tab === "kunjungan" ? "Cari nama, NIS, atau keluhan..." : "Cari nama obat..."}
-            className="input-field pl-9 text-sm" />
+            className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          {tab === "kunjungan" ? (
+            <button onClick={openAdd} className="btn-modal-save">
+              <Plus size={15} /> Tambah Kunjungan
+            </button>
+          ) : (
+            <button onClick={openAddMed} className="btn-modal-save">
+              <Plus size={15} /> Tambah Obat
+            </button>
+          )}
         </div>
       </div>
 
@@ -227,34 +244,34 @@ export default function UksManager() {
           ) : filteredVisits.length === 0 ? (
             <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada kunjungan yang cocok dengan pencarian." />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <tr>
                       {["Siswa", "Kelas", "Tanggal", "Keluhan", "Tindakan", "Obat Terpakai", ""].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                        <th key={h}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredVisits.map(v => (
-                      <tr key={v.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                        <td className="px-5 py-3.5">
+                      <tr key={v.id}>
+                        <td>
                           <p className="font-semibold text-primary-900">{v.student.user.name}</p>
                           <p className="text-gray-400 text-xs font-mono">{v.student.nis}</p>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{v.student.class?.name ?? "—"}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(v.visitDate)}</td>
-                        <td className="px-5 py-3.5 text-gray-600">{v.complaint}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs">{v.treatment || "-"}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs">
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{v.student.class?.name ?? "—"}</td>
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(v.visitDate)}</td>
+                        <td className="text-gray-600">{v.complaint}</td>
+                        <td className="text-gray-500 text-xs">{v.treatment || "-"}</td>
+                        <td className="text-gray-500 text-xs">
                           {v.usages.length > 0 ? v.usages.map((u, i) => (
                             <span key={i} className="inline-block bg-primary-50 text-primary-700 rounded-full px-2 py-0.5 mr-1 mb-0.5">{u.medicine.name} ×{u.quantity}{u.medicine.unit}</span>
                           )) : "-"}
                         </td>
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          <button onClick={() => openEdit(v)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                        <td className="text-right whitespace-nowrap">
+                          <button onClick={() => openEdit(v)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                             <Edit2 size={14} />
                           </button>
                           <button onClick={() => handleDelete(v)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
@@ -275,27 +292,28 @@ export default function UksManager() {
         ) : filteredMedicines.length === 0 ? (
           <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada obat yang cocok dengan pencarian." />
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    {["Nama Obat", "Stok", "Satuan", "Catatan", ""].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                  <tr>
+                    {["Nama Obat", "Stok", "Satuan", "Kedaluwarsa", "Catatan", ""].map(h => (
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredMedicines.map(m => (
-                    <tr key={m.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                      <td className="px-5 py-3.5 font-semibold text-primary-900">{m.name}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`font-bold ${m.stock <= 5 ? "text-red-500" : "text-emerald-600"}`}>{m.stock}</span>
+                    <tr key={m.id}>
+                      <td className="font-semibold text-primary-900">{m.name}</td>
+                      <td>
+                        <span className={`font-bold ${m.stock <= (m.stokMinimum ?? 5) ? "text-red-500" : "text-emerald-600"}`}>{m.stock}</span>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{m.unit}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{m.notes || "-"}</td>
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <button onClick={() => openEditMed(m)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                      <td className="text-gray-500 text-xs">{m.unit}</td>
+                      <td className={`text-xs whitespace-nowrap ${m.kedaluwarsa && new Date(m.kedaluwarsa).getTime() <= Date.now() + 30 * 86400000 ? "font-semibold text-red-600" : "text-gray-500"}`}>{m.kedaluwarsa ? fmt(m.kedaluwarsa) : "-"}</td>
+                      <td className="text-gray-500 text-xs">{m.notes || "-"}</td>
+                      <td className="text-right whitespace-nowrap">
+                        <button onClick={() => openEditMed(m)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                           <Edit2 size={14} />
                         </button>
                         <button onClick={() => handleDeleteMed(m)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
@@ -318,7 +336,7 @@ export default function UksManager() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -349,11 +367,21 @@ export default function UksManager() {
             <label className="label-field">Catatan (opsional)</label>
             <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="input-field resize-none" />
           </div>
+          <div>
+            <label className="label-field">Rujukan (opsional)</label>
+            <input value={form.rujukan} onChange={e => setForm(p => ({ ...p, rujukan: e.target.value }))} placeholder="cth: Puskesmas, RS, dipulangkan ke asrama/rumah" className="input-field" />
+          </div>
+          {!editing && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={form.kabarOrtu} onChange={e => setForm(p => ({ ...p, kabarOrtu: e.target.checked }))} className="h-4 w-4 rounded border-gray-300" />
+              Kabari orang tua lewat notifikasi (keluhan & rujukan, tanpa rincian obat)
+            </label>
+          )}
           {!editing && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label-field mb-0">Obat Terpakai (opsional)</label>
-                <button type="button" onClick={addUsageRow} className="text-xs font-semibold text-primary-600 hover:text-primary-900 flex items-center gap-1">
+                <button type="button" onClick={addUsageRow} className="text-xs font-semibold text-primary-700 hover:text-primary-900 flex items-center gap-1">
                   <Plus size={12} /> Tambah Obat
                 </button>
               </div>
@@ -384,7 +412,7 @@ export default function UksManager() {
         footer={
           <>
             <button type="button" onClick={() => setMedModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSaveMed} disabled={savingMed} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSaveMed} disabled={savingMed} className="btn-modal-save flex-1">
               {savingMed ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -404,6 +432,16 @@ export default function UksManager() {
             <div>
               <label className="label-field">Satuan</label>
               <input value={medForm.unit} onChange={e => setMedForm(p => ({ ...p, unit: e.target.value }))} placeholder="tablet/strip/botol" className="input-field" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-field">Kedaluwarsa</label>
+              <DatePicker value={medForm.kedaluwarsa} onChange={v => setMedForm(p => ({ ...p, kedaluwarsa: v }))} placeholder="Tidak diisi" />
+            </div>
+            <div>
+              <label className="label-field">Batas stok menipis</label>
+              <input type="number" min={0} value={medForm.stokMinimum} onChange={e => setMedForm(p => ({ ...p, stokMinimum: e.target.value }))} className="input-field" />
             </div>
           </div>
           <div>

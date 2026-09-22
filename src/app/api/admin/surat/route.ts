@@ -25,16 +25,19 @@ export async function POST(req: NextRequest) {
   try {
     await verifyTasAccess();
     const body = await req.json();
-    const { tipe, nomor, tanggal, pihak, perihal, keterangan, fileUrl, klasifikasi, content, penandaTangan } = body;
+    const { tipe, nomor, tanggal, pihak, perihal, keterangan, fileUrl, klasifikasi, content, penandaTangan, templateValue, templateIsi } = body;
 
-    if (!tipe || !nomor || !tanggal || !pihak || !perihal) {
-      return NextResponse.json({ error: "Tipe, nomor, tanggal, pihak, dan perihal wajib diisi" }, { status: 400 });
+    // `pihak` TIDAK wajib untuk surat KELUAR: Surat Keterangan, Pernyataan, dan SK memang tidak
+    // punya alamat tujuan. Untuk surat MASUK tetap wajib — itu asal suratnya.
+    if (!tipe || !nomor || !tanggal || !perihal || (tipe === "MASUK" && !pihak)) {
+      return NextResponse.json({ error: "Tipe, nomor, tanggal, dan perihal wajib diisi (surat masuk juga wajib mengisi pengirim)" }, { status: 400 });
     }
 
     const surat = await prisma.surat.create({
       data: {
-        tipe, nomor, tanggal: new Date(tanggal), pihak, perihal, keterangan: keterangan || null, fileUrl: fileUrl || null,
+        tipe, nomor, tanggal: new Date(tanggal), pihak: pihak ?? "", perihal, keterangan: keterangan || null, fileUrl: fileUrl || null,
         klasifikasi: klasifikasi || null, content: content || null, penandaTangan: penandaTangan || null,
+        templateValue: templateValue || null, templateIsi: templateIsi ?? undefined,
       },
     });
     return NextResponse.json(surat, { status: 201 });

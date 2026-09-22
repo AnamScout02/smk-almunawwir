@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { balasanExcel } from "@/lib/ekspor-excel";
 import { verifyRole } from "@/lib/dal";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
@@ -47,7 +48,6 @@ export async function GET(req: Request) {
       || a.subject.localeCompare(b.subject)
     );
 
-  const BOM = "﻿";
   const headers = ["No", "NIS", "Nama Siswa", "Kelas", "Semester", "Mata Pelajaran", "Nilai Pengetahuan", "Nilai Keterampilan", "Rata-rata"];
 
   const rows = rowsData.map((g, i) => [
@@ -62,17 +62,10 @@ export async function GET(req: Request) {
     g.avg ?? "",
   ]);
 
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
   const slug = semester ? semester.replace(/\s+/g, "-").toLowerCase() : "semua";
-  const filename = `nilai-${slug}.csv`;
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
+  return balasanExcel({
+    namaFile: `nilai-${slug}`,
+    namaSheet: "Nilai",
+    headers, rows,
   });
 }

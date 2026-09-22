@@ -289,7 +289,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
     }
 
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
           <button onClick={() => setShowGrid(v => !v)} className="flex items-center gap-1.5 text-xs font-bold text-primary-900">
             <Table2 size={14} /> Tabel Jadwal Referensi (Live)
@@ -300,14 +300,14 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
               <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
                 {(["A", "B"] as const).map(w => (
                   <button key={w} onClick={() => setGridWeek(w)}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${gridWeek === w ? "bg-primary-700 text-white" : "text-gray-500 hover:text-gray-700"}`}>
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition ${gridWeek === w ? "bg-primary-700 text-white" : "text-gray-500 hover:text-gray-700"}`}>
                     {w === "A" ? "Minggu 1" : "Minggu 2"}
                   </button>
                 ))}
               </div>
               <button onClick={exportGridExcel} disabled={exportingGrid}
                 title="Ekspor Minggu 1 & 2 ke Excel (.xlsx) berwarna, persis seperti tabel ini"
-                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition disabled:opacity-60">
+                className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition disabled:opacity-60">
                 {exportingGrid ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Ekspor Excel
               </button>
             </div>
@@ -315,7 +315,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
         </div>
         {showGrid && (
           <div className="overflow-auto max-h-[70vh]">
-            <table className="text-[9px] border-collapse w-full">
+            <table className="text-[11px] border-collapse w-full">
               <thead>
                 <tr>
                   <th className="sticky left-0 top-0 bg-primary-900 text-white px-1 py-1 z-20 min-w-[36px]">Hari</th>
@@ -410,7 +410,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
           </div>
         )}
         {showGrid && (
-          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-t border-gray-100 text-[9px] text-gray-500">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-t border-gray-100 text-[11px] text-gray-500">
             <span>Kotak: <strong>kode guru</strong> | <strong>kode mapel</strong> · warna = guru</span>
             <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-blue-100 border-2 border-dashed border-blue-400 inline-block opacity-70" /> belum digenerate</span>
             <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-red-200 inline-block" /> bentrok</span>
@@ -429,16 +429,16 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
         description="Tentukan guru pengampu tiap mata pelajaran per kelas — dipakai sebagai dasar Generate Jadwal Otomatis"
       />
 
-      <div className="flex justify-end mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <Link href={`${basePath}/print`}
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          className="btn-modal-cancel">
           <Printer size={16} /> Cetak Pembagian Tugas Mengajar
         </Link>
       </div>
 
       <div className="grid grid-cols-1 2xl:grid-cols-[1.6fr_1fr] gap-6 items-start">
         <div className="min-w-0">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+          <div className="panel p-4 mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
             {classes.length === 0 ? (
               <p className="text-sm text-gray-400">
@@ -466,11 +466,11 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                 )}
                 {activeClass && targetHours !== undefined && (
                   totalHours === targetHours ? (
-                    <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full align-middle">
+                    <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full align-middle">
                       <CheckCircle2 size={11} /> {totalHours} JP (pas {targetHours})
                     </span>
                   ) : (
-                    <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full align-middle">
+                    <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full align-middle">
                       <AlertTriangle size={11} /> {totalHours} JP ({totalHours < targetHours ? `kurang ${targetHours - totalHours}` : `lebih ${totalHours - targetHours}`} dari {targetHours})
                     </span>
                   )
@@ -503,15 +503,14 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
               <a href={subjectsHref} className="underline font-semibold">Kode Mata Pelajaran</a>.
             </Alert>
           ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-          <table className="w-full text-sm min-w-[560px]">
+        <div className="panel overflow-x-auto">
+          <table className="data-table min-w-[560px]">
             <thead>
-              <tr className="border-b border-primary-100"
-                style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-16">Kode</th>
-                <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
-                <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-28">Jam/Minggu</th>
-                <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Guru Pengampu</th>
+              <tr>
+                <th className="text-[11px] w-16">Kode</th>
+                <th className="text-[11px]">Mata Pelajaran</th>
+                <th className="text-center text-[11px] w-28">Jam/Minggu</th>
+                <th className="text-[11px]">Guru Pengampu</th>
               </tr>
             </thead>
             <tbody>
@@ -541,13 +540,13 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                 const canAddBlock = !!(current && d.day && d.startTime && d.endTime);
                 return (
                   <Fragment key={s.id}>
-                  <tr className={`hover:bg-primary-50/30 transition-colors ${current ? "" : "border-b border-gray-50 last:border-0"}`}>
-                    <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{s.code}</td>
-                    <td className="px-5 py-3.5 font-semibold text-primary-900">{s.name}</td>
-                    <td className="px-5 py-3.5 text-center">
+                  <tr className={`${current ? "" : "border-b border-gray-50 last:border-0"}`}>
+                    <td className="font-mono text-xs text-gray-500">{s.code}</td>
+                    <td className="font-semibold text-primary-900">{s.name}</td>
+                    <td className="text-center">
                       <span className="text-xs font-semibold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">{s.hoursPerWeek} jam</span>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 min-w-0 max-w-sm">
                           <Select
@@ -557,7 +556,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                             placeholder="-- Belum ditugaskan --"
                           />
                         </div>
-                        {savingId === s.id && <Loader2 size={14} className="animate-spin text-primary-400 shrink-0" />}
+                        {savingId === s.id && <Loader2 size={14} className="animate-spin text-primary-500 shrink-0" />}
                         {current && savingId !== s.id && (
                           <button onClick={() => setTeacherFor(s.id, "")} title="Hapus penugasan"
                             className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition shrink-0">
@@ -568,13 +567,13 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                     </td>
                   </tr>
                   {current && (
-                    <tr className="border-b border-gray-50 last:border-0">
-                      <td colSpan={4} className="px-5 pb-3.5 pt-0">
+                    <tr>
+                      <td colSpan={4} className="pb-3.5 pt-0">
                         <div className="bg-gray-50/70 rounded-xl px-3 py-2.5 space-y-2">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Preferensi Hari/Jam (opsional)</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Preferensi Hari/Jam (opsional)</span>
                             {current.preferences.length > 0 && (
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${prefTotal >= prefTarget ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${prefTotal >= prefTarget ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
                                 {prefTotal}/{prefTarget} jam
                               </span>
                             )}
@@ -589,7 +588,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                                   ? ` · ${weekLabel(activeClass.grade, pref.weekType)}`
                                   : "";
                                 return (
-                                  <span key={pref.id} className="inline-flex items-center gap-1 text-[10px] font-semibold bg-primary-50 text-primary-700 px-2 py-1 rounded-full">
+                                  <span key={pref.id} className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary-50 text-primary-700 px-2 py-1 rounded-full">
                                     {DAY_LABEL[pref.day]} Ke-{startI + 1}–{startI + pref.hours} ({pref.hours}j, {pref.startTime}–{endP?.endTime ?? ""}){weekTag}
                                     <button onClick={() => removePreferenceBlock(current.id, pref.id)} className="hover:text-red-600"><X size={10} /></button>
                                   </span>
@@ -643,7 +642,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                                 await addPreferenceBlock(current.id, d.day, d.startTime, hours, d.weekType);
                                 setDraft(prev => { const cp = { ...prev }; delete cp[s.id]; return cp; });
                               }}
-                              className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-900 text-white disabled:opacity-30 shrink-0">
+                              className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-900 text-white disabled:opacity-30 shrink-0">
                               + Tambah
                             </button>
                           </div>

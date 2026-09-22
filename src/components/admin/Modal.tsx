@@ -20,6 +20,10 @@ interface ModalProps {
   children: React.ReactNode;
   /** Aktifkan jika isi modal panjang & perlu scroll independen (form Buku Induk, dll). */
   scrollBody?: boolean;
+  /** Tampil DI ATAS modal lain (z-[70]). Khusus dialog konfirmasi: konfirmasi sering dipicu dari DALAM
+   * modal (mis. "Ulang dari Awal" di jendela Tindakan papan pantau). Dengan z-50 yang sama, modal yang
+   * dipasang belakangan menutupi dialognya — klik tampak tidak berbuat apa-apa (temuan user 14 Sep 2026). */
+  lapisanAtas?: boolean;
 }
 
 /**
@@ -29,7 +33,7 @@ interface ModalProps {
  * di dalam body tidak terpotong) — sudut rounded dijaga eksplisit di header/body.
  */
 export default function Modal({
-  open, onClose, title, description, size = "md", headerActions, footer, children, scrollBody = false,
+  open, onClose, title, description, size = "md", headerActions, footer, children, scrollBody = false, lapisanAtas = false,
 }: ModalProps) {
   React.useEffect(() => {
     if (!open) return;
@@ -41,7 +45,7 @@ export default function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-backdrop-in" onClick={onClose}>
+    <div className={`fixed inset-0 bg-black/50 flex items-center justify-center ${lapisanAtas ? "z-[70]" : "z-50"} p-4 modal-backdrop-in`} onClick={onClose}>
       <div
         className={`bg-white rounded-2xl shadow-2xl w-full modal-panel-in ${SIZE_CLASS[size]} ${scrollBody ? "max-h-[90vh] flex flex-col" : ""}`}
         onClick={e => e.stopPropagation()}

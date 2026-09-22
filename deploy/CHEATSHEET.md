@@ -1,6 +1,6 @@
 # SMK Al-Munawwir Website — Cheat Sheet Harian
 
-CT Proxmox: `website-smk` — IP lokal `172.15.0.3` — IP publik `103.194.175.54`
+CT Proxmox: `website-smk` — IP lokal `172.15.0.3` — IP publik `<IP-PUBLIK-SERVER>`
 SSH: `ssh smk-almunawwir` (dari laptop, sudah pakai SSH key, tanpa password)
 
 ---
@@ -8,7 +8,7 @@ SSH: `ssh smk-almunawwir` (dari laptop, sudah pakai SSH key, tanpa password)
 ## 1. Akses aplikasi
 
 - Dari LAN sekolah: `http://172.15.0.3:3000`
-- Dari internet: `http://103.194.175.54:3000`
+- Dari internet: `http://<IP-PUBLIK-SERVER>:3000`
 
 ---
 
@@ -92,8 +92,8 @@ Port forwarding di MikroTik (comment: "Website SMK Almunawwir" & "SSH Website SM
 
 | Tujuan | Dari luar | Diteruskan ke |
 |---|---|---|
-| Web app | `103.194.175.54:3000` | `172.15.0.3:3000` |
-| SSH / VS Code | `103.194.175.54:2233` | `172.15.0.3:22` |
+| Web app | `<IP-PUBLIK-SERVER>:3000` | `172.15.0.3:3000` |
+| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `172.15.0.3:22` |
 
 Lihat/ubah rule NAT (Winbox → Terminal MikroTik):
 ```
@@ -117,7 +117,7 @@ Lihat/ubah rule NAT (Winbox → Terminal MikroTik):
 ## 10. Catatan keamanan
 
 - Password root & `.env` (`POSTGRES_PASSWORD`, `SESSION_SECRET`) jangan dibagikan ke chat/publik.
-- SSH root ke CT ini sudah expose ke internet (`103.194.175.54:2233`) — login sudah pakai SSH key, disarankan matikan password login sepenuhnya kalau belum:
+- SSH root ke CT ini sudah expose ke internet (`<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>`) — login sudah pakai SSH key, disarankan matikan password login sepenuhnya kalau belum:
   ```bash
   sudo sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/" /etc/ssh/sshd_config
   sudo systemctl restart ssh

@@ -33,8 +33,8 @@ export default function AbsensiJurnalPage() {
         description="Cetak lembar Absensi Siswa, Jurnal Mengajar, dan Rekap Absensi Bulanan per kelas"
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/admin/absensi-jurnal/cover-editor" className="btn-gold flex items-center gap-2 text-sm">
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/admin/absensi-jurnal/cover-editor" className="btn-modal-save btn-teks">
           <ImageIcon size={16} /> Desain Cover
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function AbsensiJurnalPage() {
                         <Users size={12} /> {cls.students.length}
                       </span>
                       <Link href={`/dashboard/admin/absensi-jurnal/cetak-kelas/${cls.id}`}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-700 hover:bg-primary-900 text-white rounded-lg text-xs font-semibold transition-colors">
+                        className="btn-modal-cancel">
                         <Printer size={13} /> Cetak
                       </Link>
                     </div>

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import * as XLSX from "xlsx";
 
 export async function GET() {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const headers = [
     "NIP",

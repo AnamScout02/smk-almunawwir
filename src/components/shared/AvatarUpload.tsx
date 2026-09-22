@@ -53,7 +53,7 @@ export default function AvatarUpload({ currentAvatar, name }: Props) {
       <div className="relative shrink-0">
         <div className="w-20 h-20 rounded-2xl overflow-hidden bg-primary-100 flex items-center justify-center">
           {preview ? (
-            <Image src={preview} alt={name} width={80} height={80} className="w-full h-full object-cover" unoptimized />
+            <Image src={preview} alt={name} width={80} height={80} className="w-full h-full object-cover" />
           ) : (
             <span className="font-heading font-bold text-2xl text-primary-700">{initials}</span>
           )}

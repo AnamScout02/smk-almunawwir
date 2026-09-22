@@ -107,27 +107,29 @@ export default function RppManager() {
         description="Rencana Pelaksanaan Pembelajaran — kelola RPP Anda, lihat referensi RPP guru lain"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-          <Plus size={15} /> Tambah RPP
-        </button>
-      </div>
-
       {loading ? (
         <PageSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="kisi-kartu mb-6">
             <StatTile color="primary" value={myPlans} label="RPP Saya" icon={NotebookPen} />
             <StatTile color="blue" value={plans.length} label="Total di Bank RPP" icon={BookOpen} />
           </div>
-          {plans.length > 0 && (
-            <div className="relative max-w-sm mb-5">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Cari judul, guru, atau mapel..." className="input-field pl-9 text-sm" />
+          {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026). */}
+          <div className="baris-alat mb-5">
+            {plans.length > 0 && (
+              <div className="alat-cari">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Cari judul, guru, atau mapel..." className="input-field pl-10" />
+              </div>
+            )}
+            <div className="alat-aksi">
+              <button onClick={openAdd} className="btn-modal-save">
+                <Plus size={15} /> Tambah RPP
+              </button>
             </div>
-          )}
+          </div>
           {plans.length === 0 ? (
             <EmptyState icon={NotebookPen} title="Belum Ada RPP" description="Tambahkan RPP Anda ke bank bersama." />
           ) : filteredPlans.length === 0 ? (
@@ -137,7 +139,7 @@ export default function RppManager() {
               {filteredPlans.map(p => {
                 const isMine = p.teacher.id === myTeacherId;
                 return (
-                  <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div key={p.id} className="panel p-5">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0">
                         <p className="font-heading font-bold text-primary-900 truncate">{p.title}</p>
@@ -145,20 +147,20 @@ export default function RppManager() {
                       </div>
                       {isMine && (
                         <div className="flex items-center gap-1 shrink-0">
-                          <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"><Edit2 size={14} /></button>
+                          <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition"><Edit2 size={14} /></button>
                           <button onClick={() => handleDelete(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={14} /></button>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      {p.grade && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">Kelas {p.grade}</span>}
-                      {p.semester && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">Semester {p.semester}</span>}
+                      {p.grade && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">Kelas {p.grade}</span>}
+                      {p.semester && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">Semester {p.semester}</span>}
                     </div>
                     {p.objectives && <p className="text-xs text-gray-500 line-clamp-2 mb-2">{p.objectives}</p>}
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>Diperbarui {fmt(p.updatedAt)}</span>
                       {p.fileUrl && (
-                        <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                        <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                           <Download size={12} /> Dokumen
                         </a>
                       )}
@@ -180,7 +182,7 @@ export default function RppManager() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>

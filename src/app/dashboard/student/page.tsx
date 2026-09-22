@@ -2,31 +2,50 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { pengumumanUntuk } from "@/lib/pengumuman";
 import { getCurrentWeekType } from "@/lib/schedule-week.server";
 import { getWakilKepalaAgenda } from "@/lib/agenda";
+import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
+import { cekLibur } from "@/lib/hari-libur";
 import AgendaCalendar from "@/components/shared/AgendaCalendar";
+import JadwalHariIni from "@/components/shared/JadwalHariIni";
+import JadwalMingguan from "@/components/shared/JadwalMingguan";
+import Panel, { PanelKosong, DaftarPengumuman } from "@/components/shared/Panel";
+import { BagianBar } from "@/components/shared/GrafikRingkas";
+import StatTile from "@/components/admin/StatTile";
 import {
-  BookOpen, CheckCircle, Briefcase, Award, AlertTriangle,
-  CalendarDays, Printer, Newspaper, Bell, Calendar,
-  TrendingUp, Star, ArrowRight, Sparkles,
+  CalendarClock, CalendarRange, CalendarCheck, TrendingUp, Newspaper, Megaphone, Star, Building2, FileText, LayoutDashboard,
 } from "lucide-react";
+import { TautanIkon } from "@/components/shared/IkonNama";
 import Link from "next/link";
-import EmptyState from "@/components/admin/EmptyState";
+import PageHeader from "@/components/admin/PageHeader";
+import { MenuSiswa } from "@/components/shared/MenuPortal";
+import { konteksMenuSiswa, menuFavoritAkun } from "@/lib/menu-konteks";
 
-const STATUS_COLOR: Record<string, string> = {
-  HADIR: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  IZIN:  "bg-blue-50 text-blue-700 border border-blue-200",
-  SAKIT: "bg-amber-50 text-amber-700 border border-amber-200",
-  ALPHA: "bg-red-50 text-red-600 border border-red-200",
+// Ikon lucide di halaman server ini hanya di markup server & masing-masing sekali; ke komponen klien kirim NAMA ikon (CLAUDE.md #35).
+const STATUS_KELAS: Record<string, string> = {
+  HADIR: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  IZIN:  "bg-blue-50 text-blue-700 border-blue-200",
+  SAKIT: "bg-amber-50 text-amber-700 border-amber-200",
+  ALPHA: "bg-red-50 text-red-600 border-red-200",
 };
-const STATUS_DOT: Record<string, string> = {
-  HADIR: "bg-emerald-500", IZIN: "bg-blue-500", SAKIT: "bg-amber-500", ALPHA: "bg-red-500",
-};
+const STATUS_WARNA: Record<string, string> = { HADIR: "#10b981", IZIN: "#3b82f6", SAKIT: "#f59e0b", ALPHA: "#ef4444" };
+const STATUS_LABEL: Record<string, string> = { HADIR: "Hadir", IZIN: "Izin", SAKIT: "Sakit", ALPHA: "Alpha" };
+const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
+const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
+const JENIS_NILAI = ["Tugas", "Ulangan Harian", "UTS", "UAS"];
 
 export default async function StudentDashboard() {
   const session = await verifyRole(["STUDENT"]);
+  const konteksMenu = await konteksMenuSiswa(session);
+  const favoritAwal = await menuFavoritAkun(session);
 
   const now = new Date();
+  // Hari, tanggal, dan bulan menurut WIB — server berjalan di UTC.
+  const wib = new Date(now.getTime() + 7 * 3600_000);
+  const tanggalWib = wib.toISOString().slice(0, 10);
+  const hariIni = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"][wib.getUTCDay()];
+
   const student = await prisma.student.findFirst({
     where: { user: { email: session.email } },
     include: {
@@ -38,29 +57,26 @@ export default async function StudentDashboard() {
     },
   });
 
-  // Sapaan pakai Nama Panggilan dari Buku Induk kalau sudah diisi admin — lebih akrab daripada
-  // asal ambil kata pertama nama lengkap (mis. "Moh" dari "Moh Iqbal Marsuto").
+  // Sapaan pakai Nama Panggilan dari Buku Induk kalau sudah diisi admin; kalau belum, NAMA LENGKAP
+  // (keputusan user 18 Sep 2026 — nama tidak dipenggal di layar mana pun).
   const nicknameRaw = (student?.bukuIndukData as Record<string, unknown> | null)?.nickname;
-  const greetingName = (typeof nicknameRaw === "string" && nicknameRaw.trim()) || session.name.split(" ")[0];
+  const greetingName = (typeof nicknameRaw === "string" && nicknameRaw.trim()) || session.name;
 
   const currentWeekType = await getCurrentWeekType();
-  const [latestNews, announcements, schedules, agenda] = await Promise.all([
+  // Piket kelas hari ini (17 Sep 2026) — info jadwal dari wali kelas.
+  const piketHariIni = student?.classId && hariIni !== "MINGGU"
+    ? await prisma.piketKelas.findMany({ where: { classId: student.classId, hari: hariIni }, select: { studentId: true, student: { select: { user: { select: { name: true } } } } } }).catch(() => [])
+    : [];
+  const sayaPiket = piketHariIni.some(x => x.studentId === student?.id);
+
+  const [latestNews, announcements, schedules, agenda, libur] = await Promise.all([
     prisma.news.findMany({
       where: { published: true },
       orderBy: { createdAt: "desc" },
       take: 4,
       select: { id: true, slug: true, title: true, category: true, createdAt: true },
     }),
-    prisma.announcement.findMany({
-      where: {
-        active: true,
-        targetRole: { in: ["ALL", "STUDENT"] },
-        startDate: { lte: now },
-        OR: [{ endDate: null }, { endDate: { gte: now } }],
-      },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-      take: 5,
-    }),
+    pengumumanUntuk(session, 5).catch(() => []),
     student?.classId
       ? prisma.schedule.findMany({
           where: { classId: student.classId, weekType: { in: ["SEMUA", currentWeekType] }, scheduleType: "BLOK" },
@@ -69,417 +85,226 @@ export default async function StudentDashboard() {
         })
       : Promise.resolve([]),
     getWakilKepalaAgenda(),
+    cekLibur(tanggalWib).catch(() => null),
   ]);
 
   const grades = student?.grades ?? [];
   const attendance = student?.attendance ?? [];
 
-  const avgScore = grades.length
-    ? parseFloat((grades.reduce((a, g) => a + g.score, 0) / grades.length).toFixed(1))
-    : 0;
-
+  const avgScore = grades.length ? parseFloat((grades.reduce((a, g) => a + g.score, 0) / grades.length).toFixed(1)) : 0;
   const presentCount = attendance.filter(a => a.status === "HADIR").length;
   const attendancePct = attendance.length ? Math.round((presentCount / attendance.length) * 100) : 0;
 
   const gradesBySemester = [...new Set(grades.map(g => g.semester))].sort().map(sem => {
     const sg = grades.filter(g => g.semester === sem);
-    const subjects = [...new Set(sg.map(g => g.subject))];
-    const bySubject = subjects.map(subject => {
+    const bySubject = [...new Set(sg.map(g => g.subject))].map(subject => {
       const rows = sg.filter(g => g.subject === subject);
-      const avg = rows.reduce((a, g) => a + g.score, 0) / rows.length;
-      return { subject, rows, avg };
+      return { subject, rows, avg: rows.reduce((a, g) => a + g.score, 0) / rows.length };
     });
     return { sem, bySubject };
   });
 
-  const thisMonthAtt = attendance.filter(a => {
-    const d = new Date(a.date);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const thisMonthSummary = ["HADIR", "IZIN", "SAKIT", "ALPHA"].map(s => ({
-    status: s, count: thisMonthAtt.filter(a => a.status === s).length,
-  }));
+  const bulanIni = tanggalWib.slice(0, 7);
+  const thisMonthAtt = attendance.filter(a => new Date(new Date(a.date).getTime() + 7 * 3600_000).toISOString().slice(0, 7) === bulanIni);
   const thisMonthPresent = thisMonthAtt.filter(a => a.status === "HADIR").length;
   const thisMonthPct = thisMonthAtt.length ? Math.round((thisMonthPresent / thisMonthAtt.length) * 100) : 0;
-  const recentAtt = attendance.slice(0, 10);
+  const recentAtt = attendance.slice(0, 5);
 
-  const scoreColor = (s: number) => s >= 85 ? "text-emerald-600" : s >= 75 ? "text-blue-600" : "text-red-500";
+  const scoreColor = (s: number) => s >= 85 ? "text-emerald-700" : s >= 75 ? "text-blue-700" : "text-red-600";
   const scoreBg = (s: number) => s >= 85 ? "bg-emerald-50" : s >= 75 ? "bg-blue-50" : "bg-red-50";
 
-  function mergeConsecutive(slots: typeof schedules) {
-    const merged: { id: string; startTime: string; endTime: string; subject: string }[] = [];
-    for (const s of slots) {
-      const last = merged[merged.length - 1];
-      if (last && last.subject === s.subject && last.endTime === s.startTime) {
-        last.endTime = s.endTime;
-      } else {
-        merged.push({ id: s.id, startTime: s.startTime, endTime: s.endTime, subject: s.subject });
-      }
-    }
-    return merged;
-  }
+  // Jam pelajaran berurutan dengan mapel & guru yang sama digabung jadi satu blok.
+  const slotHari = (hari: string) => groupConsecutiveSchedules(schedules.filter(s => s.day === hari), s => `${s.subject}|${s.teacherId}`)
+    .sort((a, b) => a.first.startTime.localeCompare(b.first.startTime))
+    .map(b => ({ id: b.first.id, mulai: b.first.startTime, selesai: b.last.endTime, judul: b.first.subject, keterangan: b.first.teacher?.user.name ?? undefined }));
+  const jadwalMinggu = DAYS.map(kode => ({ kode, label: DAY_LABEL[kode], slot: slotHari(kode).map(s => ({ ...s, keterangan: undefined })) })).filter(h => h.slot.length);
+  const slotHariIni = hariIni === "MINGGU" || libur ? [] : slotHari(hariIni);
+  const kosongHariIni = libur ? `Hari ini libur — ${libur.nama}.`
+    : hariIni === "MINGGU" ? "Hari Minggu, selamat beristirahat."
+    : student?.classId ? "Tidak ada jadwal pelajaran hari ini." : "Kamu belum terdaftar di kelas mana pun.";
 
-  const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
-  const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
-  const todayDay = ["MINGGU","SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU"][now.getDay()];
+  const bulanLabel = now.toLocaleDateString("id-ID", { month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  const tglLabel = (d: Date) => new Date(d).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f0f2f7" }}>
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      {/* Header = PageHeader standar (keputusan user 2026-08-23): identitas kelas/NIS di description. */}
+      <PageHeader
+        icon={<LayoutDashboard size={22} />}
+        title="Dashboard Siswa"
+        description={<>{session.name} — {student?.class?.name ?? "—"}{student?.major?.code ? ` · ${student.major.code}` : ""} · NIS: {student?.nis ?? "—"}</>}
+      />
 
-      {/* ── Header ── */}
-      <div className="relative overflow-hidden sticky top-14 lg:top-0 z-30"
-        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 50%, #1B2B6B 100%)" }}>
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-
-        <div className="relative px-5 md:px-8 py-5 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-white/40 text-xs tracking-widest uppercase font-medium flex items-center gap-1.5 mb-1">
-              <Sparkles size={11} className="text-gold" />
-              Portal Siswa
-            </p>
-            <h1 className="font-heading text-xl font-bold text-white">{session.name}</h1>
-            <p className="text-white/50 text-xs mt-0.5">
-              {student?.class?.name ?? "—"}{student?.major?.code ? ` · ${student.major.code}` : ""} · NIS: {student?.nis ?? "—"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-5 md:px-8 py-6 space-y-6">
-
-        {/* ── Greeting ── */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-arabic text-primary-700 text-2xl">اَلسَّلَامُ عَلَيْكُمْ</p>
-            <h2 className="font-heading text-2xl font-bold text-navy mt-1">
-              Halo, {greetingName}! 👋
-            </h2>
-            <p className="text-gray-400 text-sm mt-0.5">
-              {now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            </p>
+      <div className="space-y-6">
+        {/* Sapaan — konten berbeda dari header (bukan duplikat), sesuai DESIGN_SYSTEM §3.3. */}
+        <div className="masuk-halus flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-arabic text-xl text-primary-700" style={{ lineHeight: 2.2 }}>اَلسَّلَامُ عَلَيْكُمْ</p>
+            <h2 className="judul-seimbang font-heading text-xl font-bold text-primary-900 sm:text-2xl">Halo, {greetingName}!</h2>
           </div>
           {avgScore >= 80 && (
-            <div className="hidden sm:flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-2xl px-4 py-2.5">
-              <Star size={16} className="text-gold fill-gold" />
-              <div>
-                <p className="text-xs font-bold text-gold">Prestasi Baik!</p>
-                <p className="text-xs text-gray-500">Rata-rata {avgScore}</p>
-              </div>
-            </div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-sm font-semibold text-gold-dark">
+              <Star size={15} className="fill-gold text-gold" /> Prestasi baik · rata-rata {avgScore}
+            </p>
           )}
         </div>
 
-        {/* ── Announcements ── */}
-        {announcements.length > 0 && (
-          <div className="space-y-2">
-            {announcements.map(ann => (
-              <div key={ann.id}
-                className={`flex items-start gap-3 p-4 rounded-2xl border ${
-                  ann.priority === "URGENT"
-                    ? "bg-red-50 border-red-200"
-                    : "bg-amber-50 border-amber-100"
-                }`}>
-                <Bell size={15} className={`shrink-0 mt-0.5 ${ann.priority === "URGENT" ? "text-red-500" : "text-amber-600"}`} />
-                <div>
-                  <p className={`font-semibold text-sm ${ann.priority === "URGENT" ? "text-red-800" : "text-amber-900"}`}>
-                    {ann.priority === "URGENT" && <span className="text-red-500 mr-1">[URGENT]</span>}
-                    {ann.title}
-                  </p>
-                  <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">{ann.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Kisi menu ala aplikasi bank (18 Sep 2026) — semua fitur terkumpul di dashboard, tidak
+            lagi tersembunyi di laci bawah. "Lihat semua" membuka /dashboard/student/menu. */}
+        <MenuSiswa ringkas={12} hrefSemua="/dashboard/student/menu" judul="Menu Cepat" favoritAwal={favoritAwal} {...konteksMenu} />
 
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            {
-              icon: Award, label: "Rata-rata Nilai", value: avgScore || "—",
-              grad: "from-gold to-gold-dark", ring: "ring-amber-100",
-              sub: avgScore >= 80 ? "Di atas rata-rata" : avgScore >= 75 ? "Memenuhi KKM" : "Perlu ditingkatkan",
-            },
-            {
-              icon: CheckCircle, label: "Kehadiran", value: `${attendancePct}%`,
-              grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100",
-              sub: `${presentCount} dari ${attendance.length} hari`,
-            },
-            {
-              icon: BookOpen, label: "Total Nilai", value: grades.length,
-              grad: "from-primary-500 to-primary-700", ring: "ring-primary-100",
-              sub: `${[...new Set(grades.map(g => g.semester))].length} semester`,
-            },
-            {
-              icon: Briefcase, label: "Status PKL", value: student?.internship?.status ?? "Belum",
-              grad: "from-purple-500 to-purple-600", ring: "ring-purple-100",
-              sub: student?.internship?.company ?? "Belum ada data",
-            },
-          ].map(({ icon: Icon, label, value, grad, ring, sub }) => (
-            <div key={label} className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${grad} ring-1 ${ring} min-w-0`}>
-              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Icon size={56} className="text-white" />
-              </div>
-              <div className="relative">
-                <p className="text-white/70 text-xs font-medium mb-1">{label}</p>
-                <p className="font-heading font-bold text-2xl text-white">{value}</p>
-                <p className="text-xs mt-1 text-white/80">{sub}</p>
-              </div>
-            </div>
-          ))}
+        <DaftarPengumuman ikon={<Megaphone />} pengumuman={announcements} />
+
+        <div className="kisi-kartu kisi-kartu-4">
+          <StatTile tampilan="lembut" href="/dashboard/student/rapor" ikon="prestasi" label="Rata-rata Nilai" value={avgScore || "—"} color="amber"
+            sublabel={!grades.length ? "Belum ada nilai" : avgScore >= 80 ? "Di atas rata-rata" : avgScore >= 75 ? "Memenuhi KKM" : "Perlu ditingkatkan"} />
+          <StatTile tampilan="lembut" ikon="hadir" label="Kehadiran" value={`${attendancePct}%`} color="emerald"
+            sublabel={`${presentCount} dari ${attendance.length} hari`} />
+          <StatTile tampilan="lembut" ikon="buku" label="Nilai Tercatat" value={grades.length} color="blue"
+            sublabel={`${gradesBySemester.length} semester`} />
+          <StatTile tampilan="lembut" ikon="pkl" label="Status PKL" size="md" color="purple"
+            value={student?.internship ? (student.internship.status === "COMPLETED" ? "Selesai" : "Berlangsung") : "Belum"}
+            sublabel={student?.internship?.company ?? "Belum ada data"} />
         </div>
 
-        {/* ── Attendance + Schedule Row ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-7">
+            <Panel judul="Jadwal Hari Ini" ikon={<CalendarClock />} keterangan={DAY_LABEL[hariIni] ?? "Minggu"}>
+              <JadwalHariIni slot={slotHariIni} kosong={kosongHariIni} />
+              {piketHariIni.length > 0 && !libur && (
+                <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${sayaPiket ? "border-amber-200 bg-amber-50 text-amber-800" : "border-gray-100 bg-gray-50 text-gray-600"}`}>
+                  <strong>{sayaPiket ? "Kamu piket kelas hari ini." : "Piket kelas hari ini:"}</strong>{" "}
+                  {piketHariIni.map(x => x.student.user.name.split(" ").slice(0, 2).join(" ")).join(", ")}
+                </p>
+              )}
+            </Panel>
 
-          {/* Absensi bulan ini */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
-            <div className="flex items-center gap-2 mb-4">
-              <CalendarDays size={16} className="text-primary-700" />
-              <h3 className="font-heading font-semibold text-navy">
-                Absensi {now.toLocaleDateString("id-ID", { month: "long", year: "numeric" })}
-              </h3>
-            </div>
+            <Panel judul="Jadwal Pelajaran Minggu Ini" ikon={<CalendarRange />}>
+              <JadwalMingguan hari={jadwalMinggu} hariIni={hariIni} kosong="Jadwal pelajaran belum tersedia." />
+            </Panel>
 
-            {/* Donut visual */}
-            <div className="flex items-center gap-5 mb-4">
-              <div className="relative w-20 h-20 shrink-0">
-                <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-                  <circle cx="40" cy="40" r="30" fill="none" stroke="#f1f5f9" strokeWidth="12" />
-                  {thisMonthAtt.length > 0 && (
-                    <circle cx="40" cy="40" r="30" fill="none"
-                      stroke="#10b981"
-                      strokeWidth="12"
-                      strokeDasharray={`${(thisMonthPct / 100) * 188.5} ${188.5}`}
-                    />
-                  )}
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-heading font-bold text-sm text-navy">{thisMonthPct}%</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 flex-1 min-w-0">
-                {thisMonthSummary.map(({ status, count }) => (
-                  <div key={status} className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${STATUS_DOT[status] ?? "bg-gray-300"}`} />
-                    <div>
-                      <p className="text-xs font-bold text-navy">{count}</p>
-                      <p className="text-[10px] text-gray-400">{status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent attendance */}
-            {recentAtt.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-2">Catatan Terakhir</p>
-                {recentAtt.map(a => (
-                  <div key={a.id} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
-                    <span className="text-xs text-gray-500">
-                      {new Date(a.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" })}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_COLOR[a.status] ?? "bg-gray-50 border-gray-100 text-gray-500"}`}>
-                      <span className={`w-1 h-1 rounded-full ${STATUS_DOT[a.status] ?? "bg-gray-400"}`} />
-                      {a.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Jadwal hari ini */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar size={16} className="text-primary-700" />
-              <h3 className="font-heading font-semibold text-navy">Jadwal Pelajaran</h3>
-            </div>
-            {schedules.length > 0 ? (
-              <div className="space-y-2">
-                {DAYS.filter(d => schedules.some(s => s.day === d)).map(day => {
-                  const daySchedules = mergeConsecutive(
-                    schedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime))
-                  );
-                  const isToday = day === todayDay;
-                  return (
-                    <div key={day} className={`rounded-xl overflow-hidden border ${isToday ? "border-primary-300 ring-1 ring-primary-100" : "border-gray-100"}`}>
-                      <div className={`px-3 py-2 flex items-center gap-2 text-xs font-semibold ${isToday ? "bg-primary-700 text-white" : "bg-gray-50 text-gray-500"}`}>
-                        {DAY_LABEL[day]}
-                        {isToday && <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Hari ini</span>}
-                      </div>
-                      <div className="divide-y divide-gray-50">
-                        {daySchedules.map(s => (
-                          <div key={s.id} className="px-3 py-2 flex items-center gap-2.5 text-xs">
-                            <span className="font-mono text-primary-700 font-bold w-20 shrink-0 text-[10px]">{s.startTime}–{s.endTime}</span>
-                            <span className="font-medium text-gray-800 flex-1 min-w-0 truncate">{s.subject}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                <Calendar size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Jadwal belum tersedia.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Agenda Wakil Kepala ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <AgendaCalendar agenda={agenda} />
-        </div>
-
-        {/* ── Nilai per Semester ── */}
-        {gradesBySemester.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50">
-              <TrendingUp size={16} className="text-primary-700" />
-              <h3 className="font-heading font-semibold text-navy">Rekap Nilai per Semester</h3>
-            </div>
-            <div className="p-6 space-y-6">
-              {gradesBySemester.map(({ sem, bySubject }) => {
-                const semAvg = bySubject.reduce((a, s) => a + s.avg, 0) / bySubject.length;
-                return (
-                  <div key={sem}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-primary-900 bg-primary-50 px-3 py-1 rounded-full">{sem}</span>
-                      <span className={`text-sm font-bold ${scoreColor(semAvg)}`}>
-                        Rata-rata: {semAvg.toFixed(1)}
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto rounded-xl border border-gray-100">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-gray-100">
-                            <th className="text-left px-4 py-2.5 text-gray-500 font-semibold">Mata Pelajaran</th>
-                            {["Tugas", "Ulangan Harian", "UTS", "UAS"].map(t => (
-                              <th key={t} className="text-center px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">{t}</th>
-                            ))}
-                            <th className="text-center px-4 py-2.5 text-gray-500 font-semibold">Rata-rata</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {bySubject.map(({ subject, rows, avg }) => {
-                            function getScore(type: string) {
-                              return rows.find(g => g.type === type)?.score ?? null;
-                            }
-                            return (
-                              <tr key={subject} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                                <td className="px-4 py-3 font-medium text-navy">{subject}</td>
-                                {["Tugas", "Ulangan Harian", "UTS", "UAS"].map(type => {
-                                  const s = getScore(type);
-                                  return (
-                                    <td key={type} className="px-3 py-3 text-center">
-                                      {s !== null ? (
-                                        <span className={`inline-block w-10 py-0.5 rounded-lg font-bold text-center ${scoreBg(s)} ${scoreColor(s)}`}>{s}</span>
-                                      ) : (
-                                        <span className="text-gray-300">—</span>
-                                      )}
-                                    </td>
-                                  );
-                                })}
-                                <td className="px-4 py-3 text-center">
-                                  <span className={`inline-flex items-center gap-1 font-bold ${scoreColor(avg)}`}>
-                                    {avg.toFixed(1)}
-                                    {avg < 75 && <AlertTriangle size={10} className="text-amber-500" />}
-                                  </span>
-                                </td>
+            {gradesBySemester.length > 0 && (
+              <Panel judul="Rekap Nilai per Semester" ikon={<TrendingUp />}>
+                <div className="space-y-6">
+                  {gradesBySemester.map(({ sem, bySubject }) => {
+                    const semAvg = bySubject.reduce((a, s) => a + s.avg, 0) / bySubject.length;
+                    return (
+                      <div key={sem}>
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <span className="rounded-full bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-900">{sem}</span>
+                          <span className={`angka text-sm font-bold ${scoreColor(semAvg)}`}>Rata-rata {semAvg.toFixed(1)}</span>
+                        </div>
+                        <div className="scrollbar-visible overflow-x-auto rounded-xl border border-gray-100">
+                          <table className="data-table min-w-[34rem]">
+                            <thead>
+                              <tr>
+                                <th>Mata Pelajaran</th>
+                                {JENIS_NILAI.map(t => <th key={t} className="whitespace-nowrap text-center">{t}</th>)}
+                                <th className="text-center">Rata-rata</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="px-6 pb-4">
-              <Link href="/dashboard/student/rapor"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary-200 text-primary-700 text-sm font-semibold hover:bg-primary-50 transition-colors">
-                <Printer size={15} />
-                Cetak Rapor Lengkap
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* ── PKL + News Row ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-          {/* PKL */}
-          {student?.internship ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0">
-              <div className="flex items-center gap-2 mb-4">
-                <Briefcase size={16} className="text-purple-600" />
-                <h3 className="font-heading font-semibold text-navy">Informasi PKL</h3>
-                <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full border ${
-                  student.internship.status === "COMPLETED"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-blue-50 text-blue-700 border-blue-200"
-                }`}>
-                  {student.internship.status === "COMPLETED" ? "Selesai" : "Berlangsung"}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { label: "Perusahaan", value: student.internship.company },
-                  { label: "Posisi", value: student.internship.position },
-                  { label: "Supervisor", value: student.internship.supervisor },
-                  { label: "Periode", value: `${new Date(student.internship.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} — ${new Date(student.internship.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}` },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <span className="text-xs text-gray-400 w-20 shrink-0 pt-0.5">{label}</span>
-                    <span className="text-sm font-semibold text-navy">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <EmptyState icon={Briefcase} title="Belum Ada Data PKL" description="Informasi PKL akan muncul setelah diinput oleh wali kelas." className="flex flex-col items-center justify-center min-h-36 py-0" />
-          )}
-
-          {/* Berita terbaru */}
-          {latestNews.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                <div className="flex items-center gap-2">
-                  <Newspaper size={15} className="text-primary-700" />
-                  <h3 className="font-heading font-semibold text-navy text-sm">Berita & Pengumuman</h3>
-                </div>
-                <Link href="/news" className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
-                  Lihat semua <ArrowRight size={11} />
-                </Link>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {latestNews.map(n => (
-                  <Link key={n.id} href={`/news/${n.slug}`}
-                    className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-2 h-2 rounded-full bg-primary-300 shrink-0 mt-1.5" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-navy font-medium line-clamp-1 group-hover:text-primary-700 transition-colors">{n.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-gray-400">
-                          {new Date(n.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                        </span>
-                        <span className="text-[10px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded font-medium">{n.category}</span>
+                            </thead>
+                            <tbody>
+                              {bySubject.map(({ subject, rows, avg }) => (
+                                <tr key={subject}>
+                                  <td className="font-medium text-primary-900">{subject}</td>
+                                  {JENIS_NILAI.map(type => {
+                                    const s = rows.find(g => g.type === type)?.score ?? null;
+                                    return (
+                                      <td key={type} className="text-center">
+                                        {s !== null
+                                          ? <span className={`angka inline-block w-11 rounded-lg py-0.5 font-bold ${scoreBg(s)} ${scoreColor(s)}`}>{s}</span>
+                                          : <span className="text-gray-300">—</span>}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className={`angka text-center font-bold ${scoreColor(avg)}`}>{avg.toFixed(1)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                    );
+                  })}
+                  <TautanIkon href="/dashboard/student/rapor" ikon="cetak"
+                    className="sentuh flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-primary-900 transition-colors hover:bg-gray-50">
+                    Cetak Rapor Lengkap
+                  </TautanIkon>
+                </div>
+              </Panel>
+            )}
+          </div>
 
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-5">
+            <Panel judul={`Absensi ${bulanLabel}`} ikon={<CalendarCheck />}>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="angka font-heading text-4xl font-bold leading-none text-primary-900">{thisMonthPct}%</p>
+                  <p className="mt-1.5 text-sm text-gray-500">hadir dari {thisMonthAtt.length} hari tercatat</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <BagianBar bagian={["HADIR", "IZIN", "SAKIT", "ALPHA"].map(s => ({ label: STATUS_LABEL[s], nilai: thisMonthAtt.filter(a => a.status === s).length, warna: STATUS_WARNA[s] }))} />
+              </div>
+              {recentAtt.length > 0 && (
+                <div className="mt-5 border-t border-gray-100 pt-4">
+                  <p className="label-kecil mb-2">Catatan terakhir</p>
+                  <ul className="divide-y divide-gray-50">
+                    {recentAtt.map(a => (
+                      <li key={a.id} className="flex items-center justify-between py-2">
+                        <span className="text-sm text-gray-600">{tglLabel(a.date)}</span>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS_KELAS[a.status] ?? "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                          {STATUS_LABEL[a.status] ?? a.status}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Panel>
+
+            <AgendaCalendar agenda={agenda} />
+
+            <Panel judul="Praktik Kerja Lapangan" ikon={<Building2 />} isi={!!student?.internship}>
+              {student?.internship ? (
+                <dl className="space-y-3">
+                  {[
+                    { label: "Perusahaan", value: student.internship.company },
+                    { label: "Posisi", value: student.internship.position },
+                    { label: "Pembimbing", value: student.internship.supervisor },
+                    {
+                      label: "Periode",
+                      value: `${new Date(student.internship.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })} — ${new Date(student.internship.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}`,
+                    },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-start gap-3">
+                      <dt className="w-24 shrink-0 text-sm text-gray-500">{label}</dt>
+                      <dd className="min-w-0 text-sm font-semibold text-primary-900">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : <PanelKosong ikon={<FileText />} teks="Informasi PKL muncul setelah diisi wali kelas." />}
+            </Panel>
+
+            {latestNews.length > 0 && (
+              <Panel judul="Berita & Pengumuman" ikon={<Newspaper />} isi={false} tautan={{ label: "Lihat semua", href: "/news" }}>
+                <ul className="divide-y divide-gray-100">
+                  {latestNews.map(n => (
+                    <li key={n.id}>
+                      <Link href={`/news/${n.slug}`} className="block px-4 py-3 transition-colors hover:bg-gray-50 sm:px-5">
+                        <p className="line-clamp-2 text-sm font-medium text-primary-900">{n.title}</p>
+                        <p className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                          {new Date(n.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })}
+                          <span className="rounded bg-primary-50 px-1.5 py-0.5 font-medium text-primary-700">{n.category}</span>
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

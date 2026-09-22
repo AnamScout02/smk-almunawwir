@@ -76,7 +76,7 @@ export default function ChangePasswordForm() {
         </div>
       </div>
       <button type="submit" disabled={isPending}
-        className="w-full bg-primary-700 hover:bg-primary-900 text-white font-semibold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2 disabled:opacity-60">
+        className="btn-modal-save w-full">
         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
         Ubah Password
       </button>

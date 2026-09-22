@@ -3,6 +3,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import PrintKop from "@/components/shared/PrintKop";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 interface HistoryRow {
   id: string; date: string; className: string; subject: string; materi: string;
@@ -37,6 +39,7 @@ function CetakJurnalContent() {
   }, [classId, subject, semester]);
 
   const className = rows[0]?.className ?? "";
+  usePrintTitle(buildPrintFilename("REKAP_JURNAL", className, subject, semester));
   const totalHadir = rows.reduce((a, r) => a + r.hadir, 0);
   const totalIzin = rows.reduce((a, r) => a + r.izin, 0);
   const totalSakit = rows.reduce((a, r) => a + r.sakit, 0);

@@ -4,15 +4,25 @@ import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
-  BookOpen, Globe, LogOut, Menu, X, Calendar, Bell, BarChart2, GraduationCap,
+  BookOpen, Globe, LogOut, Calendar, CalendarCheck, Bell, BarChart2, GraduationCap,
   UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, ShieldCheck, Award, Building2, ListChecks, Boxes,
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, IdCard,
-  ChevronDown, Search, CheckSquare,
-} from "lucide-react";
+  ChevronDown, Search, CheckSquare, MoreHorizontal, Wallet, FileSpreadsheet,
+  BookA, BookUser, Stamp, FileText, CalendarOff, HandCoins, ClipboardCheck, ScanSearch,
+  Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
+  Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
 import NotificationBell from "@/components/shared/NotificationBell";
+import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBottomNav";
+import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
+import KotakNotifikasiTombol from "@/components/shared/KotakNotifikasiTombol";
+
+// Sinkron manual dgn BENDAHARA_JABATAN di src/lib/bendahara-guard.ts (server-only, tidak bisa
+// diimpor ke komponen client ini) — pola sama seperti TAS_JABATAN yg juga di-hardcode ulang di
+// sidebar client, bukan diimpor dari tas-access-guard.ts.
+const BENDAHARA_JABATAN = ["Bendahara Sekolah", "Bendahara BOS", "Bendahara BPOPP"];
 
 // Beberapa menu di sini sebenarnya fitur KHUSUS jabatan tertentu (UKS, Ekstrakurikuler,
 // Perpustakaan, Jaringan Sekolah, Kedisiplinan Guru) — bukan tugas umum TAS. Dulu SEMUA staf TAS
@@ -27,7 +37,7 @@ import NotificationBell from "@/components/shared/NotificationBell";
 // `show: () => true` (Pendaftaran, Siswa, Kelas, dst — tugas kantor TAS umum, bukan spesifik TU)
 // disyaratkan `full` (isFullTas) supaya guru-TU cuma melihat grup "Tata Usaha" + item jabatan yang
 // benar dia pegang, bukan seluruh menu admin.
-const menuGroups = [
+export const menuGroupsTas = [
   {
     label: null,
     items: [
@@ -35,85 +45,136 @@ const menuGroups = [
     ],
   },
   {
-    label: "Akademik",
+    label: "Data Siswa & Guru",
     items: [
       { href: "/dashboard/admin/admissions", label: "Pendaftaran Siswa", icon: ClipboardList, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/spmb-konversi", label: "SPMB → Buku Induk", icon: UserPlus, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/jabatan", label: "Jabatan", icon: Award, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/program-kerja", label: "Program Kerja", icon: ListChecks, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/announcements", label: "Pengumuman", icon: Bell, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
-    label: "Jadwal & Pengajaran",
+    label: "Kurikulum & Pembelajaran",
     items: [
-      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kalender-pendidikan", label: "Kalender Pendidikan", icon: CalendarDays, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/subjects", label: "Kode Mata Pelajaran", icon: BookMarked, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/schedules", label: "Jadwal Pelajaran", icon: Calendar, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/pemeriksa-jadwal", label: "Pemeriksa Jadwal", icon: CalendarCheck, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/rpp", label: "Bank RPP", icon: BookMarked, show: (_j: string[], full: boolean) => full },
       { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
-    label: "Kedisiplinan & Kinerja",
+    label: "Kesiswaan & BK",
     items: [
-      { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck,
-        show: (j: string[]) => j.includes("Wakil Kepala Bidang Penjamin Mutu") || j.includes("Wakil Kepala Kurikulum") || j.includes("Guru Piket") },
-      { href: "/dashboard/admin/kedisiplinan-leaderboard", label: "Kedisiplinan & Kinerja", icon: Trophy, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/kinerja-saya", label: "Kinerja Saya", icon: Award, show: (_j: string[], _full: boolean) => true },
-    ],
-  },
-  {
-    label: "PKL & Karir",
-    items: [
-      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, show: (_j: string[], full: boolean) => full },
-    ],
-  },
-  {
-    label: "Sarana & Layanan Siswa",
-    items: [
-      { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, show: (j: string[]) => j.includes("Kepala UKS") },
       { href: "/dashboard/admin/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag,
         show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
       { href: "/dashboard/admin/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare,
         show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
-      { href: "/dashboard/admin/perpustakaan", label: "Perpustakaan", icon: Library,
+      { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, show: (j: string[]) => j.includes("Kepala UKS") },
+      { href: "/dashboard/admin/bantuan-siswa", label: "Bantuan & Beasiswa", icon: HandCoins, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Kepegawaian & Kinerja",
+    items: [
+      { href: "/dashboard/admin/tugas", label: "Papan Tugas", icon: ClipboardList, show: (_j: string[], _f: boolean) => true },
+      { href: "/dashboard/admin/pkb", label: "Portofolio PKB", icon: Award, show: (_j: string[], _f: boolean) => true },
+      { href: "/dashboard/admin/presensi-pegawai", label: "Presensi Pegawai", icon: UserCheck, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kegiatan", label: "Presensi Kegiatan (QR)", icon: CalendarCheck, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/arsip-sk", label: "Arsip SK & Dokumen", icon: Archive, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/cuti", label: "Cuti Pegawai", icon: CalendarOff, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck,
+        show: (j: string[]) => j.includes("Wakil Kepala Bidang Penjamin Mutu") || j.includes("Wakil Kepala Kurikulum") || j.includes("Guru Piket") },
+      { href: "/dashboard/admin/kedisiplinan-leaderboard", label: "Kedisiplinan & Kinerja", icon: Trophy, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/kinerja-saya", label: "Kinerja Saya", icon: Award, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/program-kerja", label: "Program Kerja", icon: ListChecks, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "PKL & Alumni",
+    items: [
+      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/lowongan", label: "Lowongan Kerja BKK", icon: BriefcaseBusiness, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "TU — Buku Induk & Data",
+    items: [
+      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+      { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+      { href: "/dashboard/admin/buku-klapper", label: "Buku Klapper", icon: BookA, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+      { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kenaikan-kelas", label: "Buku Kenaikan Kelas", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/pemeriksa-data", label: "Pemeriksa Data", icon: ScanSearch, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/dapodik", label: "Sinkron Dapodik", icon: DatabaseZap, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+    ],
+  },
+  {
+    label: "TU — Persuratan",
+    items: [
+      { href: "/dashboard/admin/persuratan", label: "Agenda Surat", icon: Mail, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/disposisi", label: "Disposisi Surat Masuk", icon: Forward, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/ekspedisi", label: "Buku Ekspedisi", icon: Send, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/permintaan-surat", label: "Permintaan Surat", icon: Inbox, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/arsip", label: "Pengarsipan", icon: Archive, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "TU — Layanan & Dokumen",
+    items: [
+      { href: "/dashboard/admin/rapor-siswa", label: "Penerimaan Rapor", icon: ClipboardCheck, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/cek-kelulusan", label: "Cek Kelulusan", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/ijazah-serah", label: "Penyerahan Ijazah", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/legalisir", label: "Legalisir Dokumen", icon: Stamp, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/kartu-tanda", label: "Kartu Tanda", icon: IdCard, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/buku-tamu", label: "Buku Tamu", icon: BookUser, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/nominatif", label: "Nominatif Kelas XII", icon: FileSpreadsheet, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/profil-sekolah", label: "Profil Sekolah", icon: Building2, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Sarana & Perpustakaan",
+    items: [
+      { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/layanan-sarpras", label: "Layanan Sarpras", icon: Hammer, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/usulan-alat", label: "Usulan Alat & Bahan", icon: Boxes, show: (_j: string[], _full: boolean) => true },
+      { href: "/pusat-perpustakaan", label: "Pusat Perpustakaan", icon: Library,
         show: (j: string[]) => j.includes("Koordinator Perpustakaan") || j.includes("Tim Perpustakaan") },
+      { href: "/perpustakaan", label: "Perpustakaan Digital", icon: BookOpen, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/buku-saya", label: "Buku Saya", icon: BookOpen, badgeKey: "overdueBooks" as const, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/jaringan", label: "Jaringan Sekolah", icon: Network, show: (j: string[]) => j.includes("Pengelola Jaringan Sekolah") },
+      { href: "/dashboard/admin/bel-sekolah", label: "Bel Sekolah Otomatis", icon: Bell, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
-    label: "Tata Usaha",
-    // PERBAIKAN KRITIS 2026-08-10 (temuan user): dulu SEMUA item di sini `show: () => true` —
-    // literally mengabaikan parameter `full` walau komentar di atas bilang seharusnya disyaratkan.
-    // Akibatnya staf TAS non-TU (Security/Kebersihan/dll) TETAP LIHAT menu Buku Induk/Persuratan/
-    // Pengarsipan dkk di sidebar (walau API-nya sendiri sudah benar ditolak lewat verifyTasAccess,
-    // lihat tas-access-guard.ts) — membingungkan & tetap celah kalau ada halaman TU yg lupa proteksi
-    // sendiri. Sekarang benar-benar disyaratkan `full` (isFullTasJabatan).
+    label: "Keuangan",
     items: [
-      { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/buku-induk/guru",  label: "Buku Induk Guru",  icon: UserCog, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/buku-mutasi",       label: "Buku Mutasi",      icon: Repeat, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/persuratan",        label: "Persuratan",       icon: Mail, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/arsip",             label: "Pengarsipan",      icon: Archive, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/notulen-rapat",     label: "Notulen Rapat",    icon: NotebookPen, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/kartu-tanda",       label: "Kartu Tanda",      icon: IdCard, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/verifikasi-data",   label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/bel-sekolah",       label: "Bel Sekolah Otomatis", icon: Bell, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet, show: (j: string[]) => j.some(n => BENDAHARA_JABATAN.includes(n)) },
     ],
   },
   {
-    label: "Lainnya",
+    label: "Website & Informasi",
     items: [
-      { href: "/dashboard/admin/cek-kelulusan", label: "Cek Kelulusan", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/announcements", label: "Kelola Pengumuman", icon: Bell, show: (_j: string[], full: boolean) => full },
+    ],
+  },
+  {
+    label: "Akun Saya",
+    items: [
+      { href: "/dashboard/admin/pengumuman", label: "Pengumuman", icon: Megaphone, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/survei-saya", label: "Survei & Angket", icon: ClipboardPen, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/absen-mandiri", label: "Presensi Mandiri", icon: QrCode, show: (_j: string[], _full: boolean) => true },
+      { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/profile", label: "Profil Saya", icon: UserCircle, show: (_j: string[], _full: boolean) => true },
+      { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp, show: (_j: string[], _full: boolean) => true },
     ],
   },
 ];
@@ -121,7 +182,7 @@ const menuGroups = [
 interface RenderItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badgeKey?: "pendingProfileEdits" | "overdueBooks" }
 interface RenderGroup { label: string | null; items: RenderItem[] }
 
-const ALL_HREFS = menuGroups.flatMap(g => g.items.map(i => i.href));
+const ALL_HREFS = menuGroupsTas.flatMap(g => g.items.map(i => i.href));
 
 interface SidebarContentProps {
   logoEmblem: string;
@@ -149,12 +210,12 @@ function SidebarContent({
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-2">
         {logoFullWhite ? (
           <div className="flex flex-col gap-1.5 min-w-0">
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
-            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Tata Usaha</p>
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" />
+            <p className="text-white/40 text-xs font-semibold tracking-wider uppercase">Tata Usaha</p>
           </div>
         ) : (
           <div className="flex items-center gap-3 min-w-0">
-            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
             <div>
               <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
               <p className="text-white/50 text-xs">Tenaga Administrasi</p>
@@ -166,7 +227,7 @@ function SidebarContent({
       {/* Cari menu — filter cepat lintas grup */}
       <div className="px-3 pt-3">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -189,7 +250,7 @@ function SidebarContent({
               <button
                 type="button"
                 onClick={() => toggleGroup(group.label!)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/30 hover:text-white/60 uppercase transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs font-bold tracking-wider text-white/30 hover:text-white/60 uppercase transition-colors text-left"
               >
                 <span>{group.label}</span>
                 <ChevronDown size={12} className={`shrink-0 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
@@ -217,7 +278,7 @@ function SidebarContent({
                     <item.icon size={18} className="shrink-0" />
                     <span className="flex-1">{item.label}</span>
                     {badgeCount > 0 && (
-                      <span className="text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      <span className="text-[11px] font-bold bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                         {badgeCount}
                       </span>
                     )}
@@ -269,11 +330,13 @@ interface TasSidebarProps {
   overdueBooks?: number;
   jabatanNames?: string[];
   isFullTas?: boolean;
+  /** Admin sedang "Masuk Sebagai" akun ini — topbar mobile digeser turun supaya tidak ketutup
+   * pita ImpersonationBanner. Lihat catatan sama di TeacherSidebar.tsx. */
+  impersonating?: boolean;
 }
 
-export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true }: TasSidebarProps) {
+export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true, impersonating = false }: TasSidebarProps) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
@@ -288,7 +351,7 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
   }
 
   // Grup yang benar2 punya item terlihat (sesuai jabatan) DAN cocok dengan pencarian.
-  const visibleGroups = menuGroups
+  const visibleGroups = menuGroupsTas
     .map(g => ({ ...g, items: g.items.filter(item => item.show(jabatanNames, isFullTas)) }))
     .filter(g => g.items.length > 0) as RenderGroup[];
 
@@ -330,6 +393,19 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
     { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
   ];
 
+  // Bottom nav mobile — dibangun dari `visibleGroups` yang SAMA (sudah difilter jabatan/full),
+  // supaya konsisten persis dgn apa yg boleh dilihat staf ini di desktop. 4 slot utama + Lainnya.
+  function resolveBadge(item: RenderItem): number {
+    return item.badgeKey === "pendingProfileEdits" ? pendingProfileEdits : item.badgeKey === "overdueBooks" ? overdueBooks : 0;
+  }
+  // Bottom nav HP (18 Sep 2026): 4 tautan harian + tombol tengah Dashboard, TANPA sheet.
+  const navBawah: ItemNavBawah[] = [
+    { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk", icon: BookUser, simbol: "menu_book" },
+    { href: "/dashboard/admin/persuratan", label: "Surat", icon: Archive, simbol: "mail" },
+    { href: "/dashboard/admin/presensi-pegawai", label: "Presensi", icon: UserCheck, simbol: "badge" },
+    { href: "/dashboard/admin/permintaan-surat", label: "Layanan", icon: ClipboardList, simbol: "assignment" },
+  ];
+
   return (
     <>
       <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden print:hidden">
@@ -340,48 +416,33 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
           logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} isFullTas={isFullTas}
           search={search} setSearch={setSearch}
           filteredGroups={filteredGroups} openGroups={openGroups} toggleGroup={toggleGroup}
-          isActive={isActive} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} onLinkClick={() => setOpen(false)}
+          isActive={isActive} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} onLinkClick={() => {}}
         />
       </aside>
 
-      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
+      <div className="lg:hidden print:hidden fixed left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg"
+        style={impersonating ? { top: "var(--impersonation-banner-h, 2.5rem)" } : { top: 0 }}>
         <div className="flex items-center gap-2">
           {logoFullWhite ? (
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" />
           ) : (
             <>
-              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
+              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" />
               <span className="font-heading font-bold text-white text-sm">TAS Panel</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-1">
-          <NotificationBell items={notifications} variant="dark" />
-          <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white p-2">
-            <Menu size={22} />
-          </button>
+          {/* Satu pintu notifikasi (dulu kotak + lonceng terpisah). */}
+          <KotakNotifikasiTombol variant="topbar" tindakan={notifications} />
+          <MenuAkunMobile
+            profilHref={isFullTas ? "/dashboard/admin/profile" : "/dashboard/teacher/profile"}
+            tautanTambahan={isFullTas ? [] : [{ href: "/dashboard/teacher", label: "Portal Guru", icon: ArrowLeft }]}
+          />
         </div>
       </div>
 
-      {open && (
-        <div className="lg:hidden print:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <aside className="relative w-64 bg-primary-900 h-full flex flex-col shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.10] pointer-events-none"
-              style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat" }}
-            />
-            <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white">
-              <X size={20} />
-            </button>
-            <SidebarContent
-              logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} isFullTas={isFullTas}
-              search={search} setSearch={setSearch}
-              filteredGroups={filteredGroups} openGroups={openGroups} toggleGroup={toggleGroup}
-              isActive={isActive} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} onLinkClick={() => setOpen(false)}
-            />
-          </aside>
-        </div>
-      )}
+      <MobileBottomNav items={navBawah} beranda={{ href: "/dashboard/admin", icon: LayoutDashboard, simbol: "home", label: "Beranda" }} />
     </>
   );
 }

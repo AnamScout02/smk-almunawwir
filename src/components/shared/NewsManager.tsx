@@ -92,15 +92,17 @@ export default function NewsManager() {
         description={`${items.length} berita tersimpan`}
       />
 
-      <div className="flex justify-end mb-4">
-        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={18} /> Tulis Berita Baru
-        </button>
-      </div>
-
-      <div className="relative mb-4">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari judul atau kategori..." className="input-field pl-10" />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026); di HP tombol turun ke kanan bawah. */}
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari judul atau kategori..." className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={openNew} className="btn-modal-save btn-teks">
+            <Plus size={18} /> Tulis Berita Baru
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -127,7 +129,7 @@ export default function NewsManager() {
         footer={
           <>
             <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1">
               {saving && <Loader2 size={14} className="animate-spin" />}
               {saving ? "Menyimpan..." : "Simpan Berita"}
             </button>
@@ -159,7 +161,7 @@ export default function NewsManager() {
             <textarea rows={8} value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} className="input-field resize-none" placeholder="Tulis isi berita di sini..." />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.published} onChange={e => setForm(f => ({ ...f, published: e.target.checked }))} className="w-4 h-4 rounded accent-primary-600" />
+            <input type="checkbox" checked={form.published} onChange={e => setForm(f => ({ ...f, published: e.target.checked }))} className="w-4 h-4 rounded accent-primary-700" />
             <span className="text-sm text-gray-700">Langsung tayangkan berita ini</span>
           </label>
           {msg && <p className="error-msg">{msg}</p>}
@@ -174,20 +176,19 @@ function NewsTable({ items, onEdit, onDelete, onTogglePublish }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Berita</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">Tanggal</th>
-            <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Berita</th>
+            <th className="hidden lg:table-cell">Tanggal</th>
+            <th className="text-center">Status</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(n => (
-            <tr key={n.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5">
+            <tr key={n.id}>
+              <td>
                 <div className="flex items-center gap-3">
                   {n.thumbnail && (
                     <div className="relative w-12 h-10 rounded-lg overflow-hidden shrink-0 hidden sm:block">
@@ -197,18 +198,18 @@ function NewsTable({ items, onEdit, onDelete, onTogglePublish }: {
                   <span className="font-semibold text-primary-900 line-clamp-1">{n.title}</span>
                 </div>
               </td>
-              <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell">{new Date(n.createdAt).toLocaleDateString("id-ID")}</td>
-              <td className="px-5 py-3.5 text-center">
+              <td className="text-gray-500 hidden lg:table-cell">{new Date(n.createdAt).toLocaleDateString("id-ID")}</td>
+              <td className="text-center">
                 <button onClick={() => onTogglePublish(n)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${n.published ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"}`}>
                   {n.published ? <Eye size={10} /> : <EyeOff size={10} />}
                   {n.published ? "Tayang" : "Draft"}
                 </button>
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1">
                   {n.published && (
-                    <Link href={`/news/${n.slug}`} target="_blank" className="p-1.5 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition">
+                    <Link href={`/news/${n.slug}`} target="_blank" className="p-1.5 text-gray-400 hover:text-primary-700 rounded-lg hover:bg-primary-50 transition">
                       <Eye size={15} />
                     </Link>
                   )}

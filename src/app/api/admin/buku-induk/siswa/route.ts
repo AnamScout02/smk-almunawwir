@@ -1,36 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess, assertBukuIndukSiswaScope } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
+import { jsonBesar } from "@/lib/json-besar";
 import bcrypt from "bcryptjs";
-import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
+import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { syncParentAccountForStudent } from "@/lib/parent-account";
 
 export const dynamic = "force-dynamic";
 
+/** GET dipakai ADMIN/TAS/Operator Sekolah (lihat semua) MAUPUN wali kelas (di-scope KETAT ke
+ * kelas walinya sendiri — kalau ?classId= yang diminta bukan miliknya, diam-diam diabaikan &
+ * tetap dikembalikan data kelas walinya, bukan error/kosong, supaya UI tetap tampil normal). */
 export async function GET(req: NextRequest) {
-  await verifyTasAccess();
+  const scope = await assertBukuIndukSiswaScope();
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get("classId");
+
+  const where = scope.scope === "ALL"
+    ? (classId ? { classId } : undefined)
+    : { classId: classId && scope.classIds.includes(classId) ? classId : { in: scope.classIds } };
+
   const students = await prisma.student.findMany({
-    where: classId ? { classId } : undefined,
+    where,
     include: {
       user: { select: { name: true, email: true } },
       class: { select: { id: true, name: true, grade: true } },
-      major: { select: { name: true, code: true } },
+      major: { select: { id: true, name: true, code: true } },
     },
     orderBy: [{ enrollYear: "desc" }, { user: { name: "asc" } }],
   });
-  return NextResponse.json(students);
+  return jsonBesar(students, req);
 }
 
+/** POST (buat siswa baru) TETAP full-access murni — wali kelas TIDAK boleh menambah siswa baru
+ * ke kelas manapun (di luar cakupan "akses baca/edit kelas sendiri" yang diminta). */
 export async function POST(req: NextRequest) {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const body = await req.json();
   const {
     name, email, password, nis, nisn,
     majorId, classId, enrollYear,
     birthPlace, birthDate, gender, religion, address,
-    parentName, parentPhone, parentJob, previousSchool,
+    parentName, parentPhone, parentJob, notifyEmail, notifyWhatsapp, previousSchool,
     studentStatus, studentNotes,
     bukuIndukData,
   } = body;
@@ -80,8 +92,10 @@ export async function POST(req: NextRequest) {
       address: address || null,
       parentName: parentName ? toProperCaseName(parentName) : null,
       parentPhone: parentPhone || null,
+      notifyEmail: typeof notifyEmail === "boolean" ? notifyEmail : true,
+      notifyWhatsapp: typeof notifyWhatsapp === "boolean" ? notifyWhatsapp : true,
       parentJob: parentJob || null,
-      previousSchool: previousSchool ? toProperCase(previousSchool) : null,
+      previousSchool: previousSchool ? toProperCaseSchoolName(previousSchool) : null,
       studentStatus: studentStatus || "AKTIF",
       studentNotes: studentNotes || null,
       bukuIndukData: bukuIndukData ? normalizeBukuIndukText(bukuIndukData) : undefined,
@@ -89,9 +103,12 @@ export async function POST(req: NextRequest) {
     include: {
       user: { select: { name: true, email: true } },
       class: { select: { id: true, name: true, grade: true } },
-      major: { select: { name: true, code: true } },
+      major: { select: { id: true, name: true, code: true } },
     },
   });
+
+  // Akun Orang Tua dibuat/dihubungkan otomatis dari No. HP — gagal-sync tidak boleh menggagalkan simpan siswa.
+  await syncParentAccountForStudent(student.id, student.parentPhone, student.parentName).catch(() => {});
 
   return NextResponse.json(student, { status: 201 });
 }

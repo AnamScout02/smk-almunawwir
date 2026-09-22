@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertKedisiplinan } from "@/lib/kedisiplinan-guard";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
+import { cakupanTingkat } from "@/lib/kehadiran-guru";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 
@@ -14,6 +15,9 @@ interface FlatSlot {
   id: string; classId: string; className: string; subject: string; startTime: string; endTime: string; room: string | null;
   teacherId: string | null; teacherName: string; teacherNip: string;
   status: string; hasTugas: boolean | null; notes: string;
+  /** Status presensi harian dari TU (StaffAttendance) pada tanggal itu — hanya DITAMPILKAN sebagai
+   *  petunjuk; guru piket tetap yang memutuskan status tiap jam. Lihat komentar di GET. */
+  statusHarian: string | null; keteranganHarian: string | null;
 }
 
 // Nilai status/hasTugas/notes blok diambil dari slot PERTAMA yang sudah tersimpan (kalau ada) —
@@ -30,6 +34,7 @@ function groupConsecutive(slots: FlatSlot[], periodMap: Map<string, number>) {
       endPeriod: periodMap.get(last.startTime) ?? null,
       teacherId: first.teacherId, teacherName: first.teacherName, teacherNip: first.teacherNip,
       status: first.status, hasTugas: first.hasTugas, notes: first.notes,
+      statusHarian: first.statusHarian, keteranganHarian: first.keteranganHarian,
       periodCount: items.length,
     }));
 
@@ -57,6 +62,7 @@ export async function GET(req: NextRequest) {
 
     const date = new Date(dateStr);
     const nextDay = new Date(date.getTime() + 86400000);
+    const tingkat = await cakupanTingkat();
     const day = DAYS[date.getDay()];
     const weekType = await getWeekTypeForDate(date);
 
@@ -67,8 +73,8 @@ export async function GET(req: NextRequest) {
         // (lihat CLAUDE.md), bukan jadwal rotasi 2-minggu asli. Tanpa filter ini, dua dataset
         // independen ketimpa jadi 1 tampilan (efeknya kelihatan seperti "guru minggu 1 & minggu 2
         // ketuker/campur" padahal sebenarnya itu jadwal Dapodik yang numpuk di jam yang sama).
-        where: { day, scheduleType: "BLOK", teacherId: teacherId ? teacherId : { not: null }, class: { grade: { in: [10, 11] } } },
-        include: { class: { select: { id: true, name: true } }, teacher: { select: { id: true, nip: true, user: { select: { name: true } } } } },
+        where: { day, scheduleType: "BLOK", teacherId: teacherId ? teacherId : { not: null }, class: { grade: { in: tingkat } } },
+        include: { class: { select: { id: true, name: true } }, teacher: { select: { id: true, nip: true, userId: true, user: { select: { name: true } } } } },
         orderBy: [{ startTime: "asc" }, { class: { name: "asc" } }],
       }),
       prisma.schoolPeriod.findMany({ where: { day, isBreak: false }, orderBy: { order: "asc" } }),
@@ -83,6 +89,19 @@ export async function GET(req: NextRequest) {
       : [];
     const existingMap = new Map(existing.map(e => [e.scheduleId, e]));
 
+    // PRESENSI HARIAN TU pada tanggal yang sama — supaya guru piket melihat "sudah ada surat izin"
+    // tanpa harus membuka halaman lain, dan bisa menerapkannya ke semua jam guru itu sekali klik
+    // (rancangan 18 Sep 2026). Sengaja hanya PETUNJUK: tidak pernah mengisi status secara otomatis,
+    // karena default yang terisi diam-diam persis yang dilarang aturan status kosong (CLAUDE.md #10).
+    const userIds = [...new Set(relevant.map(s2 => s2.teacher?.userId).filter(Boolean))] as string[];
+    const harian = userIds.length
+      ? await prisma.staffAttendance.findMany({
+          where: { userId: { in: userIds }, tanggal: { gte: date, lt: nextDay } },
+          select: { userId: true, status: true, keterangan: true },
+        }).catch(() => [])
+      : [];
+    const harianMap = new Map(harian.map(h => [h.userId, h]));
+
     const flat: FlatSlot[] = relevant.map(s => {
       const e = existingMap.get(s.id);
       return {
@@ -92,6 +111,8 @@ export async function GET(req: NextRequest) {
         // "" (bukan "HADIR") kalau belum pernah dicatat — supaya Wakasek/Guru Piket TERPAKSA
         // memilih status secara sadar, bukan diam2 dianggap sudah "Hadir" tanpa dicek.
         status: e?.status ?? "", hasTugas: e?.hasTugas ?? null, notes: e?.notes ?? "",
+        statusHarian: (s.teacher?.userId && harianMap.get(s.teacher.userId)?.status) || null,
+        keteranganHarian: (s.teacher?.userId && harianMap.get(s.teacher.userId)?.keterangan) || null,
       };
     });
 

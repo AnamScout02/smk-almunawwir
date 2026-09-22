@@ -160,7 +160,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
   }
 
   if (loading) {
-    return <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>;
+    return <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
   }
 
   if (mode === "personal") {
@@ -172,12 +172,12 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
           <EmptyState icon={Award} title="Belum Ada KPI" description="Belum ada indikator kinerja yang ditetapkan untuk jabatan Anda." />
         ) : (
           <>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5 text-center">
+            <div className="panel p-6 mb-5 text-center">
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Skor Akhir</p>
               <p className="font-heading text-5xl font-bold text-primary-900">{score.finalScore.toFixed(1)}</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50">
                 <h3 className="font-heading font-bold text-primary-900">Rincian per Indikator</h3>
               </div>
@@ -202,7 +202,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
             </div>
 
             {mySubmissions.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-5">
+              <div className="panel overflow-hidden mt-5">
                 <div className="px-5 py-4 border-b border-gray-50"><h3 className="font-heading font-bold text-primary-900">Riwayat Pengajuan</h3></div>
                 <div className="divide-y divide-gray-50">
                   {mySubmissions.map(s => (
@@ -212,7 +212,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
                         <p className="text-xs text-gray-400 truncate">{s.description}</p>
                         {s.reviewNote && <p className="text-xs text-gray-500 mt-0.5">Catatan: {s.reviewNote}</p>}
                       </div>
-                      <span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full border ${STATUS_BADGE[s.status]}`}>{s.status}</span>
+                      <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${STATUS_BADGE[s.status]}`}>{s.status}</span>
                     </div>
                   ))}
                 </div>
@@ -225,7 +225,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
           footer={
             <>
               <button type="button" onClick={() => setModalIndicator(null)} className="btn-modal-cancel flex-1">Batal</button>
-              <button type="button" onClick={handleSubmitBukti} disabled={saving || !description.trim()} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              <button type="button" onClick={handleSubmitBukti} disabled={saving || !description.trim()} className="btn-modal-save flex-1">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Ajukan
               </button>
             </>
@@ -255,12 +255,12 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       <div className="flex flex-wrap items-center gap-2 mb-5">
         {onSwitchTab && (
           <button onClick={onSwitchTab}
-            className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+            className="btn-modal-cancel shrink-0 whitespace-nowrap">
             <Trophy size={15} /> Kedisiplinan
           </button>
         )}
         <button onClick={toggleFullscreen}
-          className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+          className="btn-modal-cancel shrink-0 whitespace-nowrap">
           <Maximize2 size={15} /> Layar Penuh
         </button>
       </div>
@@ -283,7 +283,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       </div>
 
       {reviewQueue.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+        <div className="panel overflow-hidden mb-5">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
             <ClipboardCheck size={16} className="text-amber-600" />
             <h3 className="font-heading font-bold text-primary-900">Menunggu Verifikasi ({reviewQueue.length})</h3>
@@ -318,9 +318,9 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
               options={[{ value: "final", label: "Skor Total" }, ...leaders[0].breakdown.map(b => ({ value: b.name, label: b.name }))]}
               buttonClassName="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-primary-900 font-medium bg-white flex items-center justify-between gap-2 cursor-pointer" />
             <div className="relative flex-1 min-w-48 ml-auto">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Cari nama atau NIP..." className="input-field pl-9 text-sm" />
+                placeholder="Cari nama atau NIP..." className="input-field pl-10" />
             </div>
           </div>
           )}
@@ -333,12 +333,12 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
               return <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada pegawai yang cocok dengan pencarian." />;
             }
             return (
-          <div className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="panel relative overflow-hidden">
           <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50"
             style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
             <Trophy size={18} className="text-gold" />
             <h3 className="font-heading font-bold text-primary-900">Ranking Kinerja</h3>
-            <span className="ml-auto text-[10px] font-bold text-gold/80 uppercase tracking-widest">
+            <span className="ml-auto text-xs font-bold text-gold/80 uppercase tracking-widest">
               {periodLabel(currentPeriod())}
             </span>
           </div>
@@ -374,7 +374,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
                   <div className="min-w-0 flex-1 relative">
                     <p className={`font-semibold text-primary-900 truncate ${i === 0 ? "text-base" : "text-sm"}`}>
                       {l.name}
-                      {i === 0 && <span className="ml-2 text-[10px] font-bold text-gold/90 bg-gold/10 px-1.5 py-0.5 rounded-full align-middle">TERBAIK BULAN INI</span>}
+                      {i === 0 && <span className="ml-2 text-xs font-bold text-gold/90 bg-gold/10 px-1.5 py-0.5 rounded-full align-middle">TERBAIK BULAN INI</span>}
                     </p>
                     <p className="text-xs text-gray-400">{l.nip}</p>
                     {i < 3 && (
@@ -385,7 +385,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
                   </div>
                   <div className="text-right shrink-0 relative">
                     <p className={`font-heading font-bold ${i === 0 ? "text-2xl text-gold" : "text-lg text-primary-900"}`}>{displayScore.toFixed(1)}</p>
-                    {sortBy !== "final" && <p className="text-[0.65rem] text-gray-400">total {l.finalScore.toFixed(1)}</p>}
+                    {sortBy !== "final" && <p className="text-xs text-gray-400">total {l.finalScore.toFixed(1)}</p>}
                   </div>
                 </button>
                 {expandedUserId === l.userId && (

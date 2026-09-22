@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { URL_FONT_SIMBOL } from "@/lib/simbol-material";
 import { Plus_Jakarta_Sans, Inter, Amiri } from "next/font/google";
 import "./globals.css";
 import WhatsAppButton from "@/components/shared/WhatsAppButton";
 import Providers from "@/components/shared/Providers";
+import ServiceWorkerRegister from "@/components/shared/ServiceWorkerRegister";
+import InstallPwaPrompt from "@/components/shared/InstallPwaPrompt";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -41,9 +44,19 @@ export const metadata: Metadata = {
     "NPSN 69896523",
   ],
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon.png" },
+      { url: "/ikon-aplikasi/any-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/ikon-aplikasi/any-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/ikon-aplikasi/apple-180.png", // dari Logo Lambang — lihat src/lib/ikon-aplikasi.ts
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Al Munawwir",
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "SMK Al Munawwir IIBS",
     description:
@@ -52,6 +65,17 @@ export const metadata: Metadata = {
     locale: "id_ID",
     images: [{ url: "/images/logo-full.png" }],
   },
+};
+
+// Viewport/themeColor TERPISAH dari `metadata` di Next.js 16 (bukan lagi field di dalam
+// `metadata.themeColor` spt versi lama) — lihat node_modules/next/dist/docs/.../generate-viewport.md,
+// wajib dicek dulu per AGENTS.md krn versi Next.js ini beda dari asumsi training data.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Situs PUBLIK sengaja TETAP bisa diperbesar (tamu & orang tua sering perlu memperbesar teks).
+  // Penguncian hanya berlaku di aplikasi/portal — lihat `viewport` di layout dashboard & portal.
+  themeColor: "#0F1A45",
 };
 
 export default function RootLayout({
@@ -67,13 +91,15 @@ export default function RootLayout({
       <head>
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+          href={URL_FONT_SIMBOL /* hanya ikon bottom navbar — src/lib/simbol-material.ts */}
         />
       </head>
       <body className="min-h-screen flex flex-col">
         <Providers>
           {children}
           <WhatsAppButton />
+          <ServiceWorkerRegister />
+          <InstallPwaPrompt />
         </Providers>
       </body>
     </html>

@@ -2,6 +2,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { NextRequest } from "next/server";
 import { verifySession } from "@/lib/dal";
+import { kompresGambar } from "@/lib/kompres-gambar";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,14 +13,18 @@ export async function POST(req: NextRequest) {
 
     // Siswa hanya boleh upload foto biodata sendiri, bukti jurnal PKL & jawaban tugas; guru boleh upload materi & tugas;
     // TAS (staf TU) boleh upload audio Bel Sekolah; admin bebas semua folder.
-    const isStudentAllowedFolder = folder === "buku-induk/masuk" || folder === "pkl-jurnal" || folder === "tugas-jawaban";
-    const isTeacherAllowedFolder = folder === "materi" || folder === "tugas";
-    const isTasAllowedFolder = folder === "bel-sekolah";
+    // "ujian-jawaban": berkas jawaban siswa untuk soal CBT bertipe Unggah.
+    // "soal": gambar/audio yang disisipkan guru ke dalam soal CBT (listening, diagram).
+    const isStudentAllowedFolder = folder === "buku-induk/masuk" || folder === "pkl-jurnal" || folder === "tugas-jawaban" || folder === "ujian-jawaban";
+    // "osis": foto calon Pemilihan OSIS (Pembina OSIS/Kesiswaan — akses halaman dijaga osis-guard).
+    const isTeacherAllowedFolder = folder === "materi" || folder === "tugas" || folder === "soal" || folder === "osis" || folder === "pkl-jurnal" || folder === "liputan";
+    // "sarpras": foto laporan kerusakan (semua guru & staf, 17 Sep 2026).
+    const isTasAllowedFolder = folder === "bel-sekolah" || folder === "sarpras" || folder === "bkk";
     const allowed_ =
       session.role === "ADMIN" ||
       (session.role === "STUDENT" && isStudentAllowedFolder) ||
       (session.role === "TEACHER" && (isTeacherAllowedFolder || isTasAllowedFolder)) ||
-      (session.role === "TAS" && isTasAllowedFolder);
+      (session.role === "TAS" && (isTasAllowedFolder || folder === "soal"));
     if (!allowed_) {
       return Response.json({ error: "Tidak diizinkan" }, { status: 403 });
     }
@@ -29,15 +34,18 @@ export async function POST(req: NextRequest) {
     }
 
     const isIdPhotoFolder = folder === "buku-induk/masuk" || folder === "buku-induk/keluar";
-    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban";
+    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban";
     const isAudioFolder = folder === "bel-sekolah";
+    const isSoalFolder = folder === "soal";
     const allowed = isIdPhotoFolder
       ? ["image/jpeg", "image/jpg", "image/png"]
       : isDocFolder
         ? ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"]
         : isAudioFolder
           ? ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg"]
-          : ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+          : isSoalFolder
+            ? ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg"]
+            : ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) {
       return Response.json({
         error: isIdPhotoFolder
@@ -50,14 +58,21 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    if (file.size > (isAudioFolder ? 8 : 5) * 1024 * 1024) {
-      return Response.json({ error: `Ukuran file maksimal ${isAudioFolder ? 8 : 5}MB` }, { status: 400 });
+    const batasMb = (isAudioFolder || isSoalFolder) ? 8 : 5;
+    if (file.size > batasMb * 1024 * 1024) {
+      return Response.json({ error: `Ukuran file maksimal ${batasMb}MB` }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+    let ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
 
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    // Gambar soal CBT & jawaban unggahan siswa dikompres (WebP, maks 1600 px) — dibuka puluhan
+    // siswa sekaligus di jaringan sekolah. GIF & audio tidak disentuh.
+    if ((isSoalFolder || folder === "ujian-jawaban" || folder === "sarpras") && ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      const kecil = await kompresGambar(buffer);
+      if (kecil) { buffer = Buffer.from(kecil.buffer); ext = kecil.ext; }
+    }
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const uploadDir = join(process.cwd(), "public", "uploads", folder);
 

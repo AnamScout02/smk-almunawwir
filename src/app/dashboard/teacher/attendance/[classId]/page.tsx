@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Save, CheckSquare } from "lucide-react";
+import { ArrowLeft, Save, CheckSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
@@ -132,16 +132,16 @@ export default function AbsensiPage() {
   const summary = STATUSES.map(s => ({ label: s, count: Object.values(attendance).filter(v => v === s).length }));
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<CheckSquare size={22} />}
         title="Input Absensi"
         description={cls ? `${cls.name} — ${cls.major.name}` : "Memuat..."}
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/teacher/attendance" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/teacher/attendance" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
@@ -149,10 +149,10 @@ export default function AbsensiPage() {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.4fr] gap-5 items-start">
         <div>
           {/* Tanggal + summary */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
+          <div className="panel p-5 mb-5 flex flex-col gap-4">
+            <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
               <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
-              <DatePicker value={date} onChange={setDate} />
+              <div className="min-w-0 flex-1"><DatePicker value={date} onChange={setDate} /></div>
             </div>
             <div className="flex gap-3 text-sm flex-wrap">
               {summary.map(s => (
@@ -169,16 +169,15 @@ export default function AbsensiPage() {
           </div>
 
           {/* Tabel absensi */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
-            <div className="flex items-center justify-between px-5 py-3"
-              style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-              <p className="text-sm font-semibold text-white">{students.length} Siswa</p>
-              <button onClick={setAllHadir} className="text-xs text-gold font-semibold hover:text-white transition">
+          <div className="panel overflow-hidden mb-5">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
+              <p className="text-sm font-semibold text-primary-900">{students.length} Siswa</p>
+              <button onClick={setAllHadir} className="text-xs text-primary-700 font-semibold hover:text-primary-900 transition">
                 Tandai Semua Hadir
               </button>
             </div>
             {loading ? (
-              <div className="py-16 text-center text-gray-400 text-sm">Memuat daftar siswa...</div>
+              <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat daftar siswa...</div>
             ) : students.length === 0 ? (
               <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
             ) : (
@@ -212,16 +211,16 @@ export default function AbsensiPage() {
           <div className="flex items-center justify-end gap-4">
             {saveError && <p className="text-red-600 text-sm font-semibold">{saveError}</p>}
             {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absensi berhasil disimpan!</p>}
-            <button onClick={handleSave} disabled={isPending} className="btn-gold flex items-center gap-2 text-sm">
+            <button onClick={handleSave} disabled={isPending} className="btn-modal-save">
               <Save size={16} /> {isPending ? "Menyimpan..." : "Simpan Absensi"}
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden xl:sticky xl:top-6">
-          <div className="px-5 py-3" style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-            <p className="text-sm font-semibold text-white">Jurnal Absensi Bulan Ini</p>
-            <p className="text-white/50 text-xs">Live — otomatis update begitu absensi disimpan</p>
+        <div className="panel overflow-hidden xl:sticky xl:top-6">
+          <div className="px-5 py-3 border-b border-gray-100 bg-white">
+            <p className="text-sm font-semibold text-primary-900">Jurnal Absensi Bulan Ini</p>
+            <p className="text-gray-500 text-xs">Live — otomatis update begitu absensi disimpan</p>
           </div>
           <MonthlyAttendanceCalendar rows={calRows} days={calDays} sundays={calSundays} loading={loadingCal} viewMonth={month} compact />
         </div>

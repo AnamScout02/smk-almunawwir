@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { cabutSemuaSesiPengguna } from "@/lib/sesi-server";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const session = await verifyRole(["ADMIN", "TEACHER", "STUDENT"]);
+    const session = await verifyRole(["ADMIN", "TAS", "TEACHER", "STUDENT", "PARENT"]);
     const { currentPassword, newPassword } = await req.json();
 
     if (!currentPassword || !newPassword) {
@@ -25,13 +26,16 @@ export async function POST(req: Request) {
 
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+    // Password berganti = semua perangkat LAIN dikeluarkan (kalau password lama bocor, sesi si
+    // pencuri ikut mati). Perangkat yang sedang dipakai mengganti tetap masuk.
+    const perangkatDikeluarkan = await cabutSemuaSesiPengguna(user.id, "GANTI_PASSWORD", session.sid);
 
     await logActivity(session, {
       action: "CHANGE_OWN_PASSWORD", entity: "User", entityId: user.id,
       description: `${session.name} mengganti password akunnya sendiri`,
     });
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, perangkatDikeluarkan });
   } catch {
     return Response.json({ error: "Gagal mengubah password." }, { status: 500 });
   }

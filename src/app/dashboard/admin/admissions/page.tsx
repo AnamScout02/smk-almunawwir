@@ -55,19 +55,19 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; dot: string 
 
 const FILTER_KEYS = ["SEMUA", "PENDING", "WAWANCARA", "ACCEPTED", "REJECTED"] as const;
 
-const FILTER_TILE: Record<string, { icon: React.ElementType; grad: string; ring: string }> = {
-  SEMUA:     { icon: Users,         grad: "from-primary-500 to-primary-700", ring: "ring-primary-100" },
-  PENDING:   { icon: Clock,         grad: "from-amber-500 to-amber-600",     ring: "ring-amber-100" },
-  WAWANCARA: { icon: CalendarCheck, grad: "from-blue-500 to-blue-600",       ring: "ring-blue-100" },
-  ACCEPTED:  { icon: CheckCircle,   grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
-  REJECTED:  { icon: XCircle,       grad: "from-red-500 to-red-600",         ring: "ring-red-100" },
+const FILTER_TILE: Record<string, { icon: React.ElementType; latar: string; chip: string }> = {
+  SEMUA:     { icon: Users,         latar: "from-primary-50 to-white border-primary-100", chip: "bg-primary-700" },
+  PENDING:   { icon: Clock,         latar: "from-amber-50 to-white border-amber-100",     chip: "bg-amber-500" },
+  WAWANCARA: { icon: CalendarCheck, latar: "from-sky-50 to-white border-sky-100",         chip: "bg-sky-600" },
+  ACCEPTED:  { icon: CheckCircle,   latar: "from-emerald-50 to-white border-emerald-100", chip: "bg-emerald-600" },
+  REJECTED:  { icon: XCircle,       latar: "from-red-50 to-white border-red-100",         chip: "bg-red-600" },
 };
 
 function DocLink({ url, label }: { url?: string | null; label: string }) {
   if (!url) return <span className="text-gray-300 text-xs">—</span>;
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 hover:underline">
+      className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 hover:underline">
       <FileText size={11} />
       {label}
       <ExternalLink size={10} />
@@ -193,42 +193,40 @@ export default function AdminAdmissionsPage() {
         description="Daftar calon siswa yang mendaftar melalui website"
       />
 
-      <div className="flex justify-end mb-5">
-        <a href="/api/admin/export/admissions"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-          <Download size={15} />
-          Export CSV
-        </a>
-      </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {FILTER_KEYS.map(k => {
           const tile = FILTER_TILE[k];
           const active = filter === k;
           return (
-            <button key={k} onClick={() => setFilter(k)}
-              className={`group relative overflow-hidden rounded-xl p-3.5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all text-left bg-gradient-to-br ${tile.grad} ring-1 ${tile.ring} ${
-                active ? "ring-2 ring-inset ring-white shadow-lg" : "opacity-75 hover:opacity-100"
-              }`}>
-              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <tile.icon size={56} className="text-white" />
-              </div>
-              <div className="relative">
-                <p className="font-heading font-bold text-xl leading-tight text-white">{counts[k]}</p>
-                <p className="text-white/75 text-[10px] font-medium leading-tight truncate mt-0.5">{filterLabels[k]}</p>
-              </div>
+            <button key={k} onClick={() => setFilter(k)} aria-pressed={active}
+              className={`panel panel-interaktif flex flex-col gap-2 bg-gradient-to-br p-3.5 text-left ${tile.latar} ${active ? "ring-2 ring-primary-700" : ""}`}>
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-md ${tile.chip}`}><tile.icon size={18} /></span>
+                <span className="angka font-heading text-xl font-bold leading-tight text-primary-900">{counts[k]}</span>
+              </span>
+              <span className="text-xs font-medium leading-snug text-gray-600">{filterLabels[k]}</span>
             </button>
           );
         })}
       </div>
 
       {/* Search */}
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Cari nama, email, nomor WA, atau jurusan..."
-          className="input-field pl-10" />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026). */}
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama, email, nomor WA, atau jurusan..."
+            className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          <a href="/api/admin/export/admissions"
+            className="btn-modal-cancel">
+            <Download size={15} />
+            Unduh Excel
+          </a>
+        </div>
       </div>
 
       {loading ? (
@@ -243,7 +241,7 @@ export default function AdminAdmissionsPage() {
             const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.PENDING;
             const isExpanded = expanded === item.id;
             return (
-              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
+              <div key={item.id} className="panel hover:shadow-md transition-all overflow-hidden">
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -258,7 +256,7 @@ export default function AdminAdmissionsPage() {
                         </span>
                       )}
                       {item.skorAkhir != null && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-50 text-primary-700 border border-primary-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-50 text-primary-700 border border-primary-100">
                           <Calculator size={11} /> {item.skorAkhir}
                         </span>
                       )}
@@ -300,7 +298,7 @@ export default function AdminAdmissionsPage() {
                       </button>
                     )}
                     <button onClick={() => setExpanded(isExpanded ? null : item.id)}
-                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-lg">
+                      className="p-1.5 text-gray-400 hover:text-primary-700 rounded-lg">
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
                     <button onClick={() => remove(item.id)}
@@ -316,7 +314,7 @@ export default function AdminAdmissionsPage() {
                     style={{ background: "linear-gradient(180deg, rgba(15,26,69,0.02) 0%, transparent 100%)" }}>
                     {/* Data pribadi */}
                     <div>
-                      <p className="text-xs font-bold text-primary-600/60 uppercase tracking-widest mb-2">Data Pribadi</p>
+                      <p className="text-xs font-bold text-primary-700/60 uppercase tracking-widest mb-2">Data Pribadi</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                         <div><span className="text-gray-400 text-xs block">Tempat, Tgl Lahir</span>
                           <p className="font-medium">{item.birthPlace || "—"}, {new Date(item.birthDate).toLocaleDateString("id-ID")}</p></div>
@@ -341,18 +339,18 @@ export default function AdminAdmissionsPage() {
 
                     {/* Nilai & Skor Otomatis */}
                     <div>
-                      <p className="text-xs font-bold text-primary-600/60 uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-primary-700/60 uppercase tracking-widest mb-2">
                         Nilai &amp; Skor <span className="font-normal normal-case text-gray-400">(bobot rapor {bobot.bobotRapor}% + tes {bobot.bobotTes}%)</span>
                       </p>
                       <div className="flex flex-wrap items-end gap-2">
                         <div>
-                          <label className="text-[11px] text-gray-400 block mb-1">Nilai Rapor</label>
+                          <label className="text-xs text-gray-400 block mb-1">Nilai Rapor</label>
                           <input type="number" value={scoreVal(item.id, "nilaiRapor", item.nilaiRapor)}
                             onChange={e => setScoreVal(item.id, "nilaiRapor", e.target.value)}
                             className="input-field w-24 text-center" placeholder="0-100" />
                         </div>
                         <div>
-                          <label className="text-[11px] text-gray-400 block mb-1">Nilai Tes</label>
+                          <label className="text-xs text-gray-400 block mb-1">Nilai Tes</label>
                           <input type="number" value={scoreVal(item.id, "nilaiTes", item.nilaiTes)}
                             onChange={e => setScoreVal(item.id, "nilaiTes", e.target.value)}
                             className="input-field w-24 text-center" placeholder="0-100" />
@@ -370,7 +368,7 @@ export default function AdminAdmissionsPage() {
                     {/* Daftar Ulang & Pembayaran — hanya untuk yang sudah DITERIMA */}
                     {item.status === "ACCEPTED" && (
                       <div>
-                        <p className="text-xs font-bold text-primary-600/60 uppercase tracking-widest mb-2">Daftar Ulang &amp; Pembayaran</p>
+                        <p className="text-xs font-bold text-primary-700/60 uppercase tracking-widest mb-2">Daftar Ulang &amp; Pembayaran</p>
                         {item.daftarUlangConfirmedAt ? (
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -392,7 +390,7 @@ export default function AdminAdmissionsPage() {
 
                     {/* Dokumen */}
                     <div>
-                      <p className="text-xs font-bold text-primary-600/60 uppercase tracking-widest mb-2">Dokumen Pendukung</p>
+                      <p className="text-xs font-bold text-primary-700/60 uppercase tracking-widest mb-2">Dokumen Pendukung</p>
                       <div className="flex flex-wrap gap-3">
                         <DocLink url={item.ijazahUrl} label="Ijazah / SKL" />
                         <DocLink url={item.kkUrl} label="Kartu Keluarga" />
@@ -404,7 +402,7 @@ export default function AdminAdmissionsPage() {
 
                     {/* Catatan admin */}
                     <div>
-                      <p className="text-xs font-bold text-primary-600/60 uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-primary-700/60 uppercase tracking-widest mb-2">
                         Catatan Admin <span className="font-normal normal-case text-gray-400">(ditampilkan ke pendaftar di Cek Status)</span>
                       </p>
                       <div className="flex gap-2">

@@ -12,8 +12,14 @@ interface LogParams {
 
 /** Catat aksi SENSITIF (reset password, ubah jabatan, hapus akun, keputusan PPDB, ubah biodata
  * inti) ke ActivityLog. Dipanggil SETELAH aksi utama berhasil — kalau logging gagal, ditelan diam-
- * diam (`.catch`) supaya tidak pernah menggagalkan request utama gara-gara audit trail. */
-export async function logActivity(session: { userId: string; name: string; role: string }, params: LogParams) {
+ * diam (`.catch`) supaya tidak pernah menggagalkan request utama gara-gara audit trail.
+ *
+ * Kalau sesi sedang "Masuk Sebagai" (`session.imp`), nama admin aslinya ikut dicatat — tanpa ini
+ * log menuduh pemilik akun atas tindakan yang sebenarnya dilakukan admin. */
+export async function logActivity(
+  session: { userId: string; name: string; role: string; imp?: { userId: string; name: string } | null },
+  params: LogParams,
+) {
   await prisma.activityLog.create({
     data: {
       userId: session.userId,
@@ -24,6 +30,8 @@ export async function logActivity(session: { userId: string; name: string; role:
       entityId: params.entityId,
       description: params.description,
       metadata: params.metadata as Prisma.InputJsonValue | undefined,
+      impersonatorId: session.imp?.userId ?? null,
+      impersonatorName: session.imp?.name ?? null,
     },
   }).catch(() => {});
 }

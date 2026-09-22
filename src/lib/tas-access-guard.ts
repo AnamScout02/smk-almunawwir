@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 
-export const TAS_JABATAN = ["Tenaga Administrasi Sekolah", "Kepala Tenaga Administrasi Sekolah"];
+// Daftar & pemeriksanya kini di src/lib/tas-jabatan.ts (aman dipakai klien juga) — diekspor ulang
+// dari sini supaya pemanggil lama tidak perlu diubah.
+export { TAS_JABATAN, isFullTasJabatan } from "@/lib/tas-jabatan";
+import { TAS_JABATAN } from "@/lib/tas-jabatan";
 
 /** Sama seperti verifyRole(["ADMIN","TAS"]), TAPI mensyaratkan jabatan "Tenaga Administrasi
  * Sekolah"/"Kepala Tenaga Administrasi Sekolah" utk role TEACHER **MAUPUN role TAS** (ADMIN
@@ -38,8 +41,12 @@ export async function verifyTasAccess() {
 /** Versi non-redirect dari cek di atas — dipakai admin/layout.tsx utk hitung prop `isFullTas`
  * TasSidebar (harus konsisten dgn verifyTasAccess supaya menu yg TAMPIL sinkron dgn yg BENAR2 bisa
  * diakses; sebelum perbaikan ini isFullTas cuma `role === "TAS"` mentah, beda dgn guard API-nya). */
-export function isFullTasJabatan(jabatanNames: string[]): boolean {
-  return jabatanNames.some(n => TAS_JABATAN.includes(n));
+/** Versi boolean untuk route API: true bila Admin atau staf TU (tanpa redirect). */
+export async function petugasTu() {
+  const session = await verifySession();
+  if (session.role === "ADMIN") return true;
+  if (session.role !== "TEACHER" && session.role !== "TAS") return false;
+  return (await getJabatanNames(session.email)).some(n => TAS_JABATAN.includes(n));
 }
 
 /** Gate PALING LUAR admin layout (`/dashboard/admin/**`) — BEDA dgn verifyTasAccess() di atas.

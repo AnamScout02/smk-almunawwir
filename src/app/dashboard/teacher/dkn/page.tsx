@@ -21,13 +21,13 @@ export default async function TeacherDknIndexPage() {
   if (classes.length === 1) redirect(`/dashboard/teacher/dkn/${classes[0].id}`);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<ClipboardList size={22} />} title="DKN — Daftar Kumpulan Nilai" description="Input & cetak DKN kelas yang Anda wali kelasi, per semester" />
 
       {classes.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Anda Bukan Wali Kelas" description="Fitur DKN hanya tersedia untuk guru yang menjabat sebagai wali kelas." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+        <div className="panel divide-y divide-gray-50">
           {classes.map(c => (
             <Link key={c.id} href={`/dashboard/teacher/dkn/${c.id}`} className="flex items-center gap-3 px-5 py-4 hover:bg-primary-50/40 transition-colors">
               <div className="flex-1 min-w-0">

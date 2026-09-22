@@ -103,13 +103,26 @@ export default function WilayahSelect({
       </div>
       <div>
         <label className="label-field">Desa/Kelurahan</label>
-        <Select
-          value={villageMatch?.name ?? village}
-          onChange={v => onVillage(toProperCase(v))}
-          options={[...villages].sort(byName).map(v => ({ value: v.name, label: display(v.name) }))}
-          placeholder={district ? "Pilih desa/kelurahan" : "Pilih kecamatan dulu"}
+        {/* Dropdown+ketik-bebas (bukan <Select> murni) — API wilayah pemerintah yang dipakai
+         * (emsifa) TERNYATA tidak lengkap di level desa (ditemukan user 2026-08-22: "Temuguruh",
+         * Kec. Sempu, Banyuwangi, kode Kemendagri 35.10.20.2004, hilang dari data mereka). Dengan
+         * <Select> murni, desa yang tidak ada di API jadi diam-diam tampil KOSONG (placeholder)
+         * walau datanya tersimpan — combobox ini tetap tampilkan/terima nilai apa pun yang
+         * sudah ada, plus saran dari API kalau memang tersedia. Kecamatan/Kabupaten/Provinsi
+         * TIDAK diubah — jauh lebih stabil/lengkap di sumber data ini, gap ditemukan cuma di
+         * level desa. */}
+        <input
+          className="input-field"
+          list="wilayah-village-options"
+          placeholder={district ? "Pilih atau ketik desa/kelurahan" : "Pilih kecamatan dulu"}
           disabled={readOnly || !district}
+          value={villageMatch ? display(villageMatch.name) : village}
+          onChange={e => onVillage(e.target.value)}
+          onBlur={e => { if (e.target.value) onVillage(toProperCase(e.target.value)); }}
         />
+        <datalist id="wilayah-village-options">
+          {[...villages].sort(byName).map(v => <option key={v.id} value={display(v.name)} />)}
+        </datalist>
       </div>
     </>
   );

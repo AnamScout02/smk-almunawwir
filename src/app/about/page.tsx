@@ -372,20 +372,21 @@ export default async function AboutPage() {
             {/* Bagan Struktur Organisasi */}
             <div className="mb-10">
               <OrgChartDiagram
-                kepalaSekolah={{ label: "Kepala Sekolah", name: orgName("Kepala Sekolah") || structure.find(s => s.highlight)?.name }}
+                lang={lang}
+                kepalaSekolah={{ label: lang === "en" ? "Principal" : "Kepala Sekolah", name: orgName("Kepala Sekolah") || structure.find(s => s.highlight)?.name }}
                 row2={[
-                  { label: "Bendahara Sekolah", name: orgName("Bendahara Sekolah") },
-                  { label: "Bendahara BOS", name: orgName("Bendahara BOS") },
-                  { label: "Bendahara BPOPP", name: orgName("Bendahara BPOPP") },
-                  { label: "Operator Sekolah", name: orgName("Operator Sekolah") },
-                  { label: "Kepala Tenaga Adm. Sekolah", name: orgName("Kepala Tenaga Administrasi Sekolah") },
+                  { label: lang === "en" ? "School Treasurer" : "Bendahara Sekolah", name: orgName("Bendahara Sekolah") },
+                  { label: lang === "en" ? "BOS Fund Treasurer" : "Bendahara BOS", name: orgName("Bendahara BOS") },
+                  { label: lang === "en" ? "BPOPP Fund Treasurer" : "Bendahara BPOPP", name: orgName("Bendahara BPOPP") },
+                  { label: lang === "en" ? "School Data Operator" : "Operator Sekolah", name: orgName("Operator Sekolah") },
+                  { label: lang === "en" ? "Head of School Administration" : "Kepala Tenaga Adm. Sekolah", name: orgName("Kepala Tenaga Administrasi Sekolah") },
                 ]}
                 row3={[
-                  { label: "Wakil Kepala Bidang Kurikulum", name: orgName("Wakil Kepala Kurikulum") },
-                  { label: "Wakil Kepala Bidang Kesiswaan", name: orgName("Wakil Kepala Kesiswaan") },
-                  { label: "Wakil Kepala Bidang Humas", name: orgName("Wakil Kepala Humas") },
-                  { label: "Wakil Kepala Bidang Sarana Prasarana", name: orgName("Wakil Kepala Sarana Prasarana") },
-                  { label: "Wakil Kepala Bidang Penjamin Mutu", name: orgName("Wakil Kepala Bidang Penjamin Mutu") },
+                  { label: lang === "en" ? "Vice Principal for Curriculum" : "Wakil Kepala Bidang Kurikulum", name: orgName("Wakil Kepala Kurikulum") },
+                  { label: lang === "en" ? "Vice Principal for Student Affairs" : "Wakil Kepala Bidang Kesiswaan", name: orgName("Wakil Kepala Kesiswaan") },
+                  { label: lang === "en" ? "Vice Principal for Public Relations" : "Wakil Kepala Bidang Humas", name: orgName("Wakil Kepala Humas") },
+                  { label: lang === "en" ? "Vice Principal for Facilities" : "Wakil Kepala Bidang Sarana Prasarana", name: orgName("Wakil Kepala Sarana Prasarana") },
+                  { label: lang === "en" ? "Vice Principal for Quality Assurance" : "Wakil Kepala Bidang Penjamin Mutu", name: orgName("Wakil Kepala Bidang Penjamin Mutu") },
                 ]}
                 waliKelas={[
                   { label: "Wali Kelas X" },

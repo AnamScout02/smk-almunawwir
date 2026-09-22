@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // supaya jurusan baru tidak perlu ubah kode aplikasi.
 
 export async function GET(req: NextRequest) {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
   const majorCode = req.nextUrl.searchParams.get("majorCode") ?? "";
   const targetMajor = await prisma.major.findUnique({ where: { code: majorCode }, select: { nisCode: true } });
   const suffix = targetMajor?.nisCode;

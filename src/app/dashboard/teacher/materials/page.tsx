@@ -99,7 +99,7 @@ export default function TeacherMaterialsPage() {
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<BookOpen size={22} />}
         title="Materi & Tugas"
@@ -110,7 +110,7 @@ export default function TeacherMaterialsPage() {
         <EmptyState icon={Users} title="Belum Ada Penugasan Mengajar" description="Hubungi admin untuk ditugaskan mengajar kelas/mapel terlebih dahulu." />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+          <div className="panel p-5 mb-6">
             <label className="label-field">Kelas & Mapel</label>
             <Select value={classKey} onChange={setClassKey}
               options={classes.map(c => ({ value: `${c.classId}::${c.subjectName}`, label: `${c.className} — ${c.subjectName}` }))} />
@@ -118,31 +118,31 @@ export default function TeacherMaterialsPage() {
 
           <div className="flex items-center gap-2 mb-5 flex-wrap">
             <button onClick={() => setTab("materi")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "materi" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "materi" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
               Materi
             </button>
             <button onClick={() => setTab("tugas")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "tugas" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "tugas" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
               Tugas
             </button>
             <button onClick={() => setTab("kuis")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "kuis" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "kuis" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
               Kuis
             </button>
             {tab === "kuis" ? (
               <Link href={`/dashboard/teacher/quizzes/new?classId=${selected?.classId ?? ""}&subject=${encodeURIComponent(selected?.subjectName ?? "")}`}
-                className="ml-auto btn-gold flex items-center gap-1.5 text-xs">
+                className="btn-modal-save ml-auto text-xs">
                 <Plus size={14} /> Buat Kuis
               </Link>
             ) : (
-              <button onClick={() => setShowForm(s => !s)} className="ml-auto btn-gold flex items-center gap-1.5 text-xs">
+              <button onClick={() => setShowForm(s => !s)} className="btn-modal-save ml-auto text-xs">
                 <Plus size={14} /> {tab === "materi" ? "Tambah Materi" : "Buat Tugas"}
               </button>
             )}
           </div>
 
           {showForm && tab !== "kuis" && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 space-y-3">
+            <div className="panel p-5 mb-6 space-y-3">
               {error && <p className="error-msg">{error}</p>}
               <div>
                 <label className="label-field">Judul</label>
@@ -167,9 +167,9 @@ export default function TeacherMaterialsPage() {
                   <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="input-field" placeholder="https://..." />
                 </div>
               )}
-              <div className="flex justify-end gap-2">
-                <button onClick={resetForm} className="btn-modal-cancel text-sm px-4">Batal</button>
-                <button onClick={handleCreate} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+              <div className="alat-aksi alat-teks justify-end">
+                <button onClick={resetForm} className="btn-modal-cancel">Batal</button>
+                <button onClick={handleCreate} disabled={saving} className="btn-modal-save">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Simpan
                 </button>
               </div>
@@ -185,7 +185,7 @@ export default function TeacherMaterialsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {quizzes.map(q => (
                   <Link key={q.id} href={`/dashboard/teacher/quizzes/${q.id}`}
-                    className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
+                    className="panel group p-5 hover:border-primary-100 hover:shadow-md transition-all">
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-heading font-bold text-primary-900">{q.title}</p>
                       <ChevronRight size={16} className="text-gray-300 group-hover:text-primary-500 transition-colors shrink-0" />
@@ -208,7 +208,7 @@ export default function TeacherMaterialsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {materials.map(m => (
-                  <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div key={m.id} className="panel p-5">
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-heading font-bold text-primary-900">{m.title}</p>
                       <button onClick={() => handleDelete(m.id)} className="p-1 text-gray-300 hover:text-red-500 transition-colors shrink-0">
@@ -218,12 +218,12 @@ export default function TeacherMaterialsPage() {
                     {m.description && <p className="text-sm text-gray-500 mb-2">{m.description}</p>}
                     <div className="flex items-center gap-3 text-xs">
                       {m.fileUrl && (
-                        <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                        <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                           <FileText size={12} /> Lampiran
                         </a>
                       )}
                       {m.linkUrl && (
-                        <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                        <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                           <Link2 size={12} /> Link
                         </a>
                       )}
@@ -239,7 +239,7 @@ export default function TeacherMaterialsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {assignments.map(a => (
                 <Link key={a.id} href={`/dashboard/teacher/assignments/${a.id}`}
-                  className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
+                  className="panel group p-5 hover:border-primary-100 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-2">
                     <p className="font-heading font-bold text-primary-900">{a.title}</p>
                     <ChevronRight size={16} className="text-gray-300 group-hover:text-primary-500 transition-colors shrink-0" />
@@ -247,7 +247,7 @@ export default function TeacherMaterialsPage() {
                   {a.description && <p className="text-sm text-gray-500 mb-2 line-clamp-2">{a.description}</p>}
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     {a.dueDate && <span className="flex items-center gap-1"><Calendar size={12} /> {fmt(a.dueDate)}</span>}
-                    <span className="flex items-center gap-1 ml-auto text-primary-600 font-semibold">
+                    <span className="flex items-center gap-1 ml-auto text-primary-700 font-semibold">
                       <Users size={12} /> {a._count.submissions} terkumpul
                     </span>
                   </div>

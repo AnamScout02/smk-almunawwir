@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Briefcase, Loader2, Plus, Calendar, MessageSquare, Building2, FileCheck2, Upload, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Briefcase, Loader2, Plus, Calendar, MessageSquare, Building2, FileCheck2, Upload, CheckCircle2, XCircle, Clock, MapPin } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import FileUpload from "@/components/shared/FileUpload";
 import PageHeader from "@/components/admin/PageHeader";
@@ -43,6 +43,8 @@ export default function StudentPklPage() {
   const [date, setDate] = useState(todayStr());
   const [activity, setActivity] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [lokasi, setLokasi] = useState<{ lat: number; lng: number; akurasi: number } | null>(null);
+  const [statusLokasi, setStatusLokasi] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -94,12 +96,23 @@ export default function StudentPklPage() {
     setSaving(true);
     const res = await fetch("/api/student/pkl/journal", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, activity, photoUrl }),
+      body: JSON.stringify({ date, activity, photoUrl, ...(lokasi ?? {}) }),
     });
     setSaving(false);
     if (!res.ok) { const d = await res.json(); setError(d.error || "Gagal menyimpan"); return; }
-    setActivity(""); setPhotoUrl(""); setDate(todayStr()); setShowForm(false);
+    setActivity(""); setPhotoUrl(""); setDate(todayStr()); setShowForm(false); setLokasi(null); setStatusLokasi("");
     load();
+  }
+
+  /** Lokasi opsional sebagai bukti berada di tempat PKL — hanya berjalan di HTTPS dan atas izin siswa. */
+  function ambilLokasi() {
+    if (!window.isSecureContext || !navigator.geolocation) { setStatusLokasi("Lokasi hanya bisa diambil lewat alamat HTTPS aplikasi."); return; }
+    setStatusLokasi("Mengambil lokasi…");
+    navigator.geolocation.getCurrentPosition(
+      p => { setLokasi({ lat: p.coords.latitude, lng: p.coords.longitude, akurasi: p.coords.accuracy }); setStatusLokasi(`Lokasi tercatat (±${Math.round(p.coords.accuracy)} m).`); },
+      () => setStatusLokasi("Izin lokasi ditolak atau lokasi tidak ditemukan."),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
   }
 
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
@@ -107,12 +120,12 @@ export default function StudentPklPage() {
   if (loading) return <div className="p-6 lg:p-8 flex items-center justify-center min-h-[60vh] text-gray-400"><Loader2 size={24} className="animate-spin" /></div>;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Briefcase size={22} />} title="PKL Saya" description="Praktik Kerja Lapangan & jurnal harian" />
 
       {!internship ? (
         isGradeXi ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="panel p-5">
             <div className="flex items-center gap-2 mb-1">
               <FileCheck2 size={16} className="text-purple-600" />
               <h3 className="font-heading font-semibold text-navy">Pendaftaran PKL</h3>
@@ -150,7 +163,7 @@ export default function StudentPklPage() {
                 </div>
                 {registration?.status !== "APPROVED" && (
                   <div className="flex justify-end mt-4">
-                    <button onClick={handleSubmitRegistration} disabled={submittingReg} className="btn-gold flex items-center gap-2 text-sm">
+                    <button onClick={handleSubmitRegistration} disabled={submittingReg} className="btn-modal-save">
                       {submittingReg ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                       {registration ? "Ajukan Ulang" : "Ajukan Pendaftaran"}
                     </button>
@@ -164,7 +177,7 @@ export default function StudentPklPage() {
         )
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+          <div className="panel p-5 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Building2 size={16} className="text-purple-600" />
               <h3 className="font-heading font-semibold text-navy">Informasi PKL</h3>
@@ -180,11 +193,11 @@ export default function StudentPklPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="panel p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-heading font-semibold text-navy">Jurnal Harian</h3>
               {!showForm && (
-                <button onClick={() => setShowForm(true)} className="btn-gold flex items-center gap-1.5 text-xs">
+                <button onClick={() => setShowForm(true)} className="btn-modal-save text-xs">
                   <Plus size={14} /> Tambah Jurnal Hari Ini
                 </button>
               )}
@@ -203,9 +216,13 @@ export default function StudentPklPage() {
                     placeholder="Ceritakan kegiatan yang dikerjakan hari ini..." className="input-field" />
                 </div>
                 <ImageUpload value={photoUrl} onChange={setPhotoUrl} folder="pkl-jurnal" label="Foto Bukti Kegiatan (opsional)" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={ambilLokasi} className="btn-modal-cancel px-3 text-xs"><MapPin size={14} /> {lokasi ? "Perbarui Lokasi" : "Sertakan Lokasi Saat Ini"}</button>
+                  {statusLokasi && <span className={`text-xs ${lokasi ? "text-emerald-700" : "text-gray-500"}`}>{statusLokasi}</span>}
+                </div>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowForm(false)} className="btn-modal-cancel text-sm px-4">Batal</button>
-                  <button onClick={handleSubmit} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+                  <button onClick={() => setShowForm(false)} className="btn-modal-cancel">Batal</button>
+                  <button onClick={handleSubmit} disabled={saving} className="btn-modal-save">
                     {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Simpan Jurnal
                   </button>
                 </div>

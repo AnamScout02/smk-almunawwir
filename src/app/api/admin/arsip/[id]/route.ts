@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   await verifyTasAccess();
   const { id } = await params;
   const body = await req.json();
-  const { judul, kategori, nomor, tanggal, keterangan, fileUrl } = body;
+  const { judul, kategori, nomor, tanggal, keterangan, fileUrl, berlakuSampai } = body;
 
   const arsip = await prisma.arsip.update({
     where: { id },

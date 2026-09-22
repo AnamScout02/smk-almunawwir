@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldAlert, Plus, Trash2, Save, Loader2, Search, ClipboardList, Award, ListChecks, BookOpenCheck, AlertTriangle, Printer } from "lucide-react";
@@ -65,7 +67,7 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
       <PageHeader icon={<ShieldAlert size={22} />} title="Poin Siswa"
         description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" printHidden />
 
-      <div className="flex justify-end mb-5 print:hidden">
+      <div className="alat-aksi justify-end mb-5 print:hidden">
         <Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
           <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
         </Link>
@@ -77,7 +79,7 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
             className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === v ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
             <Icon size={14} /> {label}
             {v === "perhatian" && atRisk.length > 0 && (
-              <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${tab === v ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
+              <span className={`text-[11px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${tab === v ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
                 {atRisk.length}
               </span>
             )}
@@ -154,7 +156,7 @@ function CatatPoinTab({ toast, isAdmin }: { toast: ReturnType<typeof useToast>; 
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl space-y-5">
+    <div className="panel p-6 max-w-2xl space-y-5">
       <div>
         <label className="label-field">Siswa</label>
         {student ? (
@@ -240,7 +242,7 @@ function CatatPoinTab({ toast, isAdmin }: { toast: ReturnType<typeof useToast>; 
           placeholder={kind === "REMISI" ? "Alasan pemberian remisi — mis. sudah menunjukkan perubahan sikap sejak SP1..." : "Detail kejadian..."} />
       </div>
 
-      <button onClick={handleSubmit} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+      <button onClick={handleSubmit} disabled={saving} className="btn-modal-save">
         {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Catatan
       </button>
     </div>
@@ -286,6 +288,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
   }
 
   const rangeLabel = from || to ? `${from ? new Date(from).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "…"} – ${to ? new Date(to).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "…"}` : semester;
+  usePrintTitle(buildPrintFilename("Rekap_Poin_Siswa", rangeLabel));
 
   return (
     <div>
@@ -317,38 +320,38 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
         <PrintKop title="Rekap Poin Siswa" subtitle={`Tata Tertib Peserta Didik — ${rangeLabel}`} />
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:border-0 print:shadow-none">
+      <div className="panel print-motif overflow-hidden print:border-0 print:shadow-none">
         {loading ? (
           <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
         ) : records.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Belum Ada Catatan" description="Belum ada poin tercatat untuk semester ini." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
-                  <th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Siswa</th><th className="px-4 py-3">Jenis</th>
-                  <th className="px-4 py-3">Poin</th><th className="px-4 py-3">Dicatat Oleh</th><th className="px-4 py-3 text-right print:hidden">Aksi</th>
+                <tr>
+                  <th>Tanggal</th><th>Siswa</th><th>Jenis</th>
+                  <th>Poin</th><th>Dicatat Oleh</th><th className="text-right print:hidden">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {records.map(r => (
-                  <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30">
-                    <td className="px-4 py-2.5 whitespace-nowrap text-xs">{new Date(r.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                    <td className="px-4 py-2.5">
+                  <tr key={r.id}>
+                    <td className="whitespace-nowrap text-xs">{new Date(r.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                    <td>
                       <p className="font-semibold text-primary-900">{r.student.user.name}</p>
                       <p className="text-xs text-gray-400">{r.student.nis} · {r.student.class?.name ?? "—"}</p>
                     </td>
-                    <td className="px-4 py-2.5 max-w-xs">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.kind === "PELANGGARAN" ? "bg-red-50 text-red-600" : r.kind === "REMISI" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
+                    <td className="max-w-xs">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.kind === "PELANGGARAN" ? "bg-red-50 text-red-600" : r.kind === "REMISI" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
                         {r.kind === "PELANGGARAN" ? "Pelanggaran" : r.kind === "REMISI" ? "Remisi" : "Prestasi"}
                       </span>
                       <p className="text-xs text-gray-600 mt-1">{r.violationType?.name ?? r.achievementType?.name ?? "Remisi poin"}</p>
-                      {r.note && <p className="text-[11px] text-gray-400 italic mt-0.5">{r.note}</p>}
+                      {r.note && <p className="text-xs text-gray-400 italic mt-0.5">{r.note}</p>}
                     </td>
-                    <td className="px-4 py-2.5 font-bold">{r.kind === "PELANGGARAN" ? "+" : "-"}{r.points}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-400">{r.recordedByName}</td>
-                    <td className="px-4 py-2.5 text-right print:hidden">
+                    <td className="font-bold">{r.kind === "PELANGGARAN" ? "+" : "-"}{r.points}</td>
+                    <td className="text-xs text-gray-400">{r.recordedByName}</td>
+                    <td className="text-right print:hidden">
                       <button onClick={() => handleDelete(r.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>
                     </td>
                   </tr>
@@ -372,23 +375,23 @@ function PerhatianTab({ students }: { students: AtRiskStudent[] }) {
     return <EmptyState icon={AlertTriangle} title="Belum Ada yang Perlu Perhatian" description="Belum ada siswa dengan poin bersih >= 25 semester ini." />;
   }
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
-              <th className="px-4 py-3">Siswa</th><th className="px-4 py-3">Poin Bersih</th><th className="px-4 py-3">Status</th>
+            <tr>
+              <th>Siswa</th><th>Poin Bersih</th><th>Status</th>
             </tr>
           </thead>
           <tbody>
             {students.map(s => (
-              <tr key={s.studentId} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30">
-                <td className="px-4 py-2.5">
+              <tr key={s.studentId}>
+                <td>
                   <p className="font-semibold text-primary-900">{s.name}</p>
                   <p className="text-xs text-gray-400">{s.nis} · {s.className ?? "—"}</p>
                 </td>
-                <td className="px-4 py-2.5 font-bold text-red-600">{s.netPoints} <span className="text-gray-400 font-normal text-xs">/ 100</span></td>
-                <td className="px-4 py-2.5">
+                <td className="font-bold text-red-600">{s.netPoints} <span className="text-gray-400 font-normal text-xs">/ 100</span></td>
+                <td>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${LEVEL_BADGE[s.level] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>{s.level}</span>
                 </td>
               </tr>
@@ -465,7 +468,7 @@ function KelolaJenisTab({ toast, confirmDialog }: { toast: ReturnType<typeof use
           <button onClick={() => setSub("pelanggaran")} className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${sub === "pelanggaran" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500"}`}>Pelanggaran</button>
           <button onClick={() => setSub("prestasi")} className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${sub === "prestasi" ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500"}`}>Prestasi</button>
         </div>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm"><Plus size={15} /> Tambah Jenis</button>
+        <button onClick={openCreate} className="btn-modal-save"><Plus size={15} /> Tambah Jenis</button>
       </div>
 
       {items.length === 0 ? (
@@ -473,7 +476,7 @@ function KelolaJenisTab({ toast, confirmDialog }: { toast: ReturnType<typeof use
       ) : (
         <div className="space-y-6">
           {grouped.map(([category, list]) => (
-            <div key={category} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div key={category} className="panel overflow-hidden">
               <div className="px-5 py-3 bg-gray-50 border-b border-gray-100"><h3 className="font-heading font-bold text-primary-900 text-sm">{category}</h3></div>
               <div className="divide-y divide-gray-50">
                 {list.map(t => (
@@ -482,12 +485,12 @@ function KelolaJenisTab({ toast, confirmDialog }: { toast: ReturnType<typeof use
                       <p className="text-sm text-primary-900">{t.name}</p>
                       <p className="text-xs text-gray-400">
                         {t.pointsMin === t.pointsMax ? `${t.pointsMin} poin` : `${t.pointsMin}-${t.pointsMax} poin`}
-                        {sub === "pelanggaran" && (t as ViolationType).piketAllowed && <span className="ml-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">Boleh Guru Piket</span>}
-                        {!t.active && <span className="ml-2 text-[10px] font-bold text-gray-400">(Nonaktif)</span>}
+                        {sub === "pelanggaran" && (t as ViolationType).piketAllowed && <span className="ml-2 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">Boleh Guru Piket</span>}
+                        {!t.active && <span className="ml-2 text-xs font-bold text-gray-400">(Nonaktif)</span>}
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => openEdit(t)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition text-xs font-semibold px-2">Edit</button>
+                      <button onClick={() => openEdit(t)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition text-xs font-semibold px-2">Edit</button>
                       <button onClick={() => handleDelete(t.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>
                     </div>
                   </div>

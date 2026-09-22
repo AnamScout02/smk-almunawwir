@@ -2,10 +2,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Menu, X, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown, Library, FileText, Vote } from "lucide-react";
+import { QrCode, MessagesSquare, MessageSquareHeart, Megaphone, ClipboardPen, BriefcaseBusiness, CircleHelp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
+import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBottomNav";
+import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
+import KotakNotifikasiTombol from "@/components/shared/KotakNotifikasiTombol";
 
 interface MenuItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badge?: number; badgeKey?: "pendingBiodata" }
 interface MenuGroup { label: string | null; items: MenuItem[] }
@@ -31,12 +35,12 @@ function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups,
       <div className="px-5 py-4 border-b border-white/10">
         {logoFullWhite ? (
           <div className="flex flex-col gap-1.5">
-            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
-            <p className="text-white/40 text-[10px] font-semibold tracking-widest uppercase">Portal Siswa</p>
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" />
+            <p className="text-white/40 text-xs font-semibold tracking-wider uppercase">Portal Siswa</p>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
+            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
             <div>
               <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
               <p className="text-white/50 text-xs">Portal Siswa</p>
@@ -52,7 +56,7 @@ function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups,
             <div key={group.label ?? "__root__"} className={isRoot ? "" : "pt-2"}>
               {group.label && (
                 <button type="button" onClick={() => toggleGroup(group.label!)}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/30 hover:text-white/60 uppercase transition-colors">
+                  className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs font-bold tracking-wider text-white/30 hover:text-white/60 uppercase transition-colors text-left">
                   <span>{group.label}</span>
                   <ChevronDown size={12} className={`shrink-0 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                 </button>
@@ -70,7 +74,7 @@ function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups,
                         <span className="flex-1">{item.label}</span>
                         {showBadge && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Pengajuan menunggu persetujuan" />}
                         {badgeCount > 0 && (
-                          <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shrink-0 ${active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"}`}>
+                          <span className={`text-[11px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shrink-0 ${active ? "bg-primary-900/20 text-primary-900" : "bg-red-500 text-white"}`}>
                             {badgeCount > 99 ? "99+" : badgeCount}
                           </span>
                         )}
@@ -103,14 +107,18 @@ interface StudentSidebarProps {
   hasPendingBiodata?: boolean;
   isKelasAdmin?: boolean;
   overdueBooks?: number;
+  /** Admin sedang "Masuk Sebagai" akun ini — topbar mobile digeser turun supaya tidak ketutup
+   * pita ImpersonationBanner. Lihat catatan sama di TeacherSidebar.tsx. */
+  impersonating?: boolean;
+  tindakan?: { label: string; count: number; href: string }[];
+  kelasXII?: boolean;
 }
 
-export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, isKelasAdmin = false, overdueBooks = 0 }: StudentSidebarProps) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
-
-  const menuGroups: MenuGroup[] = [
+/** SATU SUMBER menu Portal Siswa — dipakai sidebar desktop, bottom nav HP, DAN kisi "Semua Menu"
+ * di dashboard (MenuLengkap). Jangan mendaftar ulang menu di tempat lain. */
+export function grupMenuSiswa({ hasPendingBiodata = false, isKelasAdmin = false, overdueBooks = 0, kelasXII = false }: StudentSidebarProps = {}): MenuGroup[] {
+  void hasPendingBiodata;
+  return [
     {
       label: null,
       items: [{ href: "/dashboard/student", label: "Dashboard", icon: LayoutDashboard, exact: true }],
@@ -118,23 +126,31 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     {
       label: "Akademik",
       items: [
-        { href: "/dashboard/student/rapor", label: "Rapor Nilai", icon: Printer },
         { href: "/dashboard/student/materials", label: "Materi & Tugas", icon: BookOpen },
-        { href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion },
+        { href: "/ujian-online", label: "Ujian Online (CBT)", icon: FileQuestion },
+        { href: "/dashboard/student/rapor", label: "Rapor Nilai", icon: Printer },
+        { href: "/dashboard/student/portofolio", label: "Portofolio Saya", icon: Trophy },
         { href: "/dashboard/student/pkl", label: "PKL Saya", icon: Briefcase },
-        ...(isKelasAdmin ? [{ href: "/dashboard/student/absensi-kelas", label: "Absensi Kelas", icon: CheckSquare }] : []),
+        ...(kelasXII ? [{ href: "/dashboard/student/lowongan", label: "Lowongan Kerja", icon: BriefcaseBusiness }] : []),
       ],
     },
     {
-      label: "Kedisiplinan",
+      // Kehadiran & kedisiplinan satu grup — alur harian siswa: absen, lalu poin/tata tertib (keputusan user 15 Sep 2026).
+      label: "Kehadiran & Kedisiplinan",
       items: [
+        { href: "/dashboard/student/absen-mandiri", label: "Absen Mandiri (QR)", icon: QrCode },
+        ...(isKelasAdmin ? [{ href: "/dashboard/student/absensi-kelas", label: "Absensi Kelas", icon: CheckSquare }] : []),
         { href: "/dashboard/student/poin-saya", label: "Poin Saya", icon: ShieldAlert },
+        { href: "/dashboard/student/konseling", label: "Konseling BK", icon: MessagesSquare },
+        { href: "/dashboard/student/aspirasi", label: "Kotak Aspirasi", icon: MessageSquareHeart },
+        { href: "/dashboard/student/pemilihan", label: "Pemilihan OSIS", icon: Vote },
         { href: "/dashboard/student/tata-tertib", label: "Tata Tertib Peserta Didik", icon: BookOpenCheck },
       ],
     },
     {
       label: "Perpustakaan",
       items: [
+        { href: "/perpustakaan", label: "Perpustakaan Digital", icon: Library },
         { href: "/dashboard/student/buku-saya", label: "Buku Saya", icon: BookOpen, badge: overdueBooks },
         { href: "/dashboard/student/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy },
       ],
@@ -142,12 +158,23 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     {
       label: "Akun Saya",
       items: [
+        { href: "/dashboard/student/pengumuman", label: "Pengumuman", icon: Megaphone },
+        { href: "/dashboard/student/survei", label: "Survei & Angket", icon: ClipboardPen },
         { href: "/dashboard/student/biodata", label: "Biodata Saya", icon: IdCard, badgeKey: "pendingBiodata" },
+        { href: "/dashboard/student/permintaan-surat", label: "Permintaan Surat", icon: FileText },
+        { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
         { href: "/dashboard/student/profile", label: "Profil Saya", icon: UserCircle },
+        { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp },
       ],
     },
   ].map(g => ({ ...g, items: g.items.filter(item => "href" in item) })) as MenuGroup[];
+}
 
+export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, isKelasAdmin = false, overdueBooks = 0, impersonating = false, tindakan = [], kelasXII = false }: StudentSidebarProps) {
+  const pathname = usePathname();
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+
+  const menuGroups = grupMenuSiswa({ hasPendingBiodata, isKelasAdmin, overdueBooks, kelasXII });
   const visibleGroups = menuGroups.filter(g => g.items.length > 0);
   const ALL_HREFS = visibleGroups.flatMap(g => g.items.map(i => i.href));
 
@@ -188,6 +215,15 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     setOpenGroups(prev => (prev.has(label) ? new Set<string>() : new Set([label])));
   }
 
+  // Bottom nav HP (18 Sep 2026): 4 tautan harian + tombol tengah Dashboard, TANPA sheet.
+  // Menu selengkapnya ada di kisi "Semua Menu" pada dashboard (MenuLengkap) & /dashboard/student/menu.
+  const navBawah: ItemNavBawah[] = [
+    { href: "/dashboard/student/materials", label: "Tugas", icon: BookOpen, simbol: "menu_book" },
+    { href: "/dashboard/student/absen-mandiri", label: "Absen", icon: QrCode, simbol: "qr_code_scanner" },
+    { href: "/dashboard/student/rapor", label: "Rapor", icon: Printer, simbol: "description" },
+    { href: "/dashboard/student/buku-saya", label: "Buku", icon: Library, simbol: "local_library", badge: overdueBooks },
+  ];
+
   return (
     <>
       <aside className="hidden lg:flex flex-col w-56 bg-primary-900 h-screen sticky top-0 shrink-0 overflow-hidden print:hidden">
@@ -197,38 +233,28 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
         <SidebarContent
           logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}
           filteredGroups={visibleGroups} openGroups={openGroups} toggleGroup={toggleGroup}
-          isActive={isActive} hasPendingBiodata={hasPendingBiodata} onLinkClick={() => setOpen(false)}
+          isActive={isActive} hasPendingBiodata={hasPendingBiodata} onLinkClick={() => {}}
         />
       </aside>
-      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg">
+      <div className="lg:hidden print:hidden fixed left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg"
+        style={impersonating ? { top: "var(--impersonation-banner-h, 2.5rem)" } : { top: 0 }}>
         <div className="flex items-center gap-2">
           {logoFullWhite ? (
-            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" />
           ) : (
             <>
-              <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
+              <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" />
               <span className="font-heading font-bold text-white text-sm">Portal Siswa</span>
             </>
           )}
         </div>
-        <button onClick={() => setOpen(true)} className="text-white/70 hover:text-white"><Menu size={22} /></button>
-      </div>
-      {open && (
-        <div className="lg:hidden print:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <aside className="relative w-56 bg-primary-900 h-full flex flex-col shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.10] pointer-events-none"
-              style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat" }}
-            />
-            <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white"><X size={20} /></button>
-            <SidebarContent
-              logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}
-              filteredGroups={visibleGroups} openGroups={openGroups} toggleGroup={toggleGroup}
-              isActive={isActive} hasPendingBiodata={hasPendingBiodata} onLinkClick={() => setOpen(false)}
-            />
-          </aside>
+        <div className="flex items-center gap-1">
+          <KotakNotifikasiTombol variant="topbar" tindakan={tindakan} />
+          <MenuAkunMobile profilHref="/dashboard/student/profile" />
         </div>
-      )}
+      </div>
+
+      <MobileBottomNav items={navBawah} beranda={{ href: "/dashboard/student", icon: LayoutDashboard, simbol: "home", label: "Beranda" }} />
     </>
   );
 }

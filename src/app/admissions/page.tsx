@@ -163,7 +163,7 @@ export default async function AdmissionsPage() {
                 <ul className="space-y-3 mb-8">
                   {c.requirements.map((r) => (
                     <li key={r} className="flex gap-3 items-start text-sm text-gray-600">
-                      <CheckCircle2 size={18} className="text-primary-600 shrink-0 mt-0.5" />
+                      <CheckCircle2 size={18} className="text-primary-700 shrink-0 mt-0.5" />
                       {r}
                     </li>
                   ))}

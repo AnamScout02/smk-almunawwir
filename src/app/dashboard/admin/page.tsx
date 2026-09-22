@@ -5,19 +5,31 @@ import { getJabatanNames } from "@/lib/jabatan-guard";
 import { isFullTasJabatan } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import {
-  Users, GraduationCap, Mail, School, UserCog, ClipboardList,
-  Clock, ArrowRight, Newspaper,
-  Sparkles, MessageSquare, LayoutDashboard,
+  ClipboardList, Newspaper, MessageSquare, LayoutDashboard, TriangleAlert, ChartColumn, Inbox, FileText, SquarePen, Building2,
 } from "lucide-react";
 import Link from "next/link";
-import DashboardCharts from "@/components/admin/DashboardCharts";
 import { getWakilKepalaAgenda } from "@/lib/agenda";
+import PageHeader from "@/components/admin/PageHeader";
+import { MenuAdmin, MenuTas } from "@/components/shared/MenuPortal";
+import { konteksMenuTas, menuFavoritAkun } from "@/lib/menu-konteks";
+import StatTile from "@/components/admin/StatTile";
+import AgendaCalendar from "@/components/shared/AgendaCalendar";
+import Panel, { PanelKosong } from "@/components/shared/Panel";
+import { BarDaftar, DonatBagian } from "@/components/shared/GrafikRingkas";
+
+// Ikon lucide di halaman server ini hanya dirender di markup server (PageHeader, Panel) dan masing-masing SEKALI.
+// JANGAN mengoper elemen ikon ke komponen klien (StatTile, Link): pakai NAMA ikon — lihat IkonNama.tsx & CLAUDE.md #35
+// (15 Sep 2026 halaman ini 500 di produksi karena itu).
+const WARNA_L = "#1B2B6B";
+const WARNA_P = "#E8A020";
 
 // PENTING: TETAP verifyRole(["ADMIN","TAS"]) di sini, BUKAN verifyTasAccess() — halaman ini
 // landing page WAJIB semua akun TAS (lihat proxy.ts), non-TU TAS harus TETAP bisa masuk & lihat
 // versi ringkas (bukan diredirect /login). Pengecualian sengaja dari pola file lain di bawah ini.
 export default async function AdminDashboard() {
   const session = await verifyRole(["ADMIN", "TAS"]);
+  const favoritAwal = await menuFavoritAkun(session);
+  const jabatanMenu = session.role === "ADMIN" ? [] : (await konteksMenuTas(session)).jabatanNames;
 
   // PERBAIKAN KRITIS 2026-08-10 (temuan user): halaman ini adalah landing page OTOMATIS semua
   // akun role TAS setelah login (lihat proxy.ts roleRedirect) — dulu menampilkan statistik PENUH
@@ -28,12 +40,12 @@ export default async function AdminDashboard() {
     const jabatanNames = await getJabatanNames(session.email);
     if (!isFullTasJabatan(jabatanNames)) {
       return (
-        <div className="min-h-screen pt-16 lg:pt-0 flex items-center justify-center p-8">
-          <div className="text-center max-w-sm">
-            <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-700 flex items-center justify-center mx-auto mb-4">
-              <LayoutDashboard size={26} />
+        <div className="flex min-h-[80dvh] items-center justify-center p-8 pt-16 lg:pt-8">
+          <div className="panel masuk-halus max-w-sm p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
+              <Building2 size={26} />
             </div>
-            <h1 className="font-heading text-lg font-bold text-primary-900 mb-1">Selamat Datang, {session.name}</h1>
+            <h1 className="mb-1 font-heading text-lg font-bold text-primary-900">Selamat Datang, {session.name}</h1>
             <p className="text-sm text-gray-500">
               {jabatanNames.length > 0
                 ? `Gunakan menu di sidebar sesuai tugas Anda (${jabatanNames.join(", ")}).`
@@ -73,9 +85,8 @@ export default async function AdminDashboard() {
     const rows = studentsForGradeRecap.filter(s => s.class?.grade === grade);
     const l = rows.filter(s => s.gender === "L").length;
     const p = rows.filter(s => s.gender === "P").length;
-    return { grade, label: GRADE_LABEL[grade], l, p, jml: l + p };
+    return { grade, label: GRADE_LABEL[grade], l, p, jml: rows.length };
   });
-  const recapGrandTotal = gradeRecap.reduce((s, g) => s + g.jml, 0);
 
   const genderCount = (rows: { gender: string | null; _count: { _all: number } }[]) => ({
     L: rows.find(r => r.gender === "L")?._count._all ?? 0,
@@ -85,7 +96,7 @@ export default async function AdminDashboard() {
   const teacherGender = genderCount(teacherGenderRaw);
   const majorStats = majorsWithCount
     .filter(m => m._count.students > 0)
-    .map(m => ({ code: m.code, name: m.name, count: m._count.students, color: m.themeColor || "#1B2B6B" }));
+    .map(m => ({ kunci: m.code, label: m.code, sublabel: m.name, nilai: m._count.students, warna: m.themeColor || WARNA_L }));
 
   const now = new Date();
 
@@ -97,34 +108,35 @@ export default async function AdminDashboard() {
   ]);
 
   const dataGaps = [
-    { label: "Siswa belum ada Jenis Kelamin", count: noGenderStudents, href: "/dashboard/admin/buku-induk/siswa" },
-    { label: "Guru belum ada Jenis Kelamin", count: noGenderTeachers, href: "/dashboard/admin/buku-induk/guru" },
-    { label: "Siswa belum punya Kelas", count: unclassedStudents, href: "/dashboard/admin/buku-induk/siswa" },
+    { label: "Siswa belum ada jenis kelamin", count: noGenderStudents, href: "/dashboard/admin/buku-induk/siswa" },
+    { label: "Guru belum ada jenis kelamin", count: noGenderTeachers, href: "/dashboard/admin/buku-induk/guru" },
+    { label: "Siswa belum punya kelas", count: unclassedStudents, href: "/dashboard/admin/buku-induk/siswa" },
   ].filter(g => g.count > 0);
 
   const [recentAdmissions, recentNews, recentMessages] = await Promise.all([
-    prisma.admission.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
+    prisma.admission.findMany({
+      orderBy: { createdAt: "desc" }, take: 5,
+      select: { id: true, fullName: true, chosenMajor: true, status: true, createdAt: true },
+    }),
     prisma.news.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      select: { id: true, title: true, category: true, createdAt: true, slug: true },
+      where: { published: true }, orderBy: { createdAt: "desc" }, take: 4,
+      select: { id: true, title: true, category: true, createdAt: true },
     }),
     prisma.contactMessage.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, name: true, email: true, subject: true, message: true, isRead: true, createdAt: true },
+      orderBy: { createdAt: "desc" }, take: 5,
+      select: { id: true, name: true, subject: true, isRead: true, createdAt: true },
     }),
   ]);
 
-  const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    PENDING:   { label: "Menunggu",  color: "text-amber-700",   bg: "bg-amber-50 border-amber-200",    dot: "bg-amber-500" },
-    WAWANCARA: { label: "Wawancara", color: "text-blue-700",    bg: "bg-blue-50 border-blue-200",      dot: "bg-blue-500" },
-    ACCEPTED:  { label: "Diterima",  color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500" },
-    REJECTED:  { label: "Ditolak",   color: "text-red-600",     bg: "bg-red-50 border-red-200",        dot: "bg-red-500" },
+  const statusConfig: Record<string, { label: string; kelas: string; dot: string }> = {
+    PENDING:   { label: "Menunggu",  kelas: "bg-amber-50 border-amber-200 text-amber-700",       dot: "bg-amber-500" },
+    WAWANCARA: { label: "Wawancara", kelas: "bg-blue-50 border-blue-200 text-blue-700",          dot: "bg-blue-500" },
+    ACCEPTED:  { label: "Diterima",  kelas: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" },
+    REJECTED:  { label: "Ditolak",   kelas: "bg-red-50 border-red-200 text-red-600",             dot: "bg-red-500" },
   };
 
-  const dateStr = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  const tglPendek = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
 
   function timeAgo(date: Date) {
     const diff = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
@@ -135,261 +147,157 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen pt-16 lg:pt-0">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      {/* Header = PageHeader standar (keputusan user 2026-08-23, gotcha #16/#18): tanpa tombol/badge. */}
+      <PageHeader
+        icon={<LayoutDashboard size={22} />}
+        title="Dashboard Administrator"
+        description={<>Selamat datang, <span className="font-medium">{session.name}</span><span className="hidden sm:inline"> — {dateStr}</span></>}
+      />
 
-      {/* ── Top Header Bar ── */}
-      <div className="relative overflow-hidden sticky top-16 lg:top-0 z-20"
-        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-        />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-        <div className="relative px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-white">Dashboard Administrator</h1>
-            <p className="text-white/50 text-sm mt-0.5">
-              Selamat datang, <span className="text-white/80 font-medium">{session.name}</span>
+      <div className="space-y-6">
+        {/* Kisi menu ala aplikasi bank (18 Sep 2026) — seluruh menu portal dikumpulkan di dashboard. */}
+        {session.role === "ADMIN"
+          ? <MenuAdmin ringkas={12} hrefSemua="/dashboard/admin/menu" judul="Menu Cepat" favoritAwal={favoritAwal} />
+          : <MenuTas ringkas={12} hrefSemua="/dashboard/admin/menu" judul="Menu Cepat" favoritAwal={favoritAwal} jabatanNames={jabatanMenu} />}
+
+        {/* Hanya muncul bila memang ada data yang perlu dilengkapi. */}
+        {dataGaps.length > 0 && (
+          <div role="status" className="masuk-halus flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center">
+            <p className="flex shrink-0 items-center gap-2 text-sm font-semibold text-amber-800">
+              <TriangleAlert size={16} className="text-amber-600" /> Data perlu dilengkapi
             </p>
-          </div>
-          <div className="flex flex-col sm:items-end gap-2">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-gold" />
-              <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {messageUnread > 0 && (
-                <Link href="/dashboard/admin/messages"
-                  className="relative flex items-center gap-2 bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-red-500/30 transition-colors">
-                  <Mail size={14} />
-                  {messageUnread} pesan baru
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+            <div className="flex flex-wrap gap-2">
+              {dataGaps.map(g => (
+                <Link key={g.label} href={g.href}
+                  className="sentuh inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-white/70 px-3 py-1 text-sm text-amber-800 transition-colors hover:bg-white">
+                  {g.label} <span className="angka font-bold">{g.count}</span>
                 </Link>
-              )}
-              {admissionPending > 0 && (
-                <Link href="/dashboard/admin/admissions"
-                  className="flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gold/30 transition-colors">
-                  <ClipboardList size={14} />
-                  {admissionPending} menunggu
-                </Link>
-              )}
+              ))}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="px-6 lg:px-8 py-6 space-y-5">
-
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-          {[
-            { icon: GraduationCap, label: "Total Siswa", value: studentCount, href: "/dashboard/admin/students",
-              grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
-            { icon: UserCog, label: "Tenaga Pendidik", value: teacherCount, href: "/dashboard/admin/teachers",
-              grad: "from-blue-500 to-blue-600", ring: "ring-blue-100" },
-            { icon: School, label: "Jumlah Kelas", value: classCount, href: "/dashboard/admin/classes",
-              grad: "from-primary-500 to-primary-700", ring: "ring-primary-100" },
-            { icon: Users, label: "Total Akun", value: userCount, href: "/dashboard/admin/users",
-              grad: "from-purple-500 to-purple-600", ring: "ring-purple-100" },
-            { icon: Clock, label: "Menunggu Verifikasi", value: admissionPending, href: "/dashboard/admin/admissions",
-              grad: "from-amber-500 to-amber-600", ring: "ring-amber-100" },
-            { icon: Mail, label: "Pesan Belum Dibaca", value: messageUnread, href: "/dashboard/admin/messages",
-              grad: "from-red-500 to-red-600", ring: "ring-red-100" },
-          ].map(({ icon: Icon, label, value, href, grad, ring }, i) => (
-            <Link key={label} href={href} style={{ animationDelay: `${i * 50}ms` }}
-              className={`card-fade-up group relative overflow-hidden rounded-xl p-3.5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all block bg-gradient-to-br ${grad} ring-1 ${ring}`}>
-              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Icon size={56} className="text-white" />
-              </div>
-              <div className="relative">
-                <p className="font-heading font-bold text-xl leading-tight text-white">{value.toLocaleString()}</p>
-                <p className="text-white/75 text-[10px] font-medium leading-tight truncate mt-0.5">{label}</p>
-              </div>
-            </Link>
-          ))}
+        {/* ── Angka utama: warna chip mengikuti arti (amber/merah HANYA bila ada yang menunggu) ── */}
+        <div className="kisi-kartu kisi-kartu-6">
+          <StatTile tampilan="lembut" href="/dashboard/admin/students" ikon="siswa" label="Siswa Aktif" value={studentCount} color="blue" />
+          <StatTile tampilan="lembut" href="/dashboard/admin/teachers" ikon="guru" label="Tenaga Pendidik" value={teacherCount} color="emerald" />
+          <StatTile tampilan="lembut" href="/dashboard/admin/classes" ikon="kelas" label="Kelas" value={classCount} color="purple" />
+          <StatTile tampilan="lembut" href="/dashboard/admin/users" ikon="akun" label="Akun Pengguna" value={userCount} color="primary" />
+          <StatTile tampilan="lembut" href="/dashboard/admin/admissions" ikon="menunggu" label="Pendaftar Menunggu" value={admissionPending} color="amber" sorot={admissionPending > 0} />
+          <StatTile tampilan="lembut" href="/dashboard/admin/messages" ikon="pesan" label="Pesan Belum Dibaca" value={messageUnread} color="red" sorot={messageUnread > 0} />
         </div>
 
-        {/* ── Statistik & Widget ── */}
-        <DashboardCharts studentGender={studentGender} teacherGender={teacherGender}
-          studentTotal={studentCount} teacherTotal={teacherCount} majorStats={majorStats}
-          dataGaps={dataGaps} agenda={agenda} />
-
-        {/* ── Rekapitulasi Jumlah Siswa ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-            <h3 className="font-heading font-semibold text-navy text-xs uppercase tracking-wide">Rekapitulasi Jumlah Siswa</h3>
-            <Link href="/dashboard/admin/reports/rekap-siswa"
-              className="text-[11px] text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
-              Detail <ArrowRight size={10} />
-            </Link>
-          </div>
-          <div className="p-3.5 grid grid-cols-4 gap-2.5">
-            {gradeRecap.map((g, i) => {
-              const grads = ["bg-primary-500", "bg-primary-700", "bg-primary-900"];
-              return (
-                <div key={g.grade} className="rounded-lg border border-gray-100 overflow-hidden text-center">
-                  <div className={`${grads[i]} text-white font-bold text-xs py-1.5`}>{g.label}</div>
-                  <div className="bg-primary-50/60 pb-1.5">
-                    <p className="font-heading font-bold text-lg text-primary-900 pt-1.5">{g.jml}</p>
-                    <div className="flex justify-center gap-2 text-[10px] text-gray-400">
-                      <span>L {g.l}</span><span>P {g.p}</span>
-                    </div>
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-8">
+            {/* ── Komposisi siswa: satu panel menggantikan 2 donat + grafik batang + rekap per tingkat ── */}
+            <Panel judul="Komposisi Siswa Aktif" ikon={<ChartColumn />} className="@container"
+              tautan={{ label: "Rekap lengkap", href: "/dashboard/admin/reports/rekap-siswa" }}>
+              <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] @3xl:gap-8">
+                <div className="min-w-0 space-y-5">
+                  {/* Donat L/P siswa & guru berdampingan (pilihan user 15 Sep 2026: "donat + batang berwarna"). */}
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <DonatBagian judul="Siswa aktif" satuan="siswa"
+                      bagian={[{ label: "Laki-laki", nilai: studentGender.L, warna: WARNA_L }, { label: "Perempuan", nilai: studentGender.P, warna: WARNA_P }]} />
+                    <DonatBagian judul="Tenaga pendidik" satuan="guru"
+                      bagian={[{ label: "Laki-laki", nilai: teacherGender.L, warna: WARNA_L }, { label: "Perempuan", nilai: teacherGender.P, warna: WARNA_P }]} />
                   </div>
-                </div>
-              );
-            })}
-            <div className="rounded-lg border border-gray-100 overflow-hidden text-center">
-              <div className="bg-gold text-primary-900 font-bold text-xs py-1.5">Jumlah</div>
-              <div className="bg-amber-50 pb-1.5">
-                <p className="font-heading font-bold text-lg text-primary-900 pt-1.5">{recapGrandTotal}</p>
-                <p className="text-primary-900/60 text-[10px] font-medium">Siswa</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Messages + Admissions Row ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-          {/* Pesan Masuk Panel */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <MessageSquare size={15} className="text-primary-700" />
-                <h3 className="font-heading font-semibold text-navy text-sm">Pesan Masuk</h3>
-                {messageUnread > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{messageUnread}</span>
-                )}
-              </div>
-              <Link href="/dashboard/admin/messages"
-                className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
-                Lihat semua <ArrowRight size={11} />
-              </Link>
-            </div>
-
-            {recentMessages.length ? (
-              <div className="divide-y divide-gray-50">
-                {recentMessages.map(msg => (
-                  <Link key={msg.id} href="/dashboard/admin/messages"
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors group">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
-                      msg.isRead ? "bg-gray-100 text-gray-500" : "bg-primary-100 text-primary-700"
-                    }`}>
-                      {msg.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={`text-xs font-semibold truncate ${msg.isRead ? "text-gray-500" : "text-navy"}`}>
-                          {msg.name}
-                          {!msg.isRead && <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full ml-1.5 align-middle" />}
-                        </p>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(msg.createdAt)}</span>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {gradeRecap.map(g => (
+                      <div key={g.grade} className="rounded-xl bg-primary-50/70 px-3 py-2.5">
+                        <p className="text-xs font-semibold text-gray-500">Kelas {g.label}</p>
+                        <p className="angka font-heading text-xl font-bold text-primary-900">{g.jml}</p>
+                        <p className="angka text-xs text-gray-500">L {g.l} · P {g.p}</p>
                       </div>
-                      <p className="text-xs text-gray-600 font-medium truncate mt-0.5">{msg.subject}</p>
-                      <p className="text-[10px] text-gray-400 line-clamp-1 mt-0.5">{msg.message}</p>
-                    </div>
-                  </Link>
-                ))}
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">{studentCount.toLocaleString("id-ID")} siswa aktif tersebar di {classCount} kelas.</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="label-kecil mb-3">Per konsentrasi keahlian</p>
+                  {majorStats.length
+                    ? <BarDaftar data={majorStats} satuan="siswa" />
+                    : <p className="text-sm text-gray-500">Belum ada siswa aktif per jurusan.</p>}
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-10 text-gray-400">
-                <MessageSquare size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada pesan masuk.</p>
-              </div>
-            )}
-          </div>
+            </Panel>
 
-          {/* Recent Admissions Table */}
-          <div className="lg:col-span-3 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <ClipboardList size={16} className="text-primary-700" />
-                <h3 className="font-heading font-semibold text-navy">Pendaftaran Terbaru</h3>
-              </div>
-              <Link href="/dashboard/admin/admissions"
-                className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
-                Lihat semua <ArrowRight size={11} />
-              </Link>
-            </div>
-            {recentAdmissions.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50/50">
-                      <th className="text-left px-6 py-3 text-xs text-gray-400 font-semibold uppercase tracking-wider">Pendaftar</th>
-                      <th className="text-left px-4 py-3 text-xs text-gray-400 font-semibold uppercase tracking-wider hidden sm:table-cell">Jurusan</th>
-                      <th className="text-right px-6 py-3 text-xs text-gray-400 font-semibold uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {recentAdmissions.map((a) => {
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+              <Panel judul="Pendaftaran Terbaru" ikon={<ClipboardList />} isi={false}
+                tautan={{ label: "Lihat semua", href: "/dashboard/admin/admissions" }}>
+                {recentAdmissions.length ? (
+                  <ul className="divide-y divide-gray-100">
+                    {recentAdmissions.map(a => {
                       const cfg = statusConfig[a.status];
                       return (
-                        <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                                <span className="text-primary-700 font-bold text-xs">{a.fullName.charAt(0)}</span>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm text-navy leading-tight">{a.fullName}</p>
-                                <p className="text-xs text-gray-400">{a.phone}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 hidden sm:table-cell">
-                            <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg font-medium">{a.chosenMajor}</span>
-                          </td>
-                          <td className="px-6 py-3.5 text-right">
-                            <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold border ${cfg?.bg ?? "bg-gray-50 border-gray-200"} ${cfg?.color ?? "text-gray-600"}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${cfg?.dot ?? "bg-gray-400"}`} />
-                              {cfg?.label ?? a.status}
-                            </span>
-                          </td>
-                        </tr>
+                        <li key={a.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-700" aria-hidden="true">
+                            {a.fullName.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-primary-900">{a.fullName}</p>
+                            <p className="truncate text-xs text-gray-500">{a.chosenMajor} · {timeAgo(a.createdAt)}</p>
+                          </div>
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg?.kelas ?? "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${cfg?.dot ?? "bg-gray-400"}`} />
+                            {cfg?.label ?? a.status}
+                          </span>
+                        </li>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-400">
-                <ClipboardList size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Belum ada pendaftaran masuk.</p>
-              </div>
-            )}
-          </div>
-        </div>
+                  </ul>
+                ) : <PanelKosong ikon={<FileText />} teks="Belum ada pendaftaran masuk." />}
+              </Panel>
 
-        {/* ── Berita Terbaru ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-            <div className="flex items-center gap-2">
-              <Newspaper size={15} className="text-primary-700" />
-              <h3 className="font-heading font-semibold text-navy text-sm">Berita Terbaru</h3>
+              <Panel judul="Pesan Masuk" ikon={<MessageSquare />} isi={false}
+                tautan={{ label: "Lihat semua", href: "/dashboard/admin/messages" }}>
+                {recentMessages.length ? (
+                  <ul className="divide-y divide-gray-100">
+                    {recentMessages.map(msg => (
+                      <li key={msg.id}>
+                        <Link href="/dashboard/admin/messages" className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:px-5">
+                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${msg.isRead ? "bg-gray-100 text-gray-500" : "bg-primary-50 text-primary-700"}`} aria-hidden="true">
+                            {msg.name.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className={`truncate text-sm ${msg.isRead ? "text-gray-600" : "font-semibold text-primary-900"}`}>{msg.name}</p>
+                            <p className="truncate text-xs text-gray-500">{msg.subject}</p>
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="text-xs text-gray-400">{timeAgo(msg.createdAt)}</span>
+                            {!msg.isRead && <span className="h-2 w-2 rounded-full bg-red-500"><span className="sr-only">Belum dibaca</span></span>}
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <PanelKosong ikon={<Inbox />} teks="Belum ada pesan masuk." />}
+              </Panel>
             </div>
-            <span className="text-xs text-gray-400">{newsCount} dipublikasi</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 divide-gray-50">
-            {recentNews.length ? recentNews.map(n => (
-              <Link key={n.id} href="/dashboard/admin/news"
-                className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors group">
-                <div className="w-2 h-2 rounded-full bg-primary-300 shrink-0 mt-1.5" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-navy font-medium line-clamp-1 group-hover:text-primary-700 transition-colors">{n.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-gray-400">
-                      {new Date(n.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                    </span>
-                    <span className="text-[10px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded font-medium">{n.category}</span>
-                  </div>
-                </div>
-              </Link>
-            )) : (
-              <div className="col-span-2 text-center py-6 text-gray-400 text-sm">Belum ada berita.</div>
-            )}
+
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-4">
+            <AgendaCalendar agenda={agenda} />
+
+            <Panel judul="Berita Terbaru" ikon={<Newspaper />} isi={false} keterangan={`${newsCount} terbit`}>
+              {recentNews.length ? (
+                <ul className="divide-y divide-gray-100">
+                  {recentNews.map(n => (
+                    <li key={n.id}>
+                      <Link href="/dashboard/admin/news" className="block px-4 py-3 transition-colors hover:bg-gray-50 sm:px-5">
+                        <p className="line-clamp-2 text-sm font-medium text-primary-900">{n.title}</p>
+                        <p className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                          {tglPendek(n.createdAt)}
+                          <span className="rounded bg-primary-50 px-1.5 py-0.5 font-medium text-primary-700">{n.category}</span>
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : <PanelKosong ikon={<SquarePen />} teks="Belum ada berita yang terbit." />}
+            </Panel>
           </div>
         </div>
-
       </div>
     </div>
   );

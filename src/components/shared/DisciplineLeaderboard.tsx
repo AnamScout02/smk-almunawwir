@@ -161,17 +161,17 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
           <div className="flex flex-wrap items-center gap-2 mb-5">
             {onSwitchTab && (
               <button onClick={onSwitchTab}
-                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap">
+                className="btn-modal-cancel whitespace-nowrap">
                 <Users2 size={15} /> Kinerja Pegawai
               </button>
             )}
             <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
               <button onClick={() => setPeriod("week")}
-                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 Minggu
               </button>
               <button onClick={() => setPeriod("month")}
-                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 Bulan
               </button>
             </div>
@@ -188,7 +188,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                 <ChevronRight size={15} />
               </button>
             </div>
-            <button onClick={toggleFullscreen} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 hover:scale-[1.03] active:scale-95 transition-all whitespace-nowrap sm:ml-auto">
+            <button onClick={toggleFullscreen} className="btn-modal-cancel whitespace-nowrap sm:ml-auto">
               <Maximize2 size={15} /> Layar Penuh
             </button>
           </div>
@@ -203,12 +203,12 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
         )}
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
         ) : !data || (data.topDisiplin.length === 0 && data.perluPerhatian.length === 0) ? (
           <EmptyState icon={Trophy} title="Belum Ada Data Periode Ini" description="Papan peringkat akan terisi begitu Buku Piket mulai dicatat pada periode ini." />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden card-fade-up podium-glow">
+            <div className="panel relative overflow-hidden card-fade-up podium-glow">
               <div className="relative px-5 py-4 flex items-center gap-2 border-b border-gray-50 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
                 {/* Partikel mengambang halus di header — hidup tapi tidak mengganggu keterbacaan */}
                 {[...Array(6)].map((_, p) => (
@@ -222,7 +222,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                   style={{ backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(217,164,65,0.25) 50%, transparent 70%)", backgroundSize: "200% 100%", animation: "shimmer 4s ease-in-out infinite" }} />
                 <Trophy size={18} className="text-gold relative" />
                 <h3 className="font-heading font-bold text-primary-900 relative">Paling Disiplin</h3>
-                <span className="relative ml-auto text-[10px] font-bold text-gold/80 uppercase tracking-widest hidden sm:inline-flex items-center gap-1">
+                <span className="relative ml-auto text-xs font-bold text-gold/80 uppercase tracking-widest hidden sm:inline-flex items-center gap-1">
                   <Star size={11} className="spin-slow" /> Live Ranking
                 </span>
               </div>
@@ -253,7 +253,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                       <div className="min-w-0 flex-1 relative">
                         <p className={`font-semibold text-primary-900 truncate ${i === 0 ? "text-base" : "text-sm"}`}>
                           {t.teacherName}
-                          {i === 0 && <span className="ml-2 text-[10px] font-bold text-gold/90 bg-gold/10 px-1.5 py-0.5 rounded-full align-middle">JUARA MINGGU INI</span>}
+                          {i === 0 && <span className="ml-2 text-xs font-bold text-gold/90 bg-gold/10 px-1.5 py-0.5 rounded-full align-middle">JUARA MINGGU INI</span>}
                         </p>
                         <p className="text-xs text-gray-400">{t.totalBlokTercatat}/{t.totalBlokSeharusnya} blok tercatat · {t.persentaseHadir}% hadir · {t.totalPoin} poin total</p>
                         {i < 3 && <ProgressBar percent={t.persentaseHadir} colorClass={RANK_BAR[i]} />}
@@ -262,7 +262,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                         <p className={`font-heading font-bold ${i === 0 ? "text-2xl text-gold" : "text-lg text-primary-900"}`}>
                           <ScoreValue key={refreshTick} value={t.skorRataRata} />
                         </p>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">skor/blok</p>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">skor/blok</p>
                       </div>
                     </div>
                   ))}
@@ -270,7 +270,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-fade-up" style={{ animationDelay: "80ms" }}>
+            <div className="panel overflow-hidden card-fade-up" style={{ animationDelay: "80ms" }}>
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.02) 100%)" }}>
                 <AlertTriangle size={18} className="text-red-500" />
                 <h3 className="font-heading font-bold text-primary-900">Perlu Perhatian</h3>
@@ -292,7 +292,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-heading font-bold text-red-500 text-lg"><ScoreValue key={refreshTick} value={t.totalPoin} decimals={0} /></p>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">poin</p>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">poin</p>
                       </div>
                     </div>
                   ))}

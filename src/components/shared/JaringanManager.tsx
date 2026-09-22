@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 import {
   Network, Loader2, Plus, Trash2, Save, Router, Wifi, Users, Activity,
   RefreshCw, Search, Cpu, HardDrive, Thermometer, Gauge, Terminal, Trophy, Printer, Edit2,
@@ -13,6 +15,7 @@ import StatTile from "@/components/admin/StatTile";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 import { PageSkeleton } from "@/components/shared/Skeleton";
+import AnimatedBar from "@/components/shared/AnimatedBar";
 
 interface MikrotikRow { [key: string]: string }
 interface StatusData { identity: MikrotikRow; resource: MikrotikRow; interfaces: MikrotikRow[]; health: MikrotikRow[] }
@@ -96,6 +99,7 @@ export default function JaringanManager() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [printProfile, setPrintProfile] = useState("");
+  usePrintTitle(printProfile ? buildPrintFilename("Daftar_Akun_Hotspot", printProfile) : null);
 
   function loadAll() {
     setLoading(true);
@@ -335,8 +339,8 @@ export default function JaringanManager() {
         description="Monitoring & manajemen jaringan Mikrotik — status perangkat, bandwidth, hotspot, dan PPPoE"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={loadAll} className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors border border-primary-100">
+      <div className="alat-aksi justify-end mb-5">
+        <button onClick={loadAll} className="btn-modal-cancel">
           <RefreshCw size={15} /> Segarkan
         </button>
       </div>
@@ -348,7 +352,7 @@ export default function JaringanManager() {
       )}
 
       {tab === "Ringkasan" && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
           <StatTile color="primary" icon={Users} value={hotspot.users.length} label="Total Akun Hotspot" size="md" />
           <StatTile color="emerald" icon={Wifi} value={hotspot.active.length} label="Online Sekarang" size="md" />
           <StatTile color="gray" icon={Users} value={Math.max(hotspot.users.length - hotspot.active.length, 0)} label="Offline" size="md" />
@@ -381,9 +385,7 @@ export default function JaringanManager() {
             const temp = status.health.find(h => h.name === "temperature")?.value;
             const barColor = (pct: number) => (pct > 80 ? "#ef4444" : pct > 50 ? "#f59e0b" : "#10b981");
             const bar = (pct: number) => (
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mt-1.5 segmented-bar">
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: barColor(pct) }} />
-              </div>
+              <AnimatedBar pct={pct} heightClass="h-2" trackClassName="bg-gray-100" fillColor={barColor(pct)} className="mt-1.5" />
             );
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -425,7 +427,7 @@ export default function JaringanManager() {
               <Select className="sm:w-56" value={chartInterface} onChange={setChartInterface}
                 options={(status?.interfaces ?? []).filter(i => i.disabled === "false").map(i => ({ value: i.name, label: i.name }))} />
             </div>
-            <div className="flex items-center gap-1 mb-3 rounded-xl border border-gray-100 p-1 w-max">
+            <div className="flex items-center gap-1 mb-3 rounded-xl border border-gray-100 p-1 w-max max-w-full overflow-x-auto scrollbar-hide">
               {([["live", "Live"], ["1h", "1 Jam"], ["24h", "24 Jam"], ["7d", "7 Hari"], ["30d", "30 Hari"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => setChartRange(val)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${chartRange === val ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
@@ -434,7 +436,7 @@ export default function JaringanManager() {
               ))}
             </div>
             {historyLoading ? (
-              <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-primary-400" /></div>
+              <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-primary-500" /></div>
             ) : chartRange !== "live" && chartData.length === 0 ? (
               <p className="text-center py-10 text-gray-400 text-sm">Belum ada data riwayat untuk rentang ini.</p>
             ) : null}
@@ -527,7 +529,7 @@ export default function JaringanManager() {
 
       {tab === "Status Perangkat" && status && (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="kisi-kartu kisi-kartu-4">
             <StatTile color="primary" icon={Router} value={status.identity?.name ?? "—"} label="Identitas Router" size="sm" />
             <StatTile color="emerald" icon={Activity} value={status.resource?.uptime ?? "—"} label="Uptime" size="md" />
             <StatTile color="blue" icon={Network} value={status.resource?.version ?? "—"} label="RouterOS" size="md" />
@@ -575,7 +577,7 @@ export default function JaringanManager() {
             <span>Traffic per Interface (live, refresh tiap 10 detik)</span>
           </div>
           {traffic.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">Memuat traffic...</div>
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat traffic...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -603,7 +605,7 @@ export default function JaringanManager() {
 
       {tab === "Perangkat Terhubung" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="kisi-kartu">
             <StatTile color="primary" icon={Users} value={leases.length} label="Total DHCP Lease" size="md" />
             <StatTile color="emerald" icon={Activity} value={leases.filter(l => l.status === "bound").length} label="Sedang Terhubung" size="md" />
           </div>
@@ -655,7 +657,7 @@ export default function JaringanManager() {
 
       {tab === "Hotspot" && (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="kisi-kartu">
             <StatTile color="primary" icon={Users} value={hotspot.users.length} label="Total User Hotspot" size="md" />
             <StatTile color="emerald" icon={Wifi} value={hotspot.active.length} label="Sedang Online" size="md" />
           </div>
@@ -711,7 +713,7 @@ export default function JaringanManager() {
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">Profil Hotspot ({profiles.length})</span>
               <button onClick={openAddProfile}
-                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
+                className="btn-modal-save">
                 <Plus size={13} /> Tambah Profil
               </button>
             </div>
@@ -736,7 +738,7 @@ export default function JaringanManager() {
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => openEditProfile(p)}
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100">
+                            className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100">
                             <Edit2 size={12} /> Edit
                           </button>
                           {p.name !== "default" && (
@@ -758,7 +760,7 @@ export default function JaringanManager() {
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">IP Binding ({ipBindings.length})</span>
               <button onClick={openAddBinding}
-                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
+                className="btn-modal-save">
                 <Plus size={13} /> Tambah Binding
               </button>
             </div>
@@ -806,12 +808,12 @@ export default function JaringanManager() {
               <span className="font-heading font-bold text-primary-900 text-sm shrink-0">Daftar User Hotspot ({filteredHotspotUsers.length}{hotspotSearch ? ` dari ${hotspot.users.length}` : ""})</span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:w-56">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input value={hotspotSearch} onChange={e => setHotspotSearch(e.target.value)}
                     placeholder="Cari nama atau profil..." className="input-field pl-8 py-1.5 text-xs" />
                 </div>
                 <button onClick={() => openAddUser("HOTSPOT")}
-                  className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
+                  className="btn-modal-save shrink-0">
                   <Plus size={13} /> Tambah User
                 </button>
               </div>
@@ -886,7 +888,7 @@ export default function JaringanManager() {
 
       {tab === "PPPoE" && (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="kisi-kartu">
             <StatTile color="primary" icon={Users} value={pppoe.secrets.length} label="Total User PPPoE" size="md" />
             <StatTile color="emerald" icon={Wifi} value={pppoe.active.length} label="Sedang Online" size="md" />
           </div>
@@ -895,7 +897,7 @@ export default function JaringanManager() {
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">Daftar User PPPoE</span>
               <button onClick={() => openAddUser("PPPOE")}
-                className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold/90 text-primary-900 text-xs font-semibold px-3 py-2 rounded-lg">
+                className="btn-modal-save">
                 <Plus size={13} /> Tambah User
               </button>
             </div>
@@ -1089,7 +1091,7 @@ export default function JaringanManager() {
     </div>
 
     {printProfile && (
-      <div className="hidden print:block p-8">
+      <div className="hidden print:block print-doc bg-white p-8">
         <h1 className="text-lg font-bold text-center mb-1">Daftar Akun WiFi Hotspot</h1>
         <p className="text-sm text-center text-gray-600 mb-6">Profil: {printProfile} — SMK Al-Munawwir IIBS</p>
         <table className="w-full text-sm border-collapse">

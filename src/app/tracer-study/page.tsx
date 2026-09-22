@@ -3,6 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import TracerStudyForm from "@/components/sections/TracerStudyForm";
 import { GraduationCap } from "lucide-react";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,20 @@ export const metadata: Metadata = {
   description: "Formulir isian mandiri untuk alumni SMK Al Munawwir IIBS — bagikan kabar terbaru Anda setelah lulus.",
 };
 
-export default function TracerStudyPage() {
+const TEKS = {
+  id: {
+    judul: "Tracer Study Alumni",
+    isi: "Bagikan kabar terbaru Anda setelah lulus dari SMK Al Munawwir IIBS — sedang bekerja, kuliah, atau berwirausaha. Data ini membantu sekolah memantau keterserapan lulusan.",
+  },
+  en: {
+    judul: "Alumni Tracer Study",
+    isi: "Share your latest news after graduating from SMK Al Munawwir IIBS — working, studying, or running a business. This data helps the school track where its graduates go.",
+  },
+};
+
+export default async function TracerStudyPage() {
+  const lang = await getLang();
+  const c = TEKS[lang];
   return (
     <>
       <Navbar />
@@ -25,17 +39,14 @@ export default function TracerStudyPage() {
             <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mt-4 mb-4">
               <GraduationCap size={28} className="text-gold" />
             </div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">Tracer Study Alumni</h1>
-            <p className="text-white/70 text-lg max-w-xl mx-auto">
-              Bagikan kabar terbaru Anda setelah lulus dari SMK Al Munawwir IIBS — sedang bekerja, kuliah, atau berwirausaha.
-              Data ini membantu sekolah memantau keterserapan lulusan.
-            </p>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">{c.judul}</h1>
+            <p className="text-white/70 text-lg max-w-xl mx-auto">{c.isi}</p>
           </div>
         </section>
 
         <section className="section-padding bg-cream">
           <div className="container-custom max-w-xl mx-auto">
-            <TracerStudyForm />
+            <TracerStudyForm lang={lang} />
           </div>
         </section>
       </main>

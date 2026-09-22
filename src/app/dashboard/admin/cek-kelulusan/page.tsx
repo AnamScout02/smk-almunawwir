@@ -40,7 +40,7 @@ export default function AdminCekKelulusanPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-2xl">
+        <div className="panel p-5 max-w-2xl">
           <p className="text-xs text-gray-400 mb-4">
             Kosongkan salah satu/keduanya untuk selalu terbuka. Siswa/orang tua cek status kelulusan lewat halaman publik{" "}
             <code className="font-mono">/cek-kelulusan</code>.
@@ -55,7 +55,7 @@ export default function AdminCekKelulusanPage() {
               <DatePicker value={tanggalTutup} onChange={setTanggalTutup} />
             </div>
             <button onClick={handleSave} disabled={saving}
-              className="inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-60">
+              className="btn-modal-save disabled:opacity-60">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </div>

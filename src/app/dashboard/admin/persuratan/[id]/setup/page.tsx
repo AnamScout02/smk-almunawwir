@@ -96,22 +96,22 @@ export default function SuratKeluarSetupPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Mail size={22} />}
         title="Tulis Surat Keluar"
         description="Isi data singkat surat, lalu lanjut ke Editor Word untuk menulis isinya"
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/admin/persuratan" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl mx-auto space-y-4">
+      <div className="panel p-6 max-w-2xl mx-auto space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="label-field">Klasifikasi / Kode Jenis Surat</label>
@@ -153,7 +153,7 @@ export default function SuratKeluarSetupPage() {
         </div>
 
         <div className="flex justify-end pt-2">
-          <button onClick={handleContinue} disabled={saving} className="btn-gold flex items-center gap-2 text-sm px-8">
+          <button onClick={handleContinue} disabled={saving} className="btn-modal-save px-8">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <FileType2 size={14} />} Lanjut ke Editor Word
           </button>
         </div>

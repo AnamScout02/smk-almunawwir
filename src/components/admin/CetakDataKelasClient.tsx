@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import { CheckSquare, Square } from "lucide-react";
 import PrintKop from "@/components/shared/PrintKop";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 const GRADE_LABEL: Record<number, string> = { 10: "X", 11: "XI", 12: "XII" };
 
@@ -29,6 +31,13 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
 
   const selectedClasses = classes.filter(c => selected.has(c.id));
 
+  usePrintTitle(buildPrintFilename(
+    "Data_Kelas",
+    selectedClasses.length === classes.length ? "Semua-Kelas"
+      : selectedClasses.length <= 3 ? selectedClasses.map(c => c.name).join("-")
+      : `${selectedClasses.length}-Kelas`,
+  ));
+
   function toggle(id: string) {
     setSelected(prev => {
       const next = new Set(prev);
@@ -51,7 +60,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
           <p className="text-sm font-semibold text-primary-900">Pilih kelas yang akan dicetak ({selectedClasses.length}/{classes.length} dipilih)</p>
           <div className="flex gap-2">
             <button onClick={() => setSelected(new Set(classes.map(c => c.id)))}
-              className="text-xs font-semibold text-primary-600 hover:text-primary-900 px-3 py-1.5 rounded-lg hover:bg-primary-50 transition">
+              className="text-xs font-semibold text-primary-700 hover:text-primary-900 px-3 py-1.5 rounded-lg hover:bg-primary-50 transition">
               Pilih Semua
             </button>
             <button onClick={() => setSelected(new Set())}
@@ -76,7 +85,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
                   {items.map(c => (
                     <label key={c.id}
                       className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border cursor-pointer transition ${
-                        selected.has(c.id) ? "bg-primary-50 border-primary-200 text-primary-900" : "bg-gray-50 border-gray-200 text-gray-500"
+                        selected.has(c.id) ? "bg-primary-50 border-primary-100 text-primary-900" : "bg-gray-50 border-gray-200 text-gray-500"
                       }`}>
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="accent-primary-700" />
                       {c.name}
@@ -96,7 +105,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
       ) : (
         selectedClasses.map((cls, i) => (
           <div key={cls.id}
-            className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none print:p-0 mb-8 print:mb-0 ${i < selectedClasses.length - 1 ? "break-after-page" : ""}`}>
+            className={`print-doc bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none print:p-0 mb-8 print:mb-0 ${i < selectedClasses.length - 1 ? "break-after-page" : ""}`}>
             <div className="print:block hidden">
               <PrintKop title={`Data Kelas — ${cls.name}`} subtitle="SMK Al-Munawwir IIBS" logoUrl={logoUrl} edgeClassName="-mx-6 print:-mx-2" />
             </div>

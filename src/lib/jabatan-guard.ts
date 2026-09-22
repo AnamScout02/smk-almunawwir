@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 /** Lempar error "FORBIDDEN" kalau requester bukan ADMIN dan tidak punya salah satu jabatan di `allowed`. */
 export async function assertJabatan(session: { role: string; email: string }, allowed: string[]) {
@@ -35,4 +36,18 @@ export async function getOwnedJabatanIds(email: string): Promise<{ id: string; n
     select: { jabatan: { select: { jabatan: { select: { id: true, name: true } } } } },
   });
   return teacher?.jabatan.map(j => j.jabatan) ?? [];
+}
+
+/** Untuk HALAMAN server (bukan route API): jalankan penjaga jabatan; bila ditolak ("FORBIDDEN") alihkan ke dashboard portal
+ * pengguna. Tanpa ini galat FORBIDDEN tidak tertangkap dan pengguna tanpa jabatan melihat halaman 500 (temuan 15 Sep 2026:
+ * /dashboard/teacher/wakasek/kurikulum/penugasan/print). Route API tetap memakai assertJabatan langsung → 403. */
+export async function jabatanAtauAlihkan(session: { role: string }, penjaga: () => Promise<unknown>) {
+  try {
+    await penjaga();
+  } catch (e) {
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      redirect(session.role === "TEACHER" ? "/dashboard/teacher" : session.role === "STUDENT" ? "/dashboard/student" : "/dashboard/admin");
+    }
+    throw e;
+  }
 }

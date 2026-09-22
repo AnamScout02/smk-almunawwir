@@ -37,7 +37,6 @@ export default async function Footer() {
                     width={200}
                     height={56}
                     className="object-contain h-14 w-auto"
-                    unoptimized
                   />
                 </div>
               ) : (
@@ -48,7 +47,6 @@ export default async function Footer() {
                     width={200}
                     height={56}
                     className="object-contain h-14 w-auto"
-                    unoptimized
                   />
                 </div>
               )}
@@ -160,6 +158,10 @@ export default async function Footer() {
         <div className="container-custom py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-white/50 text-sm">
             © {new Date().getFullYear()} SMK Al Munawwir IIBS. {tr.footer_copyright}
+            <span className="mx-2 text-white/20">·</span>
+            <Link href="/kebijakan-privasi" className="hover:text-gold transition-colors">
+              {tr.footer_privacy}
+            </Link>
           </p>
           <p className="text-white/30 text-xs">
             Developed by{" "}

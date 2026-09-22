@@ -1,4 +1,5 @@
 "use client";
+import TimePicker from "@/components/shared/TimePicker";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, CalendarDays, Loader2, Wand2, Printer, ArrowLeft, CheckCircle2, AlertTriangle, Table2, ChevronDown, ChevronUp } from "lucide-react";
@@ -181,7 +182,7 @@ export default function NonBlokSchedulePage() {
     }
 
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+      <div className="panel overflow-hidden mb-6">
         <button onClick={() => setShowGrid(v => !v)} className="w-full px-3 py-2 flex items-center justify-between border-b border-gray-100">
           <span className="flex items-center gap-1.5 text-xs font-bold text-primary-900">
             <Table2 size={14} /> Tabel Jadwal Non-Blok (Live) — 1 Minggu
@@ -190,7 +191,7 @@ export default function NonBlokSchedulePage() {
         </button>
         {showGrid && (
           <div className="overflow-auto max-h-[70vh]">
-            <table className="text-[9px] border-collapse w-full">
+            <table className="text-xs border-collapse w-full">
               <thead>
                 <tr>
                   <th className="sticky left-0 top-0 bg-primary-900 text-white px-1 py-1 z-20 min-w-[36px]">Hari</th>
@@ -253,27 +254,27 @@ export default function NonBlokSchedulePage() {
       />
 
       <div className="flex flex-wrap gap-2 mb-5">
-        <Link href="/dashboard/admin/schedules" className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+        <Link href="/dashboard/admin/schedules" className="btn-modal-cancel">
           <ArrowLeft size={16} /> Ke Jadwal Blok
         </Link>
         <Link href="/dashboard/admin/schedules/nonblok/print"
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          className="btn-modal-cancel">
           <Printer size={16} /> Cetak Gabungan
         </Link>
         <Link href={selectedClass ? `/dashboard/admin/schedules/nonblok/print-class?classId=${selectedClass}` : "/dashboard/admin/schedules/nonblok/print-class"}
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          className="btn-modal-cancel">
           <Printer size={16} /> Cetak per Kelas
         </Link>
         <button onClick={() => { setShowGenerate(true); setGenerateReport(null); }}
           className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
           <Wand2 size={16} /> Generate Otomatis
         </button>
-        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+        <button onClick={openNew} className="btn-modal-save sm:ml-auto">
           <Plus size={18} /> Tambah Jadwal
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+      <div className="panel p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
         {classes.length === 0 ? (
           <p className="text-sm text-gray-400">Belum ada kelas.</p>
@@ -295,8 +296,8 @@ export default function NonBlokSchedulePage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {DAYS.map(day => (
-            <div key={day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-2.5 bg-primary-900 text-white text-sm font-bold">{DAY_LABEL[day]}</div>
+            <div key={day} className="panel overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-gray-100 bg-[#f5f6fa] text-primary-900 text-sm font-bold">{DAY_LABEL[day]}</div>
               <div className="divide-y divide-gray-50">
                 {byDay[day].length === 0 ? (
                   <p className="px-4 py-3 text-xs text-gray-400">Tidak ada jadwal</p>
@@ -359,13 +360,11 @@ export default function NonBlokSchedulePage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Jam Mulai</label>
-              <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" />
+              <TimePicker value={form.startTime} onChange={v => setForm(f => ({ ...f, startTime: v }))} className="w-full" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Jam Selesai</label>
-              <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" />
+              <TimePicker value={form.endTime} onChange={v => setForm(f => ({ ...f, endTime: v }))} className="w-full" />
             </div>
           </div>
         </div>
@@ -392,7 +391,7 @@ export default function NonBlokSchedulePage() {
             <button
               disabled={generating || !selectedClass}
               onClick={() => runGenerate("class")}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary-200 text-primary-700 font-semibold text-sm hover:bg-primary-50 transition disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary-100 text-primary-700 font-semibold text-sm hover:bg-primary-50 transition disabled:opacity-60"
             >
               {generating && <Loader2 size={15} className="animate-spin" />}
               Generate untuk kelas ini saja{activeClass ? ` (${activeClass.name})` : ""}

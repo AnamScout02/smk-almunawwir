@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, Mail, IdCard, BookOpen, School, UserCircle } from "lucide-react";
+import { ArrowLeft, Mail, IdCard, BookOpen, School, UserCircle, Hash } from "lucide-react";
 import Link from "next/link";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import PageHeader from "@/components/admin/PageHeader";
 
@@ -21,22 +23,22 @@ export default async function StudentProfilePage() {
   });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<UserCircle size={22} />}
         title="Profil Saya"
         description="Akun & pengaturan"
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/student" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
       <div className="max-w-2xl space-y-6">
         {/* Info profil */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="panel p-6">
           <div className="flex items-center justify-between mb-6">
             <AvatarUpload currentAvatar={student?.user.avatar} name={session.name} />
             <span className="text-xs bg-primary-50 text-primary-700 font-semibold px-2.5 py-1 rounded-full border border-primary-100">Siswa</span>
@@ -59,7 +61,7 @@ export default async function StudentProfilePage() {
             </div>
             {student?.nisn && (
               <div className="flex items-start gap-3">
-                <IdCard size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                <Hash size={16} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-gray-400 text-xs">NISN</p>
                   <p className="font-medium text-gray-800 font-mono">{student.nisn}</p>
@@ -84,10 +86,14 @@ export default async function StudentProfilePage() {
         </div>
 
         {/* Ganti password */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="panel p-6">
           <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
           <ChangePasswordForm />
         </div>
+
+        <NotifikasiPerangkat />
+
+        <PerangkatAktif />
       </div>
     </div>
   );

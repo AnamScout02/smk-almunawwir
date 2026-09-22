@@ -77,7 +77,7 @@ export default function KpiIndikatorPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
       ) : jabatanNames.length === 0 ? (
         <EmptyState icon={Sliders} title="Belum Ada Indikator KPI" />
       ) : (
@@ -87,7 +87,7 @@ export default function KpiIndikatorPage() {
             const total = items.reduce((a, i) => a + (i.active ? i.weight : 0), 0);
             const isOpen = openJabatan.has(jabatanName);
             return (
-              <div key={jabatanName} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={jabatanName} className="panel overflow-hidden">
                 <button onClick={() => toggleJabatan(jabatanName)}
                   className="w-full px-5 py-4 flex items-center justify-between gap-2 text-left hover:bg-gray-50/50 transition">
                   <h3 className="font-heading font-bold text-primary-900 text-sm truncate">{jabatanName}</h3>
@@ -111,7 +111,7 @@ export default function KpiIndikatorPage() {
                           className="input-field w-16 text-center" />
                         <span className="text-sm text-gray-400">%</span>
                         <button onClick={() => save(ind)} disabled={savingId === ind.id}
-                          className="p-2 rounded-lg hover:bg-primary-50 text-primary-600 transition disabled:opacity-40">
+                          className="p-2 rounded-lg hover:bg-primary-50 text-primary-700 transition disabled:opacity-40">
                           {savingId === ind.id ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                         </button>
                       </div>

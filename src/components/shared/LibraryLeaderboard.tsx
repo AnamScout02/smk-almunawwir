@@ -84,9 +84,9 @@ export default function LibraryLeaderboard() {
               description={data ? `${period === "all" ? "Sepanjang waktu" : period === "week" ? "Minggu" : "Bulan"}: ${data.periodLabel}` : "Memuat..."} />
             <div className="flex flex-wrap items-center gap-2 mb-5">
               <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
-                <button onClick={() => setPeriod("week")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>Minggu</button>
-                <button onClick={() => setPeriod("month")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>Bulan</button>
-                <button onClick={() => setPeriod("all")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "all" ? "bg-gold text-primary-900" : "text-gray-500 hover:bg-gray-50"}`}>Semua</button>
+                <button onClick={() => setPeriod("week")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "week" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>Minggu</button>
+                <button onClick={() => setPeriod("month")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "month" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>Bulan</button>
+                <button onClick={() => setPeriod("all")} className={`px-3 py-2 text-xs font-semibold transition-colors ${period === "all" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>Semua</button>
               </div>
               {period !== "all" && (
                 <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
@@ -99,7 +99,7 @@ export default function LibraryLeaderboard() {
                   <button onClick={() => setRefDate(d => shiftDate(d, period, 1))} disabled={isNow} className="p-2.5 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Berikutnya"><ChevronRight size={15} /></button>
                 </div>
               )}
-              <button onClick={toggleFullscreen} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-all whitespace-nowrap sm:ml-auto">
+              <button onClick={toggleFullscreen} className="btn-modal-cancel whitespace-nowrap sm:ml-auto">
                 <Maximize2 size={15} /> Layar Penuh
               </button>
             </div>
@@ -114,12 +114,12 @@ export default function LibraryLeaderboard() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
         ) : !data || (data.topAktif.length === 0 && data.perluPerhatian.length === 0) ? (
           <EmptyState icon={Trophy} title="Belum Ada Data Periode Ini" description="Papan peringkat akan terisi begitu ada kunjungan/peminjaman tercatat." />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
                 <Trophy size={18} className="text-gold" />
                 <h3 className="font-heading font-bold text-primary-900">Paling Aktif</h3>
@@ -147,11 +147,11 @@ export default function LibraryLeaderboard() {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.02) 100%)" }}>
                 <AlertTriangle size={18} className="text-red-500" />
                 <h3 className="font-heading font-bold text-primary-900">Perlu Perhatian</h3>
-                <span className="ml-auto text-[10px] text-gray-400">buku terlambat saat ini</span>
+                <span className="ml-auto text-xs text-gray-400">buku terlambat saat ini</span>
               </div>
               {data.perluPerhatian.length === 0 ? (
                 <p className="text-center py-10 text-gray-400 text-sm">Tidak ada buku yang terlambat dikembalikan. 🎉</p>
@@ -166,7 +166,7 @@ export default function LibraryLeaderboard() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-heading font-bold text-red-500 text-lg">{t.totalDaysLate}</p>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">total hari</p>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">total hari</p>
                       </div>
                     </div>
                   ))}

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Save, Trash2, Archive, Search, ExternalLink, Pencil } from "lucide-react";
+import { Plus, Save, Trash2, Archive, Search, ExternalLink, Pencil, Loader2 } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -11,12 +11,12 @@ import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Arsip {
   id: string; judul: string; kategori: string; nomor?: string;
-  tanggal: string; keterangan?: string; fileUrl?: string; createdAt: string;
+  tanggal: string; keterangan?: string; fileUrl?: string; berlakuSampai?: string | null; createdAt: string;
 }
 
 const KATEGORI = ["Administrasi","Kepegawaian","Keuangan","Siswa","Sarana & Prasarana","Surat Menyurat","Lainnya"];
 const EMPTY: Omit<Arsip, "id" | "createdAt"> = {
-  judul: "", kategori: "", nomor: "", tanggal: "", keterangan: "", fileUrl: "",
+  judul: "", kategori: "", nomor: "", tanggal: "", keterangan: "", fileUrl: "", berlakuSampai: "",
 };
 
 function formatTgl(d: string) {
@@ -93,22 +93,24 @@ export default function ArsipPage() {
         description="Manajemen arsip dan dokumen sekolah"
       />
 
-      <div className="flex justify-end mb-3">
-        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm shrink-0">
-          <Plus size={15} /> Tambah Arsip
-        </button>
-      </div>
-
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input className="input-field pl-10"
-          placeholder="Cari judul, nomor, atau keterangan..." value={search}
-          onChange={e => setSearch(e.target.value)} />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026); di HP tombol turun ke kanan bawah. */}
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="input-field pl-10"
+            placeholder="Cari judul, nomor, atau keterangan..." value={search}
+            onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={openNew} className="btn-modal-save">
+            <Plus size={15} /> Tambah Arsip
+          </button>
+        </div>
       </div>
 
       {/* Tabel */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Memuat...</div>
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={Archive} description="Belum ada data arsip" />
       ) : (
@@ -129,7 +131,7 @@ export default function ArsipPage() {
         footer={
           <>
             <button onClick={() => setModal(null)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               <Save size={15} /> {saving ? "Menyimpan..." : "Simpan"}
             </button>
           </>
@@ -164,6 +166,10 @@ export default function ArsipPage() {
               <DatePicker value={modal?.tanggal ?? ""} onChange={v => setModal(p => ({ ...p, tanggal: v }))} />
             </div>
             <div>
+              <label className="label-field">Berlaku sampai</label>
+              <DatePicker value={modal?.berlakuSampai ?? ""} onChange={v => setModal(p => ({ ...p, berlakuSampai: v }))} placeholder="Tanpa batas" />
+            </div>
+            <div>
               <label className="label-field">Link File</label>
               <input className="input-field" value={modal?.fileUrl ?? ""}
                 onChange={e => setModal(p => ({ ...p, fileUrl: e.target.value }))}
@@ -186,38 +192,39 @@ function ArsipTable({ items, onEdit, onDelete }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Judul</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nomor</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tanggal</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Keterangan</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">File</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Judul</th>
+            <th>Nomor</th>
+            <th>Tanggal</th>
+            <th>Berlaku s/d</th>
+            <th>Keterangan</th>
+            <th>File</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(a => (
-            <tr key={a.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5 font-semibold text-primary-900 max-w-xs truncate">{a.judul}</td>
-              <td className="px-5 py-3.5 text-gray-500 font-mono">{a.nomor || "-"}</td>
-              <td className="px-5 py-3.5 text-gray-500">{formatTgl(a.tanggal)}</td>
-              <td className="px-5 py-3.5 text-gray-500 max-w-xs truncate">{a.keterangan || "-"}</td>
-              <td className="px-5 py-3.5">
+            <tr key={a.id}>
+              <td className="font-semibold text-primary-900 max-w-xs truncate">{a.judul}</td>
+              <td className="text-gray-500 font-mono">{a.nomor || "-"}</td>
+              <td className="text-gray-500">{formatTgl(a.tanggal)}</td>
+              <td className={`text-xs whitespace-nowrap ${a.berlakuSampai && new Date(a.berlakuSampai).getTime() <= Date.now() + 60 * 86400000 ? "font-semibold text-red-600" : "text-gray-500"}`}>{a.berlakuSampai ? formatTgl(a.berlakuSampai) : "-"}</td>
+              <td className="text-gray-500 max-w-xs truncate">{a.keterangan || "-"}</td>
+              <td>
                 {a.fileUrl ? (
                   <a href={a.fileUrl} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold">
+                    className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-semibold">
                     <ExternalLink size={11} /> Lihat
                   </a>
                 ) : (
                   <span className="text-gray-300">-</span>
                 )}
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  <button onClick={() => onEdit(a)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                  <button onClick={() => onEdit(a)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
                     <Pencil size={14} />
                   </button>
                   <button onClick={() => onDelete(a.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">

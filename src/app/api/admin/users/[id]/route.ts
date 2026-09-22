@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { cabutSemuaSesiPengguna } from "@/lib/sesi-server";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
@@ -16,6 +17,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const user = await prisma.user.update({ where: { id }, data });
 
     if (password) {
+      // Password direset admin → semua sesi akun itu dicabut, pemiliknya harus login ulang.
+      await cabutSemuaSesiPengguna(user.id, "GANTI_PASSWORD");
       await logActivity(session, {
         action: "RESET_PASSWORD", entity: "User", entityId: user.id,
         description: `${session.name} mereset password akun "${user.name}" (${user.email})`,

@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
+import { buildPrintFilename } from "@/lib/print-filename";
+
+export function generateMetadata() {
+  return { title: { absolute: buildPrintFilename("Daftar_Akun_Login", "Guru-Pegawai") } };
+}
 
 function sortByNip<T extends { nip: string | null }>(list: T[]): T[] {
   return [...list].sort((a, b) => {
@@ -30,7 +35,7 @@ export default async function CetakAkunLoginPage() {
         <PrintButton />
       </div>
 
-      <div className="max-w-4xl mx-auto bg-white print:shadow-none shadow-lg rounded-2xl print:rounded-none p-8 print:p-0">
+      <div className="print-doc max-w-4xl mx-auto bg-white print:shadow-none shadow-lg rounded-2xl print:rounded-none p-8 print:p-0">
         <div className="text-center mb-6">
           <h1 className="font-heading text-xl font-bold text-navy">Daftar Akun Login Guru &amp; Pegawai</h1>
           <p className="text-sm text-gray-500">SMK Al Munawwir IIBS — Dicetak {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>

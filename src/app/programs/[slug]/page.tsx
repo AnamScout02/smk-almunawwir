@@ -7,19 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { programs } from "@/data/programs";
 import { prisma } from "@/lib/prisma";
 import { themeGradient, themeGradientRight } from "@/lib/color";
-import {
-  CheckCircle2,
-  ArrowRight,
-  Briefcase,
-  Award,
-  ChevronRight,
-  Network,
-  Calculator,
-  Leaf,
-  Palette,
-  Building2,
-  GraduationCap,
-} from "lucide-react";
+import { CheckCircle2, ArrowRight, Briefcase, Award, ChevronRight, Network, Calculator, Leaf, Palette, Building2, GraduationCap } from "lucide-react";
 import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +90,7 @@ export default async function ProgramDetailPage({ params }: Props) {
 
   const logoUrl = dbMajor.logoUrl ?? undefined;
   const customColor = dbMajor.themeColor;
-  const fallbackClass = program?.color ?? "from-primary-600 to-primary-900";
+  const fallbackClass = program?.color ?? "from-primary-700 to-primary-900";
   const heroStyle = customColor ? { background: themeGradient(customColor) } : undefined;
   const rightStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
 
@@ -134,14 +122,14 @@ export default async function ProgramDetailPage({ params }: Props) {
               <Link href="/" className="hover:text-white transition">{c.home}</Link>
               <ChevronRight size={14} />
               <Link href="/programs" className="hover:text-white transition">{c.programsCrumb}</Link>
-              <ChevronRight size={14} />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
               <span className="text-white">{code}</span>
             </nav>
 
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
                 {logoUrl ? (
-                  <Image src={logoUrl} alt={name} fill sizes="96px" className="object-contain p-3" unoptimized />
+                  <Image src={logoUrl} alt={name} fill sizes="96px" className="object-contain p-3" />
                 ) : (
                   <Icon size={48} className="text-white" />
                 )}
@@ -208,7 +196,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {gallery.map((g) => (
                         <div key={g.id} className="aspect-video rounded-xl overflow-hidden relative">
-                          <Image src={g.imageUrl} alt={g.caption ?? name} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" unoptimized />
+                          <Image src={g.imageUrl} alt={g.caption ?? name} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" />
                         </div>
                       ))}
                     </div>
@@ -223,7 +211,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                               <div className="absolute inset-0 opacity-[0.1] pointer-events-none"
                                 style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "60px 60px", backgroundRepeat: "repeat", filter: "invert(1)" }}
                               />
-                              <Image src={logoUrl} alt={name} fill sizes="120px" className="object-contain p-6" unoptimized />
+                              <Image src={logoUrl} alt={name} fill sizes="120px" className="object-contain p-6" />
                             </div>
                           ) : (
                             <div key={i}
@@ -300,7 +288,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <ArrowRight size={16} />
                   </Link>
                   <Link href="/contact"
-                    className="flex items-center justify-center gap-2 w-full border border-primary-200 text-primary-700 font-semibold py-3 rounded-xl hover:bg-primary-100 transition text-sm mt-2">
+                    className="flex items-center justify-center gap-2 w-full border border-primary-100 text-primary-700 font-semibold py-3 rounded-xl hover:bg-primary-100 transition text-sm mt-2">
                     {c.askBtn}
                   </Link>
                 </div>
@@ -322,14 +310,14 @@ export default async function ProgramDetailPage({ params }: Props) {
                 const otherSlug = m.code.toLowerCase();
                 const otherStatic = staticBySlug[otherSlug];
                 const OtherIcon = icons[otherSlug] ?? GraduationCap;
-                const otherFallback = otherStatic?.color ?? "from-primary-600 to-primary-900";
+                const otherFallback = otherStatic?.color ?? "from-primary-700 to-primary-900";
                 return (
                   <Link key={m.id} href={`/programs/${otherSlug}`}
                     className="group block bg-cream rounded-2xl p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
                     <div className={`w-11 h-11 rounded-xl ${m.themeColor ? "" : `bg-gradient-to-br ${otherFallback}`} flex items-center justify-center mb-3 overflow-hidden relative`}
                       style={m.themeColor ? { background: themeGradient(m.themeColor) } : undefined}>
                       {m.logoUrl ? (
-                        <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" unoptimized />
+                        <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" />
                       ) : (
                         <OtherIcon size={20} className="text-white" />
                       )}
@@ -337,7 +325,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{m.code}</div>
                     <div className="font-heading font-bold text-navy text-sm mt-0.5 leading-snug">{m.name}</div>
                     <div className="flex items-center gap-1 text-primary-700 text-xs font-semibold mt-3 group-hover:gap-2 transition-all">
-                      {c.viewDetail} <ArrowRight size={12} />
+                      {c.viewDetail} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                     </div>
                   </Link>
                 );

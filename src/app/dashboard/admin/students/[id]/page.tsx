@@ -5,9 +5,10 @@ import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School, Printer, Pencil, CheckCircle2, FileText, Stethoscope, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail, School, Printer, Pencil, CircleUserRound, Hash, BookMarked } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
+import type { NamaIkon } from "@/components/shared/IkonNama";
 
 const STATUS_COLOR: Record<string, "emerald" | "blue" | "amber" | "red"> = {
   HADIR: "emerald",
@@ -15,11 +16,13 @@ const STATUS_COLOR: Record<string, "emerald" | "blue" | "amber" | "red"> = {
   SAKIT: "amber",
   ALPHA: "red",
 };
-const STATUS_ICON: Record<string, React.ElementType> = {
-  HADIR: CheckCircle2,
-  IZIN:  FileText,
-  SAKIT: Stethoscope,
-  ALPHA: XCircle,
+// JSX sudah-dirender (bukan ElementType mentah) — halaman ini Server Component, StatTile
+// Client Component, referensi fungsi tidak bisa lewat batas RSC (lihat komentar di StatTile.tsx).
+const STATUS_ICON: Record<string, NamaIkon> = {
+  HADIR: "centang",
+  IZIN:  "dokumen",
+  SAKIT: "sakit",
+  ALPHA: "alpha",
 };
 
 export default async function AdminStudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,24 +62,24 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
       />
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/students" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`}
           className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-50 border border-primary-100 hover:bg-primary-100 text-primary-700 rounded-xl font-semibold transition-colors whitespace-nowrap">
           <Printer size={14} /> Lihat Buku Induk
         </Link>
         <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gold hover:bg-gold-dark text-primary-900 rounded-xl font-semibold transition-colors whitespace-nowrap">
+          className="btn-modal-save whitespace-nowrap">
           <Pencil size={14} /> Edit Biodata
         </Link>
       </div>
 
       {/* Info profil */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+      <div className="panel p-5 mb-5">
         <div className="flex items-center gap-4 mb-5">
           <div className="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
-            <UserCircle size={28} className="text-primary-700" />
+            <CircleUserRound size={28} className="text-primary-700" />
           </div>
           <div>
             <h2 className="font-heading text-lg font-bold text-primary-900">{student.user.name}</h2>
@@ -90,7 +93,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
           </div>
           {student.nisn && (
             <div className="flex items-start gap-2.5">
-              <IdCard size={15} className="text-gray-400 mt-0.5 shrink-0" />
+              <Hash size={15} className="text-gray-400 mt-0.5 shrink-0" />
               <div><p className="text-gray-400 text-xs">NISN</p><p className="font-mono font-medium">{student.nisn}</p></div>
             </div>
           )}
@@ -110,13 +113,13 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
       </div>
 
       {/* Rekap absensi */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+      <div className="panel p-5 mb-5">
         <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
           <CalendarDays size={16} className="text-primary-700" /> Kehadiran
         </h3>
         <div className="grid grid-cols-4 gap-3 mb-3">
           {attSummary.map(({ status, count }) => (
-            <StatTile key={status} size="md" color={STATUS_COLOR[status]} icon={STATUS_ICON[status]} value={count} label={status} />
+            <StatTile key={status} size="md" color={STATUS_COLOR[status]} ikon={STATUS_ICON[status]} value={count} label={status} />
           ))}
         </div>
         <p className="text-sm text-gray-500">Total: {totalDays} hari · Kehadiran: <strong>{presentPct}%</strong></p>
@@ -124,21 +127,20 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         {attendance.length > 0 && (
           <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
             <div className="max-h-48 overflow-y-auto overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-primary-100"
-                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tanggal</th>
-                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th className="text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendance.slice(0, 30).map(a => (
-                    <tr key={a.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                      <td className="px-5 py-3.5 text-gray-600 text-xs">
+                    <tr key={a.id}>
+                      <td className="text-gray-600 text-xs">
                         {new Date(a.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="px-5 py-3.5 text-center">
+                      <td className="text-center">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[a.status] ?? "bg-gray-50 text-gray-500 border border-gray-200"}`}>{a.status}</span>
                       </td>
                     </tr>
@@ -152,9 +154,9 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
 
       {/* Nilai */}
       {semesters.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+        <div className="panel p-5 mb-5">
           <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
-            <BookOpen size={16} className="text-primary-700" /> Nilai per Semester
+            <BookMarked size={16} className="text-primary-700" /> Nilai per Semester
           </h3>
           <div className="space-y-6">
             {semesters.map(sem => {
@@ -164,16 +166,15 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
                 <div key={sem}>
                   <p className="font-semibold text-sm text-primary-900 mb-2">{sem}</p>
                   <div className="overflow-x-auto rounded-xl border border-gray-100 overflow-hidden">
-                    <table className="w-full text-sm">
+                    <table className="data-table">
                       <thead>
-                        <tr className="border-b border-primary-100"
-                          style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                          <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mapel</th>
-                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tugas</th>
-                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UH</th>
-                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UTS</th>
-                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">UAS</th>
-                          <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Rata-rata</th>
+                        <tr>
+                          <th>Mapel</th>
+                          <th className="text-center">Tugas</th>
+                          <th className="text-center">UH</th>
+                          <th className="text-center">UTS</th>
+                          <th className="text-center">UAS</th>
+                          <th className="text-center">Rata-rata</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -186,13 +187,13 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
                             ? <span className={`font-semibold ${val >= 75 ? "text-emerald-700" : "text-red-600"}`}>{val}</span>
                             : <span className="text-gray-300">—</span>;
                           return (
-                            <tr key={subject} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                              <td className="px-5 py-3.5 font-medium text-primary-900">{subject}</td>
-                              <td className="px-5 py-3.5 text-center">{cell(getScore("Tugas"))}</td>
-                              <td className="px-5 py-3.5 text-center">{cell(getScore("Ulangan Harian"))}</td>
-                              <td className="px-5 py-3.5 text-center">{cell(getScore("UTS"))}</td>
-                              <td className="px-5 py-3.5 text-center">{cell(getScore("UAS"))}</td>
-                              <td className="px-5 py-3.5 text-center">
+                            <tr key={subject}>
+                              <td className="font-medium text-primary-900">{subject}</td>
+                              <td className="text-center">{cell(getScore("Tugas"))}</td>
+                              <td className="text-center">{cell(getScore("Ulangan Harian"))}</td>
+                              <td className="text-center">{cell(getScore("UTS"))}</td>
+                              <td className="text-center">{cell(getScore("UAS"))}</td>
+                              <td className="text-center">
                                 {avg !== null ? <span className={`font-bold ${avg >= 75 ? "text-emerald-700" : "text-red-600"}`}>{avg.toFixed(1)}</span> : <span className="text-gray-300">—</span>}
                               </td>
                             </tr>

@@ -23,9 +23,9 @@ export default function Section({ title, icon: Icon, open, onToggle, children, a
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         )}
         <span className={`relative flex items-center gap-2 font-semibold text-sm ${open ? "text-white" : "text-primary-900"}`}>
-          <Icon size={15} className={open ? "text-gold" : (accent ?? "text-primary-600")} />{title}
+          <Icon size={15} className={open ? "text-gold" : (accent ?? "text-primary-700")} />{title}
         </span>
-        {open ? <ChevronUp size={15} className="relative text-white/60" /> : <ChevronDown size={15} className="text-primary-400" />}
+        {open ? <ChevronUp size={15} className="relative text-white/60" /> : <ChevronDown size={15} className="text-primary-500" />}
       </button>
       {open && <div className="p-4 grid grid-cols-2 gap-3 bg-white rounded-b-xl">{children}</div>}
     </div>

@@ -46,20 +46,45 @@ PostgreSQL 17 lokal (diinstal via winget). Pastikan service berjalan sebelum `np
 
 ## Auth & Session (PALING PENTING)
 
-Session disimpan sebagai **JWT di cookie `session`** (HttpOnly, SameSite=lax), **sliding window 8 jam**
-(bukan fixed-expiry) — tiap request (halaman `/dashboard/**` MAUPUN `/api/**`) yang bawa cookie sesi
-valid otomatis memperpanjang lagi 8 jam dari saat itu (`src/proxy.ts` memanggil `refreshSessionCookie`
-di `session.ts` di HAMPIR SETIAP request). Jadi selama user aktif (termasuk sekadar halaman polling data
-tanpa pindah halaman, mis. Papan Peringkat mode layar penuh), TIDAK akan ke-logout paksa — cuma idle
-total >8 jam yang bikin sesi benar2 kadaluarsa. Durasi ini keputusan eksplisit user (bukan 7 hari
-seperti sebelumnya) karena banyak device TU/lab dipakai bergantian.
+**Sistem sesi DUA TOKEN (sejak 14 September 2026)** — menggantikan JWT tunggal 8 jam yang
+di-sign ulang tiap request:
+
+| Cookie | Isi | Umur |
+|---|---|---|
+| `session` | **Token akses** — JWT berisi `userId/role/name/email` + `sid` (id baris `UserSession`) + `imp` (admin asli saat "Masuk Sebagai") | 15 menit (klaim `exp`); cookie sesi browser |
+| `sesi_segar` | **Token segar** — 256 bit acak; DB hanya menyimpan hash SHA-256 di `UserSession.tokenHash` | "Ingat saya" off: cookie sesi browser + habis **8 jam sejak aktif terakhir** (bawaan — keputusan lama user, komputer TU/lab dipakai bergantian). On: 30 hari bergeser |
 
 ```
-src/lib/session.ts   ← encrypt/decrypt JWT, createSession, deleteSession, getSession, refreshSessionCookie
-src/lib/dal.ts       ← verifySession(), verifyRole(["ADMIN"|"TEACHER"|"STUDENT"])
-src/proxy.ts          ← Next.js 16 "Proxy" (BUKAN middleware.ts — nama file berubah versi ini),
-                         jalan di semua route KECUALI _next/static, _next/image, favicon.ico, *.svg
+src/lib/session.ts      ← token & cookie: encrypt/decrypt, getSession, opsi cookie, 2FA pending
+src/lib/sesi-server.ts  ← semua yang menyentuh tabel UserSession: masukkanSesi (login), segarkanSesi,
+                          sesiMasihHidup, cabutSesi/cabutSemuaSesiPengguna, keluarkanSesiIni (logout),
+                          mulaiMasukSebagai/akhiriMasukSebagai, migrasiTokenLama
+src/lib/dal.ts          ← verifySession(): token akses + CEK BARIS UserSession masih hidup (1 query PK
+                          per request, di-cache) → pencabutan/sesi tunggal/logout perangkat lain INSTAN
+src/proxy.ts            ← token akses habis + ada token segar → terbitkan yang baru DIAM-DIAM dan
+                          teruskan ke request yang sama (padanan silent refresh, berlaku untuk RSC)
 ```
+
+Aturan yang wajib dijaga:
+- **Jangan menambahkan rotasi token segar.** Dashboard memuat banyak request paralel; saat token
+  akses habis semuanya membawa token segar yang sama — dengan rotasi, semua kecuali satu ditolak
+  dan pengguna "logout sendiri".
+- **Jangan paksa `Secure=true`, dan jangan jadikan setelan global.** Situs dibuka dua jalur sekaligus:
+  HTTP langsung di jaringan sekolah dan HTTPS lewat terowongan Tailscale Funnel. `pakaiSecure(headers)`
+  memutuskan PER REQUEST dari `X-Forwarded-Proto` (cadangan: `NEXT_PUBLIC_APP_URL`) — cookie Secure di
+  jalur HTTP ditolak browser dan tidak ada yang bisa login. Setiap tempat yang memasang cookie sesi WAJIB
+  meneruskan header request: `opsiCookieAkses(h)` / `opsiCookieSegar(ingat, h)` (di proxy `req.headers`,
+  di server action/route `await headers()`).
+- **Ganti/reset password WAJIB `cabutSemuaSesiPengguna(userId, "GANTI_PASSWORD")`** (ganti sendiri:
+  kecuali `session.sid`). Sudah dipasang di profile/password, admin/users/[id], parents reset,
+  buku-induk guru/[id] & siswa/[id] — endpoint baru yang mengubah password juga harus begitu.
+- "Masuk Sebagai" TIDAK lagi memakai cookie `impersonator`: baris sesi admin ditandai
+  `impersonatingUserId`, token akses membawa `imp`. `logActivity` otomatis mengisi
+  `impersonatorName`. Token lama tanpa `sid` dipindahkan otomatis oleh proxy (tanpa login ulang).
+- Kebijakan "satu akun satu perangkat" per peran: SiteSetting `auth.sesiTunggal` (JSON array),
+  diatur di `/dashboard/admin/keamanan-sesi`. Perangkat aktif tiap akun: kartu `PerangkatAktif`
+  di halaman Profil. `PenjagaSesiTab` (dipasang di `Providers`) menutup tab yang akunnya berganti
+  di tab lain.
 
 **Wajib dipakai di setiap server component/route yang butuh auth:**
 ```ts
@@ -142,13 +167,29 @@ await prisma.$transaction(async (tx) => {
 ```
 Jangan pakai `createMany` dengan `skipDuplicates` — tidak akan kerja tanpa constraint DB.
 
-### Export CSV (UTF-8 BOM)
-Semua file CSV untuk download wajib diawali BOM agar Excel Indonesia bisa baca karakter khusus:
+### Export data → Excel (.xlsx), BUKAN CSV
+**JANGAN membuat endpoint ekspor CSV baru.** Excel versi Indonesia memakai titik-koma sebagai
+pemisah kolom sedangkan CSV kita memakai koma — akibatnya berkas yang dibuka lewat klik dua kali
+menumpuk seluruh data di SATU kolom, dan petugas harus lewat wizard "Text to Columns" tiap kali
+(keputusan eksplisit user 13 September 2026: "mending excel biasa, jadi tidak satu kolom untuk
+banyak data"). Semua 9 endpoint ekspor lama sudah dipindah ke .xlsx.
+
+Pakai helper `src/lib/ekspor-excel.ts` — sudah mengurus lebar kolom otomatis, saringan per kolom,
+nama sheet yang sah (maks 31 karakter, tanpa `: \ / ? * [ ]`), dan header unduhan:
 ```ts
-const BOM = "﻿"; // ﻿
-const csv = BOM + [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-return new Response(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="nama.csv"` } });
+import { balasanExcel } from "@/lib/ekspor-excel";
+return balasanExcel({ namaFile: "data-siswa-2026-09-13", namaSheet: "Data Siswa", headers, rows });
+// beberapa tabel dalam satu berkas:
+import { balasanExcelBanyakSheet } from "@/lib/ekspor-excel";
+return balasanExcelBanyakSheet("pemeriksa-data", [{ nama: "Ringkasan", headers, rows }, { nama: "Rincian", ... }]);
 ```
+`rows` adalah array of array (`SelBaris`). **Biarkan angka tetap bertipe number** — jangan
+`String(v)` seperti pola CSV lama, supaya di Excel bisa langsung dijumlah/dirata-rata. BOM UTF-8
+tidak lagi diperlukan (xlsx sudah Unicode).
+
+Merakit berkas Excel di sisi KLIEN juga dihindari — pustaka `xlsx` terlalu berat untuk bundel
+browser. Kalau tombol unduh ada di client component, buat endpoint-nya lalu pakai `<a href>` biasa
+(lihat `PemeriksaDataManager` → `/api/admin/pemeriksa-data/ekspor`).
 
 ### React.ElementType di React 19
 Jika pakai `React.ElementType` sebagai tipe, wajib import React secara eksplisit:
@@ -259,7 +300,7 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
 
 12. **Fetch client-side wajib `.catch()`** — pola `fetch(...).then(...).then(data => { ...; setLoading(false); })` TANPA `.catch()` di akhir membuat spinner macet permanen selamanya kalau request gagal (network error, dsb). Selalu tutup chain dengan `.catch(() => {}).finally(() => setLoading(false))` (pisahkan `setLoading` dari isi `.then()` terakhir ke `.finally()`).
 
-13. **Guard berbasis jabatan** — pola standar: buat `src/lib/<nama>-guard.ts` isinya `if (session.role === "TEACHER") await assertJabatan(session, ["Nama Jabatan"]);` (ADMIN & TAS otomatis lolos karena tidak masuk cabang `if`). Reuse pola ini kalau ada jabatan baru yang perlu akses modul tertentu — lihat `branding-guard.ts`, `uks-guard.ts`, `kedisiplinan-guard.ts`, dll sebagai contoh.
+13. **Guard berbasis jabatan** — pola standar: buat `src/lib/<nama>-guard.ts` isinya `if (session.role === "TEACHER") await assertJabatan(session, ["Nama Jabatan"]);` (ADMIN & TAS otomatis lolos karena tidak masuk cabang `if`). Reuse pola ini kalau ada jabatan baru yang perlu akses modul tertentu — lihat `branding-guard.ts`, `uks-guard.ts`, `kedisiplinan-guard.ts`, dll sebagai contoh. **Di HALAMAN server (page.tsx), bungkus penjaga dengan `jabatanAtauAlihkan(session, () => assertXxx(session))`** (src/lib/jabatan-guard.ts) — `assertJabatan` melempar `FORBIDDEN` yang di route API menjadi 403, tetapi di halaman server tidak tertangkap dan pengguna tanpa jabatan melihat 500 (temuan 15 Sep 2026).
 
 14. **Komponen manager + basePath / reuse lintas portal** — kalau sebuah fitur admin (misal Berita/Galeri/Banner) perlu juga bisa diakses guru dengan jabatan tertentu, JANGAN duplikasi kode. Ekstrak isi halaman jadi komponen di `src/components/shared/<Nama>Manager.tsx`, lalu buat wrapper tipis di kedua portal (`src/app/dashboard/admin/x/page.tsx` dan `src/app/dashboard/teacher/x/page.tsx`) yang cuma `return <XManager />`. Lihat `NewsManager`/`GalleryManager`/`BannerManager` (dipakai admin & guru Koordinator Publikasi) sebagai contoh terbaru.
 
@@ -270,7 +311,7 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
 17. **Sidebar (`AdminSidebar`, `TasSidebar`, `TeacherSidebar`, `StudentSidebar`) — SEMUA sekarang dikelompokkan (grup + accordion), dan grup WAJIB tertutup semua di awal login/muat halaman** (kecuali grup yang memuat halaman aktif saat itu) — sengaja TIDAK ADA restore dari localStorage utk status buka/tutup grup, ini keputusan eksplisit user, jangan ditambah lagi. Pola standar tiap sidebar: `menuGroups` (array `{label, items}}`, `label: null` utk item root spt Dashboard), `ALL_HREFS` gabungan semua href utk disambiguasi prefix (`isActive`/`matchesPath` cuma anggap href PALING SPESIFIK/terpanjang yg aktif), `openGroups` (Set, satu grup aktif dalam satu waktu — accordion, bukan numpuk), `toggleGroup()`, `activeGroupLabel()` dipanggil di 2 `useEffect` (mount + tiap `pathname` berubah) supaya grup halaman yang lagi dibuka otomatis kebuka. Kalau nambah menu baru, taruh di grup yang paling sesuai (atau bikin grup baru kalau belum ada yg cocok) — JANGAN kembalikan ke daftar flat/datar.
     - **Desktop `<aside>` WAJIB `sticky top-0 h-screen shrink-0`, JANGAN `fixed top-0 left-0 bottom-0`.** `fixed` melepas sidebar dari alur dokumen sehingga elemen lain yang disisipkan SEBELUM sidebar di layout (mis. `ImpersonationBanner` pita oranye "Masuk Sebagai...") jadi ke-overlap/ketutup krn sidebar tetap nempel di y=0 viewport, bukan didorong ke bawah seperti seharusnya. `sticky` ikut alur dokumen (didorong turun oleh elemen sebelumnya) sambil tetap nempel ke atas viewport-nya-sendiri saat discroll — persis yang dibutuhkan. Kalau aside pakai `sticky`, JANGAN kasih `lg:ml-<lebar>` kompensasi di `<main>` — itu cuma perlu utk `fixed` (yg keluar dari alur, butuh margin manual). Lihat `AdminSidebar.tsx`/`TasSidebar.tsx` sbg referensi yg sudah benar dari awal.
 
-18. **Halaman "hero"/landing tiap portal (`/dashboard/admin/page.tsx`, `/dashboard/teacher/page.tsx`, `/dashboard/student/page.tsx`) — header sapaan besarnya (gradient navy, bukan `PageHeader` biasa) WAJIB `sticky top-14 lg:top-0 z-30`** (Admin pakai `top-16` krn topbar mobile-nya beda tinggi — sesuaikan angka `top-*` dgn tinggi topbar mobile portal masing2, jangan asal `top-0` polos krn nanti ketutup topbar mobile yg `fixed z-50`) — supaya konsisten dgn `PageHeader` yang semua halaman lain sudah sticky, tidak ikut hilang pas discroll ke bawah.
+18. **(DIBALIK 2026-08-23 — lihat DESIGN_SYSTEM.md §3.3)** Halaman landing tiap portal (`/dashboard/admin/page.tsx`, `/dashboard/teacher/page.tsx`, `/dashboard/student/page.tsx`) DULU punya header "hero" custom (gradient navy manual, `sticky top-14 lg:top-0 z-30`, Admin pakai `top-16`) — SEKARANG WAJIB pakai `<PageHeader>` standar yang sama persis dengan semua halaman fitur lain (keputusan eksplisit user: header dashboard "keliatan tidak sama seperti halaman lain"). Jangan bikin blok header custom lagi di 3 halaman ini — sapaan/tanggal/identitas taruh di prop `description`, bukan blok terpisah.
 
 19. **Tombol/link "Cetak" (halaman print apapun) JANGAN pakai `target="_blank"`** kecuali benar2 perlu tetap terbuka terus-menerus di device terpisah ATAU ada resiko nyata kehilangan draft yang belum disimpan. Dua pengecualian yg sah: `/dashboard/admin/bel-sekolah/player` (didesain dibuka permanen di PC/speaker sekolah, layar penuh, terpisah dari alur kerja admin) dan `/dashboard/admin/persuratan/[id]/edit-word` (link "Cetak" di situ sengaja tab baru supaya draft di editor WYSIWYG yang belum disimpan tidak hilang kalau tab utama pindah halaman). Cetak biasa (rekap, kalender, form, buku induk, jurnal, notulen, barcode, dsb) harus navigasi di tab yang sama — halaman cetak semuanya sudah punya tombol "Kembali"/`ArrowLeft` sendiri, tab baru cuma bikin bersliweran tanpa guna. Keputusan eksplisit user, ditegur berulang — sudah disapu bersih di seluruh app 2026-08-11 (buku-induk siswa ×2, notulen-rapat, jurnal-guru, journal guru, students/[id], perpustakaan cetak-barcode).
 
@@ -290,3 +331,491 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     <PageHeader icon={...} title="..." printHidden />
     ```
     Disapu bersih di 8 halaman/komponen (rapor, buku-mutasi, reports/rekap-siswa, TataTertibViewer, classes/cetak, StudentPointsManager, DknTable, KartuTandaSheet) — kalau nambah PageHeader baru yang butuh disembunyikan saat print, pakai prop `printHidden`, bukan wrapper div.
+
+25. **Saat mencetak, varian `lg:` TIDAK berlaku — halaman dilayout selebar KERTAS, bukan selebar layar.** A4 portrait = 210mm = 794px CSS, dan itu ADA DI BAWAH breakpoint `lg` (1024px). Jadi semua peredam bergaya `lg:pb-0`, `lg:pt-0`, `lg:hidden` diam-diam mati saat print, dan yang berlaku justru nilai dasarnya (versi mobile). Kejadian nyata 13 September 2026: `<main>` tiap portal punya `pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0` (ruang untuk `MobileBottomNav`) — 64px = 16,9mm itu ikut tercetak persis setelah lembar terakhir dan melahirkan **satu halaman kosong di akhir SETIAP cetakan surat**. Gejalanya menipu: kelihatan seperti lembar `.a4-page` yang meluber, sempat "diperbaiki" dengan mengecilkan `min-height` sampai 280mm (menutupi gejala + bikin kop bawah berhenti 17mm dari tepi kertas), padahal lembarnya memang muat 297mm penuh. Aturannya: setiap peredam khusus layar yang mengambil RUANG (padding/margin/tinggi) wajib punya pasangan `print:` sendiri (`print:pt-0 print:pb-0`), jangan mengandalkan `lg:`. Untuk sekadar menyembunyikan elemen, `print:hidden` memang sudah benar — yang berbahaya cuma yang menyisakan ruang. Cara memeriksanya juga penting: ukur dengan `page.pdf({ preferCSSPageSize: true })` lalu HITUNG halamannya, bukan `emulateMedia({media:"print"})` di viewport lebar — viewport lebar justru menyembunyikan bug ini karena `lg:` jadi aktif.
+
+26. **`route.ts` HANYA boleh mengekspor handler HTTP (`GET`/`POST`/…) dan konfigurasi (`dynamic`, `revalidate`, dsb).** Mengekspor fungsi/tipe pembantu dari `route.ts` (mis. `export function siapkanButir`) membuat `next build` GAGAL dengan pesan "is not a valid Route export field". Taruh pembantu bersama di `src/lib/<nama>.ts` dan impor dari sana — pola nyata: `src/lib/soal-butir-server.ts` & `src/lib/ujian-pengaturan.ts` (dipisah dari route CBT, 13 September 2026).
+
+
+27. **Satu ujian CBT boleh diikuti BANYAK kelas (`Exam.kelasIds`, sejak 14 September 2026).** `Exam.classId` tinggal
+    "kelas utama" untuk tampilan/kompatibilitas — **JANGAN dipakai untuk menyaring peserta.** Pakai helper di
+    `src/lib/ujian-server.ts`: `kelasPeserta(exam)` (daftar kelas), `ujianUntukKelas(classId)` (filter Prisma ujian
+    yang diikuti sebuah kelas), `petaNamaKelas(exams)` (nama kelas banyak ujian, 1 query), `jumlahSiswaAktif(ids)`.
+    Akses guru di `ujianDalamCakupan(session, id, { ubah })`: **pembuat** boleh semua; **pengampu** (mengajar mapel
+    yang sama di salah satu kelas peserta) boleh memantau/koreksi/hasil tapi TIDAK boleh mengubah — route yang
+    mengubah soal/pengaturan/menghapus WAJIB memanggil dengan `{ ubah: true }`. Kelas peserta divalidasi
+    `periksaKelasPeserta` (guru hanya kelas yang ia ampu; kelas yang siswanya sudah mengerjakan tidak bisa dilepas).
+    Kode Test (Excel) & Mata Pelajaran (Word) dicocokkan ke mapel ujian dengan `cocokMapel` (`src/lib/cocok-mapel.ts`):
+    BEDA ditolak saat menerapkan Excel ke ujian, singkatan wajar (PJOK, "Pendidikan Agama Islam") diterima dgn catatan.
+28. **JANGAN memanggil `navigator.clipboard` langsung — pakai `salinTeks(teks)` dari `src/lib/salin-teks.ts`.**
+    Clipboard API hanya ada di *secure context* (HTTPS/localhost). Server sekolah dibuka lewat
+    `http://<IP-PUBLIK-SERVER>:3000`, jadi `navigator.clipboard` = `undefined`: pola `navigator.clipboard?.writeText(x)`
+    gagal DIAM-DIAM sementara toast "disalin" tetap tampil — token terlihat tersalin tapi saat ditempel kosong
+    (temuan user 14 Sep 2026, di 3 tombol salin token + tombol kode cadangan 2FA yang malah error). `salinTeks`
+    memakai Clipboard API bila tersedia, lalu cadangan textarea + `execCommand("copy")`, dan mengembalikan
+    `true` HANYA kalau benar tersalin — toast berhasil/gagal wajib mengikuti hasil itu. **Mengujinya jangan lewat
+    `localhost`** (dianggap secure context, bug-nya tersembunyi); pakai IP jaringan server, mis. `http://172.15.0.3:3000`.
+
+29. **Ikon aplikasi terpasang (PWA) dibangkitkan dari Logo Lambang (`logo.emblem`), bukan gambar statis.**
+    `src/lib/ikon-aplikasi.ts` + route `/ikon-aplikasi/[berkas]` (any-192/512 transparan, maskable-192/512 & apple-180
+    = logo di zona aman di atas warna tepi logo). `src/app/manifest.ts` WAJIB `export const dynamic = "force-dynamic"` —
+    metadata route di-cache statis saat build, dan tanpa itu versi ikon (`?v=`) membeku. `public/icons/*` hanya
+    cadangan; kalau gambar di `/icons` atau `/images` diganti di tempat, NAIKKAN `CACHE_NAME` di `public/sw.js` (cache-first).
+    Pemasangan hanya jalan lewat HTTPS (`ALAMAT_APLIKASI` di `src/lib/alamat-aplikasi.ts` — ganti saat domain sekolah
+    aktif). Tawaran pasang browser ditangkap sedini mungkin di `src/lib/pasang-pwa.ts` (event `beforeinstallprompt` sering
+    datang sebelum hydrate) — komponen baru berlangganan ke sana, JANGAN memasang pendengar sendiri di useEffect.
+    Halaman yang dibagikan ke WA: `/pasang-aplikasi`. Uji: `Page.getInstallabilityErrors` lewat CDP harus kosong.
+30. **Papan pantau ujian = Server-Sent Events** (`/api/teacher/exams/[id]/pantau/stream`, isi dari `susunPapanPantau` di
+    `src/lib/pantau-ujian.ts`, sama dengan GET `/pantau`). Klien WAJIB lewat hook `usePantauLangsung` (otomatis kembali ke
+    polling 5 detik bila stream gagal; `sisa(sisaDetik)` untuk hitung mundur). Respons stream WAJIB
+    `Cache-Control: no-cache, no-transform` — tanpa `no-transform` kompresi menahan potongan stream. Terbukti 14 Sep 2026:
+    kiriman pertama ±0,5 dtk (HTTPS terowongan) / ±0,2 dtk (HTTP lab), kiriman berkala ±15 dtk tidak tertahan.
+
+31. **Notifikasi push: selalu lewat `kirimNotifikasi` (src/lib/push-server.ts) dengan `kunci` stabil.** Satu kunci hanya
+    pernah terkirim sekali (tabel `NotifikasiTerkirim`), jadi aman dari simpan ulang & penjadwal. Dari route API panggil
+    `kirimLatar(() => …)` SETELAH data tersimpan — push tidak boleh memperlambat atau menggagalkan simpan. Notifikasi
+    kejadian ada di `src/lib/notifikasi-kejadian.ts` (alpha → orang tua, alpha 3 hari beruntun → wali & BK, poin → orang
+    tua, tugas baru → siswa); pengingat berjam di `src/lib/pengingat-terjadwal.ts` (dijalankan `instrumentation.ts` tiap 5
+    menit; jam di SiteSetting `notifikasi.*`, diatur admin di /dashboard/admin/notifikasi). Setiap pengingat baru WAJIB
+    menerima parameter `kirim` supaya ikut di **Pratinjau** (mode kering, tanpa mengirim). Keluar (logout) → `/login?keluar=1`
+    melepas langganan perangkat itu. Kunci VAPID di `.env` JANGAN dibuat ulang: semua langganan terikat ke kunci itu. Setiap kiriman JUGA masuk **kotak
+    notifikasi** akun (`NotifikasiPengguna`; lonceng di bar atas mobile & tombol melayang desktop) — sampai ke semua akun
+    walau push belum diaktifkan (keputusan user: aktivasi per perangkat tidak bisa dipaksa dari superadmin). **Pita "Tugas
+    Hari Ini" sudah DIHAPUS** (15 Sep 2026: isinya sama dengan kotak notifikasi → dobel & memakan ruang HP) — jangan
+    dimunculkan lagi. `src/lib/tugas-hari-ini.ts` tetap dipakai untuk menandai pengingat yang tugasnya sudah selesai.
+    **Pengingat berulang sehari (absensi/piket/jurnal/peringatan dini) WAJIB `gantiHariIni: true`**: entri kotak dengan jenis +
+    judul sama di hari itu diganti yang terbaru, bukan menumpuk (temuan user 15 Sep 2026: "notifikasi dobel dimana-mana").
+    Pengingat yang tugasnya sudah dikerjakan otomatis ditandai dibaca (`tandaiPengingatSelesai`, src/lib/kotak-notifikasi.ts,
+    dipanggil /api/notifikasi & /ringkas). Jangan menambah kartu/pita pengingat di halaman untuk hal yang sudah ada di kotak notifikasi.
+    **Kunci notifikasi KEJADIAN yang bisa dipicu simpan massal (mis. absensi beberapa hari sekaligus) memakai HARI KIRIM per
+    sasaran, bukan tanggal datanya** — `alpha-beruntun:<siswa>:<hari WIB>`. Dengan kunci per tanggal data, satu simpan
+    mengirim "alpha 10, 11, … 19 hari berturut-turut" ke penerima yang sama (temuan user 15 Sep 2026).
+32. **Peringatan dini siswa = satu sumber: `hitungRisikoSiswa` (src/lib/peringatan-dini.ts).** Dipakai Dashboard BK,
+    /dashboard/teacher/peringatan-dini (wali kelas: kelas walinya saja; Guru BK & Wakasek Kesiswaan: semua), admin, notifikasi
+    alpha beruntun, dan ringkasan Senin. Ubah bobot/ambang HANYA di file itu (dan teks penjelas di PeringatanDiniManager).
+33. **Absensi lewat pindai tidak pernah menimpa isian wali kelas** — scan kartu (/api/admin/absensi-scan) & absen mandiri QR
+    (/api/student/absen-mandiri) hanya mengisi HADIR bila hari itu belum ada catatan, dan setiap pindaian dicatat di
+    `AbsensiPindaiLog` (metode, perangkat, hasil). QR mandiri = token HMAC berganti tiap 30 detik (`src/lib/absensi-qr.ts`),
+    berlaku ±1 menit. Pemindai kamera bersama: `usePindaiKamera` (src/lib/pindai-kamera.ts — BarcodeDetector, cadangan
+    `jsqr`), hanya jalan di HTTPS.
+34. **Perpustakaan punya dua portal di luar /dashboard (pola Pusat Ujian):** `/pusat-perpustakaan` (petugas: Koordinator/Tim
+    Perpustakaan & admin — meja sirkulasi, kiosk kunjungan, katalog & data = `PerpustakaanManager` lama, laporan) dan
+    `/perpustakaan` (anggota: katalog & pesan, pinjaman, kartu anggota digital). Kartu anggota = kartu tanda sekolah
+    (NIS/NIP/awalan email pegawai), dicocokkan di server lewat `cariAnggota` (src/lib/perpustakaan-server.ts) — jangan
+    memuat daftar seluruh anggota ke browser untuk mencocokkan kartu.
+35. **Halaman server (tanpa "use client") yang mengoper ikon lucide ke client component: setiap ikon dipakai SEKALI saja
+    di halaman itu** — termasuk pemakaian lain di `<Link>`, `EmptyState`, atau judul kartu. Di build produksi (Next 16.2.9
+    Turbopack, lucide-react 1.21) ikon kembar membuat SSR gagal "Element type is invalid … but got: object" → halaman 500,
+    padahal `next dev` normal dan tsc lolos. Dibuktikan 14 Sep 2026 lewat 5 build produksi lokal (beranda Pusat Perpustakaan):
+    `<StatTile icon={<Wallet />}>` ×2 → 500; satu kembaran kartu+Link atau kartu+EmptyState → 200, tetapi DUA kembaran
+    sekaligus → 500; semua ikon unik → 200. Jangan menggantungkan diri pada batas "satu kembaran masih lolos" — buat semua unik.
+    Galat yang hanya muncul di produksi jangan ditebak dari kode: salin proyek ke scratchpad (hardlink `node_modules`, tanpa
+    `instrumentation.ts`), buat halaman diagnosa per bagian, `next build` + `next start -p 3999 -H 127.0.0.1`, bandingkan,
+    lalu hapus salinannya (berisi `.env`).
+    **Akar yang terbukti 15 Sep 2026 (Pola tampilan v2):** di lucide-react 1.x komponen dasar `Icon` bertanda `"use client"`,
+    jadi setiap ikon di halaman server adalah RUJUKAN KLIEN. Mengoper elemen itu KE DALAM komponen klien lain (`<StatTile
+    icon={<Users />}>`, `<Link><Printer /></Link>`) membuat rujukan klien bertumpuk yang di build produksi bisa gagal diurai →
+    500 "Element type is invalid … got: object". Pemicunya bergeser oleh perubahan kecil APA PUN (itu sebabnya batas "satu
+    kembaran lolos" di atas tidak konsisten): `/dashboard/admin` v2 500; bisect di build lokal (layout Admin + DB asli) → tanpa
+    ikon header 200, tanpa ikon kartu 200, tanpa tautan kartu 200, keterangan header teks polos 200; menghapus ikon kembar,
+    cabang TAS, atau verifyRole TETAP 500. **Aturan:** halaman server TIDAK mengoper elemen ikon lucide ke komponen klien —
+    kirim NAMA ikon: `StatTile ikon="siswa"`, `TautanIkon`/`TautanCepat`/`KartuTautan` (src/components/shared/IkonNama.tsx,
+    tambahkan nama baru di peta `IKON`). Ikon di markup server murni (PageHeader, Panel, span) tetap boleh, masing-masing sekali.
+    Periksa sebelum build: **`node scripts/cek-ikon-kembar.mjs <berkas yang diubah>`** (menandai ikon kembar & elemen lucide yang
+    dioper sebagai prop). Reproduksi galat yang butuh layout/sesi: build lokal di scratchpad dengan `DATABASE_URL` diarahkan ke IP
+    kontainer postgres + sesi uji (`sesi_segar`, header `x-forwarded-proto: https`); hentikan server lewat PID dari `ss -ltnp`.
+36. **Denah ruang & kisi-kisi ujian (14 Sep 2026).** Nomor peserta HANYA dari `nomorPeserta()` (src/lib/denah-ruang.ts) —
+    dipakai kartu peserta, denah, kartu meja; jangan merakit format `SINGKATAN-KELAS-NN` di tempat lain, nanti nomor di kartu
+    dan di pintu ruang berbeda. Pembagian ruang disimpan per kegiatan (`PenempatanRuangUjian`, unik per siswa & per kursi),
+    diatur `bolehAturUjian`, dikelola di /pusat-ujian/administrasi/ruang (cetak denah pintu, kartu meja, rekap). Kolom
+    kisi-kisi soal (`materi`, `indikator`, `levelKognitif`) WAJIB ikut di SETIAP jalur yang membuat/menyalin soal
+    (`siapkanButir`, POST/PUT ujian, bank soal, impor Excel) — PUT ujian menghapus & membuat ulang semua soal, jadi kolom
+    yang lupa dibawa hilang diam-diam. Isian dari /pusat-ujian/[id]/kisi-kisi lewat API sendiri yang hanya mengubah kolom
+    kisi-kisi (boleh setelah ujian dikerjakan, tidak menyentuh penilaian).
+    Pola tempat duduk (`bagiPeserta`): SELANG_SELING (tingkat bergantian, kelas di dalam tingkat juga bergantian, sebaran
+    rata — bukan giliran polos yang menumpukkan sisa tingkat terbanyak di kursi terakhir), SELANG_SELING_JURUSAN (satu ruang
+    satu jurusan, siswanya dibagi rata ke ruang yang dipakai jurusan itu; 21 Sep 2026), PER_KELAS.
+37. **Daftar panjang WAJIB berpagination lewat komponen bersama** — `usePaginasi(items, perHalaman, kunciReset)`
+    (src/lib/use-paginasi.ts) + `<Paginasi hal={hal} satuan="…" />` (src/components/shared/Paginasi.tsx), permintaan user
+    14 Sep 2026. Dipasang di Akun Pengguna, Kelola Siswa (per tabel kelas), Orang Tua, Agenda Surat, Perpustakaan (katalog,
+    peminjaman, reservasi, riwayat), Katalog Anggota, Buku Saya. `kunciReset` = kata cari/saringan supaya kembali ke
+    halaman 1; nomor urut baris pakai `hal.awal + i`. JANGAN racik tombol Sebelumnya/Berikutnya sendiri lagi.
+    **`PageHeader` menempel di `top: var(--pageheader-top, 0px)`** dengan padding atas HP `var(--pageheader-pt, 4.5rem)`.
+    Di dalam portal (`PortalShell`) kepala portal (bar navy) MENEMPEL dalam `#kepala-portal`; tingginya diukur
+    `UkurKepalaPortal` → `--tinggi-kepala-portal` dan dipakai sebagai `--pageheader-top`. **Pita menu tab portal (`PitaPortal`)
+    ada DI BAWAH PageHeader** (21 Sep 2026: header navy di atas pita) — PageHeader merendernya sendiri dari konteks yang dipasang
+    PortalShell (`menu`), dan pita menempel tepat di bawah header dengan mengukur tinggi header itu. Jangan menebak tinggi dengan
+    angka tetap, dan jangan menaikkan z-index untuk menutupi masalah tumpukan.
+38. **Dapodik: data TU di situs = ACUAN, Dapodik yang disamakan (keputusan user 14 Sep 2026).** Situs hanya MEMBACA
+    Dapodik lewat `panggilDapodik` (src/lib/dapodik.ts); JANGAN membuat tombol yang menyalin data Dapodik ke data situs —
+    kolom yang kosong di TU cukup ditandai "data TU belum lengkap" untuk dilengkapi TU dari berkas aslinya. Perbandingan di
+    `src/lib/dapodik-sinkron.ts` menghasilkan daftar untuk operator Dapodik (perlu diperbaiki / belum ada di Dapodik / tidak
+    ada di TU / sudah lulus-keluar di TU), bisa diunduh .xlsx (`/api/admin/dapodik/ekspor`). Pasangan bertingkat (siswa
+    NISN → NIK → NIS=NIPD → nama+tgl lahir → nama saja; GTK NIK → NUPTK → NIP → nama tanpa gelar), nilai wajib TUNGGAL di
+    kedua sisi; tingkat kelas hanya dibandingkan bila semester Dapodik = tahun ajaran aktif TU. Kunci `DAPODIK_KEY` hanya di
+    header Authorization — jangan dicetak, jangan mencoba variasi kunci. `rows` getSekolah = OBJEK, endpoint daftar = ARRAY;
+    penolakan bisa teks polos "Access denied" dengan HTTP 200. Tiga daftar WAJIB diminta BERURUTAN — diminta serentak,
+    Dapodik membalas halaman galat HTML (terbukti 15 Sep 2026). Komputer Dapodik (sejak 16 Sep 2026 PC biasa 192.168.100.99, dulu VM 172.15.0.4) hanya menjawab saat
+    menyala, Windows login, dan aplikasi Dapodik dibuka & login; **alamat Dapodik & IP server situs diubah Administrator lewat tombol Ubah**
+    (SiteSetting `dapodik.alamat`/`dapodik.ipServer`, kosong = `.env`; hanya IPv4 jaringan lokal karena kunci ikut terkirim). MikroTik
+    me-masquerade semua lalu lintas ke 192.168.100.0/24, jadi Dapodik melihat IP MikroTik — bukan 172.15.0.3. Firewall Windows PC itu
+    sempat punya aturan BLOKIR "Apache HTTP Server" (profil Public) yang mengalahkan aturan izin port 5774; bila tidak, halaman menampilkan petunjuk — fitur situs lain tidak
+    bergantung padanya. Saat menguji, cetak angka saja.
+39. **Setiap isian Konten Halaman (`ContentEditor`) WAJIB benar-benar dibaca halaman, dan `hint`-nya menyebut letak tampilnya.**
+    Temuan user 15 Sep 2026: mengganti "Kutipan 1" tidak mengubah beranda, karena beranda memakai Kutipan 2 dan ayat Login
+    tertulis mati di kode. Peta sekarang: Kutipan 1 = Tentang Kami, Kutipan 2 = Beranda, Kutipan 3 = cadangan; ayat Login =
+    `islamic.login_arabic/_label` lewat pembungkus server `src/app/login/page.tsx` (isi klien di `LoginClient.tsx`);
+    `school.tagline/hero_subtitle` = slide pertama beranda selama belum ada Banner; kartu Keunggulan = `why.*`. Teks bahasa
+    Indonesia dari pengaturan, bahasa Inggris dari `translations.ts`. Kalau menambah isian baru, pastikan ada pembacanya
+    (sapuan: kunci di DEFAULTS yang hanya muncul di editor = isian mati). Header halaman publik baru: `pt-28 pb-16` seperti
+    Berita/Galeri — navbar menempel menutupi header yang hanya `py-16` (kasus halaman Agenda).
+40. **Hari libur = satu sumber: `cekLibur` / `daftarLibur` (src/lib/hari-libur.ts).** Libur bila: agenda Kalender Pendidikan
+    bersifat LIBUR (jenis LIBUR / kode LHB, LU, LS1, LS2, CB, LHR), tanggal merah nasional (kalender libur Indonesia Google,
+    hanya "Hari libur nasional", disalin ke SiteSetting `libur.nasional` & diperbarui mingguan oleh penjadwal pengingat;
+    sakelar `notifikasi.liburNasional`), libur tambahan manual (`notifikasi.tanggalLibur`), atau hari Minggu. Dipakai
+    pengingat terjadwal, penanda pengingat selesai (tugas-hari-ini), absen mandiri QR, dan badge "kelas belum absen". Fitur baru yang harus diam di
+    hari libur WAJIB memanggil `cekLibur`, jangan mengecek Minggu/daftar manual sendiri (permintaan user 15 Sep 2026).
+41. **Halaman publik WAJIB dua bahasa untuk teks antarmuka.** Bahasa dari cookie `lang` lewat `getLang()` (server); komponen
+    klien menerima prop `lang`. Pola: objek `TEKS = { id: {...}, en: {...} }` per halaman/komponen, atau `translations.ts`.
+    `Navbar` membaca cookie di server dan mengoper `langAwal` ke `NavbarClient` — jangan kembali memulai state bahasa dari
+    `"id"` lalu membaca localStorage (menu sempat tetap Beranda/Tentang di mode Inggris, audit 15 Sep 2026). Nilai yang juga
+    menjadi data/filter (kategori berita, jalur pendaftaran) tetap bahasa Indonesia — hanya LABEL-nya diterjemahkan. Isi dari
+    database (jurusan, berita, galeri, agenda, struktur organisasi) memang hanya berbahasa Indonesia sampai ada kolom versi Inggris.
+42. **Pola tampilan v2 (15 Sep 2026) — lihat DESIGN_SYSTEM.md §17.** Dashboard kelima portal & halaman Masuk sudah memakai
+    `Panel`, `StatTile tampilan="lembut"`, `GrafikRingkas`, `JadwalHariIni`/`JadwalMingguan`; halaman lain dipindahkan bertahap
+    dengan pola yang sama (jangan racik gaya kartu baru). Server berjalan di **UTC**: setiap "hari ini/tanggal/bulan ini" di
+    halaman server WAJIB dihitung di WIB (`Date.now() + 7 jam` + `getUTC*`, atau `timeZone: "Asia/Jakarta"`) — pola lama
+    `now.getDay()` menampilkan hari kemarin antara pukul 00.00–07.00 WIB.
+    **Putaran 15 Sep 2026 (sore):** grup menu kelima portal disusun per ALUR KERJA (DESIGN_SYSTEM §3.7); portal di luar /dashboard
+    (Perpustakaan, Pusat Ujian, peserta ujian) punya bottom navbar di HP (`NavPortal`); tombol aksi portal satu gaya per jenis
+    (§4.1 — `btn-gold` hanya situs publik); kepala tabel & `GroupedSection` terang; **freeze tabel otomatis** (`PembekuTabel`, §5.7 —
+    tabel layar baru wajib dibungkus `overflow-x-auto`); kartu bottom sheet berwarna lembut.
+    **Seragam detail (15 Sep 2026 malam, DESIGN_SYSTEM §4.1 & §5.3):** grid kartu angka = `.kisi-kartu(-N)`; cari/saringan/tab + tombol =
+    `.baris-alat` (`.alat-cari/.alat-saring/.alat-tab/.alat-aksi`); satu pintu notifikasi (`KotakNotifikasiTombol tindakan`, tanpa
+    `NotificationBell`/`AdminTopBar`); Kembali & `PrintButton` = `btn-modal-cancel`; halaman PortalShell pakai `PageHeader`.
+
+43. **Rapor = verifikasi bertingkat (17 Sep 2026).** Guru mengisi nilai di Jurnal Mengajar (bisa impor Excel: `/api/teacher/journal/impor-nilai`)
+    → wali kelas MENGUNCI (`RaporKunci`, halaman Nilai & Rapor Kelas) → Kepala Sekolah MENGESAHKAN (`RaporApproval`, bisa "Sahkan Semua";
+    ditolak 409 bila belum dikunci) → rapor Siswa/Orang Tua tampil. Selama terkunci, simpan jurnal & impor ditolak (`pesanNilaiTerkunci`,
+    src/lib/rapor-verifikasi.ts); buka kunci hanya bila belum disahkan. Isi rapor satu sumber: `susunRaporSiswa` (src/lib/rapor-data.ts) —
+    KKM per mapel (`Subject.kkm`, kosong = SiteSetting `akademik.kkmDefault` lewat `petaKkm`), predikat interval dari KKM & deskripsi capaian
+    (src/lib/deskripsi-capaian.ts, memakai materi jurnal bernilai tertinggi/terendah), kehadiran per rentang semester (`rentangSemester`).
+    Semester rapor dari `semesterRapor()` (WIB) — jangan menulis generateSemesters baru di route.
+44. **Izin/sakit online (17 Sep 2026).** Orang tua mengajukan (`IzinSiswa`, /dashboard/parent/izin) → wali kelas memutuskan
+    (/dashboard/teacher/izin-siswa; Kesiswaan/BK memantau) → disetujui = `Attendance` hari sekolah dalam rentang diisi IZIN/SAKIT
+    (`hariSekolah`, memakai daftar libur). **Lampiran rahasia** disimpan di `public/uploads/rahasia/` — proxy memblokir `/uploads/rahasia/*`
+    dan `/api/uploads/rahasia/*`; dibuka hanya lewat rute berizin (`/api/izin-siswa/[id]/lampiran`, `bolehLihatIzin`). Berkas sensitif baru
+    (kesehatan, dokumen pribadi) WAJIB memakai pola folder rahasia ini, bukan `/api/upload` biasa. Rekap harian kelas ke wali kelas =
+    pengingat `notifikasi.jamRekapKelas`.
+45. **Akses berbasis jabatan untuk halaman yang juga dipakai Admin:** guru tidak bisa membuka `/dashboard/admin/*` (layout Admin hanya
+    menerima jabatan TU). Tautan dari halaman guru WAJIB menuju rute portal guru — pola: pindahkan isi halaman ke komponen bersama dengan
+    `basePath`/`kembaliHref` (contoh `KalenderAbsensiCetak`, `BukuIndukGuruManager`, `DapodikManager`) lalu buat pembungkus di
+    `/dashboard/teacher/*`. Periksa dengan penelusur jabatan (`rayap-jabatan.mjs`: masuk sebagai tiap pemegang jabatan, buka tiap grup menu,
+    tandai tautan yang dialihkan). Sinkron Dapodik: `verifyDapodikAccess` (Admin & Operator Sekolah penuh, staf TU baca), kunci Web Service
+    bisa diganti dari halaman (terenkripsi AES-GCM di SiteSetting `dapodik.kunci`), pasangan manual `DapodikPasangan` dipakai paling dulu.
+46. **Sasaran pengumuman/survei/kegiatan = satu aturan (`src/lib/pengumuman.ts`, 17 Sep 2026).** Kolom `targetRole`
+    (ALL/STUDENT/PARENT/STUDENT_PARENT/TEACHER/ADMIN) + `targetKelasIds`/`targetJurusanIds` (hanya menyaring siswa & orang tua —
+    orang tua lewat kelas anaknya) + `targetJabatan` (hanya guru/staf). Pakai `konteksPenerima` + `syaratSasaran` untuk "apa yang
+    ditujukan ke saya", `penerimaPengumuman` untuk daftar penerima (notifikasi, statistik pembaca, daftar belum hadir), dan
+    `rapikanSasaran` untuk validasi isian (wali kelas hanya kelas walinya). Model baru yang punya sasaran WAJIB memakai kolom yang
+    sama. Konfirmasi baca (`PengumumanDibaca`) & survei belum diisi masuk antrean "Perlu tindakan" (guru, siswa, orang tua).
+    Pintu tautan notifikasi lintas peran: `/pengumuman`, `/survei`, `/layanan-sarpras` (mengalihkan ke portal pengguna).
+    **`/dashboard` polos TIDAK ADA** — cadangan pengalihan memakai `/login` (proxy meneruskan yang sudah masuk ke dashboard-nya).
+47. **Sarpras & Lab (17 Sep 2026) — `src/lib/sarpras-akses.ts`.** Semua guru & staf: Layanan Sarpras (lapor kerusakan berfoto ke
+    folder `/uploads/sarpras`, pinjam barang/pesan ruang). Pengelola penuh = Admin, staf TU, Wakil Kepala Sarana Prasarana;
+    Kepala Laboratorium = lingkup LAB (aset/ruang/lokasi berisi kata "lab" — `lingkupDari`). Pemesanan ruang ditolak bila bentrok
+    dengan pemesanan lain ATAU Jadwal Pelajaran di ruang itu (`cekBentrokRuang`); daftar ruang = ruang di jadwal + Ruang Ujian +
+    `sarpras.ruangTambahan`. Barang kembali rusak / temuan perawatan otomatis menjadi laporan kerusakan. Perubahan lokasi aset
+    dicatat `MutasiAset`. Label QR aset → `/aset/<id>`; QR presensi kegiatan → `/hadir/<id>?t=` (token HMAC 30 dtk, berlaku 5 menit,
+    `src/lib/kegiatan-qr.ts`). Keduanya route handler: bila belum masuk, tujuan dititipkan di cookie `lanjut_masuk` dan dipakai
+    `ambilLanjut` di actions/auth.ts — HANYA pola `/aset/…` & `/hadir/…?t=…` (jangan dilonggarkan jadi pengalihan bebas).
+48. **Survei & angket (17 Sep 2026) — `src/lib/survei.ts`.** Jawaban unik per akun lewat `penanda` (hash akun+survei) — survei anonim
+    tidak menyimpan userId/kelas sama sekali. Jenis AKPD (20 butir Ya/Tidak per bidang pribadi/sosial/belajar/karier) & SOSIOMETRI
+    (pilih teman sekelas) selalu bernama dan hasilnya rahasia (pembuat, Guru BK/Wakasek Kesiswaan, Admin). Pertanyaan terkunci
+    setelah ada jawaban. Hasil & unduhan .xlsx di `/api/survei/kelola/[id]/hasil`.
+49. **QR keaslian dokumen (17–18 Sep 2026).** Pola sama untuk semua: kolom token acak (`randomBytes(18).toString("base64url")`)
+    di baris data, dibuat SEKALI saat dokumen pertama dicetak, QR berisi `${ALAMAT_APLIKASI}/verify/<jenis>/<token>`, dan halaman
+    verifikasi publik hanya menampilkan identitas dokumen (bukan isinya). Sudah dipakai: sertifikat PKL (`Internship.sertifikatToken`),
+    piagam prestasi (`StudentPointRecord.sertifikatToken`), sertifikat ekstrakurikuler (`ExtracurricularMember.sertifikatToken`),
+    surat keluar (`Surat.verifikasiToken`), rapor format sekolah (`RaporVerifikasi` per siswa × semester × jenis, `qrRapor` di
+    src/lib/rapor-qr.ts — HANYA rapor yang sudah disahkan, /verify/rapor/<token>). Dokumen cetak baru yang perlu dijamin keasliannya mengikuti pola ini.
+50. **Berkas pribadi baru WAJIB folder rahasia.** Arsip SK & dokumen kepegawaian disimpan di `public/uploads/rahasia/kepegawaian`
+    (diblokir proxy) dan dibuka lewat `/api/kepegawaian/sk/[id]/berkas` — pengelola kepegawaian atau guru pemiliknya saja
+    (`src/lib/arsip-sk.ts`). Foto kerusakan Sarpras, liputan, dan poster BKK bukan data pribadi sehingga tetap di `/uploads`.
+51. **Pengingat terjadwal baru** ditambahkan di `src/lib/pengingat-terjadwal.ts` + kunci jam di `PENGATURAN_NOTIFIKASI`,
+    DEFAULTS `site-settings.ts`, API `/api/admin/notifikasi`, dan daftar jam di `NotifikasiPushManager` — empat tempat itu harus
+    diubah bersamaan, jika tidak jamnya tidak bisa diatur admin. Ringkasan mingguan orang tua berjalan tiap SABTU
+    (`notifikasi.jamRingkasanOrtu`); pengingat apa pun otomatis diam pada hari libur (`cekLibur`).
+
+52. **Presensi pegawai punya TIGA jalur (18 Sep 2026)** — semuanya menulis ke `StaffAttendance` (unik per userId+tanggal):
+    Tata Usaha mengisi manual (/dashboard/admin/presensi-pegawai), pegawai memindai QR absensi gerbang lewat HP
+    (/dashboard/{teacher,admin}/absen-mandiri → `/api/pegawai/absen-mandiri`), atau kartu pegawainya dipindai di stasiun
+    (`/api/admin/absensi-scan`, kode bukan NIS → dicoba sebagai NIP/awalan email lewat `pegawaiDariKartu`). Logika satu pintu:
+    `catatPresensiPegawai` (src/lib/presensi-pegawai.ts) — pindaian pertama mengisi jam masuk, pindaian ≥60 menit berikutnya
+    mengisi jam pulang, dan status yang sudah ditetapkan TU (IZIN/SAKIT/DINAS_LUAR/CUTI) TIDAK PERNAH ditimpa (aturan sama
+    dengan absensi siswa, #33). Hari libur ditolak lewat `cekLibur`.
+
+53. **Kartu identitas digital ada untuk SEMUA akun** — `/kartu-identitas` (semua peran) menampilkan `KartuAnggotaDigital`
+    dengan `mode="identitas"`: QR-nya sama persis dengan kartu tanda cetak (NIS/NIP/awalan email), jadi bisa dipindai untuk
+    presensi gerbang, perpustakaan, dan layanan lain tanpa kartu fisik. Tautannya ada di grup "Akun" tiap sidebar dan di
+    `MenuAkunMobile`. Jangan membuat halaman kartu kedua — tambahkan mode baru ke komponen yang sama.
+
+54. **Navigasi HP = bottom navbar 5 slot + kisi menu di dashboard (18 Sep 2026)** — lihat DESIGN_SYSTEM §3.6 & §5.8.
+    Bottom sheet berisi daftar menu DIHAPUS: `MobileBottomNav` sekarang menerima `items` (4 tautan) + `beranda`
+    (tombol bulat tengah ke dashboard). Seluruh menu ada di dashboard lewat `MenuLengkap` (kisi ikon bergradasi ala
+    BRImo/Livin) dan halaman `/dashboard/<portal>/menu` yang punya kotak "Cari menu". **Satu sumber menu**: tiap
+    Sidebar mengekspor pembangun grupnya (`grupMenuSiswa`, `grupMenuGuru`, `grupMenuOrtu`, `menuGroups`,
+    `menuGroupsTas`) dan `src/lib/menu-konteks.ts` menyediakan keadaan akun (jabatan/wali kelas/buku terlambat)
+    untuk layout MAUPUN halaman menu — menambah menu cukup di satu tempat. Portal di luar /dashboard memakai
+    `src/lib/menu-portal.ts` + `KisiMenuPortal` di berandanya. `MenuAkunMobile` tetap memakai `BottomSheet`
+    (Profil, Kartu Identitas, Pencarian Cepat, Keluar) — itu bukan laci menu.
+
+55. **Superadmin berakses PENUH lewat portalnya sendiri (19–20 September 2026).** Superadmin bukan guru/pegawai,
+    jadi ia TIDAK boleh dilempar ke shell portal guru untuk melihat dashboard/halaman jabatan. Pola: isi halaman
+    diekstrak ke `src/components/jabatan/<Nama>.tsx`, lalu DUA pembungkus tipis — portal guru (pemegang jabatan) &
+    portal admin. Sudah dipasang: 12 dashboard jabatan di grup **"Dashboard Jabatan"** (`/dashboard/admin/dashboard-jabatan/*`)
+    dan 11 halaman pengawasan yang dimasukkan ke grup FUNGSINYA masing-masing (Buku Piket & Kinerja Pimpinan →
+    Kepegawaian; Izin/Sakit & Piket Kelas → Kehadiran Siswa; Kunjungan Rumah, Kesehatan Siswa, Kontak Ortu →
+    Kesiswaan & BK; Pengesahan Rapor & Rekap UKK → Kurikulum; Status MoU Mitra → PKL; Branding → Website).
+    JANGAN menautkan halaman admin ke rute `/dashboard/teacher/*` — layout guru memang menerima ADMIN, tetapi
+    sidebarnya jadi nyaris kosong. Halaman yang MELEKAT pada orangnya (Jurnal/Jadwal/Materi/Rapor Kelas/Absen
+    Mandiri) tidak disalin: versi pengawasannya sudah ada di admin.
+
+56. **Tombol ikon-saja HANYA untuk kata kerja umum (20 September 2026).** `.alat-aksi` menyembunyikan teks tombol
+    (`font-size: 0`) demi hemat ruang. Itu jelas untuk Tambah/Cetak/Kembali/Simpan/Unduh/Ekspor, tetapi tombol yang
+    NAMANYA membawa arti sendiri ("Kalender Bulanan", "Lapor Kerusakan", "Denah Ruang Ujian", "Tampilkan QR") jadi
+    tidak bisa ditemukan — ikonnya terbaca sebagai aksi umum (laporan user: "rekap absensi perkalender kok hilang?").
+    Beri `.btn-teks` pada tombol semacam itu (60 tanda di 43 berkas). `.alat-teks` pada WADAH bila semua tombolnya
+    wajib berteks.
+
+57. **Gambar menu: satu fitur satu gambar (`src/components/shared/IlustrasiMenu.tsx`).** Dua FITUR BERBEDA tidak
+    boleh berbagi gambar; fitur SAMA di beberapa portal justru WAJIB sama. Aturan kata kunci terlalu longgar untuk
+    membedakan menu serumpun, jadi setiap fitur didaftarkan tegas di `PETA_ILUSTRASI`. Jebakan halus: pemetaan
+    memakai LABEL ASLI menu, bukan yang tampil di layar — "Poin Siswa (Tata Tertib)" tertangkap aturan "tata tertib"
+    lebih dulu. Memeriksa: bandingkan innerHTML SVG tiap ubin di kelima halaman `/menu`, bukan nama gambarnya.
+
+58. **Halaman notifikasi ada DI DALAM portal, bukan rute akar.** `/notifikasi` hanyalah PINTU yang mengalihkan ke
+    `/dashboard/{teacher,student,parent}/notifikasi` dan `/dashboard/admin/kotak-notifikasi` (nama beda karena
+    `/dashboard/admin/notifikasi` sudah dipakai PENGATURAN push). Sebagai halaman akar ia kehilangan sidebar,
+    bottom navbar, dan latar dashboard. Tombol lonceng menuju rute portal LANGSUNG (ditentukan dari `usePathname`),
+    bukan lewat pintu — lewat pintu, layar krem kosong di luar portal tampil beberapa detik dulu. Tiap rute punya
+    `loading.tsx` supaya tidak pernah layar kosong.
+
+59. **Dapodik: alamat bebas IP/domain, kolom host & port terpisah (20 September 2026).** `periksaAlamatDapodik`
+    menerima IP privat, IP publik, dan nama domain termasuk `localhost`; yang ditolak hanya yang membuatnya bukan
+    alamat (skema selain http/https, nama pengguna/sandi, jalur, query). Aturan lama "hanya IPv4 jaringan lokal"
+    menolak alamat yang BENAR: `172.15.x.x` bukan rentang privat RFC1918 (privat mulai 172.**16**), ia dulu lolos
+    hanya lewat jalur "sama /16 dengan bawaan .env". `hostLokal()` kini menghitung host yang SATU BLOK /16 DENGAN
+    SERVER SITUS sebagai lokal — dipakai HANYA untuk memutuskan perlu-tidaknya peringatan "kunci Web Service ikut
+    terkirim ke alamat ini", bukan untuk menolak. Pembantu yang dipakai halaman ada di `src/lib/dapodik-alamat.ts`
+    (netral) karena `dapodik.ts` bertanda `server-only`.
+
+60. **Pratinjau Sinkron Dapodik diambil PER LANGKAH + disinggahkan (20 September 2026).** Tiga daftar wajib
+    berurutan dan lamanya berubah-ubah (terukur 20–47 detik), sehingga satu permintaan panjang sesekali dibalas
+    **502** oleh proxy di depan aplikasi. Halaman memanggil `?langkah=pd|gtk|rombel` satu per satu (±15 detik tiap
+    permintaan) — hasilnya disinggahkan 10 menit di `dapodik-sinkron.ts`, lalu permintaan tanpa `langkah`
+    membandingkan dari singgahan (0,5 detik). Buka ulang halaman jadi 0,4 detik. JANGAN memparalelkan ketiganya:
+    Dapodik membalas halaman galat HTML.
+
+61. **CBT: token bersama per KEGIATAN + kunci otomatis saat keluar layar (20 September 2026).**
+    - `KegiatanUjian.token` = satu token untuk SEMUA mapel dalam kegiatan itu; server memilihkan ujian yang sedang
+      dibuka untuk kelas siswa (`/api/student/exams/join`). Opt-in per kegiatan lewat Pengaturan Ujian → Kegiatan
+      Ujian; token per-ujian TIDAK dihapus dan tetap berlaku sebagai cadangan. Berganti berkala lewat
+      `tokenOtomatisMenit` (`putarTokenKegiatanBilaPerlu`, hanya dipanggil dari layar petugas). Token kegiatan &
+      token ujian berbagi SATU ruang — `buatTokenUnik` memeriksa keduanya. Ruang Kendali menampilkan token kegiatan
+      lebih menonjol (emas) dan token ujian mengecil sebagai cadangan.
+    - `batasPindahTab` terlampaui = pengerjaan LANGSUNG dikunci server (`terkunci` + `alasanKunci`), bukan sekadar
+      dicatat. Siswa pulih otomatis begitu pengawas menekan Reset Login / Buka Kunci: layar terkunci mengetuk
+      `denyut` tiap 8 detik. Tanpa itu `aktif = … && !blokir` membongkar interval denyut, sehingga tindakan pengawas
+      baru terasa setelah siswa hard-refresh.
+    - Layar penuh diminta DI DALAM klik "Mulai" (di luar gestur pasti ditolak browser); kalau keluar, layar ujian
+      tertutup tirai satu tombol. Wake lock menahan layar. **Batas yang harus diterima: Alt-Tab, tombol Home, dan
+      menutup aplikasi TIDAK bisa dicegah dari halaman web** — kunci sungguhan butuh Safe Exam Browser / kiosk
+      Android. Tirai layar penuh dilewati bila `requestFullscreen` tidak ada (iOS Safari), supaya peserta iPhone
+      tidak terkunci di luar ujian.
+    - Daftar Ujian & Bank Soal TIDAK LAGI mensyaratkan pilih kelas+mapel — dropdown itu murni saringan (hak akses
+      dijaga server: `filterDaftarUjian` & cakupan bank soal per penugasan). Mapel butir ditanyakan DI DALAM
+      formulir Tambah Soal. Judul ujian baru terisi otomatis dari nama kegiatan aktif.
+    - Impor Word: tabel di naskah paragraf kini IKUT jadi isi pertanyaan (dulu menutup soal lalu dibuang, sehingga
+      soal bertabel hilang). Gaya tabelnya di `.soal-html table`.
+    - Edit soal saat ujian berjalan HANYA lewat tombol pensil oranye (`/api/teacher/exams/[id]/soal-live`). Editor
+      biasa mengunci susunan soal begitu ada yang mengerjakan dan Simpan SENGAJA tidak mengirim `questions`.
+
+62. **CBT — satu sumber token, alat periksa, dan jalur tahan putus (20–21 September 2026).**
+    - **Token yang ditampilkan SATU SUMBER di SEMUA layar**: token bersama kegiatan bila ada, selain itu token
+      ujian. Dipakai Ruang Kendali, Daftar Ujian, kepala halaman detail, dan Papan Pantau (`susunPapanPantau`
+      mengembalikan `token` = yang dibacakan, `tokenUjian` = cadangan teknis). Token per-ujian tetap DITERIMA di
+      server tetapi TIDAK ditampilkan bila ada token bersama. Temuan nyata: memperbaiki dua layar tapi lupa satu
+      membuat ujian yang sama tampil dengan dua token berbeda — lebih buruk daripada masalah awalnya.
+    - Token bersama **dibuat otomatis** untuk kegiatan aktif (`pastikanTokenKegiatan`, dipanggil dari layar petugas)
+      dan mewarisi `ujian.tokenOtomatisMenit` sekolah. Opt-in manual sebelumnya membuat token tidak pernah terbuat.
+    - **Kemiripan jawaban** (`src/lib/kemiripan-ujian.ts`): sinyalnya SAMA-SAMA SALAH DENGAN PILIHAN SAMA, bukan
+      sama-sama benar. Dijalankan saat diminta, keluarannya daftar untuk DIPERIKSA — bukan tuduhan. Uraian/unggah
+      tidak dibandingkan.
+    - **Naskah tahan putus**: soal yang sudah dilihat disinggahkan di perangkat + satu soal berikutnya diambil
+      lebih awal. JANGAN menyinggahkan seluruh naskah — `satuSoalPerHalaman` ada supaya naskah utuh tidak pernah
+      berada dalam satu muatan yang bisa disalin lewat alat pengembang.
+    - **Safe Exam Browser** (`src/lib/seb.ts`, `Exam.wajibSeb`): verifikasi `X-SafeExamBrowser-RequestHash` =
+      SHA256(URL + Browser Exam Key). Kunci keluar dari SEB Configuration Tool di komputer sekolah — BUKAN dibangkitkan
+      server — lalu ditempel ke `ujian.sebKunci`. Selama kunci kosong, ujian ber-`wajibSeb` TIDAK dikunci mati.
+    - **Batalkan soal** saat ujian berjalan = `skor` jadi 0 + `skorButir` semua peserta 0 untuk butir itu, lalu
+      nilai dihitung ulang. JANGAN menghapus baris soal yang sudah dikerjakan: urutan acak & jawaban terikat ID soal.
+      Ganti isi soal lewat "Perbaiki Live" atau "Ambil isi dari Bank Soal" — hanya butir berjenis sama dan
+      berjumlah pilihan sama (kode pilihan A, B, C… harus tetap).
+    - Bank Soal dan soal ujian adalah **SALINAN**, bukan tautan — mengedit bank tidak mengubah ujian yang sudah dibuat.
+    - Koreksi uraian: mode **Per Soal** (bawaan, standar penilaian konsisten) & Per Siswa; **Simpan Semua Skor**
+      mengirim hanya yang berubah, dan nilai tiap peserta dihitung ulang SEKALI di akhir.
+    - "Jadikan Ujian" dari impor Word/Excel: soal dititipkan lewat `sessionStorage` (`impor-ujian`), bukan URL —
+      naskah bisa ratusan KB. Mapel & judul terisi dari kepala naskah; kelas & jadwal tetap di penyusun ujian.
+    - **Template unduhan pakai `exceljs`**, bukan `xlsx`: SheetJS edisi komunitas TIDAK bisa menulis gaya sel
+      (font, garis, warna hilang). Tata letak mengikuti berkas contoh user: Pengaturan A–B, Kunci F–K (termasuk kolom
+      "Pedoman Penskoran"), "Kisi - Kisi Soal" L–O. Arial Narrow di Excel & Word. Pembaca Excel berbasis LABEL kolom,
+      jadi berkas lama (Kunci F–J) tetap terbaca.
+    - **Uraian/unggah punya DUA pegangan (21 Sep 2026): `kunci.acuan` = JAWABAN ACUAN (kolom Kunci Jawaban Excel) dan
+      `kunci.rubrik` = PEDOMAN PENSKORAN (kolom "Pedoman Penskoran").** Berkas tanpa kolom Pedoman → isi kolom Kunci
+      disimpan sebagai rubrik seperti dulu (`terapkanKunci(b, kunci, pedoman)`, pedoman null = kolom tidak ada).
+      Keduanya tampil di penyunting soal, Kartu Soal, layar Koreksi (`PeganganKoreksi`), dan LAMPIRAN kunci cetak
+      kisi-kisi (`?kunci=1` — sengaja bukan bawaan karena kisi-kisi lazim dibagikan ke siswa). Tidak pernah dikirim
+      ke siswa selama ujian (`soalUntukSiswa` hanya menyertakan kunci setelah dikumpulkan).
+    - **Kartu Soal** (`/pusat-ujian/[id]/kartu-soal`): satu butir satu halaman, seluruh isi dari data yang sudah
+      ada. Belum ada contoh format sekolah di data TU (diperiksa 21 Sep 2026: tabel `Arsip` kosong) — bila sekolah
+      mengirim formatnya, sesuaikan.
+
+63. **Ujian per KELAS vs per RUANG (21 September 2026) — `KegiatanUjian.mekanisme`.** RUANG = peserta dibagi lewat Denah
+    Ruang, pengawas per ruang × sesi (`PengawasUjian`). KELAS (lazimnya STS) = siswa ujian di kelasnya sendiri; satu ujian
+    boleh punya **jam berbeda per kelas** (`Exam.jadwalKelas`, startTime/endTime = amplopnya) dan pengawasnya OTOMATIS guru
+    pengampu mapel itu di kelas itu (Penugasan Mengajar, cadangan pembuat ujian) — tidak disimpan, hanya PENGGANTI yang
+    disimpan (`PengawasKelasUjian`). Satu sumber: `susunPengawasKelas` (src/lib/pengawas-kelas.ts), dipakai halaman Pengawas
+    (`PengawasKelasPanel`, jam per kelas bisa diubah di sana) & Jadwal Pengawas guru.
+    **Setiap jalur yang membuka/menutup ujian untuk siswa atau menghitung batas waktunya WAJIB `jendelaKelas(exam, classIdSiswa)`**
+    (src/lib/jadwal-ujian-kelas.ts) — bukan `exam.startTime/endTime` langsung: daftar & join siswa, detail/jawab/denyut/submit/info,
+    papan pantau, massal, lanjutkan, jejak, ruang kendali. Mengubah jam satu kelas dari halaman Pengawas melengkapi jadwal
+    SEMUA kelas ujian itu dulu — kelas tanpa jam khusus memakai amplop, yang ikut bergeser bila tidak dilengkapi.
+    Denah Ruang: ruang bisa diberi peruntukan jurusan/kelas (`KegiatanUjian.aturRuang`, `bagiPeserta(…, peruntukan)`).
+
+64. **Pesan pengawas ke layar peserta (21 September 2026) — `PesanUjian`, src/lib/pesan-ujian.ts.** Dikirim dari Papan Pantau &
+    Ruang Kendali (`PesanPesertaPanel`; "Pesan ke Semua Ujian Berlangsung" = `/api/teacher/exams/pesan-massal`). Sampai ke siswa
+    LEWAT DENYUT yang sudah ada (±20 detik) + muatan awal halaman ujian — jangan membuat saluran/polling baru per siswa. Sasaran
+    SEMUA/KELAS/JURUSAN/SISWA/RUANG; jurusan & ruang DIURAI saat dikirim jadi `kelasIds`/`siswaIds` supaya penyaring di denyut
+    tetap satu kueri murah. `questionId` = soal urutan asli; layar siswa menerjemahkannya lewat `peta` ke nomor di urutan
+    acaknya sendiri (tombol "Buka soal"). "Mengerti" diingat di localStorage (`pesan-dibaca:<examId>`), pesan ditarik = `ditarikAt`.
+65. **Rekap Nilai Ujian (21 September 2026) — /pusat-ujian/rekap-nilai.** Keputusan user: rekap & unduh Excel saja, **TIDAK
+    dikirim ke Jurnal/nilai rapor** (sekolah akan memakai e-Rapor pemerintah) — jangan membuat tombol "kirim ke jurnal/rapor".
+    Data mentah `muatRekapNilai` (src/lib/rekap-nilai-ujian.ts: reguler = nilai utama, susulan mengisi bila reguler kosong,
+    remedial terpisah, `s` = sementara), hitungan MURNI di src/lib/rekap-nilai-hitung.ts dipakai layar & Excel
+    (src/lib/rekap-nilai-excel.ts, exceljs bergaya) supaya angkanya selalu sama. Cakupan: guru = ujian yang diampu + semua mapel
+    kelas walinya; Admin/TAS/Wakakur = semua. KKM lewat `petaKkm` per tingkat+jurusan kelas.
+66. **Alat bantu ujian gelombang 1 (21 September 2026).**
+    - **Saran skor uraian** (`src/lib/saran-skor.ts`, murni, jalan di browser guru): jawaban acuan dipecah jadi poin, dicocokkan
+      per kata dasar (imbuhan sederhana & salah ketik 1 huruf ditoleransi), kata yang sudah ada di SOAL tidak dihitung (menyalin
+      soal ≠ skor), bobot dari angka "(n)" di pedoman bila jumlahnya sama dengan jumlah poin. HANYA SARAN — "Pakai saran" /
+      "Isi dengan Saran" mengisi kotak skor, guru tetap menekan Simpan. Jangan pernah menyimpan skor saran otomatis.
+      Hindari regex lookbehind di kode klien: Safari iPhone lama gagal mengurainya dan seluruh halaman rusak.
+    - **Kemiripan + denah + waktu** (`cariKemiripan`): skor risiko = kemiripan salah-sama + posisi kursi (bersebelahan/depan-
+      belakang/diagonal dari `RuangUjian.kolom`) + korelasi pola waktu per soal (`waktuSoal`, log). Ambang dilonggarkan untuk
+      yang duduk berdekatan. Ditambah daftar siswa yang selesai jauh lebih cepat dari median. Tetap daftar untuk DIPERIKSA.
+    - **Paket soal menurut denah** (`Exam.paketDenah` 0/2/3/4, `paketDariKursi` di src/lib/ujian-acak.ts): benih pengacakan =
+      paket (bukan attempt) → siswa berpaket sama melihat urutan sama, yang duduk berdekatan berbeda. Paket disimpan di
+      `ExamAttempt.urutan.paket` dan tampil di papan pantau. Siswa tanpa kursi di denah tetap diacak per siswa. Urutan hanya
+      dibuat SEKALI (saat attempt pertama dimuat) — mengubah denah setelahnya tidak memindahkan paket siswa yang sudah mulai.
+67. **MAPEL DINIYAH = MAPEL TAMBAHAN (keputusan user 21 September 2026, "paling penting").** Dikenali dari `Subject.category`
+    (data: "Kelompok Mata Pelajaran Diniyyah" — cocokkan dengan `/diniy/i`, JANGAN string persis) lewat `src/lib/mapel-diniyah.ts`
+    (`adalahKategoriDiniyah`, `namaMapelDiniyah()` untuk nilai/ujian yang mencatat mapel dengan NAMA). Aturannya:
+    **DKN: TIDAK tampil sama sekali** (disaring di `/api/teacher/dkn/[classId]`). **Ujian: tetap boleh dibuat & dikerjakan**, tetapi di
+    Rekap Nilai Ujian menjadi kelompok TERPISAH (kolom berkepala emas setelah Peringkat) dan TIDAK ikut jumlah, rata-rata, maupun
+    peringkat (`DataRekap.diniyah`, `legerKelas`→`mapelDiniyah`). Rekap/peringkat/rata-rata lintas mapel baru WAJIB memakai aturan ini.
+68. **Soal berparameter & soal interaktif (gelombang 2, 21 September 2026).**
+    - **Parameter** (`src/lib/soal-parameter.ts`): `{ABSEN}` (nomor absen, urut nama siswa AKTIF di kelasnya), `{NIS2}`, `{NIS3}`,
+      `{ACAK}` (1–99, tetap per siswa+ujian). Boleh berhitung `{ABSEN*4+1}` — diurai sendiri (bukan eval); kurung kurawal yang
+      tidak memuat variabel (himpunan `{1, 2, 3}`, LaTeX) dibiarkan. Diisi di SERVER di tiga tempat, satu sumber
+      (`isiButirParameter` + `variabelSiswaUjian`): layar siswa (`/api/student/exams/[id]`), penilaian (`simpanNilaiAttempt` —
+      kunci Isian Singkat per siswa), dan layar koreksi (jawaban acuan & pedoman per siswa + `templat` aslinya). Pratinjau guru
+      memakai `CONTOH_VARIABEL`. Jalur baru yang menampilkan/menilai soal ke siswa WAJIB lewat fungsi yang sama.
+    - **Jenis interaktif** `TITIK_GAMBAR` (ketuk N titik = jumlah area), `SERET_LEPAS` (label → tempatnya; `kode` label = kode area),
+      `URUTKAN` (opsi disimpan dalam urutan BENAR). Koordinat selalu PERSEN gambar. Nilai proporsional (`nilaiButir`).
+      `kunci.area` TIDAK PERNAH dikirim ke siswa (`soalUntukSiswa` hanya `gambar` + `jumlahTitik`); URUTKAN SELALU diacak dan
+      tidak pernah tampil dalam urutan benar (`ujian-acak.ts`). Perbaikan live: jumlah area/label/langkah dikunci (`soal-live`),
+      letak area boleh digambar ulang. Kemiripan jawaban tidak membandingkan jenis berkoordinat. Belum bisa diimpor dari
+      Word/Excel — dibuat lewat penyunting soal (Bank Soal / penyusun ujian).
+69. **Tindakan pengawas sampai ke layar peserta ±1 detik lewat SINYAL long-poll (21 September 2026) — `src/lib/sinyal-ujian.ts`.**
+    Denyut peserta hanya tiap 20 detik, jadi Reset Login/Waktu dulu terasa "harus hard refresh". Layar ujian membuka
+    `GET /api/student/exams/[id]/sinyal` yang DITAHAN server (≤25 dtk, tanpa kueri selama menunggu); `kirimSinyal(examId, [studentId])`
+    melepasnya dan layar langsung menjalankan denyut (atau pemulihan kunci). Peta penunggu di `globalThis` (satu proses Node).
+    **Route baru yang mengubah keadaan pengerjaan/ujian WAJIB memanggil `kirimSinyal`** setelah tersimpan — sudah di lanjutkan
+    (per siswa), massal, pesan, pesan-massal, soal-live, PUT ujian, jam per kelas (Pengawas). Sinyal umum (tanpa studentIds)
+    disebar acak 0–3 dtk di klien. Denyut 404 (pengerjaan dihapus "Ulang") → layar peserta kembali ke halaman token.
+    **Token yang tampil = `tokenTampilUjian`** (ujian-server.ts) di papan pantau & `GET /api/teacher/exams/token?ids=` yang
+    dipakai `useTokenLangsung` (detail ujian, Daftar Ujian; Pengaturan Kegiatan memuat ulang tiap 15 dtk). Perputaran token
+    ATOMIK (`updateMany where token = yang dibaca`) — dua layar petugas tidak lagi menghasilkan dua token berbeda.
+70. **Jam = `<TimePicker>` 24 jam (src/components/shared/TimePicker.tsx), JANGAN `<input type="time">`** (21 Sep 2026, permintaan
+    user: "jangan AM PM"). Isian jam bawaan ikut bahasa perangkat → AM/PM di HP berbahasa Inggris. Nilai tetap "HH:MM" (sama dengan
+    input bawaan), bisa diketik (0715, 7.15) atau dipilih; `ringkas` untuk sel tabel. 23 isian sudah diganti. Menampilkan jam juga
+    selalu `toLocaleTimeString("id-ID", …)`, jangan tanpa lokal.
+71. **Build Docker: `npm ci` tahan gangguan jaringan (21 Sep 2026).** Cache build dipangkas otomatis (rantai build: sisakan 3 rollback,
+    cache ≤25 GB — cache & image lama sempat memenuhi thin pool Proxmox 95%), sehingga lapisan `npm ci` kadang dibangun ulang dan
+    jaringan sekolah memutus koneksi serentak (`ECONNRESET`). Dockerfile memakai cache mount `/root/.npm` + `--maxsockets=6` +
+    percobaan ulang. Jangan tambahkan `# syntax=docker/dockerfile:1` — itu menarik image dari Docker Hub tiap build.
+72. **Peserta Ditahan per kegiatan ujian (21 September 2026) — `PesertaDitahanUjian`, src/lib/peserta-ditahan.ts.** Jawaban atas
+    "siswa belum menyelesaikan administrasi ujian, bagaimana pengecualiannya": panitia (`bolehAturUjian`) menahan siswa di
+    /pusat-ujian/administrasi/ditahan → join token ditolak 403 untuk SEMUA ujian kegiatan itu (pesan + alasan), halaman mulai &
+    daftar ujian siswa menampilkan alasannya, papan pantau/Ruang Kendali menandai "Ditahan". Pengerjaan yang sudah dimulai
+    sebelum ditahan TIDAK diganggu (penahanan hanya mencegah MASUK). Lepas = hapus baris. Diisi manual — JANGAN dihubungkan ke
+    modul Bendahara (keputusan user: modul itu tidak disentuh lagi). Jalur masuk ujian baru WAJIB memanggil `alasanDitahan`.
+73. **Rumus matematika & kimia (22 September 2026).** Satu format: LaTeX di teks (`$…$` sebaris, `$$…$$` baris sendiri), kimia
+    `\ce{…}`/`\pu{…}` (mhchem). Render SATU pintu `HtmlSoal`/`renderRumus` (src/components/ujian/HtmlSoal.tsx, KaTeX + mhchem, dimuat
+    hanya bila ada penanda rumus). **Jawaban siswa WAJIB lewat `TeksRumus`** (di-escape dulu) — jangan pernah `HtmlSoal` untuk teks
+    ketikan siswa (XSS). Input: `PaletRumus` + `TombolRumus` (src/components/ujian/PaletRumus.tsx) dipakai penyunting soal (pertanyaan,
+    tiap pilihan, kunci isian, acuan, pedoman) DAN kotak jawaban isian/uraian siswa; menyisipkan di posisi kursor. Jangan menulis
+    LaTeX di string JS biasa (`"\frac"` = form feed) — pakai `String.raw`. Impor Word: rumus Equation Editor (OMML) diubah ke LaTeX
+    sebelum mammoth oleh `gantiRumusWord` (src/lib/omml-latex.ts); "Equation 3.0" lama tetap gambar. Isian Singkat: pembanding
+    `rapikan` (src/lib/soal.ts) menyamakan `$…$`, `\ce{}`, indeks Unicode (H₂O), dan koma desimal.
+74. **Jawaban Lisan = jenis soal `LISAN` (22 September 2026).** Rekaman (MediaRecorder, `PerekamLisan`) diunggah ke
+    `POST /api/student/exams/[id]/lisan` → folder RAHASIA `public/uploads/rahasia/ujian-lisan/<examId>/` → jawaban = alamat
+    `/api/ujian/lisan/<examId>/<attemptId>-<questionId>-<t>.<ext>` yang hanya bisa diputar pemilik atau guru berhak (dukung Range untuk
+    Safari). Rute jawab menolak alamat rekaman milik pengerjaan lain (`rekamanMilikSendiri`). Dinilai manual (`butuhKoreksi`), batas
+    durasi `kunci.durasiMaks` (15–600 dtk) ikut ke siswa lewat `soalUntukSiswa`. Mikrofon hanya jalan di HTTPS. Jendela izin mikrofon
+    memanggil `tahanPengawasan` (src/lib/perangkat-ujian.ts) supaya tidak tercatat "pindah tab".
+75. **Rapor format makro sekolah (22 September 2026) — keputusan user: "jangan buat aturan baru, ambil parameter dari data yang
+    sudah ada".** Alur: guru mapel mengisi & MENGIRIM **Form Nilai Rapor** (`FormNilaiRapor`, satu baris per kelas × mapel ×
+    semester; /dashboard/{teacher,admin}/form-nilai-rapor, bisa diisi dari Jurnal & CBT) → wali kelas mengisi **Isian Rapor**
+    (/dashboard/teacher/rapor-kelas/isian: predikat sikap SB/B/C/K + perilaku menonjol, sikap Diniyah Kelakuan/Kerajinan/Kerapian,
+    Naik/Tinggal atau Lulus/Tidak Lulus di semester genap — disimpan di `CatatanWaliKelas`) → kunci → pengesahan → **Cetak Rapor**
+    (/dashboard/teacher/rapor-kelas/cetak & /dashboard/admin/rapor-cetak, `?jenis=akhir|ts|diniyah`).
+    - Rumus = tiruan makro, SATU sumber: `src/lib/rapor-form.ts` (LM, RPH, HPA berbobot 50/20/30/0, predikat >89 A >79 B >69 C,
+      deskripsi formatif/sumatif, katrol `KKM + x·(100−KKM)/100` — STS tidak pernah dikatrol), `src/lib/rapor-sikap.ts` (kalimat
+      sikap & kalimat baku), `src/lib/terbilang-arab.ts`. Data cetak satu kelas: `susunRaporKelas` (src/lib/rapor-cetak.ts) — hanya
+      form berstatus DIKIRIM yang dibaca. Diuji 1520/1520 sel sama dengan berkas Excel makro.
+    - Cetak = `LembarBerhalaman`: blok diukur di browser lalu disusun ke lembar A4 tetap, kaki halaman per siswa + nomor halaman buku
+      rapor (4 hal/semester: X-1→1 … XII-2→21; TS 2 hal/semester). Jarak antarblok WAJIB padding (bukan margin). Lembar di dalam
+      SATU wadah `.print-doc` — memberi `.print-doc` pada tiap lembar menumpuk motif kertas `fixed` sebanyak jumlah lembar.
+    - Selama wali kelas mengunci nilai (#43), simpan/kirim Form Nilai Rapor ditolak 409; isian wali ditolak setelah disahkan.
+      Tanda tangan Kepala Sekolah (`letterhead.ttdKepalaSekolah`) hanya tercetak bila rapor sudah disahkan.
+    - Nama Arab mapel Diniyah = `Subject.namaArab` (Data Mapel). P5 tidak dipakai sekolah — jangan dibuat.
+    - **Halaman Depan** (`?jenis=depan`, lembar HAL.1-2 & HAL.3 makro): sampul (Garuda `public/images/garuda-pancasila.png`), i Identitas
+      Sekolah (setelan Nominatif & Kontak), ii Petunjuk Pengisian, iii Keterangan Diri (Buku Induk lewat getter `SISWA_COLUMNS`,
+      `susunHalamanDepan` di src/lib/rapor-depan.ts), Pindah Sekolah keluar/masuk, Catatan Prestasi — satu `DokumenCetak` per halaman,
+      bisa dipilih. Data yang tidak ada di situs dicetak bertitik (diisi tangan), bukan dikarang. Pita navy kop diberi motif SMK (`PolaNavy`).
+    - Superadmin mengisi/mencetak rapor lewat portal admin: /dashboard/admin/rapor-kelas (komponen bersama `RaporKelasManager`
+      `portal="admin"`, isian di /dashboard/admin/rapor-kelas/isian). Siswa & orang tua melihat rapor format sekolah di
+      /dashboard/{student,parent}/rapor/sekolah — hanya semester yang sudah disahkan, dan HANYA baris siswa itu yang dikirim ke browser.
+    - **Wali kelas boleh MENGEDIT form setelah DIKIRIM** (permintaan user 22 Sep 2026; selama DRAF form dipegang guru — simpan
+      otomatis keduanya bisa saling menimpa). Setiap perubahan oleh selain guru pengampu pada form DIKIRIM dicatat per sel di
+      `FormNilaiRapor.riwayatWali` (`bedaForm` + `tambahRiwayat`, src/lib/rapor-form.ts; simpan beruntun ≤30 menit digabung) dan
+      tampil di form guru ("Diubah setelah dikirim …"). Jalur simpan baru untuk form WAJIB lewat PUT /api/rapor/form/isi supaya
+      riwayat ini tidak terlewat.
+    - **Leger Nilai Rapor** (/dashboard/{teacher,admin}/rapor-kelas/leger, Excel /api/rapor/leger): hitungan murni `legerRapor`
+      (src/lib/leger-rapor.ts) dari `susunRaporKelas` — layar & Excel selalu sama; Diniyah terpisah, tidak ikut peringkat.
+76. **Singkatan mapel (22 September 2026) — `Subject.singkatan`, diisi lewat Data Mapel → Singkatan Mapel (satu isian per NAMA
+    mapel, disimpan ke semua baris bernama sama).** Kepala kolom DKN & leger/ringkasan Rekap Nilai (layar + Excel) memakai
+    `labelMapel(nama, peta)` dengan keterangan `keteranganSingkatan` di bawahnya; peta dari `petaSingkatanMapel` (server).
+    Isian kosong = SARAN OTOMATIS (`saranSingkatan`, lewat `petaSingkatanMapel`) — permintaan user 22 Sep 2026 "kok nama mapel bukan
+    singkatan"; isian form selalu menang. Keterangan singkatan wajib ikut di bawah tabel/cetakan.
+77. **Mapel gabungan DPK 1–4 & KK 1–4 (22 September 2026) — `src/lib/mapel-gabungan.ts`.** Keputusan user: bagiannya tetap mapel
+    sendiri di Penugasan Mengajar & Form Nilai Rapor (tiap guru mengisi/mengirim formnya), tetapi **rapor, leger, dan DKN memakai SATU
+    mapel** "Dasar-Dasar Program Keahlian" (DPK) / "Konsentrasi Keahlian" (KK, kode makro). Nilai gabungan = **"Gabung LM & TP"**
+    (`gabungForm` + `hitungSiswaGabungan`, src/lib/rapor-form.ts): semua LM/TP bagian jadi LM/TP satu mapel, nilai LM & SAS dipakai
+    setelah katrol bagiannya masing-masing, STS/SAS = rata-rata bagian, KKM = rata-rata. Hanya bagian yang sudah DIKIRIM ikut;
+    kolom leger bertanda * sampai SEMUA bagian terkirim (`BarisNilai.anggota`). **DKN: kolom gabungan TERISI OTOMATIS** dari nilai
+    rapor gabungan (cadangan: rata-rata DKN bagian lama), tampil miring; ketikan wali (Grade DKN bernama grup) menimpa, mengosongkan
+    sel = DELETE → kembali otomatis. Kolom DKN lain tetap murni manual. Tempat baru yang menampilkan mapel per kelas di dokumen
+    rapor/rekap WAJIB memakai `namaGabungan`/`grupMapel`, jangan menampilkan bagian satu per satu.

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Select from "@/components/admin/Select";
+import { useToast } from "@/components/shared/ToastProvider";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -87,7 +88,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="flex flex-col items-center gap-1 px-2">
       <div className="flex items-center gap-0.5">{children}</div>
-      <p className="text-[9px] uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-gray-400">{label}</p>
     </div>
   );
 }
@@ -98,6 +99,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
       supaya toolbar benar-benar keluar dari "kertas surat", bukan cuma sticky di tempat lamanya. */
   toolbarSlot?: HTMLElement | null;
 }) {
+  const toast = useToast();
   const [tab, setTab] = useState<TabKey>("Beranda");
   const [fontSizeChoice, setFontSizeChoice] = useState("");
   const [showTextColor, setShowTextColor] = useState(false);
@@ -110,6 +112,10 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
   const [pageBreaks, setPageBreaks] = useState<number[]>([]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const contentWrapRef = useRef<HTMLDivElement>(null);
+
+  /** HTML terakhir yang dihasilkan editor sendiri — pembanding agar sinkronisasi dari luar
+   * tidak salah menganggap ketikan pengguna sebagai perubahan eksternal. */
+  const htmlTerakhir = useRef(value);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -137,10 +143,28 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
       attributes: { class: "prose-surat focus:outline-none min-h-[280px] px-4 py-3 text-sm" },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      htmlTerakhir.current = html;
+      onChange(html);
       recomputePageBreaks();
     },
   });
+
+  /** Menyerap perubahan `value` yang datang DARI LUAR editor (mis. tombol "Gunakan Template" di
+   * halaman Persuratan). Tiptap membaca opsi `content` HANYA sekali saat editor dibuat, jadi tanpa
+   * efek ini isi template tidak pernah masuk ke lembar kerja — gejalanya diam-diam: tidak ada
+   * error, lembar kerja cuma tetap kosong (ditemukan saat uji template 13 September 2026).
+   *
+   * Dibandingkan dengan HTML terakhir yang DIKELUARKAN editor sendiri, bukan dengan isi editor
+   * saat itu: kalau tidak, setiap ketikan biasa ikut memicu setContent dan kursor melompat ke awal. */
+  useEffect(() => {
+    if (!editor) return;
+    if (value === htmlTerakhir.current) return;
+    htmlTerakhir.current = value;
+    editor.commands.setContent(value || "", { emitUpdate: false });
+    recomputePageBreaks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, editor]);
 
   // Hitung ulang garis panduan halaman setiap kali tinggi konten berubah (termasuk saat gambar
   // selesai dimuat, yang mengubah tinggi tanpa memicu onUpdate teks).
@@ -208,7 +232,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
       editor!.chain().focus().setImage({ src: data.url }).run();
       setTimeout(recomputePageBreaks, 300);
     } catch {
-      window.alert("Gagal mengunggah gambar.");
+      toast.error("Gagal mengunggah gambar.");
     } finally {
       setUploadingImage(false);
     }
@@ -275,7 +299,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
         {TABS.map(t => (
           <button key={t} type="button" onClick={() => setTab(t)}
             className={`relative px-3 py-1.5 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
-              tab === t ? "bg-white text-primary-700 border-primary-600" : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-white/50"
+              tab === t ? "bg-white text-primary-700 border-primary-700" : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-white/50"
             }`}>
             {t}
           </button>
@@ -300,7 +324,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
             <input value={replaceQuery} onChange={e => setReplaceQuery(e.target.value)}
               placeholder="Ganti dengan..." className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white w-40" />
           </div>
-          {matchInfo.total > 0 && <span className="text-[11px] text-gray-400 font-mono">{matchInfo.current}/{matchInfo.total}</span>}
+          {matchInfo.total > 0 && <span className="text-xs text-gray-400 font-mono">{matchInfo.current}/{matchInfo.total}</span>}
           <button type="button" onClick={() => findNext(-1)} className="p-1.5 rounded-lg text-gray-500 hover:bg-white transition-colors" title="Sebelumnya"><ChevronUp size={14} /></button>
           <button type="button" onClick={() => findNext(1)} className="p-1.5 rounded-lg text-gray-500 hover:bg-white transition-colors" title="Berikutnya"><ChevronDown size={14} /></button>
           <button type="button" onClick={replaceCurrent} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg text-primary-700 hover:bg-white transition-colors">Ganti</button>
@@ -431,7 +455,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Tulis i
         {pageBreaks.map((top, i) => (
           <div key={top} className="absolute left-0 right-0 pointer-events-none flex items-center gap-2 px-4" style={{ top }}>
             <div className="flex-1 border-t-2 border-dashed border-gray-300" />
-            <span className="text-[10px] font-semibold text-gray-400 bg-white px-1.5 whitespace-nowrap">Halaman {i + 2}</span>
+            <span className="text-xs font-semibold text-gray-400 bg-white px-1.5 whitespace-nowrap">Halaman {i + 2}</span>
             <div className="flex-1 border-t-2 border-dashed border-gray-300" />
           </div>
         ))}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
+import { cakupanTingkat } from "@/lib/kehadiran-guru";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { getDisciplinePointConfig, pointsForStatus, getCalendarWeekWindow, getMonthWindow } from "@/lib/discipline-points";
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       else if (status === "ALPHA") t.countAlpha += 1;
     }
 
+    const tingkat = await cakupanTingkat();
     for (const date of windowDates) {
       const dateStr = date.toISOString().slice(0, 10);
       const day = DAYS[date.getDay()];
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
 
       // --- Absensi mengajar (blok jam pelajaran) ---
       const schedules = await prisma.schedule.findMany({
-        where: { day, scheduleType: "BLOK", teacherId: { not: null }, class: { grade: { in: [10, 11] } } },
+        where: { day, scheduleType: "BLOK", teacherId: { not: null }, class: { grade: { in: tingkat } } },
         include: { teacher: { select: { userId: true, nip: true, user: { select: { name: true } } } } },
         orderBy: { startTime: "asc" },
       });

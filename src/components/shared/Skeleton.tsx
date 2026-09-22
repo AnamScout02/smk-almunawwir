@@ -18,7 +18,7 @@ export function StatTileSkeleton({ count = 4 }: { count?: number }) {
 /** Skeleton baris tabel (mis. daftar siswa/buku/dsb). */
 export function TableRowsSkeleton({ rows = 6, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="panel overflow-hidden">
       {Array.from({ length: rows }).map((_, r) => (
         <div key={r} className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-50 last:border-0">
           {Array.from({ length: cols }).map((__, c) => (

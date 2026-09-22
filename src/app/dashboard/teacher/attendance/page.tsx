@@ -71,16 +71,16 @@ export default function AttendancePage() {
     : classes.find(c => c.id === selectedClass)?.students.length ?? 0;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<CheckSquare size={22} />}
         title="Absensi Siswa"
         description="Rekap dan input absensi harian — kelas wali & kelas yang Anda ampu"
       />
 
-      <div className="flex justify-end mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/teacher/attendance/summary"
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+          className="btn-modal-cancel btn-teks">
           <BarChart2 size={16} /> Ringkasan Absensi
         </Link>
       </div>
@@ -96,7 +96,7 @@ export default function AttendancePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {classes.map((cls) => (
               <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-4">
+                className="panel group p-5 hover:border-emerald-200 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
                   <CheckSquare size={20} className="text-emerald-600" />
                 </div>
@@ -124,15 +124,15 @@ export default function AttendancePage() {
             Rekap Absensi per Tanggal
           </h2>
           <a href={`/api/teacher/export/attendance?month=${date.slice(0, 7)}${selectedClass !== "ALL" ? `&classId=${selectedClass}` : ""}`}
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
-            <Download size={13} /> Export Bulan Ini
+            className="btn-modal-cancel">
+            <Download size={13} /> Unduh Excel Bulan Ini
           </a>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-wrap">
-          <div className="flex items-center gap-3">
+        <div className="panel p-4 mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-wrap">
+          <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Tanggal:</label>
-            <DatePicker value={date} onChange={setDate} />
+            <div className="min-w-0 flex-1"><DatePicker value={date} onChange={setDate} /></div>
           </div>
           <div className="flex items-center gap-3">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kelas:</label>
@@ -153,7 +153,7 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           {loadingRecords ? (
             <div className="flex items-center justify-center py-16 text-gray-400">
               <Loader2 size={20} className="animate-spin mr-2" /> Memuat data...
@@ -166,23 +166,22 @@ export default function AttendancePage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-primary-100"
-                    style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 w-8">#</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kelas</th>
-                    <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+                  <tr>
+                    <th className="w-8">#</th>
+                    <th>Nama Siswa</th>
+                    <th>Kelas</th>
+                    <th className="text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {records.map((r, i) => (
-                    <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                      <td className="px-5 py-3.5 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="px-5 py-3.5 font-medium text-primary-900">{r.student.user.name}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{r.student.class?.name ?? "—"}</td>
-                      <td className="px-5 py-3.5 text-center">
+                    <tr key={r.id}>
+                      <td className="text-gray-400 text-xs">{i + 1}</td>
+                      <td className="font-medium text-primary-900">{r.student.user.name}</td>
+                      <td className="text-gray-500 text-xs">{r.student.class?.name ?? "—"}</td>
+                      <td className="text-center">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[r.status] ?? "bg-gray-50 border border-gray-200 text-gray-500"}`}>
                           {r.status}
                         </span>

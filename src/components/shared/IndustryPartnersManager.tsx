@@ -120,31 +120,33 @@ export default function IndustryPartnersManager() {
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Building2 size={22} />}
         title="Mitra Industri (DU/DI)"
         description="Kelola daftar perusahaan mitra PKL & status MoU kerja sama"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-          <Building2 size={15} /> Tambah Mitra
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div className="kisi-kartu kisi-kartu-4 mb-5">
         <StatTile color="primary" icon={Building2} value={counts.total} label="Total Mitra" />
         <StatTile color="emerald" icon={CheckCircle2} value={counts.aktif} label="MoU Aktif" />
         <StatTile color="amber" icon={Clock} value={counts.akanExpire} label="Akan Kedaluwarsa" />
         <StatTile color="red" icon={XCircle} value={counts.expired} label="Kedaluwarsa" />
       </div>
 
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Cari nama perusahaan atau bidang usaha..."
-          className="input-field pl-10" />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026). */}
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama perusahaan atau bidang usaha..."
+            className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={openAdd} className="btn-modal-save">
+            <Building2 size={15} /> Tambah Mitra
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -159,14 +161,14 @@ export default function IndustryPartnersManager() {
             const status = getStatus(p.mouEndDate);
             const pklCount = companyCounts[p.name.trim().toLowerCase()] ?? 0;
             return (
-              <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div key={p.id} className="panel p-5">
                 <div className="flex items-start justify-between mb-2">
                   <div className="min-w-0">
                     <p className="font-heading font-bold text-primary-900 truncate">{p.name}</p>
                     {p.industryField && <p className="text-gray-400 text-xs">{p.industryField}</p>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"><Edit2 size={14} /></button>
+                    <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition"><Edit2 size={14} /></button>
                     <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={14} /></button>
                   </div>
                 </div>
@@ -179,7 +181,7 @@ export default function IndustryPartnersManager() {
                   )}
                   <p className="flex items-center gap-1.5"><Users size={12} className="text-gray-400" /> {pklCount} siswa PKL saat ini{p.quota != null && ` (kuota ${p.quota})`}</p>
                   {p.mouDocumentUrl && (
-                    <a href={p.mouDocumentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary-600 hover:text-primary-900 font-semibold">
+                    <a href={p.mouDocumentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary-700 hover:text-primary-900 font-semibold">
                       <FileText size={12} /> Lihat Dokumen MoU
                     </a>
                   )}

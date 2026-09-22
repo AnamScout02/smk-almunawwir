@@ -1,0 +1,33 @@
+# Reverse proxy + HTTPS otomatis (Let's Encrypt, via Caddy bawaan — tidak perlu certbot manual)
+# untuk domain resmi sekolah. DISIAPKAN 2026-08-24, BELUM DIAKTIFKAN — domain masih "proses
+# pengajuan" (.sch.id butuh verifikasi institusi dulu sebelum live/DNS mengarah ke server ini).
+#
+# CARA MENGAKTIFKAN (setelah domain dikonfirmasi aktif — cek dulu dgn `dig smkalmunawwiriibs.sch.id`
+# harus mengarah ke IP publik server ini, <IP-PUBLIK-SERVER>):
+#   1. docker compose up -d caddy
+#   2. Tunggu ~30-60 detik (Caddy otomatis minta sertifikat ke Let's Encrypt via HTTP-01 challenge
+#      di port 80 — makanya port 80/443 WAJIB bisa diakses dari internet, bukan cuma LAN).
+#   3. Cek jalan: curl -I https://smkalmunawwiriibs.sch.id (harus 200, bukan error sertifikat).
+#   4. Update NEXT_PUBLIC_APP_URL di .env jadi https://smkalmunawwiriibs.sch.id, lalu
+#      docker compose up -d --build app (supaya link internal, manifest PWA, dsb pakai domain baru).
+#
+# Kalau nanti gagal/perlu diulang, Caddy simpan sertifikat di volume `caddy_data` — hapus volume
+# itu (docker compose down caddy && docker volume rm smk-almunawwir_caddy_data) kalau perlu reset
+# total percobaan penerbitan sertifikat.
+
+smkalmunawwiriibs.sch.id {
+	reverse_proxy app:3000
+
+	encode gzip
+
+	header {
+		# HSTS — beri tahu browser SELALU pakai HTTPS ke domain ini stlh kunjungan pertama.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+	}
+
+	log {
+		output file /var/log/caddy/access.log
+	}
+}

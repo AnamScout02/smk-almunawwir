@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import Modal from "@/components/admin/Modal";
 
 type ConfirmFn = (message: string) => Promise<boolean>;
@@ -27,6 +28,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     <ConfirmContext.Provider value={confirmDialog}>
       {children}
       <Modal
+        lapisanAtas
         open={message !== null}
         onClose={() => decide(false)}
         title="Konfirmasi"
@@ -40,7 +42,16 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           </>
         }
       >
-        <p className="text-sm text-gray-600">{message}</p>
+        {/* Ikon bulat merah + teks tengah — diadaptasi dari pola `.hapus-icon-wrap` referensi
+            eksternal (billing-technofix): dialog konfirmasi destruktif jadi lebih jelas maksudnya
+            sekilas pandang, bukan cuma teks polos. Dipakai OTOMATIS oleh SEMUA pemanggil
+            `useConfirm()` di seluruh app (perubahan 1 file). */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-3.5">
+            <AlertTriangle size={26} className="text-red-600" />
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">{message}</p>
+        </div>
       </Modal>
     </ConfirmContext.Provider>
   );

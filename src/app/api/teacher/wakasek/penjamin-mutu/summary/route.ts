@@ -2,11 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
+import { bagianWib } from "@/lib/waktu-wib";
 
 function currentSemester(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const { tahun: year, bulan: month } = bagianWib(now); // WIB, bukan jam server (UTC)
   const isGanjil = month >= 7;
   const tahunAjaran = isGanjil ? `${year}/${year + 1}` : `${year - 1}/${year}`;
   return isGanjil ? `Ganjil ${tahunAjaran}` : `Genap ${tahunAjaran}`;

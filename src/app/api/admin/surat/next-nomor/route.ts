@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
-import { getSettings } from "@/lib/site-settings";
-import { formatNomorSurat, parseNomorUrut } from "@/lib/nomor-surat";
+import { nomorSuratBerikutnya } from "@/lib/nomor-surat-berikutnya";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,15 +13,9 @@ export async function GET(req: NextRequest) {
     const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
     if (!activeYear) return NextResponse.json({ error: "Tahun ajaran aktif belum diatur." }, { status: 400 });
 
-    const [existing, settings] = await Promise.all([
-      prisma.surat.findMany({ where: { tipe: "KELUAR", tanggal: { gte: activeYear.startDate } }, select: { nomor: true } }),
-      getSettings(["school.kode"]),
-    ]);
-    // Lanjutkan dari nomor urut tertinggi yang sudah ada (termasuk yang diimpor dari catatan manual)
-    // — bukan dari jumlah baris, karena jumlah baris di database tidak selalu sama dengan urutan asli.
-    const maxUrut = existing.reduce((max, s) => Math.max(max, parseNomorUrut(s.nomor)), 0);
-
-    const nomor = formatNomorSurat(maxUrut + 1, klasifikasi, settings["school.kode"], new Date());
+    // Urutannya dipakai bersama Surat Keterangan & Surat Tugas — kalau di sini hanya menghitung
+    // tabel Surat sendiri, nomor yang sudah terpakai oleh dua modul itu bisa terbit dua kali.
+    const nomor = await nomorSuratBerikutnya(klasifikasi);
     return NextResponse.json({ nomor });
   } catch {
     return NextResponse.json({ error: "Gagal membuat nomor otomatis." }, { status: 500 });

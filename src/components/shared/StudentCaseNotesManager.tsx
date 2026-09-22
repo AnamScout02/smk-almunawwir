@@ -81,7 +81,7 @@ function CatatTab({ toast }: { toast: ReturnType<typeof useToast> }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl space-y-5">
+    <div className="panel p-6 max-w-2xl space-y-5">
       <div>
         <label className="label-field">Siswa</label>
         {student ? (
@@ -119,7 +119,7 @@ function CatatTab({ toast }: { toast: ReturnType<typeof useToast> }) {
         <textarea value={note} onChange={e => setNote(e.target.value)} rows={5} className="input-field" placeholder="Kronologi kejadian, hasil konseling, tindak lanjut yang disepakati..." />
       </div>
 
-      <button onClick={handleSubmit} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+      <button onClick={handleSubmit} disabled={saving} className="btn-modal-save">
         {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Catatan
       </button>
     </div>
@@ -171,14 +171,14 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
       ) : (
         <div className="space-y-3">
           {notes.map(n => (
-            <div key={n.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={n.id} className="panel p-5">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <p className="font-semibold text-primary-900">{n.student.user.name}</p>
                   <p className="text-xs text-gray-400 mb-2">{n.student.nis} · {n.student.class?.name ?? "—"}</p>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">{n.handlingType}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${n.status === "SELESAI" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">{n.handlingType}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${n.status === "SELESAI" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
                       {n.status === "SELESAI" ? <CheckCircle2 size={10} /> : <Clock size={10} />} {n.status === "SELESAI" ? "Selesai" : "Berjalan"}
                     </span>
                   </div>
@@ -188,7 +188,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => toggleStatus(n)} className="text-xs font-semibold text-primary-600 hover:bg-primary-50 rounded-lg px-2.5 py-1.5 transition whitespace-nowrap">
+                  <button onClick={() => toggleStatus(n)} className="text-xs font-semibold text-primary-700 hover:bg-primary-50 rounded-lg px-2.5 py-1.5 transition whitespace-nowrap">
                     Tandai {n.status === "BERJALAN" ? "Selesai" : "Berjalan"}
                   </button>
                   <button onClick={() => handleDelete(n.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>

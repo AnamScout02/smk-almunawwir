@@ -50,15 +50,15 @@ export default function AdminJabatanPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Award size={22} />}
         title="Jabatan"
         description="Katalog jabatan/tugas struktural guru — bisa ditambah bebas, satu guru bisa punya beberapa jabatan"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+      <div className="alat-aksi justify-end mb-5">
+        <button onClick={openAdd} className="btn-modal-save">
           <Plus size={15} /> Tambah Jabatan
         </button>
       </div>
@@ -70,14 +70,14 @@ export default function AdminJabatanPage() {
       ) : items.length === 0 ? (
         <EmptyState icon={Award} title="Belum Ada Jabatan" description="Tambahkan jabatan seperti Kepala Sekolah, Wakil Kepala, Guru BK, dsb." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="divide-y divide-gray-50">
             {items.map(item => (
               <div key={item.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-primary-50/30 transition-colors">
                 <Award size={16} className="text-gold shrink-0" />
                 <p className="font-semibold text-primary-900 flex-1">{item.name}</p>
                 <span className="text-xs text-gray-400">{item._count.teachers} guru</span>
-                <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                   <Edit2 size={14} />
                 </button>
                 <button onClick={() => handleDelete(item)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">

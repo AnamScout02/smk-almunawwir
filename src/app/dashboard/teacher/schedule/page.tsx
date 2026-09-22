@@ -39,18 +39,18 @@ export default async function TeacherSchedulePage() {
     return (
       <div>
         <h2 className="font-heading text-sm font-bold text-primary-900 mb-3 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-primary-700 text-white flex items-center justify-center text-[11px]">{weekType === "A" ? "1" : "2"}</span>
+          <span className="w-6 h-6 rounded-full bg-primary-700 text-white flex items-center justify-center text-xs">{weekType === "A" ? "1" : "2"}</span>
           {label}
         </h2>
         {schedules.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-xs text-gray-400">
+          <div className="panel p-6 text-center text-xs text-gray-400">
             Belum ada jadwal di minggu ini.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {DAYS.filter(d => byDay[d].length > 0).map(day => (
-              <div key={day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-2.5 bg-primary-900 text-white text-sm font-bold">{DAY_LABEL[day]}</div>
+              <div key={day} className="panel overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-gray-100 bg-[#f5f6fa] text-primary-900 text-sm font-bold">{DAY_LABEL[day]}</div>
                 <div className="divide-y divide-gray-50">
                   {groupConsecutiveSchedules(byDay[day], s => `${s.classId}|${s.subject}`).map(({ items, first, last }) => (
                     <div key={items[0].id} className="px-4 py-2.5 text-xs">
@@ -71,7 +71,7 @@ export default async function TeacherSchedulePage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<Calendar size={22} />}
         title="Jadwal Mengajar Saya"

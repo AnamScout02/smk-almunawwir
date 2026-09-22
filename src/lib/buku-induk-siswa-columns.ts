@@ -86,7 +86,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "programKeahlian", label: "Program Keahlian", group: "D. Pendidikan Sebelumnya", get: s => b(s, "programKeahlian") },
   { key: "kompetensiKeahlian", label: "Konsentrasi Keahlian", group: "D. Pendidikan Sebelumnya", get: s => b(s, "kompetensiKeahlian") },
   { key: "diterimaDate", label: "Tanggal Diterima", group: "D. Pendidikan Sebelumnya", get: s => tgl(b(s, "diterimaDate")) },
-  { key: "enrollYear", label: "Tahun Masuk SMK", group: "D. Pendidikan Sebelumnya", get: s => s.enrollYear ? String(s.enrollYear) : "" },
+  { key: "enrollYear", label: "Tahun Angkatan", group: "D. Pendidikan Sebelumnya", get: s => s.enrollYear ? String(s.enrollYear) : "" },
 
   // E. Keterangan Ayah
   { key: "fatherName", label: "Nama Ayah Kandung", group: "E. Keterangan Ayah", get: s => b(s, "fatherName") },

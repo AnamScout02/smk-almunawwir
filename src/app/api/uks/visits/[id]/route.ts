@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const { visitDate, complaint, treatment, notes } = body;
+    const { visitDate, complaint, treatment, notes, rujukan } = body;
 
     const visit = await prisma.uksVisit.update({
       where: { id },
@@ -19,6 +19,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         complaint: complaint || undefined,
         treatment: treatment ?? undefined,
         notes: notes ?? undefined,
+        rujukan: typeof rujukan === "string" ? rujukan.trim().slice(0, 200) || null : undefined,
       },
       include: { student: { select: { nis: true, user: { select: { name: true } }, class: { select: { name: true } } } } },
     });

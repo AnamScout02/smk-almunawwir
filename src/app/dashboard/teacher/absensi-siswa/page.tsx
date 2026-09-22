@@ -7,5 +7,5 @@ import AbsensiSiswaManager from "@/components/shared/AbsensiSiswaManager";
  * berstatus wali kelas (hasHomeroom), terpisah dari /dashboard/teacher/kesiswaan/absensi-siswa
  * yang aksesnya lintas kelas khusus Kesiswaan/BK. */
 export default function TeacherAbsensiSiswaPage() {
-  return <AbsensiSiswaManager classesEndpoint="/api/teacher/classes?scope=homeroom" />;
+  return <AbsensiSiswaManager classesEndpoint="/api/teacher/classes?scope=homeroom" kalenderHref="/dashboard/teacher/absensi-siswa/cetak-kalender" />;
 }

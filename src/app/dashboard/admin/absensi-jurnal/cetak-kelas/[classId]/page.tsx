@@ -7,6 +7,10 @@ import Select from "@/components/admin/Select";
 import PrintKop from "@/components/shared/PrintKop";
 import MonthPicker from "@/components/shared/MonthPicker";
 import { CoverTemplate, COVER_TEMPLATE_KEY, resolveCoverText, DEFAULT_WIDTH_PCT } from "@/lib/cover-template";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
+
+const TAB_LABEL: Record<Tab, string> = { cover: "Cover", absensi: "Absensi", jurnal: "Jurnal", rekap: "Rekap" };
 
 const MM_PX = 3.7795275591;
 
@@ -74,6 +78,8 @@ export default function CetakAbsensiJurnalPage() {
   const [totalBarisSiswa, setTotalBarisSiswa] = useState(35);
   const [totalBarisGuru, setTotalBarisGuru] = useState(10);
 
+  usePrintTitle(cls ? buildPrintFilename("ABSENSI_JURNAL", cls.name, TAB_LABEL[tab], monthValue) : null);
+
   useEffect(() => {
     fetch(`/api/admin/classes/${classId}/roster`)
       .then(r => { if (!r.ok) return null; return r.json(); })
@@ -90,7 +96,7 @@ export default function CetakAbsensiJurnalPage() {
   if (!cls) return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex flex-col items-center justify-center gap-3 min-h-[60vh] text-gray-400">
       <p>Data kelas tidak ditemukan</p>
-      <button onClick={() => router.back()} className="text-primary-600 hover:underline text-sm">Kembali</button>
+      <button onClick={() => router.back()} className="text-primary-700 hover:underline text-sm">Kembali</button>
     </div>
   );
 
@@ -135,7 +141,7 @@ export default function CetakAbsensiJurnalPage() {
           </div>
           {tab === "cover" && (
             <Link href="/dashboard/admin/absensi-jurnal/cover-editor"
-              className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-900 font-semibold">
+              className="flex items-center gap-1.5 text-xs text-primary-700 hover:text-primary-900 font-semibold">
               <Pencil size={13} /> Edit Desain Cover
             </Link>
           )}

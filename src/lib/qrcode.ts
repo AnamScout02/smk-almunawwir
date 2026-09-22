@@ -9,9 +9,16 @@ export async function generateQrDataUrl(url: string): Promise<string> {
 }
 
 let logoBase64Cache: string | null = null;
+/** Logo yang ditempel di tengah QR WAJIB versi kecil (logo-emblem-qr.png, 72x72 ~4 KB), BUKAN
+ * logo-emblem.png yang 512x512 ~157 KB. Logo ini di-base64 ke DALAM setiap SVG QR, jadi ukurannya
+ * terkali jumlah QR yang dibuat: dengan logo besar, endpoint Kartu Tanda satu kelas penuh
+ * mengirim 93 MB untuk 317 siswa (terukur 2026-09-12) — dengan logo kecil jadi ~3 MB. Saat
+ * dicetak logo ini cuma beberapa milimeter, 72px sudah lebih dari cukup.
+ * Kalau logo sekolah diganti, ganti JUGA berkas -qr.png-nya (kecilkan dulu), jangan arahkan
+ * balik ke logo besar. */
 function getLogoBase64(): string {
   if (logoBase64Cache) return logoBase64Cache;
-  const buf = fs.readFileSync(path.join(process.cwd(), "public/images/logo-emblem.png"));
+  const buf = fs.readFileSync(path.join(process.cwd(), "public/images/logo-emblem-qr.png"));
   logoBase64Cache = `data:image/png;base64,${buf.toString("base64")}`;
   return logoBase64Cache;
 }

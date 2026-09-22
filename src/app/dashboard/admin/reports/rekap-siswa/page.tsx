@@ -9,6 +9,14 @@ import { ArrowLeft, BarChart3 } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
 import Image from "next/image";
 import PageHeader from "@/components/admin/PageHeader";
+import PrintKop from "@/components/shared/PrintKop";
+import { buildPrintFilename } from "@/lib/print-filename";
+import { bagianWib } from "@/lib/waktu-wib";
+
+export async function generateMetadata() {
+  const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
+  return { title: { absolute: buildPrintFilename("Rekap_Siswa", activeYear?.name, currentSemesterLabel()) } };
+}
 
 const GRADES = [10, 11, 12] as const;
 const GRADE_LABEL: Record<number, string> = { 10: "X", 11: "XI", 12: "XII" };
@@ -16,7 +24,7 @@ const GRADE_LABEL: Record<number, string> = { 10: "X", 11: "XI", 12: "XII" };
 const MAJOR_ORDER = ["TKJ", "AK", "DKV", "ATU", "DPIB"];
 
 function currentSemesterLabel(): string {
-  const month = new Date().getMonth() + 1; // 1-12
+  const month = bagianWib().bulan; // 1-12, WIB
   return month >= 7 || month <= 1 ? "Ganjil" : "Genap";
   // Catatan: Juli-Desember = Ganjil, Januari-Juni = Genap (kalender akademik Indonesia)
 }
@@ -33,11 +41,31 @@ function hexToRgb(hex: string): string {
   return m.slice(0, 3).map(x => parseInt(x, 16)).join(", ");
 }
 
-/** Teks putih atau navy tergantung kegelapan warna latar, supaya selalu kontras & terbaca. */
-function textColorFor(hex: string): string {
-  const [r, g, b] = hexToRgb(hex).split(", ").map(Number);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? "#0F1A45" : "#FFFFFF";
+/** Label jurusan: lambang di KIRI, kode & nama di KANAN — mendatar, bukan bertumpuk.
+ * Versi bertumpuk (lambang di atas, kode di tengah, nama di bawah) membuat tiap baris tabel
+ * setinggi ±3 baris teks dan memboroskan tinggi halaman (temuan user 13 September 2026). */
+function MajorLabel({ major, color, size = 26 }: {
+  major: { code: string; name: string; logoUrl?: string | null }; color: string; size?: number;
+}) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <CrestBadge url={major.logoUrl} code={major.code} color={color} size={size} />
+      <div className="min-w-0 text-left">
+        <div className="text-[11px] font-bold text-primary-900 leading-tight">{major.name}</div>
+        <div className="text-[10px] text-gray-400 leading-tight">{major.code}</div>
+      </div>
+      <style>{`
+        @media print {
+          /* MENDATAR: satu tabel gabungan berisi 12 kolom angka tidak muat di A4 potret.
+             Margin ditaruh sebagai padding wadah, bukan di @page — dropdown "Margins" di dialog
+             cetak Chrome mengalahkan @page, jadi kalau petugas memilih "None" isinya menempel ke
+             tepi kertas (temuan user 13 September 2026 pada Buku Mutasi). */
+          @page { size: A4 landscape; margin: 0; }
+          .lembar-rekap { padding: 1cm; }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 /** Lambang jurusan selalu di atas latar solid warna jurusan — sebagian lambang memakai
@@ -49,7 +77,7 @@ function CrestBadge({ url, code, color, size }: { url?: string | null; code: str
       style={{ backgroundColor: color, width: size, height: size }}
     >
       {url ? (
-        <Image src={url} alt={code} width={size - 10} height={size - 10} className="object-contain" unoptimized />
+        <Image src={url} alt={code} width={size - 10} height={size - 10} className="object-contain" />
       ) : (
         <span className="text-white font-bold" style={{ fontSize: size * 0.32 }}>{code.slice(0, 2)}</span>
       )}
@@ -68,7 +96,7 @@ export default async function RekapSiswaPage() {
       },
     }),
     prisma.academicYear.findFirst({ where: { isActive: true } }),
-    getSettings(["school.name"]),
+    getSettings(["school.name", "logo.full_white"]),
   ]);
 
   const majors = Array.from(new Map(classes.map(c => [c.major.id, c.major])).values())
@@ -103,8 +131,16 @@ export default async function RekapSiswaPage() {
       const p = gc.reduce((s, c) => s + c.students.filter(st => st.gender === "P").length, 0);
       return { l, p, jml: l + p };
     });
+    // Banyaknya ROMBEL (bukan jumlah siswa) per tingkat — inilah angka yang dijanjikan judul
+    // kolom "Banyaknya Rombel" pada rekap resmi. Tabel lama menaruh jumlah SISWA di bawah judul
+    // itu, jadi angkanya kembar persis dengan kolom "Jml" di sebelahnya (temuan 13 September 2026).
+    const rombelPerGrade = GRADES.map(g => majorClasses.filter(c => c.grade === g).length);
+    const rombelTotal = rombelPerGrade.reduce((a, b) => a + b, 0);
     const color = major.themeColor || "#1B2B6B";
-    return { major, rows, totalL, totalP, total: totalL + totalP, perGradeTotal, color, textColor: textColorFor(color) };
+    return {
+      major, rows, totalL, totalP, total: totalL + totalP, perGradeTotal,
+      rombelPerGrade, rombelTotal, color,
+    };
   });
 
   const gradeTotals = GRADES.map(g => {
@@ -127,145 +163,104 @@ export default async function RekapSiswaPage() {
       />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
-        <Link href="/dashboard/admin/reports" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/reports" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <PrintButton />
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none">
-        {/* Kop */}
-        <div className="text-center mb-6 pb-5 border-b-2 border-primary-900/10">
-          <h2 className="font-heading font-bold text-lg text-primary-900 uppercase tracking-wide">Rekapitulasi Jumlah Siswa</h2>
-          <h3 className="font-heading font-bold text-lg text-primary-900 uppercase">{settings["school.name"] || "SMK Al Munawwir IIBS"}</h3>
-          <p className="font-heading font-semibold text-primary-700 text-sm mt-1">Tahun Pelajaran {activeYear?.name ?? "-"} · Semester {currentSemesterLabel()}</p>
-        </div>
+      <div className="print-doc lembar-rekap bg-white rounded-2xl border border-gray-100 shadow-sm p-6 print:border-0 print:shadow-none print:rounded-none overflow-hidden">
+        {/* Kop resmi — sama persis dengan halaman cetak lain (Buku Tamu, Ekspedisi, Jadwal).
+            Sebelumnya cuma tiga baris teks tanpa lambang sekolah, jadi hasil cetaknya tidak
+            kelihatan sebagai dokumen resmi (temuan user 13 September 2026). */}
+        <PrintKop
+          title="Rekapitulasi Jumlah Siswa"
+          subtitle={`${settings["school.name"] || "SMK Al Munawwir IIBS"} — Tahun Pelajaran ${activeYear?.name ?? "-"} · Semester ${currentSemesterLabel()}`}
+          logoUrl={settings["logo.full_white"]}
+          edgeClassName="-mx-6 print:-mx-6"
+        />
 
-        {/* Ringkasan visual: grafik batang jumlah siswa per jurusan, tersegmentasi per tingkat */}
-        <div className="mb-8">
-          <h4 className="font-heading font-bold text-primary-900 mb-3">Jumlah Siswa per Konsentrasi Keahlian</h4>
-          <div className="flex flex-col gap-4 bg-gray-50/60 rounded-xl border border-gray-100 p-4">
-            {(() => {
-              const maxTotal = Math.max(1, ...majorRows.map(m => m.total));
-              const tintAlpha: Record<number, number> = { 10: 0.35, 11: 0.65, 12: 1 };
-              return majorRows.map(({ major, total, totalL, totalP, perGradeTotal, color }) => (
-                <div key={major.id} className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex items-center gap-1.5 sm:gap-2 w-24 sm:w-56 shrink-0">
-                    <CrestBadge url={major.logoUrl} code={major.code} color={color} size={30} />
-                    <div className="min-w-0 text-xs font-bold text-primary-900 truncate">{major.name}</div>
-                  </div>
-                  <div className="flex-1 min-w-0 h-7 flex items-center">
-                    <div
-                      className="h-full flex items-center gap-[2px] rounded-md overflow-hidden"
-                      style={{ width: `${Math.max((total / maxTotal) * 100, total > 0 ? 4 : 0)}%` }}
-                    >
-                      {GRADES.map((g, i) => perGradeTotal[i].jml > 0 && (
-                        <div
-                          key={g}
-                          className="h-full flex items-center justify-center gap-1 px-1"
-                          style={{
-                            width: `${(perGradeTotal[i].jml / (total || 1)) * 100}%`,
-                            backgroundColor: `rgba(${hexToRgb(color)}, ${tintAlpha[g]})`,
-                          }}
-                          title={`Kelas ${GRADE_LABEL[g]}: ${perGradeTotal[i].jml} siswa (L ${perGradeTotal[i].l} · P ${perGradeTotal[i].p})`}
-                        >
-                          {(perGradeTotal[i].jml / total) > 0.09 && (
-                            <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: textColorFor(color) }}>
-                              {GRADE_LABEL[g]}&nbsp;{perGradeTotal[i].jml}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="w-14 sm:w-28 text-right shrink-0">
-                    <div className="font-heading font-bold text-primary-900 text-lg leading-none">{total}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">Total &middot; L {totalL} &middot; P {totalP}</div>
-                  </div>
-                </div>
-              ));
-            })()}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-2">Panjang batang = jumlah siswa jurusan tsb; tiap batang dibagi per segmen tingkat (label pada segmen = tingkat &amp; jumlahnya, warna makin pekat = tingkat makin tinggi). Rincian L/P per tingkat ada di tabel di bawah.</p>
-        </div>
+        {/* SATU tabel saja.
+            Dulu terpisah dua (Ringkasan per jurusan + Detail per rombel), lalu digabung atas
+            permintaan user 13 September 2026 ("kita gabung saja... maka kita buat landscape") —
+            digabung berarti 12 kolom angka, yang memang tidak muat di A4 potret, jadi halaman ini
+            dicetak MENDATAR.
 
-        {/* Tabel 1: Rombel & Jenis Kelamin per Rombel */}
-        <h4 className="font-heading font-bold text-primary-900 mb-3">Detail per Rombongan Belajar</h4>
-        <div className="overflow-x-auto mb-8 rounded-xl border border-primary-900/15 shadow-sm">
+            Banyaknya rombel TIDAK dijadikan kolom tersendiri: satuannya beda dengan kolom-kolom
+            di sebelahnya (rombel vs siswa) dan justru itu yang dulu bikin salah baca. Angkanya
+            ditaruh di baris subtotal tiap jurusan, menyatu dengan tulisannya. */}
+        <h4 className="font-heading font-bold text-primary-900 mb-3">Jumlah Peserta Didik per Rombongan Belajar</h4>
+        <div className="overflow-x-auto mb-6 rounded-xl border border-primary-900/15 shadow-sm print:shadow-none">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th rowSpan={3} className="sticky left-0 z-20 border border-primary-900 bg-primary-900 text-white px-3 py-2.5 min-w-48">Konsentrasi Keahlian</th>
-                <th rowSpan={3} className="sticky left-48 z-20 border border-primary-900 bg-primary-900 text-white px-2 py-2.5 min-w-20 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">Rombel</th>
-                <th colSpan={4} className="border border-primary-900 bg-primary-700 text-white px-3 py-2 uppercase tracking-wide text-xs font-bold">Jumlah Rombel Kelas</th>
-                <th colSpan={9} className="border border-primary-900 bg-primary-700 text-white px-3 py-2 uppercase tracking-wide text-xs font-bold">Jumlah Peserta Didik Menurut Jenis Kelamin</th>
-              </tr>
-              <tr>
-                <th className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">X</th>
-                <th className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">XI</th>
-                <th className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">XII</th>
-                <th rowSpan={2} className="border border-primary-900 bg-gold text-primary-900 px-2 py-1.5 font-bold">Jml</th>
-                <th colSpan={3} className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">X</th>
-                <th colSpan={3} className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">XI</th>
-                <th colSpan={3} className="border border-primary-900 bg-primary-500 text-white px-2 py-1.5 font-bold">XII</th>
+                <th rowSpan={2} className="sticky left-0 z-20 border border-primary-900 bg-primary-900 text-white px-3 py-2.5 min-w-52 text-left">Konsentrasi Keahlian</th>
+                <th rowSpan={2} className="sticky left-52 z-20 border border-primary-900 bg-primary-900 text-white px-2 py-2.5 min-w-20 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">Rombel ke-</th>
+                {GRADES.map(g => (
+                  <th key={g} colSpan={3} className="border border-primary-900 bg-primary-700 text-white px-3 py-2 uppercase tracking-wide text-xs font-bold">Kelas {GRADE_LABEL[g]}</th>
+                ))}
+                <th rowSpan={2} className="border border-primary-900 bg-gold text-primary-900 px-2 py-2.5 font-bold">Jumlah<br />Siswa</th>
               </tr>
               <tr>
                 {GRADES.map(g => (
                   <Fragment key={g}>
-                    <th className="border border-primary-900 bg-primary-50 px-2 py-1.5 font-semibold text-primary-700">L</th>
-                    <th className="border border-primary-900 bg-primary-50 px-2 py-1.5 font-semibold text-primary-700">P</th>
-                    <th className="border border-primary-900 bg-gold/25 px-2 py-1.5 font-bold text-primary-900">Jml</th>
+                    <th className="border border-primary-900 bg-primary-50 px-2 py-1.5 font-semibold text-primary-700 w-12">L</th>
+                    <th className="border border-primary-900 bg-primary-50 px-2 py-1.5 font-semibold text-primary-700 w-12">P</th>
+                    <th className="border border-primary-900 bg-gold/25 px-2 py-1.5 font-bold text-primary-900 w-14">Jml</th>
                   </Fragment>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {majorRows.map(({ major, rows, color, textColor }, mi) => (
-                rows.map((row, idx) => (
-                  <tr key={`${major.id}-${row.rombel}`}
-                    className="hover:brightness-95 transition-[filter]"
-                    style={{ backgroundColor: `rgba(${hexToRgb(color)}, ${mi % 2 === 0 ? 0.05 : 0.1})` }}>
-                    {idx === 0 && (
-                      <td rowSpan={rows.length}
-                        className="sticky left-0 z-10 border-r-4 border-y border-l border-gray-200 px-3 py-3 align-middle bg-white"
-                        style={{ borderRightColor: color }}>
-                        <div className="flex flex-col items-center gap-1.5 text-center">
-                          <CrestBadge url={major.logoUrl} code={major.code} color={color} size={44} />
-                          <span className="text-[11px] font-bold uppercase tracking-wide leading-tight px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: color, color: textColor }}>
-                            {major.code}
-                          </span>
-                          <span className="text-[11px] font-semibold text-gray-600 leading-tight">{major.name}</span>
-                        </div>
+              {majorRows.map(({ major, rows, color, perGradeTotal, rombelPerGrade, rombelTotal, total }, mi) => (
+                <Fragment key={major.id}>
+                  {rows.map((row, idx) => (
+                    <tr key={`${major.id}-${row.rombel}`}
+                      style={{ backgroundColor: `rgba(${hexToRgb(color)}, ${mi % 2 === 0 ? 0.05 : 0.1})` }}>
+                      {idx === 0 && (
+                        <td rowSpan={rows.length}
+                          className="sticky left-0 z-10 border-r-4 border-y border-l border-gray-200 px-3 py-2 align-middle bg-white"
+                          style={{ borderRightColor: color }}>
+                          <MajorLabel major={major} color={color} size={30} />
+                        </td>
+                      )}
+                      <td className="sticky left-52 z-10 border border-gray-200 px-2 py-1.5 text-center text-gray-500 font-semibold bg-white shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                        {rows.length > 1 ? `R${row.rombel}` : "—"}
                       </td>
-                    )}
-                    <td className="sticky left-48 z-10 border border-gray-200 px-2 py-1.5 text-center text-gray-500 font-semibold bg-white shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
-                      {rows.length > 1 ? `R${row.rombel}` : "—"}
+                      {row.perGrade.map((c, gi) => (
+                        <Fragment key={gi}>
+                          <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-600">{c?.l ?? <span className="text-gray-300">–</span>}</td>
+                          <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-600">{c?.p ?? <span className="text-gray-300">–</span>}</td>
+                          <td className="border border-gray-200 px-2 py-1.5 text-center font-semibold text-primary-900 bg-primary-50/60">{c ? c.l + c.p : <span className="text-gray-300">–</span>}</td>
+                        </Fragment>
+                      ))}
+                      <td className="border border-gray-200 px-2 py-1.5 text-center font-bold text-primary-900 bg-gold/10">{row.jml || ""}</td>
+                    </tr>
+                  ))}
+                  {/* Subtotal jurusan — sekaligus tempat banyaknya rombel disebutkan. */}
+                  <tr className="bg-primary-700/10 font-semibold">
+                    <td colSpan={2} className="sticky left-0 z-10 border border-primary-900/20 bg-primary-100/70 px-3 py-1.5 text-left text-primary-900 text-xs">
+                      Jumlah {major.code}
+                      <span className="font-normal text-primary-700"> — {rombelTotal} rombel (X {rombelPerGrade[0]} · XI {rombelPerGrade[1]} · XII {rombelPerGrade[2]})</span>
                     </td>
-                    {row.perGrade.map((c, gi) => (
-                      <td key={gi} className="border border-gray-200 px-2 py-2 text-center font-semibold text-primary-900">
-                        {c?.total ?? <span className="text-gray-300">–</span>}
-                      </td>
-                    ))}
-                    <td className="border border-gray-200 px-2 py-2 text-center font-bold text-primary-900 bg-gold/10">{row.jml || ""}</td>
-                    {row.perGrade.map((c, gi) => (
+                    {perGradeTotal.map((g, gi) => (
                       <Fragment key={gi}>
-                        <td className="border border-gray-200 px-2 py-2 text-center text-gray-600">{c?.l ?? ""}</td>
-                        <td className="border border-gray-200 px-2 py-2 text-center text-gray-600">{c?.p ?? ""}</td>
-                        <td className="border border-gray-200 px-2 py-2 text-center font-semibold text-primary-900 bg-primary-50/60">{c ? c.l + c.p : ""}</td>
+                        <td className="border border-primary-900/20 px-2 py-1.5 text-center text-primary-900">{g.l}</td>
+                        <td className="border border-primary-900/20 px-2 py-1.5 text-center text-primary-900">{g.p}</td>
+                        <td className="border border-primary-900/20 px-2 py-1.5 text-center font-bold text-primary-900">{g.jml}</td>
                       </Fragment>
                     ))}
+                    <td className="border border-primary-900/20 px-2 py-1.5 text-center font-bold text-primary-900 bg-gold/25">{total}</td>
                   </tr>
-                ))
+                </Fragment>
               ))}
             </tbody>
             <tfoot>
               <tr className="bg-primary-900 text-white font-bold">
-                <td colSpan={2} className="sticky left-0 z-10 border border-primary-900 bg-primary-900 px-3 py-2.5 uppercase tracking-wide text-xs">Jumlah Keseluruhan</td>
-                {gradeTotals.map(g => (
-                  <td key={g.grade} className="border border-primary-900 px-2 py-2.5 text-center">{g.jml}</td>
-                ))}
-                <td className="border border-primary-900 px-2 py-2.5 text-center bg-gold text-primary-900">{grandTotal}</td>
+                <td colSpan={2} className="sticky left-0 z-10 border border-primary-900 bg-primary-900 px-3 py-2.5 uppercase tracking-wide text-xs text-left">
+                  Jumlah Keseluruhan
+                  <span className="font-normal normal-case tracking-normal text-white/70"> — {majorRows.reduce((n, m) => n + m.rombelTotal, 0)} rombel</span>
+                </td>
                 {gradeTotals.map(g => (
                   <Fragment key={g.grade}>
                     <td className="border border-primary-900 px-2 py-2.5 text-center">{g.l}</td>
@@ -273,6 +268,7 @@ export default async function RekapSiswaPage() {
                     <td className="border border-primary-900 px-2 py-2.5 text-center bg-primary-700">{g.jml}</td>
                   </Fragment>
                 ))}
+                <td className="border border-primary-900 px-2 py-2.5 text-center bg-gold text-primary-900">{grandTotal}</td>
               </tr>
             </tfoot>
           </table>

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { cabutSemuaSesiPengguna } from "@/lib/sesi-server";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { normalizeBukuIndukText } from "@/lib/text";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await verifyTasAccess();
+  const session = await verifyBukuIndukFullAccess();
   const { id } = await params;
   const body = await req.json();
   const {
@@ -22,6 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       const teacherRef = await prisma.teacher.findUnique({ where: { id }, select: { userId: true, user: { select: { name: true, email: true } } } });
       if (teacherRef) {
         await prisma.user.update({ where: { id: teacherRef.userId }, data: { password: hashed } });
+        await cabutSemuaSesiPengguna(teacherRef.userId, "GANTI_PASSWORD");
         await logActivity(session, {
           action: "RESET_PASSWORD", entity: "Teacher", entityId: id,
           description: `${session.name} mereset password guru/pegawai "${teacherRef.user.name}" (${teacherRef.user.email})`,

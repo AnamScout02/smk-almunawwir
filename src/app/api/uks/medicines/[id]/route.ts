@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const { name, stock, unit, notes } = body;
+    const { name, stock, unit, notes, kedaluwarsa, stokMinimum } = body;
 
     const medicine = await prisma.uksMedicine.update({
       where: { id },
@@ -19,6 +19,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         stock: stock !== undefined ? Number(stock) : undefined,
         unit: unit || undefined,
         notes: notes ?? undefined,
+        kedaluwarsa: kedaluwarsa === undefined ? undefined : kedaluwarsa ? new Date(kedaluwarsa) : null,
+        stokMinimum: stokMinimum === undefined ? undefined : Math.max(0, Math.round(Number(stokMinimum)) || 0),
       },
     });
     return NextResponse.json(medicine);

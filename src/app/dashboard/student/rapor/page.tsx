@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
-import { ArrowLeft, FileText, Lock, CheckCircle2, Stethoscope, CalendarX, XCircle } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
@@ -11,9 +11,17 @@ import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import { getOrCreateVerificationToken } from "@/lib/verification";
 import { generateQrDataUrl } from "@/lib/qrcode";
-import { getJournalGradeAggregates } from "@/lib/journal-grades";
+import { susunRaporSiswa } from "@/lib/rapor-data";
+import RaporSemester from "@/components/shared/RaporSemester";
+import { buildPrintFilename } from "@/lib/print-filename";
+import { semesterRaporSekolah } from "@/components/rapor/RaporSekolahSiswa";
+import { TautanIkon } from "@/components/shared/IkonNama";
 
-export const metadata = { title: "Rapor Nilai — Portal Siswa" };
+export async function generateMetadata() {
+  const session = await verifyRole(["STUDENT"]);
+  const student = await prisma.student.findFirst({ where: { user: { email: session.email } }, select: { nis: true } });
+  return { title: { absolute: buildPrintFilename("RAPOR", session.name, student?.nis) } };
+}
 
 export default async function RaporPage() {
   const session = await verifyRole(["STUDENT"]);
@@ -38,21 +46,11 @@ export default async function RaporPage() {
 
   // Nilai dihitung dari rata-rata skor Pengetahuan/Keterampilan yang guru mapel isi di Jurnal
   // Mengajar tiap pertemuan — lihat komentar di src/lib/journal-grades.ts.
-  const aggregates = student ? await getJournalGradeAggregates({ studentIds: [student.id] }) : [];
-  const semesters = [...new Set(aggregates.map(g => g.semester))].sort();
+  // Nilai, KKM per mapel, predikat, deskripsi capaian & kehadiran per semester — satu sumber: src/lib/rapor-data.ts.
+  const raporSemester = student ? await susunRaporSiswa({ id: student.id, classId: student.classId, majorId: student.majorId, grade: student.class?.grade ?? null }) : [];
 
-  const approvals = student?.classId
-    ? await prisma.raporApproval.findMany({ where: { classId: student.classId, semester: { in: semesters } }, select: { semester: true } })
-    : [];
-  const approvedSemesters = new Set(approvals.map(a => a.semester));
-
-  const gradesBySemester = semesters.map(sem => {
-    const bySubject = aggregates.filter(g => g.semester === sem)
-      .sort((a, b) => a.subject.localeCompare(b.subject))
-      .map(g => ({ subject: g.subject, pengetahuan: g.avgPengetahuan, keterampilan: g.avgKeterampilan, avg: g.avg }));
-    const semAvg = bySubject.filter(s => s.avg !== null).reduce((a, s) => a + (s.avg ?? 0), 0) / bySubject.filter(s => s.avg !== null).length;
-    return { sem, bySubject, semAvg: isNaN(semAvg) ? null : semAvg };
-  });
+  // Rapor format sekolah (Form Nilai Rapor + isian wali kelas) — hanya semester yang sudah disahkan.
+  const semSekolah = await semesterRaporSekolah(student?.classId ?? null);
 
   // Rekap absensi
   const attSummary = ["HADIR", "IZIN", "SAKIT", "ALPHA"].map(s => ({
@@ -64,17 +62,9 @@ export default async function RaporPage() {
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
-  function scoreCell(val: number | null) {
-    if (val === null) return <td className="border border-gray-200 px-3 py-2 text-center text-gray-300 text-xs">—</td>;
-    return (
-      <td className={`border border-gray-200 px-3 py-2 text-center font-semibold text-sm ${val >= 75 ? "text-emerald-700" : "text-red-600"}`}>
-        {val}
-      </td>
-    );
-  }
 
   return (
-    <div className="p-6 lg:p-8 print:p-0">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <PageHeader
         icon={<FileText size={22} />}
         title="Rapor Nilai"
@@ -83,11 +73,23 @@ export default async function RaporPage() {
       />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
-        <Link href="/dashboard/student" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/student" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <PrintButton />
       </div>
+
+      {semSekolah.length > 0 && (
+        <div className="panel p-4 mb-5 print:hidden">
+          <p className="text-sm font-semibold text-primary-900">Rapor sekolah (sudah disahkan)</p>
+          <p className="text-xs text-gray-500 mb-3">Rapor Akhir, Tengah Semester, dan Diniyah dalam format buku rapor sekolah — bisa dicetak.</p>
+          <div className="flex flex-wrap gap-2">
+            {semSekolah.map(s => (
+              <TautanIkon key={s} href={`/dashboard/student/rapor/sekolah?semester=${encodeURIComponent(s)}`} ikon="cetak" className="btn-modal-cancel">{s}</TautanIkon>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Konten rapor — ikut print */}
       <div className="print-doc bg-white max-w-4xl mx-auto px-6 py-8 print:p-6 print:max-w-none">
@@ -106,71 +108,17 @@ export default async function RaporPage() {
         </div>
 
         {/* Nilai per semester */}
-        {gradesBySemester.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-8 print:hidden">Belum ada data nilai.</p>
-        ) : (
-          gradesBySemester.map(({ sem, bySubject, semAvg }) => (
-            <div key={sem} className="mb-8">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-heading font-bold text-primary-900">Semester: {sem}</h4>
-                {approvedSemesters.has(sem) && semAvg !== null && (
-                  <span className={`text-sm font-bold px-3 py-1 rounded-full border ${semAvg >= 75 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>
-                    Rata-rata: {semAvg.toFixed(1)}
-                  </span>
-                )}
-              </div>
-              {!approvedSemesters.has(sem) ? (
-                <div className="border border-amber-100 bg-amber-50 rounded-xl py-10 text-center print:border-gray-200 print:bg-gray-50">
-                  <Lock size={28} className="text-amber-400 mx-auto mb-2" />
-                  <p className="text-amber-700 font-semibold text-sm">Rapor semester ini belum disahkan Kepala Sekolah</p>
-                  <p className="text-amber-500 text-xs mt-1">Nilai akan tersedia setelah disahkan.</p>
-                </div>
-              ) : (
-              <>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-primary-900 text-white">
-                      <th className="border border-primary-900 px-3 py-2.5 text-left font-medium">Mata Pelajaran</th>
-                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Pengetahuan</th>
-                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Keterampilan</th>
-                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-20">Rata-rata</th>
-                      <th className="border border-primary-900 px-3 py-2.5 text-center font-medium w-24">Predikat</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bySubject.map(({ subject, pengetahuan, keterampilan, avg }, idx) => (
-                      <tr key={subject} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="border border-gray-200 px-3 py-2 font-medium text-primary-900">{subject}</td>
-                        {scoreCell(pengetahuan)}
-                        {scoreCell(keterampilan)}
-                        <td className={`border border-gray-200 px-3 py-2 text-center font-bold ${avg !== null ? (avg >= 75 ? "text-emerald-700" : "text-red-600") : "text-gray-300"}`}>
-                          {avg !== null ? avg.toFixed(1) : "—"}
-                        </td>
-                        <td className="border border-gray-200 px-3 py-2 text-center text-xs font-semibold">
-                          {avg === null ? "—" : avg >= 90 ? "A" : avg >= 80 ? "B" : avg >= 70 ? "C" : avg >= 60 ? "D" : "E"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">KKM: 75 · Nilai dihitung dari rata-rata Jurnal Mengajar tiap pertemuan sepanjang semester.</p>
-              </>
-              )}
-            </div>
-          ))
-        )}
+        <RaporSemester data={raporSemester} formatSekolah={semSekolah} />
 
         {/* Rekap absensi */}
         {totalDays > 0 && (
           <div className="mt-6 border-t pt-6">
-            <h4 className="font-heading font-bold text-primary-900 mb-3">Rekap Kehadiran</h4>
+            <h4 className="font-heading font-bold text-primary-900 mb-3">Rekap Kehadiran Keseluruhan</h4>
             <div className="grid grid-cols-4 gap-3">
               {attSummary.map(({ status, count }) => (
-                <StatTile key={status} size="md"
+                <StatTile key={status} size="md" tampilan="gradien"
                   color={status === "HADIR" ? "emerald" : status === "IZIN" ? "blue" : status === "SAKIT" ? "amber" : "red"}
-                  icon={status === "HADIR" ? CheckCircle2 : status === "IZIN" ? CalendarX : status === "SAKIT" ? Stethoscope : XCircle}
+                  ikon={status === "HADIR" ? "centang" : status === "IZIN" ? "izin" : status === "SAKIT" ? "sakit" : "alpha"}
                   value={count} label={status} />
               ))}
             </div>

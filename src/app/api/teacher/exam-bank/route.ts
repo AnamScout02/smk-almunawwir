@@ -1,30 +1,49 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { resolveTeacherId } from "@/lib/teacher-context";
+import { teacherIdDariSesi } from "@/lib/ujian-server";
+import { siapkanButir } from "@/lib/soal-butir-server";
 import { NextRequest } from "next/server";
 
+export const dynamic = "force-dynamic";
+
+/** Bank soal: ADMIN/TAS melihat semua, guru hanya miliknya. `?subject=` menyaring per mapel,
+ * `?tipe=` per jenis, `?q=` cari teks. */
 export async function GET(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-    const { searchParams } = new URL(req.url);
-    const subject = searchParams.get("subject");
+    const sp = new URL(req.url).searchParams;
+    const subject = sp.get("subject") || undefined;
+    const tipe = sp.get("tipe") || undefined;
+    const q = sp.get("q")?.trim() || undefined;
+    const teacherId = await teacherIdDariSesi(session);
+    if (session.role === "TEACHER" && !teacherId) return Response.json([]);
 
-    if (session.role === "ADMIN" || session.role === "TAS") {
-      const items = await prisma.questionBankItem.findMany({
-        where: { ...(subject ? { subject } : {}) },
-        orderBy: { createdAt: "desc" },
-      });
-      return Response.json(items);
+    // Bank soal bersama (18 Sep 2026): selain miliknya, guru juga melihat soal yang DIBAGIKAN guru lain
+    // untuk mapel yang sama-sama diampu — hanya untuk disalin, tidak bisa diubah/dihapus.
+    const bersama = sp.get("bersama") === "1";
+    let mapelSaya: string[] = [];
+    if (teacherId && bersama) {
+      const [t, tugas] = await Promise.all([
+        prisma.teacher.findUnique({ where: { id: teacherId }, select: { subject: true } }),
+        prisma.teachingAssignment.findMany({ where: { teacherId }, select: { subject: { select: { name: true } } }, distinct: ["subjectId"] }),
+      ]);
+      mapelSaya = [...new Set([t?.subject, ...tugas.map(x => x.subject?.name)].filter((x): x is string => !!x))];
     }
-
-    const teacher = await prisma.teacher.findFirst({ where: { user: { email: session.email } }, select: { id: true } });
-    if (!teacher) return Response.json([]);
-
     const items = await prisma.questionBankItem.findMany({
-      where: { teacherId: teacher.id, ...(subject ? { subject } : {}) },
+      where: {
+        ...(teacherId ? (bersama && mapelSaya.length
+          ? { OR: [{ teacherId }, { dibagikan: true, subject: { in: mapelSaya } }] }
+          : { teacherId }) : {}),
+        ...(subject ? { subject } : {}),
+        ...(tipe ? { tipe } : {}),
+        ...(q ? { pertanyaan: { contains: q, mode: "insensitive" } } : {}),
+      },
+      include: { stimulus: { select: { id: true, judul: true } }, teacher: { select: { user: { select: { name: true } } } } },
       orderBy: { createdAt: "desc" },
+      take: 500,
     });
-    return Response.json(items);
+    return Response.json(items.map(i => ({ ...i, milikSaya: !teacherId || i.teacherId === teacherId })));
   } catch {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -33,17 +52,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
+    const body = await req.json();
+    const subject = String(body.subject ?? "").trim();
+    if (!subject) return Response.json({ error: "Mata pelajaran wajib diisi." }, { status: 400 });
+    const { data, error } = siapkanButir(body);
+    if (error) return Response.json({ error }, { status: 400 });
 
-    const { subject, question, optionA, optionB, optionC, optionD, correctAnswer } = await req.json();
-    if (!subject?.trim() || !question?.trim() || !optionA?.trim() || !optionB?.trim() || !optionC?.trim() || !optionD?.trim() || !["A", "B", "C", "D"].includes(correctAnswer)) {
-      return Response.json({ error: "Semua field soal wajib diisi dengan benar." }, { status: 400 });
-    }
-
-    const teacherId = await resolveTeacherId(session, { subject: subject.trim() });
+    const teacherId = await resolveTeacherId(session, { subject });
     if (!teacherId) return Response.json({ error: "Tidak ditemukan guru pengampu mapel ini." }, { status: 400 });
 
     const item = await prisma.questionBankItem.create({
-      data: { teacherId, subject: subject.trim(), question, optionA, optionB, optionC, optionD, correctAnswer },
+      data: {
+        teacherId, subject, tipe: data.tipe, pertanyaan: data.pertanyaan,
+        opsi: data.opsi as object, kunci: (data.kunci ?? undefined) as object | undefined,
+        skor: data.skor ?? 1, kd: data.kd ?? null, pembahasan: data.pembahasan ?? null, stimulusId: data.stimulusId ?? null,
+        materi: data.materi ?? null, indikator: data.indikator ?? null, levelKognitif: data.levelKognitif ?? null,
+      },
     });
     return Response.json(item, { status: 201 });
   } catch {

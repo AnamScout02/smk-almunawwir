@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import {
   Search, Download, Upload, Loader2,
-  BookOpen, User, GraduationCap, Users, Plus, Table2, Printer,
+  BookOpen, User, GraduationCap, Users, Plus, Table2, Printer, ArrowRightLeft,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageHeader from "@/components/admin/PageHeader";
@@ -11,6 +11,7 @@ import Alert from "@/components/admin/Alert";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
 import BukuIndukSiswaModal, { type BukuIndukData } from "@/components/admin/BukuIndukSiswaModal";
+import PindahKelasModal from "@/components/admin/PindahKelasModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,10 +22,10 @@ interface Student {
   previousSchool?: string; enrollYear?: number; studentStatus?: string;
   exitDate?: string; studentNotes?: string; bukuIndukData?: BukuIndukData;
   user: { name: string; email: string }; class?: { id: string; name: string };
-  major: { name: string; code: string };
+  major: { id: string; name: string; code: string };
 }
 
-interface ClassOption { id: string; name: string; grade: number; majorId: string }
+interface ClassOption { id: string; name: string; grade: number; major: { id: string; code: string } }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -49,8 +50,9 @@ export default function BukuIndukSiswaPage() {
   const [selected, setSelected] = useState<Student | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; foto?: number; errors: string[] } | null>(null);
   const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [moveStudent, setMoveStudent] = useState<Student | null>(null);
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -166,15 +168,15 @@ export default function BukuIndukSiswaPage() {
             { value: "UNCLASSED", label: "Belum Ada Kelas" },
           ]}
         />
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm">
+        <button onClick={openCreate} className="btn-modal-save">
           <Plus size={15} /> Tambah Siswa
         </button>
         <a href="/dashboard/admin/buku-induk/siswa/tabel"
-          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-sm font-semibold transition-colors">
+          className="btn-modal-cancel">
           <Table2 size={15} /> Tabel Lengkap
         </a>
         <a href="/api/admin/buku-induk/siswa/template"
-          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-sm font-semibold transition-colors">
+          className="btn-modal-cancel">
           <Download size={15} /> Template
         </a>
         <label className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 hover:bg-primary-900 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">
@@ -184,9 +186,14 @@ export default function BukuIndukSiswaPage() {
         </label>
       </div>
 
+      <p className="text-xs text-gray-400 -mt-1 mb-4">
+        Impor memakai berkas Template di atas. Foto yang ditempel di lembar pertama berkas Excel
+        ikut terbaca otomatis dan dipasangkan ke baris siswanya — foto yang sudah ada di sistem tidak ditimpa.
+      </p>
+
       {importResult && (
         <Alert variant={importResult.errors.length > 0 ? "warning" : "success"} className="mb-4"
-          title={`Hasil import: ${importResult.created} dibuat, ${importResult.updated} diperbarui`}>
+          title={`Hasil import: ${importResult.created} dibuat, ${importResult.updated} diperbarui${importResult.foto ? `, ${importResult.foto} foto ikut terbaca dari berkas` : ""}`}>
           {importResult.errors.length > 0 && (
             <ul className="mt-1 text-red-600 text-xs list-disc list-inside">
               {importResult.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
@@ -208,16 +215,16 @@ export default function BukuIndukSiswaPage() {
               headerActions={classId && (
                 <a href={`/dashboard/admin/buku-induk/siswa/cetak-kelas/${classId}`}
                   title="Cetak Buku Induk Sekelas"
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-white/15 hover:bg-white/25 text-white rounded-lg border border-white/20 font-medium transition-colors">
+                  className="btn-modal-cancel px-3 text-xs">
                   <Printer size={12} /> Cetak Kelas
                 </a>
               )}>
-              <BukuIndukSiswaTable items={items} onEdit={openEdit} />
+              <BukuIndukSiswaTable items={items} onEdit={openEdit} onMove={setMoveStudent} />
             </GroupedSection>
           ))}
           {unclassed.length > 0 && (
             <GroupedSection title="Belum Ada Kelas" count={unclassed.length} icon={Users} variant="warning">
-              <BukuIndukSiswaTable items={unclassed} onEdit={openEdit} />
+              <BukuIndukSiswaTable items={unclassed} onEdit={openEdit} onMove={setMoveStudent} />
             </GroupedSection>
           )}
           <p className="text-xs text-gray-400">Menampilkan {filtered.length} dari {students.length} siswa</p>
@@ -230,38 +237,44 @@ export default function BukuIndukSiswaPage() {
         onClose={closeModal}
         onSaved={handleSaved}
       />
+
+      <PindahKelasModal
+        student={moveStudent}
+        classes={classes}
+        onClose={() => setMoveStudent(null)}
+        onMoved={() => { setMoveStudent(null); fetchStudents(); }}
+      />
     </div>
   );
 }
 
-function BukuIndukSiswaTable({ items, onEdit }: { items: Student[]; onEdit: (s: Student) => void }) {
+function BukuIndukSiswaTable({ items, onEdit, onMove }: { items: Student[]; onEdit: (s: Student) => void; onMove: (s: Student) => void }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">NIS</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Siswa</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Jurusan</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>NIS</th>
+            <th>Nama Siswa</th>
+            <th>Jurusan</th>
+            <th>Status</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map((s) => (
-            <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5 font-mono font-semibold text-gray-600">{s.nis}</td>
-              <td className="px-5 py-3.5 font-semibold text-primary-900">{s.user.name}</td>
-              <td className="px-5 py-3.5 text-xs">
+            <tr key={s.id}>
+              <td className="font-mono font-semibold text-gray-600">{s.nis}</td>
+              <td className="font-semibold text-primary-900">{s.user.name}</td>
+              <td className="text-xs">
                 <span className="bg-gray-50 text-gray-600 font-semibold px-2 py-0.5 rounded-full border border-gray-200">{s.major.code}</span>
               </td>
-              <td className="px-5 py-3.5">
+              <td>
                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_COLOR[s.studentStatus ?? "AKTIF"] ?? "bg-gray-100 text-gray-600 border border-gray-200"}`}>
                   {s.studentStatus ?? "AKTIF"}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   <a href={`/dashboard/admin/buku-induk/siswa/${s.id}/cetak`}
                     title="Cetak Buku Induk"
@@ -271,6 +284,10 @@ function BukuIndukSiswaTable({ items, onEdit }: { items: Student[]; onEdit: (s: 
                   <button onClick={() => onEdit(s)}
                     className="px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 font-semibold transition-colors">
                     Lihat/Edit
+                  </button>
+                  <button onClick={() => onMove(s)} title="Pindah Kelas"
+                    className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition">
+                    <ArrowRightLeft size={14} />
                   </button>
                 </div>
               </td>

@@ -11,10 +11,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await assertKurikulum(session);
     const { id } = await params;
     const body = await req.json();
-    const { code, name, category, grade, majorId, order, hoursPerWeek, weekGroup, maxSharedTeacher } = body;
+    const { code, name, category, grade, majorId, order, hoursPerWeek, weekGroup, maxSharedTeacher, kkm, namaArab } = body;
 
     if (!name || !category || !grade) {
       return NextResponse.json({ error: "Nama, kategori, dan tingkat wajib diisi" }, { status: 400 });
+    }
+
+    // KKM/KKTP mapel: kosong = ikut KKM bawaan sekolah (17 Sep 2026).
+    const kkmTeks = kkm === undefined || kkm === null ? "" : String(kkm).trim();
+    const nilaiKkm = kkmTeks === "" ? null : Number(kkmTeks);
+    if (nilaiKkm !== null && !(Number.isInteger(nilaiKkm) && nilaiKkm >= 1 && nilaiKkm <= 100)) {
+      return NextResponse.json({ error: "KKM harus bilangan bulat 1–100, atau kosongkan untuk memakai KKM bawaan sekolah." }, { status: 400 });
     }
 
     const subject = await prisma.subject.update({
@@ -29,6 +36,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         hoursPerWeek: hoursPerWeek ? parseInt(String(hoursPerWeek)) : 2,
         weekGroup: weekGroup === "PRODUKTIF" ? "PRODUKTIF" : "UMUM",
         maxSharedTeacher: maxSharedTeacher ? Math.max(1, parseInt(String(maxSharedTeacher))) : 1,
+        kkm: nilaiKkm,
+        // Nama Arab mapel Diniyah — kolom مادة di Rapor Diniyah (makro: MATA PELAJARAN kolom M).
+        ...(namaArab !== undefined ? { namaArab: typeof namaArab === "string" && namaArab.trim() ? namaArab.trim().slice(0, 120) : null } : {}),
       },
       include: { major: { select: { id: true, name: true, code: true } } },
     });

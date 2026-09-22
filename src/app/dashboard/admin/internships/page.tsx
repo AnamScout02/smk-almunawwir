@@ -152,7 +152,7 @@ export default function AdminInternshipsPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="kisi-kartu kisi-kartu-3 mb-5">
         <StatTile color="primary" icon={Users} value={students.length} label="Total Siswa" />
         <StatTile color="emerald" icon={CheckCircle} value={withPKL} label="Sudah Ada PKL" />
         <StatTile color="amber" icon={AlertCircle} value={noPKL} label="Belum Ada PKL" />
@@ -332,31 +332,30 @@ function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Siswa</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Kelas</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">PKL</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Siswa</th>
+            <th className="hidden md:table-cell">Kelas</th>
+            <th>PKL</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map((s) => {
             const pkl = s.internship;
             return (
-              <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                <td className="px-5 py-3.5">
+              <tr key={s.id}>
+                <td>
                   <p className="font-semibold text-primary-900">{s.user.name}</p>
                   <p className="text-gray-400 text-xs font-mono mt-0.5">{s.nis}</p>
                 </td>
-                <td className="px-5 py-3.5 text-xs hidden md:table-cell">
+                <td className="text-xs hidden md:table-cell">
                   {s.class?.name
-                    ? <span className="bg-primary-50 text-primary-600 font-semibold px-2 py-0.5 rounded-full border border-primary-100">{s.class.name}</span>
+                    ? <span className="bg-primary-50 text-primary-700 font-semibold px-2 py-0.5 rounded-full border border-primary-100">{s.class.name}</span>
                     : <span className="text-amber-500">Belum ada kelas</span>}
                 </td>
-                <td className="px-5 py-3.5">
+                <td>
                   {pkl ? (
                     <div>
                       <p className="font-semibold text-gray-800 text-xs">{pkl.company}</p>
@@ -364,7 +363,7 @@ function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
                       <p className="text-gray-300 text-xs mt-0.5">{fmt(pkl.startDate)} — {fmt(pkl.endDate)}</p>
                       <p className="text-xs mt-0.5">
                         {pkl.teacher
-                          ? <span className="text-primary-600">Pembimbing: {pkl.teacher.user.name}</span>
+                          ? <span className="text-primary-700">Pembimbing: {pkl.teacher.user.name}</span>
                           : <span className="text-amber-500 italic">Belum ada guru pembimbing</span>}
                       </p>
                     </div>
@@ -372,7 +371,7 @@ function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
                     <span className="text-gray-300 text-xs italic">Belum diisi</span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 text-right">
+                <td className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     {pkl && (
                       <button onClick={() => onJournal(s)}
@@ -381,7 +380,7 @@ function InternshipTable({ items, onEdit, onDelete, onJournal, fmt }: {
                       </button>
                     )}
                     <button onClick={() => onEdit(s)}
-                      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-200 transition-colors">
+                      className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100 hover:border-primary-100 transition-colors">
                       <Edit2 size={12} /> {pkl ? "Edit" : "Tambah"}
                     </button>
                     {pkl && (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import { toProperCaseName } from "@/lib/text";
@@ -29,7 +29,7 @@ function s(val: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;

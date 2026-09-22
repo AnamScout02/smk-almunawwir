@@ -131,7 +131,7 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
 
       <form onSubmit={handleCheck} className="flex gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             ref={inputRef}
             value={query}
@@ -173,7 +173,7 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
               <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
                 {t.notFoundDesc}
               </p>
-              <button onClick={reset} className="mt-4 text-sm text-primary-600 hover:text-primary-900 underline underline-offset-2">
+              <button onClick={reset} className="mt-4 text-sm text-primary-700 hover:text-primary-900 underline underline-offset-2">
                 {t.tryAgain}
               </button>
             </div>

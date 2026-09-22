@@ -23,10 +23,16 @@ const pctToMmH = (pct: number) => Math.round((pct / 100) * CARD_HEIGHT_MM * 10) 
 const mmToPctW = (mm: number) => (mm / CARD_WIDTH_MM) * 100;
 const mmToPctH = (mm: number) => (mm / CARD_HEIGHT_MM) * 100;
 
+/** Data contoh untuk PRATINJAU saja — tidak pernah ikut tercetak di kartu siswa sungguhan.
+ * `identifier` WAJIB memakai format NIS asli sekolah ("1153/105.4.2.1"), BUKAN nomor pendaftaran
+ * SPMB: panjang & bentuknya menentukan lebar kotak yang dirancang di sini, dan kalau contohnya
+ * beda format, kotak yang sudah pas saat mendesain jadi meleset waktu dipakai data asli. Sempat
+ * terisi "SPMB26-TKJ-015" dan bikin bingung — dikira NIS siswa beneran belum terbentuk
+ * (temuan user 2026-09-12). Nilai di bawah disalin dari data nyata siswa ybs supaya konsisten. */
 const PREVIEW_CTX = {
-  nama: "Ahmad Nuril Hakim", identifier: "SPMB26-TKJ-015", sub: "X TKJ 1 · Teknik Komputer dan Jaringan",
+  nama: "Ahmad Nuril Hakim", identifier: "1153/105.4.2.1", sub: "X TKJ 1 · Teknik Komputer dan Jaringan",
   kelas: "X TKJ 1", jurusan: "Teknik Komputer dan Jaringan",
-  ttl: "Banyuwangi, 12 Januari 2010", agama: "Islam", jenisKartu: "Pelajar",
+  ttl: "Banyuwangi, 20 November 2010", agama: "Islam", jenisKartu: "Pelajar",
   namaSekolah: "SMK Al-Munawwir IIBS", alamatSekolah: "Jl. Kedungliwung No. 36, Kemiri, Banyuwangi",
   kontakSekolah: "0838-7820-3670 · smkalmunawwir@gmail.com", namaKepsek: "Ahmad Azmi Khoirul Umam, S.Pt, M.Pt, M.Sc",
 };
@@ -141,25 +147,25 @@ export default function KartuTandaEditorPage() {
         description="Upload gambar latar depan/belakang, atur foto/QR/teks — berlaku sbg template semua kartu. Kosongkan gambar latar utk pakai desain bawaan." />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/kartu-tanda" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/kartu-tanda" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
           {(["front", "back"] as const).map(s => (
             <button key={s} onClick={() => { setSide(s); setSelectedId(null); }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${side === s ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${side === s ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
               {s === "front" ? "Sisi Depan" : "Sisi Belakang"}
             </button>
           ))}
         </div>
-        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+        <button onClick={handleSave} disabled={saving} className="btn-modal-save sm:ml-auto">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Template
         </button>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Canvas */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="panel p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <label className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-900 text-white rounded-lg text-sm cursor-pointer transition-colors">
               {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
@@ -213,7 +219,7 @@ export default function KartuTandaEditorPage() {
               }
               return (
                 <div key={box.id} onPointerDown={e => onPointerDownBox(e, box.id)} onClick={e => e.stopPropagation()}
-                  className={`absolute cursor-move flex flex-col items-center justify-center gap-0.5 bg-white/70 border overflow-hidden ${isSelected ? "outline outline-2 outline-primary-500 border-primary-400" : "border-gray-300 hover:border-primary-300"} ${{ square: "rounded-none", rounded: "rounded-lg", circle: "rounded-full" }[resolveShape(box)]}`}
+                  className={`absolute cursor-move flex flex-col items-center justify-center gap-0.5 bg-white/70 border overflow-hidden ${isSelected ? "outline outline-2 outline-primary-500 border-primary-500" : "border-gray-300 hover:border-primary-300"} ${{ square: "rounded-none", rounded: "rounded-lg", circle: "rounded-full" }[resolveShape(box)]}`}
                   style={{ ...commonStyle, width: `${box.widthPct}%`, height: `${box.heightPct}%` }}>
                   <Icon size={16} className="text-gray-400" />
                   <span className="text-[9px] font-semibold text-gray-400 uppercase">{BOX_TYPE_LABELS[box.type]}</span>
@@ -225,7 +231,7 @@ export default function KartuTandaEditorPage() {
         </div>
 
         {/* Side panel */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="panel p-5 space-y-4">
           <h3 className="font-heading font-bold text-primary-900 text-sm">{selected ? `Edit ${BOX_TYPE_LABELS[selected.type]}` : "Daftar Elemen"}</h3>
 
           {!selected && (
@@ -303,7 +309,7 @@ export default function KartuTandaEditorPage() {
                 <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
                   {(["square", "rounded", "circle"] as const).map(s => (
                     <button key={s} type="button" onClick={() => updateSelected({ shape: s })}
-                      className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${resolveShape(selected) === s ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+                      className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${resolveShape(selected) === s ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                       {SHAPE_LABELS[s]}
                     </button>
                   ))}
@@ -314,7 +320,7 @@ export default function KartuTandaEditorPage() {
 
           {selected && (
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1 text-sm">Selesai</button>
+              <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1">Selesai</button>
               <button onClick={deleteSelected} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-colors">
                 <Trash2 size={14} /> Hapus
               </button>

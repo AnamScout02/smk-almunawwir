@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan } from "@/lib/jabatan-guard";
+import { aksesSarpras, FILTER_KERUSAKAN_LAB } from "@/lib/sarpras-akses";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,10 @@ export async function GET() {
     const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
     await guard(session);
 
+    // Kepala Lab (tanpa jabatan Sarpras) hanya melihat laporan lingkup lab.
+    const a = await aksesSarpras(session);
     const reports = await prisma.assetDamageReport.findMany({
+      where: a.penuh ? undefined : FILTER_KERUSAKAN_LAB,
       orderBy: { reportDate: "desc" },
       include: { asset: { select: { name: true, category: true, location: true } } },
     });
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const report = await prisma.assetDamageReport.create({
-      data: { assetId, description, reportedBy: reportedBy || null },
+      data: { assetId, description, reportedBy: reportedBy || session.name, pelaporId: session.userId },
       include: { asset: { select: { name: true, category: true, location: true } } },
     });
     return NextResponse.json(report, { status: 201 });

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { kirimLatar } from "@/lib/push-server";
+import { beritahuTugasBaru } from "@/lib/notifikasi-kejadian";
 import { NextRequest } from "next/server";
 
 async function getTeacher(email: string) {
@@ -58,6 +60,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    kirimLatar(() => beritahuTugasBaru(assignment.id)); // notifikasi siswa kelas tujuan
     return Response.json(assignment);
   } catch {
     return Response.json({ error: "Gagal menyimpan tugas." }, { status: 500 });

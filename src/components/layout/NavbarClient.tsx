@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Globe, ChevronDown } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 const navLinks = {
@@ -11,6 +11,7 @@ const navLinks = {
     { name: "Tentang", href: "/about" },
     { name: "Program", href: "/programs" },
     { name: "Berita", href: "/news" },
+    { name: "Agenda", href: "/agenda" },
     { name: "Galeri", href: "/gallery" },
     { name: "Alumni", href: "/alumni" },
     { name: "Kontak", href: "/contact" },
@@ -20,6 +21,7 @@ const navLinks = {
     { name: "About", href: "/about" },
     { name: "Programs", href: "/programs" },
     { name: "News", href: "/news" },
+    { name: "Agenda", href: "/agenda" },
     { name: "Gallery", href: "/gallery" },
     { name: "Alumni", href: "/alumni" },
     { name: "Contact", href: "/contact" },
@@ -53,6 +55,8 @@ interface NavbarClientProps {
   initialEmblem: string;
   initialFull: string;
   initialFullWhite: string;
+  /** Bahasa dari cookie `lang` (dibaca server di Navbar.tsx) — menu langsung benar sejak render pertama. */
+  langAwal?: "id" | "en";
 }
 
 export default function NavbarClient({
@@ -60,6 +64,7 @@ export default function NavbarClient({
   initialEmblem,
   initialFull,
   initialFullWhite,
+  langAwal = "id",
 }: NavbarClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -68,16 +73,19 @@ export default function NavbarClient({
   const [open, setOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
-  const [lang, setLang] = useState<"id" | "en">("id");
+  // Bahasa SELALU dari server (cookie `lang`). Tidak diganti duluan di klien: dulu menu langsung berganti sementara isi
+  // halaman baru menyusul 1–2 detik kemudian, sehingga halaman sempat tampil campur dua bahasa (temuan user 15 Sep 2026).
+  const lang = langAwal;
+  const [gantiBahasa, mulaiGanti] = useTransition();
   const servicesTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoEmblem = initialEmblem;
   const logoFull = initialFull;
   const logoFullWhite = initialFullWhite;
 
+  // Cookie `lang` (dibaca server) adalah acuan; localStorage hanya disamakan untuk kompatibilitas.
   useEffect(() => {
-    const saved = localStorage.getItem("lang");
-    if (saved === "en") setLang("en");
-  }, []);
+    try { localStorage.setItem("lang", langAwal); } catch { /* mode privat */ }
+  }, [langAwal]);
 
   useEffect(() => {
     setScrolled(window.scrollY > 80);
@@ -87,11 +95,11 @@ export default function NavbarClient({
   }, []);
 
   function toggleLang() {
+    if (gantiBahasa) return;
     const next = lang === "id" ? "en" : "id";
-    setLang(next);
-    localStorage.setItem("lang", next);
-    document.cookie = `lang=${next};path=/;max-age=31536000`;
-    router.refresh();
+    document.cookie = `lang=${next};path=/;max-age=31536000;samesite=lax`;
+    // Menu, tombol, dan isi halaman berganti BERSAMAAN setelah server merender ulang; selama menunggu tombol berputar.
+    mulaiGanti(() => router.refresh());
   }
 
   const isDark = transparent && !scrolled;
@@ -136,7 +144,6 @@ export default function NavbarClient({
                 height={50}
                 style={{ height: "3rem", width: "auto", objectFit: "contain" }}
                 priority
-                unoptimized
               />
             ) : (
               <>
@@ -147,7 +154,6 @@ export default function NavbarClient({
                   height={44}
                   className="rounded-full object-contain"
                   priority
-                  unoptimized
                 />
                 <div>
                   <span className="font-heading font-bold text-lg leading-tight block text-white">Al Munawwir</span>
@@ -163,7 +169,6 @@ export default function NavbarClient({
               height={50}
               className="object-contain h-12 w-auto"
               priority
-              unoptimized
             />
           )}
         </Link>
@@ -235,8 +240,10 @@ export default function NavbarClient({
                 : "border-gray-200 text-gray-500 hover:bg-gray-50"
             }`}
             title={lang === "id" ? "Switch to English" : "Ganti ke Indonesia"}
+            disabled={gantiBahasa}
+            aria-busy={gantiBahasa}
           >
-            <Globe size={12} />
+            {gantiBahasa ? <Loader2 size={12} className="animate-spin" /> : <Globe size={12} />}
             <span>{lang === "id" ? "ID" : "EN"}</span>
           </button>
 
@@ -259,11 +266,14 @@ export default function NavbarClient({
         <div className="lg:hidden flex items-center gap-2">
           <button
             onClick={toggleLang}
+            disabled={gantiBahasa}
+            aria-busy={gantiBahasa}
+            title={lang === "id" ? "Switch to English" : "Ganti ke Indonesia"}
             className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border transition ${
               isDark ? "border-white/30 text-white/80" : "border-gray-200 text-gray-500"
             }`}
           >
-            <Globe size={11} />
+            {gantiBahasa ? <Loader2 size={11} className="animate-spin" /> : <Globe size={11} />}
             {lang === "id" ? "ID" : "EN"}
           </button>
           <button

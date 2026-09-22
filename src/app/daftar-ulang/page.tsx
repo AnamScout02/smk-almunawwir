@@ -3,6 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import DaftarUlangForm from "@/components/sections/DaftarUlangForm";
 import { ClipboardCheck } from "lucide-react";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,20 @@ export const metadata: Metadata = {
   description: "Konfirmasi daftar ulang & unggah bukti pembayaran untuk calon siswa yang sudah dinyatakan diterima.",
 };
 
-export default function DaftarUlangPage() {
+const TEKS = {
+  id: {
+    label: "SPMB", judul: "Daftar Ulang PPDB", awal: "Khusus calon siswa yang sudah dinyatakan", diterima: "DITERIMA",
+    akhir: "Masukkan nama lengkap & nomor WA sesuai formulir pendaftaran untuk konfirmasi daftar ulang.",
+  },
+  en: {
+    label: "Admissions", judul: "Re-registration", awal: "Only for applicants who have been", diterima: "ACCEPTED",
+    akhir: "Enter your full name and WhatsApp number as written on the registration form to confirm your re-registration.",
+  },
+};
+
+export default async function DaftarUlangPage() {
+  const lang = await getLang();
+  const c = TEKS[lang];
   return (
     <>
       <Navbar />
@@ -21,21 +35,20 @@ export default function DaftarUlangPage() {
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
-            <span className="text-gold text-sm font-semibold uppercase tracking-widest">SPMB</span>
+            <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.label}</span>
             <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mt-4 mb-4">
               <ClipboardCheck size={28} className="text-gold" />
             </div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">Daftar Ulang PPDB</h1>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">{c.judul}</h1>
             <p className="text-white/70 text-lg max-w-xl mx-auto">
-              Khusus calon siswa yang sudah dinyatakan <span className="font-semibold text-gold">DITERIMA</span>.
-              Masukkan nama lengkap & nomor WA sesuai formulir pendaftaran untuk konfirmasi daftar ulang.
+              {c.awal} <span className="font-semibold text-gold">{c.diterima}</span>. {c.akhir}
             </p>
           </div>
         </section>
 
         <section className="section-padding bg-cream">
           <div className="container-custom max-w-xl mx-auto">
-            <DaftarUlangForm />
+            <DaftarUlangForm lang={lang} />
           </div>
         </section>
       </main>

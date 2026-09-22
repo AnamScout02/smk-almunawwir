@@ -139,16 +139,16 @@ export default function NotulenRapatFormPage() {
   const hadirCount = checkedPeople.size + extraNames.filter(n => n.trim()).length;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <PageHeader
         icon={<NotebookPen size={22} />}
         title={isNew ? "Tambah Notulen Rapat" : "Edit Notulen Rapat"}
         description="Isi langsung di lembar kerja di bawah — tampilannya mengikuti dokumen yang akan dicetak"
       />
 
-      <div className="flex justify-end mb-4">
-        <Link href="/dashboard/admin/notulen-rapat" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+      <div className="alat-aksi justify-end mb-4">
+        <Link href="/dashboard/admin/notulen-rapat" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
@@ -199,7 +199,7 @@ export default function NotulenRapatFormPage() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setGreetings(g => [...g, ""])} className="mt-1.5 ml-6 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
+                <button onClick={() => setGreetings(g => [...g, ""])} className="mt-1.5 ml-6 text-xs text-primary-700 hover:text-primary-900 font-semibold flex items-center gap-1">
                   <Plus size={11} /> Tambah Sambutan
                 </button>
               </div>
@@ -207,7 +207,7 @@ export default function NotulenRapatFormPage() {
           </div>
         </div>
 
-        <div className="flex justify-end mb-6">
+        <div className="alat-aksi justify-end mb-6">
           <div className="text-sm text-center min-w-[220px]">
             <p className="mb-1 text-primary-900">Singojuruh, {fmtLong(date)}</p>
             <p className="mb-14 text-primary-900">Kepala SMK Al Munawwir IIBS</p>
@@ -239,7 +239,7 @@ export default function NotulenRapatFormPage() {
             </div>
           ))}
         </div>
-        <button onClick={() => setPhotos(p => [...p, ""])} className="mb-6 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
+        <button onClick={() => setPhotos(p => [...p, ""])} className="mb-6 text-xs text-primary-700 hover:text-primary-900 font-semibold flex items-center gap-1">
           <Plus size={12} /> Tambah Foto
         </button>
 
@@ -271,7 +271,7 @@ export default function NotulenRapatFormPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => setExtraNames(a => [...a, ""])} className="mt-2 text-xs text-primary-600 hover:text-primary-900 font-semibold flex items-center gap-1">
+              <button onClick={() => setExtraNames(a => [...a, ""])} className="mt-2 text-xs text-primary-700 hover:text-primary-900 font-semibold flex items-center gap-1">
                 <Plus size={11} /> Tambah Nama Tamu
               </button>
             </div>
@@ -298,7 +298,7 @@ export default function NotulenRapatFormPage() {
       </div>
 
       <div className="flex justify-center mb-8 max-w-[800px] mx-auto">
-        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 text-sm px-8">
+        <button onClick={handleSave} disabled={saving} className="btn-modal-save px-8">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Notulen
         </button>
       </div>

@@ -94,7 +94,7 @@ export default function ProgramKerjaTeacherPage() {
 
   if (!loading && jabatanList.length === 0) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-8 pt-16 lg:pt-8">
         <PageHeader icon={<ListChecks size={22} />} title="Program Kerja" description="Program kerja jabatan struktural Anda" />
         <EmptyState icon={ListChecks} title="Belum Ada Jabatan" description="Anda belum memegang jabatan struktural — hubungi admin kalau ini keliru." />
       </div>
@@ -102,29 +102,30 @@ export default function ProgramKerjaTeacherPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<ListChecks size={22} />}
         title="Program Kerja"
         description="Program kerja jabatan struktural Anda"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openAdd} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-          <Plus size={15} /> Tambah Program
-        </button>
-      </div>
-
+      <div className="baris-alat mb-5">
       {jabatanList.length > 1 && (
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 flex-wrap">
+        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
           {jabatanList.map(j => (
             <button key={j.id} onClick={() => setActiveJabatan(j.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeJabatan === j.id ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeJabatan === j.id ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
               {j.name}
             </button>
           ))}
         </div>
       )}
+        <div className="alat-aksi">
+          <button onClick={openAdd} className="btn-modal-save">
+            <Plus size={15} /> Tambah Program
+          </button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">
@@ -133,7 +134,7 @@ export default function ProgramKerjaTeacherPage() {
       ) : items.length === 0 ? (
         <EmptyState icon={ListChecks} title="Belum Ada Program Kerja" description="Tambahkan program kerja untuk jabatan ini." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="divide-y divide-gray-50">
             {items.map(item => (
               <div key={item.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-primary-50/30 transition-colors">
@@ -144,10 +145,10 @@ export default function ProgramKerjaTeacherPage() {
                     {fmt(item.tanggalMulai)}{item.tanggalSelesai ? ` – ${fmt(item.tanggalSelesai)}` : ""}
                   </p>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.status] ?? STATUS_BADGE.DIRENCANAKAN}`}>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.status] ?? STATUS_BADGE.DIRENCANAKAN}`}>
                   {STATUS_OPTIONS.find(s => s.value === item.status)?.label ?? item.status}
                 </span>
-                <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                   <Edit2 size={14} />
                 </button>
                 <button onClick={() => handleDelete(item)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
@@ -166,7 +167,7 @@ export default function ProgramKerjaTeacherPage() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>

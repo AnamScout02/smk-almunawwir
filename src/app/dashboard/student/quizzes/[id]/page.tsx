@@ -99,7 +99,7 @@ export default function StudentQuizPage() {
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<HelpCircle size={22} />}
         title={quiz.title}
@@ -112,13 +112,13 @@ export default function StudentQuizPage() {
             <Timer size={14} /> {fmtClock(remaining)}
           </div>
         )}
-        <Link href="/dashboard/student/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/student/materials" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
       {quiz.description && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 text-sm text-gray-600">{quiz.description}</div>
+        <div className="panel p-5 mb-5 text-sm text-gray-600">{quiz.description}</div>
       )}
 
       {quiz.alreadyAttempted && quiz.myAttempt && (
@@ -136,7 +136,7 @@ export default function StudentQuizPage() {
 
       <div className="space-y-4 mb-6">
         {quiz.questions.map((q, i) => (
-          <div key={q.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div key={q.id} className="panel p-5">
             <p className="font-semibold text-primary-900 text-sm mb-3">{i + 1}. {q.question}</p>
             <div className="space-y-2">
               {(["A", "B", "C", "D"] as const).map(opt => {
@@ -153,13 +153,13 @@ export default function StudentQuizPage() {
                       isCorrect ? "bg-emerald-50 border-emerald-300 text-emerald-800" :
                       isWrongPick ? "bg-red-50 border-red-300 text-red-700" :
                       isSelected ? "bg-primary-50 border-primary-300 text-primary-900" :
-                      "bg-white border-gray-200 text-gray-600 hover:border-primary-200"
+                      "bg-white border-gray-200 text-gray-600 hover:border-primary-100"
                     } ${quiz.alreadyAttempted ? "cursor-default" : "cursor-pointer"}`}
                   >
                     <span className={`w-6 h-6 shrink-0 rounded-full text-xs font-bold flex items-center justify-center border ${
                       isCorrect ? "bg-emerald-500 border-emerald-500 text-white" :
                       isWrongPick ? "bg-red-500 border-red-500 text-white" :
-                      isSelected ? "bg-primary-600 border-primary-600 text-white" : "border-gray-300 text-gray-400"
+                      isSelected ? "bg-primary-700 border-primary-700 text-white" : "border-gray-300 text-gray-400"
                     }`}>{opt}</span>
                     <span className="flex-1">{optionText}</span>
                     {isCorrect && <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />}
@@ -175,7 +175,7 @@ export default function StudentQuizPage() {
       {!quiz.alreadyAttempted && (
         <div className="flex items-center justify-end gap-4">
           <p className="text-xs text-gray-400 flex items-center gap-1"><Clock size={12} /> {answeredCount}/{quiz.questions.length} terjawab</p>
-          <button onClick={() => handleSubmit.current(false)} disabled={submitting} className="btn-gold flex items-center gap-2 text-sm">
+          <button onClick={() => handleSubmit.current(false)} disabled={submitting} className="btn-modal-save">
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Kumpulkan Kuis
           </button>
         </div>

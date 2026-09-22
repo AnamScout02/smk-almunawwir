@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
+import { cakupanTingkat } from "@/lib/kehadiran-guru";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
@@ -103,6 +104,7 @@ export async function computeDisciplineScoreForUser(userId: string, dates: Date[
 
   const teacher = await prisma.teacher.findUnique({ where: { userId }, select: { id: true } });
 
+  const tingkat = await cakupanTingkat();
   let totalPoin = 0;
   let totalBlokSeharusnya = 0;
   let totalBlokTercatat = 0;
@@ -116,7 +118,7 @@ export async function computeDisciplineScoreForUser(userId: string, dates: Date[
 
     if (teacher) {
       const schedules = await prisma.schedule.findMany({
-        where: { day, scheduleType: "BLOK", teacherId: teacher.id, class: { grade: { in: [10, 11] } } },
+        where: { day, scheduleType: "BLOK", teacherId: teacher.id, class: { grade: { in: tingkat } } },
         orderBy: { startTime: "asc" },
       });
       const relevant = schedules

@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Printer, ArrowLeft } from "lucide-react";
 import BukuIndukPrintSheet, { PrintStudent } from "@/components/admin/BukuIndukPrintSheet";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 export default function CetakKelasPage() {
   const { classId } = useParams<{ classId: string }>();
   const router = useRouter();
   const [students, setStudents] = useState<PrintStudent[]>([]);
   const [className, setClassName] = useState("");
+  usePrintTitle(className ? buildPrintFilename("BUKU_INDUK-Kelas", className) : null);
   const [logo, setLogo] = useState("");
   const [principalName, setPrincipalName] = useState("");
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
@@ -32,7 +35,7 @@ export default function CetakKelasPage() {
     return (
       <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex flex-col items-center justify-center gap-3 min-h-[60vh] text-gray-400">
         <p>Belum ada siswa di kelas ini</p>
-        <button onClick={() => router.back()} className="text-primary-600 hover:underline text-sm">Kembali</button>
+        <button onClick={() => router.back()} className="text-primary-700 hover:underline text-sm">Kembali</button>
       </div>
     );
   }

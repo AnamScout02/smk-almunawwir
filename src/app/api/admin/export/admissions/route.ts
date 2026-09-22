@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { balasanExcel } from "@/lib/ekspor-excel";
 
 export async function GET() {
   try {
@@ -34,24 +35,10 @@ export async function GET() {
       (a.notes ?? "").replace(/\n/g, " "),
     ]);
 
-    const escape = (v: string | number) => {
-      const s = String(v);
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    };
-
-    const csv = [headers, ...rows]
-      .map(row => row.map(escape).join(","))
-      .join("\n");
-
-    const bom = "﻿"; // UTF-8 BOM for Excel
-    return new Response(bom + csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="pendaftaran-${new Date().toISOString().slice(0, 10)}.csv"`,
-      },
+    return balasanExcel({
+      namaFile: `pendaftaran-${new Date().toISOString().slice(0, 10)}`,
+      namaSheet: "Pendaftaran",
+      headers, rows,
     });
   } catch {
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });

@@ -7,12 +7,44 @@
 // flag experimental apa pun.
 const SAMPLE_INTERVAL_MS = 5 * 60 * 1000; // 5 menit
 
+// Tagihan Terjadwal (modul Bendahara) — cek tiap 1 jam apakah ada BillingSchedule yang siklus
+// berikutnya sudah jatuh tempo, generate otomatis kalau ada. Idempoten (aman dicek berkali-kali,
+// lihat komentar runDueBillingSchedules) jadi interval 1 jam cukup longgar, tidak perlu presisi
+// ke menit — pola sama persis sampler bandwidth di bawah, cuma beda selang waktu.
+const BILLING_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 jam
+
+const PENGINGAT_INTERVAL_MS = 5 * 60 * 1000; // 5 menit
+
 export async function register() {
   // Cuma jalan di runtime Node (bukan Edge) — Prisma & koneksi Mikrotik tidak jalan di Edge.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   const { prisma } = await import("@/lib/prisma");
   const { withMikrotik } = await import("@/lib/mikrotik");
+
+  async function checkBillingSchedules() {
+    try {
+      const { runDueBillingSchedules } = await import("@/lib/billing-schedule");
+      await runDueBillingSchedules();
+    } catch {
+      // Jangan sampai bikin proses server crash krn 1 jadwal error — coba lagi jam berikutnya.
+    }
+  }
+  checkBillingSchedules();
+  setInterval(checkBillingSchedules, BILLING_CHECK_INTERVAL_MS);
+
+  // Pengingat notifikasi push (absensi kelas, buku piket, jurnal, ujian dimulai) — dicek tiap 5 menit,
+  // idempoten per kunci (lihat src/lib/pengingat-terjadwal.ts). Tunda 1 menit setelah server hidup.
+  async function cekPengingat() {
+    try {
+      const { jalankanPengingat } = await import("@/lib/pengingat-terjadwal");
+      await jalankanPengingat();
+    } catch {
+      // Jangan sampai proses server crash — coba lagi 5 menit berikutnya.
+    }
+  }
+  setTimeout(cekPengingat, 60_000);
+  setInterval(cekPengingat, PENGINGAT_INTERVAL_MS);
 
   async function sampleOnce() {
     try {

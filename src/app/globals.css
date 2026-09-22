@@ -17,6 +17,9 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+  /* Pengaman: bila fontnya belum/tidak termuat, tulisan ligatur ("fact_check") tidak boleh melebar keluar kotaknya. */
+  width: 1em;
+  overflow: hidden;
 }
 
 :root {
@@ -213,8 +216,40 @@
 }
 .card-fade-up { animation: cardFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+/* === BottomSheet mobile (src/components/shared/BottomSheet.tsx) — slide naik dari tepi bawah
+   layar, beda dari modal-panel-in yang scale-in di tengah. === */
+@keyframes sheetPanelIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-backdrop-in { animation: fadeIn 0.18s ease-out; }
+.sheet-panel-in { animation: sheetPanelIn 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Item menu di dalam BottomSheet "muncul satu-satu" (stagger) — diadaptasi dari pola
+   `.psheet.open .psheet-item { animation: fadeUp ... } :nth-child(n){ animation-delay }` di
+   referensi eksternal (billing-technofix). Delay per-item dihitung di komponen React
+   (`animationDelay` inline, bukan `nth-child` CSS) supaya tidak terbatas 6 item spt aslinya. */
+@keyframes sheetItemIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sheet-item-in { animation: sheetItemIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Garis aksen emas mengalir di tepi atas MobileBottomNav — diadaptasi dari referensi desain
+   eksternal (repo billing-technofix, 2026-08-23), diganti warna gold (bukan biru aslinya) supaya
+   konsisten dgn token warna kita (§2 DESIGN_SYSTEM.md). */
+@keyframes navAccentSlide {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+.bottom-nav-accent {
+  background: linear-gradient(90deg, transparent, #E8A020 30%, #F5C842 50%, #E8A020 70%, transparent);
+  background-size: 200% 100%;
+  animation: navAccentSlide 2.5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .modal-backdrop-in, .modal-panel-in, .card-fade-up { animation: none; }
+  .modal-backdrop-in, .modal-panel-in, .card-fade-up, .sheet-backdrop-in, .sheet-panel-in, .bottom-nav-accent, .sheet-item-in { animation: none; }
 }
 
 @layer base {
@@ -244,6 +279,91 @@
 .print-doc, .print-doc * {
   font-family: "Arial Narrow", Arial, sans-serif !important;
 }
+/* Motif kertas sekolah di SEMUA halaman cetak — sebelumnya cuma Buku Induk yang punya (lewat
+   .a4-page::before), sehingga dokumen resmi lain (Nominatif, Buku Tamu, Legalisir, Klapper, dst)
+   tercetak di atas kertas polos & terlihat beda "kelas" (permintaan user 2026-09-12: "jangan lupa
+   pattern smk untuk saat di cetak ... untuk semua file cetak").
+
+   SENGAJA memakai background-image berlapis, BUKAN ::before seperti .a4-page: elemen ::before
+   yang diposisikan akan tergambar DI ATAS isi tabel (isi tabel tidak punya stacking context
+   sendiri), sedangkan background selalu di belakang isi apa pun. Lapisan putih 96% di atas motif
+   memberi efek transparansi ~4% yang sama dengan Buku Induk tanpa perlu opacity. */
+.print-doc {
+  background-color: #ffffff;
+  /* WAJIB. Tanpa ini motif di ::after (z-index -1) jatuh di belakang LATAR PUTIH .print-doc
+     sendiri, bukan cuma di belakang isinya — jadi motifnya tidak pernah kelihatan sama sekali,
+     baik di layar maupun di hasil cetak (temuan user 13 September 2026: "buku mutasi tidak punya
+     pattern?" — ternyata berlaku di SEMUA halaman cetak, karena tiap wadah cetak memang wajib
+     ber-`bg-white`, lihat gotcha #22).
+
+     `isolation: isolate` membuat .print-doc jadi stacking context sendiri. Di dalam satu stacking
+     context, urutan gambarnya: latar elemennya dulu, BARU keturunan ber-z-index negatif, baru
+     isinya. Jadi motif duduk tepat di antara latar putih dan teks — persis yang diinginkan, tanpa
+     menyentuh satu pun anak (cara lama `.print-doc > * { position: relative }` merusak hiasan
+     absolute di Buku Induk). `isolation` TIDAK mengubah containing block, jadi anak ber-position
+     absolute/fixed tetap berperilaku sama. */
+  isolation: isolate;
+}
+/* Motif kertas: DIPASANG SEBAGAI LAPISAN `fixed`, bukan background wadahnya.
+   Alasannya — background pada wadah hanya setinggi ISI surat, jadi bagian kertas yang kosong di
+   bawah tetap putih polos, dan pada dokumen berhalaman banyak motifnya tidak ikut ke lembar
+   berikutnya (temuan user 13 September 2026: "pattern itu full di satu kertas, jika banyak
+   halaman ya patternnya mengikuti kertasnya"). Elemen `position: fixed` saat mencetak diulang
+   oleh browser di SETIAP halaman dan selalu setinggi kertas penuh — persis yang dibutuhkan,
+   berlaku untuk portrait maupun landscape, sepanjang apa pun dokumennya. */
+.print-doc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/pattern-smk.png');
+  background-size: 90px 90px;
+  background-repeat: repeat;
+  opacity: 0.045;
+  pointer-events: none;
+  /* z-index NEGATIF, bukan 0. Dengan 0, lapisan motif menutupi isi surat sehingga isinya harus
+     "diangkat" lewat `.print-doc > * { position: relative }` — dan aturan itu MERUSAK anak yang
+     memang sengaja `absolute`: di Buku Induk, dua lapisan hiasannya berubah jadi blok biasa
+     sehingga kop halamannya berantakan (temuan user 13 September 2026). Dengan -1, motif jatuh
+     di belakang isi tanpa perlu menyentuh satu pun anaknya. */
+  z-index: -1;
+}
+.print-doc { position: relative; }
+/* Buku Induk SUDAH punya lapisan motifnya sendiri sejak awal dan tata letaknya sudah pas —
+   jangan ditumpangi lapisan kedua. */
+.print-doc[data-print-page]::after { content: none; }
+
+@media print {
+  .print-doc::after {
+    position: fixed;
+  }
+}
+
+
+/* Kop surat (PrintKop / LetterheadImage) sudah punya latar & motifnya sendiri — jangan ditumpuk. */
+.print-doc .print-doc {
+  background-image: none;
+}
+/* Halaman yang sekaligus .a4-page (Persuratan, Notulen, Surat Keterangan) sudah punya motif
+   sendiri lewat .a4-page::before — tanpa aturan ini motifnya tercetak dobel (dua lapis 4%). */
+.print-doc.a4-page {
+  background-image: none;
+}
+
+/* Motif kertas untuk blok yang SEKALIGUS dipakai sebagai tampilan layar biasa (tabel interaktif
+   Poin Siswa, kartu hasil Cek Kelulusan, dsb). Beda dari .print-doc: hanya aktif saat mencetak,
+   dan TIDAK memaksa font Arial Narrow — halaman kerja sehari-hari tidak boleh ikut berubah
+   hurufnya cuma karena bisa dicetak. */
+@media print {
+  .print-motif {
+    background-color: #ffffff !important;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)),
+      url('/images/pattern-smk.png') !important;
+    background-size: auto, 90px 90px !important;
+    background-repeat: repeat, repeat !important;
+    background-position: center, center !important;
+  }
+}
 @media print {
   * {
     font-family: "Arial Narrow", Arial, sans-serif !important;
@@ -266,6 +386,19 @@
     background-image: none !important;
     animation: none !important;
   }
+  /* PERBAIKAN 2026-09-12 (temuan user, screenshot: pita abu-abu #f0f2f7 muncul di bawah blok
+     tanda tangan Nominatif SAAT CETAK — bukan cuma di preview layar). Root cause BEDA dari
+     tekstur body di atas: setiap layout.tsx (`admin`, `teacher`, `student`, `parent`,
+     `bendahara`) punya div pembungkus sidebar+main dengan `style={{ backgroundColor: "#f0f2f7"
+     }}` inline — warna abu ini dipaksa ikut tercetak oleh `print-color-adjust: exact` di bawah
+     (perlu utk kop/header navy), padahal seharusnya cuma warna latar dashboard di LAYAR. Fix
+     `body { background: white }` di atas TIDAK cukup krn div ini terpisah dari body (elemen
+     ANAK body, jadi background putih body tidak "menutupi" background div ini yang di atasnya).
+     Semua 5 layout.tsx sudah diganti dari inline style ke class `.dashboard-shell` supaya bisa
+     di-override print di sini — JANGAN kembalikan ke inline style kalau menyentuh layout ini. */
+  .dashboard-shell {
+    background: white !important;
+  }
   /* Browser default menyembunyikan warna latar saat print (mis. banner navy kop, header tabel gelap)
      kecuali user manual centang "Print backgrounds" — paksa selalu tampil supaya WYSIWYG. */
   * {
@@ -280,6 +413,21 @@
   }
 }
 
+/* Latar abu dashboard (sidebar+main), dipakai SEMUA layout.tsx portal (admin/teacher/student/
+   parent/bendahara) — class (bukan inline style) supaya bisa di-override jadi putih saat print
+   (lihat @media print di atas, gotcha #20 CLAUDE.md). */
+.dashboard-shell {
+  /* Gradasi lembut STATIS (18 September 2026, pilihan user) — latar tidak lagi rata datar, tetapi
+     juga tidak bergerak: dua noda warna sangat tipis (navy di kiri atas, emas di kanan bawah) di
+     atas abu-abu dasar. Tanpa animasi supaya tidak memberatkan HP lama & tidak mengganggu saat
+     membaca tabel; saat CETAK tetap putih (aturan .dashboard-shell di blok @media print). */
+  background-image:
+    radial-gradient(60rem 40rem at 0% -10%, rgb(27 43 107 / 0.07), transparent 60%),
+    radial-gradient(48rem 36rem at 110% 110%, rgb(232 160 32 / 0.07), transparent 60%);
+  background-attachment: fixed;
+  background-color: #f0f2f7;
+}
+
 /* Lembar A4 (kop/header dan lain-lain) — ukuran fisik A4 sungguhan supaya tampilan layar (live)
    sesuai hasil cetak. .a4-page-body diberi margin rata 2cm semua sisi TIDAK termasuk kop, karena
    kop harus tercetak penuh sampai tepi kertas tanpa margin (lihat @page di atas). */
@@ -288,7 +436,10 @@
   min-height: 297mm;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden;
+  /* BUKAN overflow:hidden — dokumen yang isinya lebih dari satu halaman harus boleh memanjang
+     melewati 297mm, bukan terpotong. Tingginya tetap minimal satu halaman penuh supaya kop bawah
+     terdorong ke dasar kertas saat isinya pendek. */
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
@@ -306,9 +457,28 @@
 }
 /* flex: 1 mendorong kop bawah (kalau ada) ke tepi bawah kertas selama konten belum melebihi satu
    halaman A4 — kalau melebihi, kop bawah ikut turun mengikuti konten (tidak diulang tiap halaman). */
+/* CATATAN HALAMAN KOSONG DI AKHIR CETAKAN (13 September 2026) — JANGAN diperbaiki lagi dengan
+   mengecilkan min-height di sini. Lembar tetap 297mm penuh, sesuai tinggi kertas A4.
+
+   Dulu tiap cetakan surat melahirkan satu halaman kosong di akhir. Sempat disangka lembarnya
+   meluber, lalu min-height dikecilkan bertahap (294 → 290 → 285 → 280mm) sampai halaman kosongnya
+   hilang di 280mm — padahal itu cuma menutupi gejalanya dan bikin kop bawah berhenti 17mm di atas
+   tepi kertas.
+
+   Penyebab sebenarnya ada di <main> tiap portal: `pb-[calc(4rem+env(safe-area-inset-bottom))]`
+   (ruang untuk MobileBottomNav) = 64px = 16,9mm. Peredamnya `lg:pb-0` TIDAK berlaku saat mencetak,
+   karena cetakan dilayout selebar kertas (210mm = 794px CSS) — di BAWAH breakpoint lg (1024px).
+   Jadi 16,9mm itu ikut tercetak persis setelah lembar terakhir dan mendorongnya ke halaman baru.
+   Perbaikannya `print:pt-0 print:pb-0` di <main> (lihat layout tiap portal), bukan di sini.
+   Terbukti: setelah itu ekspor PDF Surat Tugas jadi 4 halaman pada min-height 280 SAMPAI 297mm. */
+
 .a4-page-body {
   position: relative;
-  padding: 2cm;
+  /* Atas sengaja jauh lebih tipis dari kiri-kanan: gambar kop sudah setinggi ~42mm dan sudah
+     menyisakan ruang kosongnya sendiri di bagian bawah gambar. Dengan padding 2cm seperti dulu,
+     jarak kop ke baris pertama jadi ±3cm dan memakan ruang kertas sia-sia (temuan user
+     13 September 2026). Kiri-kanan tetap 2cm mengikuti margin surat dinas. */
+  padding: 0.7cm 2cm 0.8cm;
   flex: 1 1 auto;
 }
 
@@ -354,6 +524,24 @@
 }
 .prose-surat a, .prose-surat-print a { color: #1d4ed8; text-decoration: underline; }
 .prose-surat mark, .prose-surat-print mark { border-radius: 2px; padding: 0 2px; }
+/* TABEL DI DALAM ISI SOAL — naskah Word sering memuat tabel data sebagai bagian pertanyaan
+   (20 September 2026). Tanpa aturan ini tabelnya tampil tanpa garis sama sekali. Berlaku di layar
+   ujian, pratinjau guru, dan naskah cetak. */
+.soal-html table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  max-width: 100%;
+  font-size: 0.875rem;
+}
+.soal-html table td, .soal-html table th {
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.soal-html table th { background: #f5f6fa; font-weight: 600; }
+/* Tabel lebar tidak boleh membuat seluruh halaman ujian bisa digeser ke samping. */
+.soal-html { overflow-x: auto; }
+
 .prose-surat table, .prose-surat-print table {
   border-collapse: collapse;
   margin-bottom: 0.75em;
@@ -521,6 +709,11 @@ section.from-primary-900 > * {
     box-shadow: 0 6px 20px rgba(27, 43, 107, 0.4);
     transform: translateY(-1px);
   }
+  /* Tap feedback (:active scale-down) — diadaptasi dari referensi eksternal billing-technofix
+     (.st-action-btn:active, .psheet-item:active), dipasang di SEMUA class tombol bersama supaya
+     berlaku serentak di seluruh app, bukan cuma bottom-nav/sheet (permintaan eksplisit user
+     2026-08-23: "bukan hanya sheet buttom saja... tapi semua hal"). */
+  .btn-primary:active { transform: scale(0.97); }
 
   .btn-gold {
     display: inline-flex;
@@ -539,6 +732,7 @@ section.from-primary-900 > * {
     box-shadow: 0 6px 20px rgba(232, 160, 32, 0.4);
     transform: translateY(-1px);
   }
+  .btn-gold:active { transform: scale(0.97); }
 
   .btn-outline {
     display: inline-flex;
@@ -555,6 +749,7 @@ section.from-primary-900 > * {
     background: rgba(255,255,255,0.1);
     border-color: rgba(255,255,255,0.8);
   }
+  .btn-outline:active { transform: scale(0.97); }
 
   .section-padding {
     padding-top: 5rem;
@@ -658,6 +853,7 @@ section.from-primary-900 > * {
     box-shadow: 0 6px 24px rgba(232,160,32,0.5);
     transform: translateY(-1px);
   }
+  .btn-gold-shimmer:active { transform: scale(0.97); }
 
   /* ── Admin Dashboard Form Utilities ── */
   .input-field {
@@ -695,49 +891,36 @@ section.from-primary-900 > * {
     font-size: 0.875rem;
     color: #dc2626;
   }
-  .btn-modal-cancel {
+  /* ── Tombol aksi portal — SATU gaya per jenis aksi (keputusan user 15 Sep 2026, DESIGN_SYSTEM §4) ──
+     .btn-modal-save   = aksi utama (Tambah / Simpan / Buat / Kirim): navy padat + ikon
+     .btn-modal-cancel = aksi kedua (Batal / Cetak / Ekspor / Impor / Unduh): putih bergaris
+     .btn-hapus        = hapus / aksi berbahaya: merah
+     Tinggi sama (min 40px; 44px di layar sentuh), sudut 12px, ikon 16px. */
+  .btn-modal-cancel, .btn-modal-save, .btn-hapus {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
+    gap: 0.5rem;
+    min-height: 2.5rem;
     padding: 0.5rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #4b5563;
-    background: white;
-    transition: background-color 0.15s, border-color 0.15s;
-    cursor: pointer;
-  }
-  .btn-modal-cancel:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-  }
-  .btn-modal-save {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
     border-radius: 0.75rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: white;
-    background: var(--color-primary-700);
-    transition: background-color 0.15s, box-shadow 0.15s;
+    line-height: 1.25rem;
     cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
   }
-  .btn-modal-save:hover {
-    background: var(--color-primary-900);
-    box-shadow: 0 4px 12px rgba(15,26,69,0.25);
-  }
-  .btn-modal-save:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* ── Data Table ── */
+  .btn-modal-cancel svg, .btn-modal-save svg, .btn-hapus svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+  .btn-modal-cancel { color: #374151; background: white; border-color: #e5e7eb; }
+  .btn-modal-cancel:hover:not(:disabled) { background: #f9fafb; border-color: #d1d5db; color: var(--color-primary-900); }
+  .btn-modal-save { color: white; background: var(--color-primary-700); box-shadow: 0 1px 2px rgb(15 26 69 / 0.16); }
+  .btn-modal-save:hover:not(:disabled) { background: var(--color-primary-900); box-shadow: 0 4px 12px rgb(15 26 69 / 0.22); }
+  .btn-hapus { color: white; background: #dc2626; box-shadow: 0 1px 2px rgb(220 38 38 / 0.2); }
+  .btn-hapus:hover:not(:disabled) { background: #b91c1c; }
+  .btn-modal-cancel:active:not(:disabled), .btn-modal-save:active:not(:disabled), .btn-hapus:active:not(:disabled) { transform: scale(0.97); }
+  .btn-modal-cancel:focus-visible, .btn-modal-save:focus-visible, .btn-hapus:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+  .btn-modal-cancel:disabled, .btn-modal-save:disabled, .btn-hapus:disabled { opacity: 0.5; cursor: not-allowed; }
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -830,3 +1013,340 @@ section.from-primary-900 > * {
     border: 1px solid rgba(15,26,69,0.15);
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════
+   POLA TAMPILAN v2 (15 Sep 2026 — permintaan user: dashboard & login dirapikan, modern, responsif
+   untuk semua ukuran layar). Dipakai dulu di dashboard kelima portal & halaman Masuk, lalu
+   diterapkan ke halaman lain. Aturan lengkap: DESIGN_SYSTEM.md §17.
+   ════════════════════════════════════════════════════════════════════════════════════════════ */
+@theme {
+  --shadow-panel: 0 1px 2px 0 rgb(15 26 69 / 0.04), 0 1px 3px 0 rgb(15 26 69 / 0.05);
+  --shadow-panel-naik: 0 2px 4px -1px rgb(15 26 69 / 0.06), 0 14px 32px -10px rgb(15 26 69 / 0.18);
+  --ease-halus: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer components {
+  /* Wadah isi standar: putih, sudut 16px, garis tipis, bayangan halus. */
+  .panel {
+    position: relative;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid rgb(15 26 69 / 0.07);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-panel);
+  }
+  .panel-kepala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.375rem 0.75rem;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid rgb(15 26 69 / 0.06);
+  }
+  .panel-judul {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+    font-family: var(--font-heading);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-primary-900);
+  }
+  .panel-ikon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.625rem;
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+  }
+  .panel-ikon svg { width: 1rem; height: 1rem; }
+  .panel-isi { padding: 1rem; }
+  .panel-tautan {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: -0.375rem -0.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--color-primary-700);
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .panel-tautan:hover { color: var(--color-gold-dark); background: var(--color-primary-50); }
+  .panel-tautan:focus-visible, .panel-interaktif:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+
+  /* Animasi masuk tanpa JavaScript (@starting-style): muncul pelan dari 10px di bawah. */
+  .masuk-halus { transition: opacity 0.5s var(--ease-halus), translate 0.5s var(--ease-halus); }
+  @starting-style { .masuk-halus { opacity: 0; translate: 0 10px; } }
+  /* Kartu yang bisa diklik: sedikit naik & bayangan menebal saat disorot. */
+  .panel-interaktif {
+    transition: opacity 0.5s var(--ease-halus), translate 0.3s var(--ease-halus), box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .panel-interaktif:hover { translate: 0 -2px; box-shadow: var(--shadow-panel-naik); border-color: rgb(15 26 69 / 0.12); }
+
+  /* Batang grafik ringkas tumbuh saat halaman dibuka. */
+  .bar-tumbuh { transition: width 0.9s var(--ease-halus); }
+  @starting-style { .bar-tumbuh { width: 0 !important; } }
+  .bar-bagian { transition: flex-grow 0.9s var(--ease-halus); }
+  @starting-style { .bar-bagian { flex-grow: 0 !important; } }
+  .donat-seg { transition: stroke-dasharray 0.9s var(--ease-halus); }
+  @starting-style { .donat-seg { stroke-dasharray: 0 300 !important; } }
+
+  .angka { font-variant-numeric: tabular-nums; }
+  .judul-seimbang { text-wrap: balance; }
+  .label-kecil { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7280; }
+}
+@media (min-width: 640px) {
+  .panel-kepala { padding: 1rem 1.25rem; }
+  .panel-isi { padding: 1.25rem; }
+}
+/* Gaya bersama lama ikut pola v2 (berlaku di SEMUA halaman, KHUSUS LAYAR — nilai cetak tetap seperti semula): isian 16px di HP supaya Safari iPhone tidak memperbesar
+   layar sendiri, tinggi 44px di layar sentuh, dan tabel lebih rapat di HP. Di dalam @layer supaya utility per halaman tetap menang. */
+@layer components {
+  @media screen {
+    .data-table thead th { font-size: 0.75rem; letter-spacing: 0.06em; }
+    .status-badge { font-size: 0.75rem; letter-spacing: 0.02em; }
+    .badge { font-size: 0.75rem; letter-spacing: 0.04em; }
+    .page-card { border-radius: 1rem; border-color: rgb(15 26 69 / 0.07); box-shadow: var(--shadow-panel); }
+    /* Kepala tabel TERANG tapi BERWARNA (navy muda) — terang sejak 15 Sep 2026, diberi warna 18 Sep 2026
+       atas permintaan user ("tampilan kurang berwarna, misal judul tabel"). Cetak tetap navy pekat. */
+    .data-table thead tr { background: none; }
+    .data-table thead th {
+      background: linear-gradient(135deg, #EEF0F8 0%, #E2E7F6 100%);
+      color: #1B2B6B;
+      border-bottom: 1px solid rgb(27 43 107 / 0.18);
+    }
+    .data-table thead th:first-child, .data-table thead th:last-child { border-radius: 0; }
+
+    /* ── FREEZE TABEL (permintaan user 15 Sep 2026) — atribut dipasang otomatis oleh PembekuTabel (src/components/shared/PembekuTabel.tsx).
+       Judul tabel menempel saat digulir ke bawah (wadah setinggi layar), kolom No/Nama menempel saat digeser ke samping. ── */
+    [data-beku-wadah] { max-height: max(18rem, calc(100dvh - 13rem)); overflow: auto; overscroll-behavior-x: contain; }
+    [data-beku="1"] > thead > tr > th, [data-beku="1"] > thead > tr > td { position: sticky; top: var(--beku-atas, 0px); z-index: 3; }
+    /* Sel tanpa latar sendiri diberi warna baris/judulnya (ditumpuk di atas putih, jadi warna tembus pandang tetap menutup isi di bawahnya). */
+    [data-beku="1"] > thead > tr > [data-beku-tanpa-latar] { background: linear-gradient(var(--beku-latar, #EEF0F8), var(--beku-latar, #E2E7F6)), #fff; }
+    [data-beku="1"] [data-beku-kolom] { position: sticky; left: var(--beku-kiri, 0px); z-index: 2; }
+    [data-beku="1"] > thead [data-beku-kolom] { z-index: 4; }
+    [data-beku="1"] > tbody > tr > [data-beku-kolom][data-beku-tanpa-latar],
+    [data-beku="1"] > tfoot > tr > [data-beku-kolom][data-beku-tanpa-latar] { background: linear-gradient(var(--beku-latar-sel, #fff), var(--beku-latar-sel, #fff)), #fff; }
+    .data-table[data-beku="1"] > tbody > tr:hover > [data-beku-kolom] { background: #f8f9fc; }
+    [data-beku="1"] [data-beku-kolom="akhir"] { box-shadow: 6px 0 8px -6px rgb(15 26 69 / 0.2); }
+  }
+  @media (max-width: 639px) {
+    .input-field { font-size: 1rem; }
+    .data-table thead th, .data-table tbody td { padding: 0.625rem 0.75rem; }
+    .data-table thead th:first-child, .data-table tbody td:first-child { padding-left: 1rem; }
+    .data-table thead th:last-child, .data-table tbody td:last-child { padding-right: 1rem; }
+  }
+  @media (pointer: coarse) {
+    .input-field { min-height: 44px; }
+    .btn-modal-cancel, .btn-modal-save, .btn-hapus { min-height: 44px; }
+  }
+}
+/* ── KISI KARTU ANGKA & BARIS ALAT (seragam semua halaman, permintaan user 15 Sep 2026) ──
+   .kisi-kartu        = grid StatTile: SELALU 2 kolom di HP (kartu ganjil terakhir melebar penuh), kolom bertambah di layar lebar
+                        sesuai jumlah kartu lewat pengubah .kisi-kartu-3 … -7 (tanpa pengubah = 2 kolom).
+   .baris-alat        = SATU baris untuk kotak cari (.alat-cari), saringan (.alat-saring), dan tombol aksi (.alat-aksi, rata kanan).
+                        Di HP: cari + tombol tetap sebaris — tombol berikon cukup ikonnya (teks tetap dibaca pembaca layar); saringan
+                        turun ke baris berikutnya; kalau tombolnya ≥3, tombol mengambil barisnya sendiri dan tetap berteks. */
+@layer components {
+  .kisi-kartu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .kisi-kartu > * { min-width: 0; }
+  @media (max-width: 639px) { .kisi-kartu > :last-child:nth-child(odd) { grid-column: span 2 / span 2; } }
+  @media (min-width: 640px) {
+    .kisi-kartu { gap: 1rem; }
+    .kisi-kartu-3, .kisi-kartu-5, .kisi-kartu-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kisi-kartu-7 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) { .kisi-kartu-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) {
+    .kisi-kartu-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .kisi-kartu-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .kisi-kartu-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  }
+
+  .baris-alat { display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem 0.75rem; }
+  .baris-alat > .alat-cari { position: relative; flex: 1 1 14rem; min-width: 0; }
+  .baris-alat > .alat-saring { flex: 0 1 13rem; min-width: 0; }
+  .baris-alat > .alat-tab { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+  /* `.alat-aksi` juga dipakai BERDIRI SENDIRI sebagai baris tombol di bawah PageHeader (§3.1) —
+     tombolnya lalu ikut aturan ikon-saja sehingga ukurannya seragam dan sebaris (permintaan user
+     18 Sep 2026: "tombol-tombol tidak rapi dan tidak simetris"). */
+  .alat-aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .baris-alat > .alat-aksi { margin-left: auto; flex-shrink: 0; }
+  @media (max-width: 639px) {
+    .baris-alat > .alat-cari { flex: 1 1 0; order: 0; }
+    .baris-alat > .alat-aksi { order: 1; }
+    .baris-alat > .alat-saring { order: 2; flex: 1 1 100%; }
+    .baris-alat > .alat-tab { order: 2; flex: 1 1 100%; overflow-x: auto; }
+    .baris-alat:not(:has(> .alat-cari)) > .alat-tab:first-child { order: 0; flex: 1 1 0; }
+    .baris-alat:not(:has(> .alat-cari)) > .alat-saring:first-child { flex: 1 1 0; order: 0; }
+    .baris-alat > .alat-aksi:has(> :nth-child(3)) { flex: 1 1 100%; justify-content: flex-end; margin-left: 0; }
+    /* Tombol BERTEKS (.btn-teks / .alat-teks) tidak muat sebaris dengan kotak cari: wadahnya mengambil baris sendiri,
+       tombolnya melebar rata & boleh turun baris. Dulu `flex-shrink: 0` membuat "Scan QR/Barcode" terpotong keluar
+       layar (audit HP 21 Sep 2026: Absensi Siswa, Layanan Sarpras, Dashboard Humas). */
+    .baris-alat > .alat-aksi:is(.alat-teks, :has(> .btn-teks)) { flex: 1 1 100%; margin-left: 0; }
+    .alat-aksi:is(.alat-teks, :has(> .btn-teks)) { max-width: 100%; }
+    .alat-aksi:is(.alat-teks, :has(> .btn-teks)) > :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus) { flex: 1 1 auto; min-width: 0; }
+  }
+  /* TABEL BANYAK KOLOM DI HP = DIGESER, BUKAN DIJEPIT (audit HP 21 Sep 2026). Tabel 5+ kolom yang dipaksa muat ±358px
+     menyusutkan kolom sampai teks patah per kata (tanggal, nama guru, judul ujian jadi 4–6 baris). Dengan lebar minimum
+     tabel melebar dan wadah `overflow-x-auto` menggesernya; PembekuTabel membekukan kolom pertama. Tabel ≤4 kolom tetap
+     mengikuti lebar layar. Khusus layar — hasil cetak tidak berubah. */
+  @media screen and (max-width: 639px) {
+    .data-table:has(> thead > tr:first-child > th:nth-child(5)) { min-width: 36rem; }
+    .data-table:has(> thead > tr:first-child > th:nth-child(7)) { min-width: 46rem; }
+  }
+
+  /* TOMBOL AKSI = IKON SAJA di semua lebar layar (permintaan user 18 September 2026: "tombol tambah,
+     print, kembali dan yang serupa cukup ikon saja tanpa teks" demi menghemat ruang). Teksnya TETAP
+     ada di DOM (font-size: 0) sehingga pembaca layar & pencarian masih membacanya, dan `JudulTombolIkon`
+     menyalin teks itu ke atribut title supaya muncul sebagai tooltip. Tombol di footer Modal TIDAK ikut
+     (Batal/Simpan harus jelas berteks) karena aturan ini hanya berlaku di dalam `.alat-aksi`/`.btn-ikon`. */
+  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus):has(> svg),
+  .btn-ikon:has(> svg) {
+    font-size: 0; gap: 0; width: 2.75rem; padding-inline: 0; justify-content: center;
+  }
+  /* Pengecualian sadar: beri `.alat-teks` pada wadah bila SEMUA tombolnya wajib berteks. */
+  .alat-aksi.alat-teks :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus) { font-size: 0.875rem; gap: 0.5rem; width: auto; padding-inline: 1rem; }
+  /* Pengecualian PER TOMBOL: `.btn-teks` (temuan user 19 September 2026 — "rekap absensi perkalender
+     kok hilang?"). Ikon saja hanya jelas untuk kata kerja umum (Tambah, Cetak, Kembali, Unduh); tombol
+     yang NAMANYA membawa arti sendiri — "Kalender Bulanan", "Lapor Kerusakan", "Denah Ruang Ujian" —
+     jadi tak bisa ditemukan kalau teksnya disembunyikan, karena ikonnya terbaca sebagai aksi umum. */
+  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus).btn-teks:has(> svg),
+  .btn-ikon.btn-teks:has(> svg) { font-size: 0.875rem; gap: 0.5rem; width: auto; padding-inline: 1rem; }
+}
+/* Target sentuh minimal 44px di layar sentuh. */
+@media (pointer: coarse) { .sentuh { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) {
+  .masuk-halus, .panel-interaktif, .bar-tumbuh, .bar-bagian, .donat-seg { transition: none; }
+  .panel-interaktif:hover { translate: none; }
+}
+
+/* =========================================================================
+   PELINDUNG LUBERAN (17 Sep 2026 — temuan user: halaman melebar saat isinya BERUBAH, mis. dropdown kelas diganti ke
+   pilihan yang namanya panjang, atau pesan server panjang tanpa spasi). Anak grid & kolom lentur (flex-1) boleh menyempit
+   di bawah lebar isinya, dan kata/alamat panjang dipatahkan bila tidak muat. Khusus LAYAR: dokumen cetak tidak berubah.
+   :where() = spesifisitas nol, jadi kelas Tailwind (min-w-[…]) tetap menang.
+   ========================================================================= */
+@media screen {
+  :where(.grid) > * { min-width: 0; }
+  :where(.flex-1) { min-width: 0; }
+  body { overflow-wrap: break-word; }
+}
+
+/* ============================================================
+   PAGEHEADER DI DALAM PORTAL (21 September 2026)
+   Keputusan user: header halaman portal (mis. "Ruang Kendali Ujian") NAVY seragam header lain dan berada DI ATAS
+   pita menu tab portal — membalik aturan "header terang di portal" 18 Sep 2026. Pita (`PitaPortal`) menempel tepat
+   di bawah header, jadi jarak bawah header dipindah ke pita. Hanya layar lebar: di bawah lg pita disembunyikan
+   (menu portal = bottom navbar).
+   ============================================================ */
+@media screen and (min-width: 1024px) {
+  .page-header:has(+ .pita-portal) { margin-bottom: 0; }
+}
+
+/* ============================================================
+   KISI MENU ALA APLIKASI BANK (18 September 2026)
+   Permintaan user: tiru pewarnaan & tata letak BRImo/Livin — ikon berwarna bergradasi, kartu
+   membulat, pita pintasan navy, animasi tekan — dengan warna dasar TETAP navy milik sekolah.
+   ============================================================ */
+@layer components {
+  /* Kartu menu: ikon bergradasi + label dua baris. Menekan kartu membuatnya mengecil sedikit
+     (umpan balik sentuh khas aplikasi HP), bukan sekadar berubah warna. */
+  .kartu-menu {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    border-radius: 1rem; padding: 0.75rem 0.25rem; text-align: center;
+    transition: transform 0.18s var(--ease-halus, cubic-bezier(0.16, 1, 0.3, 1)), background-color 0.18s;
+  }
+  .kartu-menu:hover { background-color: #f8f9fc; }
+  .kartu-menu:active { transform: scale(0.94); }
+  /* Chip ikon dibuat BERDIMENSI (permintaan user 18 Sep 2026: "ikonnya jangan cuma ikon"):
+     gradasi warna + kilau lembut di sudut atas + garis dalam tipis + bayangan jatuh, sehingga
+     terlihat seperti kepingan aplikasi, bukan glyph datar. */
+  .kartu-menu .ikon-menu {
+    position: relative; display: flex; height: 3rem; width: 3rem; align-items: center; justify-content: center;
+    border-radius: 0.9rem; color: #fff; overflow: hidden; isolation: isolate;
+    box-shadow: 0 6px 14px -6px rgb(15 26 69 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.35),
+                inset 0 -2px 6px rgb(0 0 0 / 0.12);
+  }
+  .kartu-menu .ikon-menu::before {
+    content: ""; position: absolute; inset: -30% -30% 55% -30%; pointer-events: none; z-index: -1;
+    background: radial-gradient(60% 70% at 30% 0%, rgb(255 255 255 / 0.45), transparent 70%);
+  }
+  .kartu-menu .ikon-menu > * { filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25)); }
+  .kartu-menu:active .ikon-menu { box-shadow: 0 3px 8px -5px rgb(15 26 69 / 0.45); }
+
+  /* Pita pintasan navy di atas kisi menu — padanan baris "Transfer / BRIVA / E-Wallet / Pulsa"
+     di BRImo. Gradien navy standar situs + motif SMK tipis. */
+  .pita-pintasan {
+    position: relative; overflow: hidden; border-radius: 1.25rem;
+    background: linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%);
+  }
+  .pita-pintasan::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.06;
+    background-image: url('/images/pattern-smk.png'); background-size: 120px 120px; filter: invert(1);
+  }
+  .pintasan-item {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    border-radius: 0.9rem; padding: 0.75rem 0.25rem; color: #fff;
+    transition: transform 0.18s var(--ease-halus, cubic-bezier(0.16, 1, 0.3, 1)), background-color 0.18s;
+  }
+  .pintasan-item:hover { background-color: rgb(255 255 255 / 0.08); }
+  .pintasan-item:active { transform: scale(0.94); }
+}
+
+/* Kartu menu muncul berurutan saat halaman dibuka (halus, bukan mencolok). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) or (not (animation-timeline: view())) {
+    .kisi-menu > * { animation: menuMasuk 0.28s var(--ease-halus, cubic-bezier(0.16, 1, 0.3, 1)) both; }
+  }
+  @keyframes menuMasuk { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+/* ============================================================
+   PRATINJAU CETAK DI LAYAR KECIL (18 September 2026)
+   Lembar cetak dibuat selebar kertas (A4 = 794px, rekap landscape sampai 1150px), jadi di HP ia
+   meluber dan SELURUH halaman ikut bisa digeser ke samping (temuan user: "gambar 6 masih melebar").
+   Wadah langsung lembar itu dibuat bergulir sendiri, sehingga yang bergeser hanya kertasnya —
+   bar bawah, header, dan isi halaman lain tetap diam. Saat CETAK aturan ini tidak berlaku.
+   ============================================================ */
+@media screen and (max-width: 1023px) {
+  /* JANGAN dipasang pada wadah yang juga memuat `PageHeader` — header `sticky` di dalam wadah
+     bergulir ikut bergeser mengikuti gulir samping sehingga terlihat "berantakan" menimpa isi
+     (temuan user 18 Sep 2026 di Kalender Matriks). Halaman seperti itu lembarnya memang sudah
+     bergulir sendiri (`overflow-x-auto` di `.print-doc`-nya). */
+  :where(main, section, article, div):has(> .print-doc, > .a4-page):not(:has(> .page-header)) {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .print-doc, .a4-page { flex-shrink: 0; }
+}
+
+/* ============================================================
+   KOLOM DASHBOARD SEJAJAR (18 September 2026)
+   Dua kolom dashboard adalah tumpukan panel yang tingginya bebas, sehingga panel pertama kolom kiri
+   dan kanan sering berhenti di tinggi berbeda dan panel berikutnya jadi tidak sejajar (temuan user:
+   "tinggi dan posisi tidak sama"). Panel PERTAMA tiap kolom kini punya tinggi minimum yang sama di
+   layar lebar, jadi baris pertama rata atas-bawah; sisanya tetap mengalir bebas.
+   ============================================================ */
+@media (min-width: 1280px) {
+  .kolom-dashboard > :first-child { min-height: 15rem; }
+}
+
+/* ============================================================
+   TAMPILAN TERKUNCI (18 September 2026)
+   Selain `userScalable: false` di viewport, ketuk-ganda untuk memperbesar juga dimatikan lewat
+   `touch-action: manipulation` — tanpa ini sebagian browser Android masih memperbesar saat layar
+   diketuk dua kali dengan cepat. Elemen yang MEMANG perlu digeser/dicubit (peta, pratinjau cetak,
+   tabel lebar) tetap bisa digulir karena hanya perbesaran yang dimatikan, bukan gulir.
+   ============================================================ */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }

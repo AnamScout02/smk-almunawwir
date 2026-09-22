@@ -21,6 +21,12 @@ const defaultSlides: Banner[] = [
   { id: "3", title: "Tahfidz Al-Qur'an & Teknologi Modern", subtitle: "Program tahfidz terintegrasi dengan keahlian teknis — lulusan kami hafal Al-Qur'an sekaligus menguasai teknologi masa depan.", linkUrl: "/programs", linkText: "Lihat Program" },
 ];
 
+const defaultSlidesEn: Banner[] = [
+  { id: "1", title: "Nurturing a Qur'anic & Skilled Generation", subtitle: "Combining the national vocational curriculum with intensive Islamic education — preparing a generation of noble character, ready for the global workplace.", linkUrl: "/admissions", linkText: "Register Now" },
+  { id: "2", title: "An International-Class Boarding School", subtitle: "A conducive modern pesantren environment, complete facilities, and 24-hour character development shape outstanding individuals.", linkUrl: "/about", linkText: "Learn More" },
+  { id: "3", title: "Qur'an Memorization & Modern Technology", subtitle: "An integrated tahfidz program with technical skills — our graduates memorize the Qur'an while mastering the technology of the future.", linkUrl: "/programs", linkText: "View Programs" },
+];
+
 interface HeroStats {
   students?: string;
   majors?: string;
@@ -28,16 +34,24 @@ interface HeroStats {
   graduationRate?: string;
 }
 
-export default function Hero({ lang = "id", stats }: { lang?: Lang; stats?: HeroStats }) {
+/** `slideUtama`: judul & paragraf slide pertama dari Konten Halaman (school.tagline / school.hero_subtitle) — dipakai
+ * selama belum ada slide di menu Banner/Hero. */
+export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; stats?: HeroStats; slideUtama?: { title: string; subtitle: string } }) {
   const tr = t(lang);
-  const [slides, setSlides] = useState<Banner[]>(defaultSlides);
+  // Slide bawaan DIHITUNG tiap render dari `lang` (bukan disimpan di state awal): saat bahasa diganti lewat navbar,
+  // halaman hanya di-refresh (komponen tidak dipasang ulang) — state awal akan membeku di bahasa lama.
+  const [banner, setBanner] = useState<Banner[] | null>(null);
+  const dasar = lang === "en" ? defaultSlidesEn : defaultSlides;
+  const slides = banner ?? (slideUtama
+    ? [{ ...dasar[0], title: slideUtama.title || dasar[0].title, subtitle: slideUtama.subtitle || dasar[0].subtitle }, ...dasar.slice(1)]
+    : dasar);
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/banners")
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data) && data.length > 0) setSlides(data); })
+      .then(data => { if (Array.isArray(data) && data.length > 0) setBanner(data); })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, []);

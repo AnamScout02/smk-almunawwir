@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 import { Loader2, ArrowRight, CheckCircle2, XCircle, Printer } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import type { Lang } from "@/lib/lang";
@@ -40,6 +42,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
+  usePrintTitle(result ? buildPrintFilename("Hasil_Kelulusan", result.name) : null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +59,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
 
   if (result) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center print:shadow-none print:border-0">
+      <div className="print-motif bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center print:shadow-none print:border-0">
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${result.lulus ? "bg-emerald-50" : "bg-gray-100"}`}>
           {result.lulus ? <CheckCircle2 size={32} className="text-emerald-600" /> : <XCircle size={32} className="text-gray-400" />}
         </div>

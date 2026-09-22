@@ -6,11 +6,11 @@ interface OrgBox {
 function Box({ label, name }: OrgBox) {
   return (
     <div className="rounded-md overflow-hidden shadow-sm w-full">
-      <div className="bg-primary-900 text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wide px-2 sm:px-3 py-2 text-center leading-tight">
+      <div className="bg-primary-900 text-white text-xs sm:text-xs font-bold uppercase tracking-wide px-2 sm:px-3 py-2 text-center leading-tight">
         {label}
       </div>
       {name && (
-        <div className="bg-gold text-primary-900 text-[11px] sm:text-xs font-semibold px-2 sm:px-3 py-1.5 text-center leading-tight">
+        <div className="bg-gold text-primary-900 text-xs sm:text-xs font-semibold px-2 sm:px-3 py-1.5 text-center leading-tight">
           {name}
         </div>
       )}
@@ -42,8 +42,9 @@ function Connector({ branches }: { branches: number }) {
 }
 
 export default function OrgChartDiagram({
-  kepalaSekolah, row2, row3, waliKelas, guruMapel,
+  kepalaSekolah, row2, row3, waliKelas, guruMapel, lang = "id",
 }: {
+  lang?: "id" | "en";
   kepalaSekolah: OrgBox;
   row2: OrgBox[];
   row3: OrgBox[];
@@ -55,9 +56,9 @@ export default function OrgChartDiagram({
       <div className="min-w-[760px] px-2">
         {/* Baris 1: DU/DI — Kepala Sekolah — Komite Sekolah */}
         <div className="grid grid-cols-3 gap-6 items-start">
-          <Box label="Dunia Usaha / Dunia Industri" />
-          <Box label="Kepala Sekolah" name={kepalaSekolah.name} />
-          <Box label="Komite Sekolah" />
+          <Box label={lang === "en" ? "Business & Industry (DU/DI)" : "Dunia Usaha / Dunia Industri"} />
+          <Box label={kepalaSekolah.label} name={kepalaSekolah.name} />
+          <Box label={lang === "en" ? "School Committee" : "Komite Sekolah"} />
         </div>
         <div className="relative h-7">
           <div className="absolute top-0 h-1/2 w-px bg-primary-300 left-1/2 -translate-x-1/2" />
@@ -84,7 +85,7 @@ export default function OrgChartDiagram({
         <Connector branches={1} />
 
         {/* Baris 5: Guru Mapel */}
-        <Box label="Guru Mata Pelajaran" name={guruMapel} />
+        <Box label={lang === "en" ? "Subject Teachers" : "Guru Mata Pelajaran"} name={guruMapel} />
       </div>
     </div>
   );

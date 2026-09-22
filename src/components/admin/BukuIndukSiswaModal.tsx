@@ -92,10 +92,16 @@ export interface BukuIndukModalStudent {
   birthPlace?: string | null; birthDate?: string | Date | null;
   gender?: string | null; religion?: string | null;
   address?: string | null; parentName?: string | null; parentPhone?: string | null; parentJob?: string | null;
+  notifyEmail?: boolean | null; notifyWhatsapp?: boolean | null;
   previousSchool?: string | null; enrollYear?: number | null; studentStatus?: string | null;
   exitDate?: string | Date | null; studentNotes?: string | null;
   bukuIndukData?: BukuIndukData | Record<string, unknown> | null;
   user: { name: string; email: string };
+  /** Kelas AKTUAL siswa sekarang — opsional/longgar krn tidak semua caller (mis. form "Tambah
+   * Siswa") punya ini. Dipakai HANYA untuk info read-only di sebelah field "Rombel" (supaya
+   * jelas beda dari field itu, yang cuma riwayat rombel saat diterima) — bukan field yang bisa
+   * diedit dari sini. Ubah kelas aktual lewat tombol "Pindah Kelas" (`PindahKelasModal`). */
+  class?: { name: string } | null;
 }
 
 interface MasterEntry { category: string; items: string[] }
@@ -118,6 +124,7 @@ const EMPTY_FORM = {
   nisn: "", birthPlace: "", birthDate: "", gender: "", religion: "",
   address: "", parentName: "", parentPhone: "", parentJob: "", previousSchool: "",
   enrollYear: undefined as number | undefined, studentStatus: "AKTIF", studentNotes: "", exitDate: "",
+  notifyEmail: true, notifyWhatsapp: true,
 };
 const EMPTY_ACCOUNT = { name: "", email: "", password: "", majorId: "", classId: "", enrollYear: "", nis: "" };
 
@@ -133,7 +140,7 @@ interface GuardianKeys {
 
 /** Section E/F/G (Ayah/Ibu/Wali) berstruktur identik — hanya beda key & field penutup. */
 function GuardianSection({
-  title, accent, roleLabel, open, onToggle, keys, f, setF, md, trailing, addressReadOnly,
+  title, accent, roleLabel, open, onToggle, keys, f, setF, md, trailing, addressReadOnly, birthPlaceListId,
 }: {
   title: string; accent: string; roleLabel: string;
   open: boolean; onToggle: () => void; keys: GuardianKeys;
@@ -143,13 +150,15 @@ function GuardianSection({
   trailing: React.ReactNode;
   /** Ayah/Ibu: alamat mengikuti alamat siswa (Section B) & tidak bisa diedit terpisah di sini. */
   addressReadOnly?: boolean;
+  /** id `<datalist>` saran Tempat Lahir — lihat komentar di BukuIndukField.tsx. */
+  birthPlaceListId?: string;
 }) {
   return (
     <Section title={title} icon={Users} open={open} onToggle={onToggle} accent={accent}>
       <Field label={`Nama ${roleLabel}${roleLabel === "Ayah" || roleLabel === "Ibu" ? " Kandung" : " Siswa"}`}
         value={f(keys.name)} wide onChange={setF(keys.name)} />
       <Field label={`NIK ${roleLabel} (16 digit)`} value={f(keys.nik)} type="nik" onChange={setF(keys.nik)} />
-      <Field label={`Tempat Lahir ${roleLabel}`} value={f(keys.birthPlace)} onChange={setF(keys.birthPlace)} />
+      <Field label={`Tempat Lahir ${roleLabel}`} value={f(keys.birthPlace)} list={birthPlaceListId} onChange={setF(keys.birthPlace)} />
       <Field label={`Tanggal Lahir ${roleLabel}`} value={f(keys.birthDate)} type="date" onChange={setF(keys.birthDate)} />
       <Field label="Agama" value={f(keys.religion)} options={md("agama")} onChange={setF(keys.religion)} />
       <Field label="Kewarganegaraan" value={f(keys.citizenship)} options={md("kewarganegaraan")} onChange={setF(keys.citizenship)} />
@@ -176,12 +185,17 @@ function GuardianSection({
 }
 
 export default function BukuIndukSiswaModal({
-  student, isNew, onClose, onSaved,
+  student, isNew, onClose, onSaved, canManageAccount = true,
 }: {
   student: BukuIndukModalStudent | null;
   isNew: boolean;
   onClose: () => void;
   onSaved: () => void;
+  /** Wali kelas boleh edit biodata Buku Induk kelasnya TAPI TIDAK boleh reset password/ganti
+   * email login siswa — itu tetap murni ADMIN/TAS/Operator Sekolah (server juga sudah menolak
+   * field ini kalau di-kirim tanpa akses penuh, lihat [id]/route.ts — prop ini cuma sembunyikan
+   * section-nya di UI supaya wali kelas tidak coba isi field yang toh diam-diam diabaikan). */
+  canManageAccount?: boolean;
 }) {
   const router = useRouter();
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -199,6 +213,7 @@ export default function BukuIndukSiswaModal({
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [previousSchools, setPreviousSchools] = useState<{ name: string; address: string }[]>([]);
+  const [birthPlaces, setBirthPlaces] = useState<string[]>([]);
 
   const open = isNew || student !== null;
   const md = (cat: string): string[] => masterData.find(m => m.category === cat)?.items ?? [];
@@ -211,6 +226,7 @@ export default function BukuIndukSiswaModal({
     fetch("/api/admin/majors").then(r => r.json()).then(d => { if (Array.isArray(d)) setMajors(d); }).catch(() => {});
     fetch("/api/admin/classes").then(r => r.json()).then(d => { if (Array.isArray(d)) setClasses(d); }).catch(() => {});
     fetch("/api/admin/buku-induk/siswa/previous-schools").then(r => r.json()).then(d => { if (Array.isArray(d)) setPreviousSchools(d); }).catch(() => {});
+    fetch("/api/admin/buku-induk/siswa/birth-places").then(r => r.json()).then(d => { if (Array.isArray(d)) setBirthPlaces(d); }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -228,6 +244,7 @@ export default function BukuIndukSiswaModal({
         gender: student.gender ?? "", religion: student.religion ?? "",
         address: student.address ?? "", parentName: student.parentName ?? "",
         parentPhone: student.parentPhone ?? "", parentJob: student.parentJob ?? "",
+        notifyEmail: student.notifyEmail ?? true, notifyWhatsapp: student.notifyWhatsapp ?? true,
         previousSchool: student.previousSchool ?? "",
         enrollYear: student.enrollYear ?? undefined,
         studentStatus: student.studentStatus ?? "AKTIF",
@@ -380,7 +397,7 @@ export default function BukuIndukSiswaModal({
           <button onClick={onClose} className="btn-modal-cancel flex-1">
             Batal
           </button>
-          <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+          <button onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
             <Save size={14} />
             {saving ? "Menyimpan..." : (isNew ? "Buat Siswa" : "Simpan")}
           </button>
@@ -429,8 +446,11 @@ export default function BukuIndukSiswaModal({
         <Field label="Jenis Kelamin" value={String(form.gender ?? "")}
           options={[{ value: "L", label: "Laki-laki" }, { value: "P", label: "Perempuan" }]}
           onChange={v => setForm(p => ({ ...p, gender: v }))} />
-        <Field label="Tempat Lahir" value={String(form.birthPlace ?? "")}
+        <Field label="Tempat Lahir" value={String(form.birthPlace ?? "")} list="birth-place-options"
           onChange={v => setForm(p => ({ ...p, birthPlace: v }))} />
+        <datalist id="birth-place-options">
+          {birthPlaces.map(bp => <option key={bp} value={bp} />)}
+        </datalist>
         <Field label="Tanggal Lahir" value={String(form.birthDate ?? "")} type="date"
           onChange={v => setForm(p => ({ ...p, birthDate: v }))} />
         <Field label="Agama" value={String(form.religion ?? "")} options={md("agama")}
@@ -465,6 +485,20 @@ export default function BukuIndukSiswaModal({
         <Field label="No. HP/Tlp Siswa" value={f("studentPhone")} type="tel" onChange={setF("studentPhone")} />
         <Field label="No. HP/Tlp Orang Tua" value={String(form.parentPhone ?? "")} type="tel"
           onChange={v => setForm(p => ({ ...p, parentPhone: v }))} />
+        <div className="col-span-2">
+          <label className="label-field">Preferensi Notifikasi Tagihan</label>
+          <p className="text-xs text-gray-400 mb-1.5">Belum aktif kirim otomatis (belum ada SMTP/WhatsApp API) — disiapkan utk nanti.</p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={form.notifyEmail} onChange={e => setForm(p => ({ ...p, notifyEmail: e.target.checked }))} className="w-4 h-4 rounded accent-primary-700" />
+              Email
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={form.notifyWhatsapp} onChange={e => setForm(p => ({ ...p, notifyWhatsapp: e.target.checked }))} className="w-4 h-4 rounded accent-primary-700" />
+              WhatsApp
+            </label>
+          </div>
+        </div>
         <Field label="Tinggal Dengan" value={f("livesWith")} options={md("tinggal_dengan")} onChange={setF("livesWith")} />
         <Field label="Jarak ke Sekolah" value={f("distanceToSchool")} options={md("jarak_sekolah")} onChange={setF("distanceToSchool")} />
       </Section>
@@ -482,7 +516,7 @@ export default function BukuIndukSiswaModal({
         {isNew && (
           <>
             <div className="col-span-2 text-xs text-blue-600 bg-blue-50 rounded px-3 py-1.5">
-              Jurusan, Kelas, dan Tahun Masuk otomatis mengisi Bidang/Program/Konsentrasi Keahlian, Diterima di Tingkat, dan Tanggal Diterima di bawah
+              Jurusan, Kelas, dan Tahun Angkatan otomatis mengisi Bidang/Program/Konsentrasi Keahlian, Diterima di Tingkat, dan Tanggal Diterima di bawah
             </div>
             <div>
               <label className="label-field">Jurusan <span className="text-red-500">*</span></label>
@@ -533,11 +567,12 @@ export default function BukuIndukSiswaModal({
                 placeholder="— Pilih Kelas (opsional) —"
               />
             </div>
-            <Field label="Tahun Masuk" value={accountForm.enrollYear} type="number" min={2000} max={2050}
-              placeholder="Contoh: 2024"
+            <Field label="Tahun Angkatan" value={accountForm.enrollYear} type="number" min={2000} max={2050}
+              placeholder="Contoh: 2024" hint="Tahun awal tahun ajaran saat angkatannya duduk di kelas X (angkatan 2024 = kelas X 2024/2025). Siswa pindahan mengikuti angkatan teman sekelasnya."
               onChange={v => {
                 setAccountForm(p => ({ ...p, enrollYear: v }));
-                if (v) setBukuForm(p => ({ ...p, diterimaDate: `${v}-07-01` }));
+                // Tanggal diterima hanya diisi otomatis bila masih kosong — jangan menimpa tanggal asli siswa pindahan.
+                if (v) setBukuForm(p => (p.diterimaDate ? p : { ...p, diterimaDate: `${v}-07-01` }));
               }} />
             <div /> {/* spacer */}
           </>
@@ -567,7 +602,11 @@ export default function BukuIndukSiswaModal({
         <Field label="Kelas Asal (Sekolah Lama)" value={f("kelasAsal")} onChange={setF("kelasAsal")} />
         <Field label="Alasan Pindah ke SMK Ini" value={f("alasanPindahKe")} options={md("alasan_pindah")} onChange={setF("alasanPindahKe")} />
         <Field label="Diterima di Tingkat" value={f("tingkatMasuk")} options={md("tingkat_masuk")} onChange={setF("tingkatMasuk")} />
-        <Field label="Rombel" value={f("rombel")} onChange={setF("rombel")} />
+        <Field label="Rombel (saat diterima)" value={f("rombel")} onChange={setF("rombel")} />
+        {!isNew && (
+          <Field label="Kelas Saat Ini" value={student?.class?.name ?? "Belum ada kelas"} readOnly
+            placeholder="Ubah lewat tombol Pindah Kelas" onChange={() => {}} />
+        )}
         <Field label="Konsentrasi Keahlian" value={f("kompetensiKeahlian")}
           options={!f("kompetensiKeahlian") || kompetensiOptions.includes(f("kompetensiKeahlian"))
             ? kompetensiOptions
@@ -583,10 +622,12 @@ export default function BukuIndukSiswaModal({
           placeholder="Otomatis dari Konsentrasi Keahlian" onChange={() => {}} />
         <Field label="Tanggal Diterima" value={f("diterimaDate")} type="date" onChange={setF("diterimaDate")} />
         {!isNew && (
-          <Field label="Tahun Masuk SMK" value={String(form.enrollYear ?? "")} type="number" min={2000} max={2050}
+          <Field label="Tahun Angkatan" value={String(form.enrollYear ?? "")} type="number" min={2000} max={2050} hint="Tahun awal tahun ajaran saat angkatannya duduk di kelas X (angkatan 2024 = kelas X 2024/2025). Siswa pindahan mengikuti angkatan teman sekelasnya."
             onChange={v => {
               setForm(p => ({ ...p, enrollYear: parseInt(v) || undefined }));
-              if (v) setBukuForm(p => ({ ...p, diterimaDate: `${v}-07-01` }));
+              // Tanggal diterima hanya diisi otomatis bila masih kosong — mengubah angkatan siswa pindahan (mis. diterima Januari)
+              // tidak boleh menimpa tanggal aslinya (temuan 17 Sep 2026).
+              if (v) setBukuForm(p => (p.diterimaDate ? p : { ...p, diterimaDate: `${v}-07-01` }));
             }} />
         )}
       </Section>
@@ -595,7 +636,7 @@ export default function BukuIndukSiswaModal({
       <GuardianSection
         title="E. Keterangan Ayah" accent="text-blue-600" roleLabel="Ayah"
         open={!!sections.e} onToggle={() => toggleSection("e")}
-        f={f} setF={setF} md={md} addressReadOnly
+        f={f} setF={setF} md={md} addressReadOnly birthPlaceListId="birth-place-options"
         keys={{
           name: "fatherName", nik: "fatherNik", birthPlace: "fatherBirthPlace", birthDate: "fatherBirthDate",
           religion: "fatherReligion", citizenship: "fatherCitizenship", education: "fatherEducation",
@@ -609,7 +650,7 @@ export default function BukuIndukSiswaModal({
       <GuardianSection
         title="F. Keterangan Ibu" accent="text-pink-600" roleLabel="Ibu"
         open={!!sections.f} onToggle={() => toggleSection("f")}
-        f={f} setF={setF} md={md} addressReadOnly
+        f={f} setF={setF} md={md} addressReadOnly birthPlaceListId="birth-place-options"
         keys={{
           name: "motherName", nik: "motherNik", birthPlace: "motherBirthPlace", birthDate: "motherBirthDate",
           religion: "motherReligion", citizenship: "motherCitizenship", education: "motherEducation",
@@ -623,7 +664,7 @@ export default function BukuIndukSiswaModal({
       <GuardianSection
         title="G. Keterangan Wali" accent="text-violet-600" roleLabel="Wali"
         open={!!sections.g} onToggle={() => toggleSection("g")}
-        f={f} setF={setF} md={md}
+        f={f} setF={setF} md={md} birthPlaceListId="birth-place-options"
         keys={{
           name: "guardianName", nik: "guardianNik", birthPlace: "guardianBirthPlace", birthDate: "guardianBirthDate",
           religion: "guardianReligion", citizenship: "guardianCitizenship", education: "guardianEducation",
@@ -678,7 +719,7 @@ export default function BukuIndukSiswaModal({
             </div>
           ))}
           <button type="button" onClick={addAchievement}
-            className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-900 font-medium">
+            className="flex items-center gap-2 text-sm text-primary-700 hover:text-primary-900 font-medium">
             <Plus size={14} /> Tambah Penghargaan
           </button>
         </div>
@@ -696,7 +737,7 @@ export default function BukuIndukSiswaModal({
           <div className="col-span-2">
             <a href={`https://maps.google.com/?q=${bukuForm.pklLatitude},${bukuForm.pklLongitude}`}
               target="_blank" rel="noopener noreferrer"
-              className="text-sm text-primary-600 hover:underline">
+              className="text-sm text-primary-700 hover:underline">
               Lihat Lokasi di Google Maps ↗
             </a>
           </div>
@@ -744,36 +785,38 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── M: Akun & Login ───────────────────────────────────────── */}
-      <Section title="M. Akun & Login" icon={KeyRound} open={!!sections.m} onToggle={() => toggleSection("m")} accent="text-indigo-600">
-        <div>
-          <label className="label-field">
-            Email Login {isNew && <span className="text-red-500">*</span>}
-          </label>
-          {isNew ? (
-            <>
-              <input className="input-field" type="email" placeholder="Otomatis dari NISN/NIS setelah diisi (bisa diubah)"
-                value={accountForm.email}
-                onChange={e => setAccountForm(p => ({ ...p, email: e.target.value }))} />
-              <p className="text-xs text-gray-400 mt-1">Terisi otomatis dari NIS begitu diisi.</p>
-            </>
-          ) : (
-            <input className="input-field bg-gray-50 text-gray-500 cursor-default" type="email"
-              value={student?.user.email ?? ""} readOnly />
-          )}
-        </div>
-        <div>
-          <label className="label-field">
-            Password{" "}
-            {isNew ? <span className="text-red-500">*</span>
-              : <span className="text-gray-400">(kosongkan jika tidak diubah)</span>}
-          </label>
-          <input className="input-field" type="password"
-            placeholder={isNew ? "Otomatis = NIS (bisa diubah)" : "Isi untuk reset password"}
-            value={accountForm.password}
-            onChange={e => setAccountForm(p => ({ ...p, password: e.target.value }))} />
-          {isNew && <p className="text-xs text-gray-400 mt-1">Terisi otomatis = &quot;Almunawwir1&quot;. Beri tahu siswa untuk segera ganti password sendiri.</p>}
-        </div>
-      </Section>
+      {canManageAccount && (
+        <Section title="M. Akun & Login" icon={KeyRound} open={!!sections.m} onToggle={() => toggleSection("m")} accent="text-indigo-600">
+          <div>
+            <label className="label-field">
+              Email Login {isNew && <span className="text-red-500">*</span>}
+            </label>
+            {isNew ? (
+              <>
+                <input className="input-field" type="email" placeholder="Otomatis dari NISN/NIS setelah diisi (bisa diubah)"
+                  value={accountForm.email}
+                  onChange={e => setAccountForm(p => ({ ...p, email: e.target.value }))} />
+                <p className="text-xs text-gray-400 mt-1">Terisi otomatis dari NIS begitu diisi.</p>
+              </>
+            ) : (
+              <input className="input-field bg-gray-50 text-gray-500 cursor-default" type="email"
+                value={student?.user.email ?? ""} readOnly />
+            )}
+          </div>
+          <div>
+            <label className="label-field">
+              Password{" "}
+              {isNew ? <span className="text-red-500">*</span>
+                : <span className="text-gray-400">(kosongkan jika tidak diubah)</span>}
+            </label>
+            <input className="input-field" type="password"
+              placeholder={isNew ? "Otomatis = NIS (bisa diubah)" : "Isi untuk reset password"}
+              value={accountForm.password}
+              onChange={e => setAccountForm(p => ({ ...p, password: e.target.value }))} />
+            {isNew && <p className="text-xs text-gray-400 mt-1">Terisi otomatis = &quot;Almunawwir1&quot;. Beri tahu siswa untuk segera ganti password sendiri.</p>}
+          </div>
+        </Section>
+      )}
     </Modal>
   );
 }

@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "TAS" | "TEACHER" | "STUDENT";
+export type Role = "ADMIN" | "TAS" | "TEACHER" | "STUDENT" | "PARENT";
 
 export interface SessionPayload {
   userId: string;
@@ -6,6 +6,11 @@ export interface SessionPayload {
   name: string;
   email: string;
   expiresAt: Date;
+  /** Id baris `UserSession`. Kosong HANYA pada token lama sebelum sistem sesi server (14 Sep 2026) —
+   * token seperti itu dipindahkan otomatis oleh proxy.ts, tidak pernah lolos ke verifySession. */
+  sid?: string;
+  /** Identitas ADMIN asli selama sedang "Masuk Sebagai" akun ini; null/kosong kalau tidak. */
+  imp?: { userId: string; name: string; email: string; role: Role } | null;
 }
 
 export interface NavLink {

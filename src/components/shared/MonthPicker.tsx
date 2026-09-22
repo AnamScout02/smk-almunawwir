@@ -159,10 +159,10 @@ export default function MonthPicker({ value, onChange, placeholder = "Pilih bula
     <div className={`relative ${className}`}>
       <button ref={btnRef} type="button" onClick={openPicker} disabled={disabled}
         className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-colors text-left
-          ${open ? "border-primary-500 ring-2 ring-primary-100 bg-white" : "border-gray-200 bg-white hover:border-primary-400"}
+          ${open ? "border-primary-500 ring-2 ring-primary-100 bg-white" : "border-gray-200 bg-white hover:border-primary-500"}
           ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}
         `}>
-        <CalendarDays size={15} className={open ? "text-primary-600" : "text-gray-400"} />
+        <CalendarDays size={15} className={open ? "text-primary-700" : "text-gray-400"} />
         <span className={`flex-1 ${displayText ? "text-gray-800 font-medium" : "text-gray-400"}`}>
           {displayText || placeholder}
         </span>

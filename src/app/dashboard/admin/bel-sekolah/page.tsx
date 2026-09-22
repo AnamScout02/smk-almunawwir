@@ -1,4 +1,5 @@
 "use client";
+import TimePicker from "@/components/shared/TimePicker";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Plus, Trash2, Save, Loader2, Play, Volume2, Upload, X, MonitorPlay } from "lucide-react";
@@ -100,12 +101,12 @@ export default function BelSekolahPage() {
       <PageHeader icon={<Bell size={22} />} title="Bel Sekolah Otomatis"
         description="Jadwal bel otomatis — dimainkan lewat halaman Player yang dibuka di PC TU/Piket" />
 
-      <div className="flex flex-wrap justify-end gap-2 mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/admin/bel-sekolah/player" target="_blank"
           className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
           <MonitorPlay size={15} /> Buka Player
         </Link>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm"><Plus size={15} /> Tambah Jadwal</button>
+        <button onClick={openCreate} className="btn-modal-save"><Plus size={15} /> Tambah Jadwal</button>
       </div>
 
       <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-4 text-sm mb-6">
@@ -117,32 +118,32 @@ export default function BelSekolahPage() {
       ) : items.length === 0 ? (
         <EmptyState icon={Bell} title="Belum Ada Jadwal Bel" description="Tambahkan jadwal bel pertama, mis. Bel Masuk jam 06:45." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
-                  <th className="px-4 py-3">Waktu</th><th className="px-4 py-3">Nama</th><th className="px-4 py-3">Hari</th>
-                  <th className="px-4 py-3">Audio</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Aksi</th>
+                <tr>
+                  <th>Waktu</th><th>Nama</th><th>Hari</th>
+                  <th>Audio</th><th>Status</th><th className="text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map(item => (
-                  <tr key={item.id} className={`border-b border-gray-50 last:border-0 hover:bg-primary-50/30 ${!item.active ? "opacity-40" : ""}`}>
-                    <td className="px-4 py-2.5 font-bold text-primary-900 font-mono">{item.time}</td>
-                    <td className="px-4 py-2.5">{item.label}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">{item.days.split(",").map(d => DAY_SHORT[d] ?? d).join(", ")}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">{item.audioUrl ? "Custom (MP3)" : "Nada Bawaan"}</td>
-                    <td className="px-4 py-2.5">
+                  <tr key={item.id} className={`${!item.active ? "opacity-40" : ""}`}>
+                    <td className="font-bold text-primary-900 font-mono">{item.time}</td>
+                    <td>{item.label}</td>
+                    <td className="text-xs text-gray-500">{item.days.split(",").map(d => DAY_SHORT[d] ?? d).join(", ")}</td>
+                    <td className="text-xs text-gray-500">{item.audioUrl ? "Custom (MP3)" : "Nada Bawaan"}</td>
+                    <td>
                       <button onClick={() => toggleActive(item)}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-400"}`}>
+                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-400"}`}>
                         {item.active ? "Aktif" : "Nonaktif"}
                       </button>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex justify-end gap-1">
+                    <td className="text-right">
+                      <div className="alat-aksi justify-end">
                         <button onClick={() => testPlay(item)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Tes Suara"><Play size={14} /></button>
-                        <button onClick={() => openEdit(item)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition text-xs font-semibold px-2">Edit</button>
+                        <button onClick={() => openEdit(item)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition text-xs font-semibold px-2">Edit</button>
                         <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>
                       </div>
                     </td>
@@ -166,7 +167,7 @@ export default function BelSekolahPage() {
           </div>
           <div>
             <label className="label-field">Waktu</label>
-            <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className="input-field w-40" />
+            <TimePicker value={form.time} onChange={v => setForm(f => ({ ...f, time: v }))} className="w-40" />
           </div>
           <div>
             <label className="label-field">Hari</label>

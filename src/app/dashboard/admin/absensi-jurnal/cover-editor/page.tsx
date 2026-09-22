@@ -121,25 +121,25 @@ export default function CoverEditorPage() {
       />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/absensi-jurnal" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/absensi-jurnal" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
         <button onClick={handleSave} disabled={saving}
-          className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+          className="btn-modal-save sm:ml-auto">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Template
         </button>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Canvas */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="panel p-6">
           <div className="flex items-center justify-between mb-4">
             <label className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-900 text-white rounded-lg text-sm cursor-pointer transition-colors">
               {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
               {imageUrl ? "Ganti Gambar" : "Upload Gambar"}
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
             </label>
-            <button onClick={addText} className="flex items-center gap-2 px-4 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg text-sm font-semibold transition-colors">
+            <button onClick={addText} className="btn-modal-cancel">
               <Plus size={15} /> Tambah Teks
             </button>
           </div>
@@ -181,7 +181,7 @@ export default function CoverEditorPage() {
         </div>
 
         {/* Side panel */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="panel p-5 space-y-4">
           <h3 className="font-heading font-bold text-primary-900 text-sm">
             {selected ? "Edit Teks" : "Daftar Teks"}
           </h3>
@@ -228,7 +228,7 @@ export default function CoverEditorPage() {
                 <label className="label-field">Lebar Teks ({selected.widthPct ?? DEFAULT_WIDTH_PCT}%)</label>
                 <input type="range" min={10} max={100} value={selected.widthPct ?? DEFAULT_WIDTH_PCT}
                   onChange={e => updateSelected({ widthPct: Number(e.target.value) })} className="w-full accent-primary-700" />
-                <p className="text-[11px] text-gray-400 mt-0.5">Perbesar supaya teks panjang tidak terlalu banyak bungkus baris.</p>
+                <p className="text-xs text-gray-400 mt-0.5">Perbesar supaya teks panjang tidak terlalu banyak bungkus baris.</p>
               </div>
               <div>
                 <label className="label-field">Perataan</label>
@@ -240,7 +240,7 @@ export default function CoverEditorPage() {
                 Tebal (Bold)
               </label>
               <div className="flex gap-2 pt-2">
-                <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1 text-sm">Selesai</button>
+                <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1">Selesai</button>
                 <button onClick={deleteSelected} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-colors">
                   <Trash2 size={14} /> Hapus
                 </button>

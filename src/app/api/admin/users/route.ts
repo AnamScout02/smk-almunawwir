@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { jsonBesar } from "@/lib/json-besar";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { toProperCaseName } from "@/lib/text";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await verifyRole(["ADMIN"]);
     const users = await prisma.user.findMany({
@@ -14,7 +15,7 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
-    return Response.json(users);
+    return jsonBesar(users, req);
   } catch {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

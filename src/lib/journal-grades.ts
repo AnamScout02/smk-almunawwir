@@ -8,6 +8,9 @@ export interface JournalGradeAgg {
   avgPengetahuan: number | null;
   avgKeterampilan: number | null;
   avg: number | null;
+  /** Materi jurnal dengan nilai (rata P/K) tertinggi & terendah siswa itu — bahan deskripsi capaian rapor. */
+  materiTerbaik: string | null;
+  materiTerendah: string | null;
 }
 
 /** Nilai "resmi" mapel sekarang dihitung dari rata-rata skor Pengetahuan/Keterampilan yang guru
@@ -38,17 +41,25 @@ export async function getJournalGradeAggregates(opts: {
       studentId: true,
       scorePengetahuan: true,
       scoreKeterampilan: true,
-      journal: { select: { subject: true, semester: true } },
+      journal: { select: { subject: true, semester: true, materi: true } },
     },
   });
 
   const bucketKey = (studentId: string, subject: string, semester: string) => `${studentId}::${subject}::${semester}`;
-  const buckets = new Map<string, { studentId: string; subject: string; semester: string; p: number[]; k: number[] }>();
+  type Bucket = { studentId: string; subject: string; semester: string; p: number[]; k: number[]; materi: Map<string, number[]> };
+  const buckets = new Map<string, Bucket>();
   for (const e of entries) {
     const k = bucketKey(e.studentId, e.journal.subject, e.journal.semester);
-    const b = buckets.get(k) ?? { studentId: e.studentId, subject: e.journal.subject, semester: e.journal.semester, p: [], k: [] };
+    const b: Bucket = buckets.get(k) ?? { studentId: e.studentId, subject: e.journal.subject, semester: e.journal.semester, p: [], k: [], materi: new Map() };
     if (e.scorePengetahuan !== null) b.p.push(e.scorePengetahuan);
     if (e.scoreKeterampilan !== null) b.k.push(e.scoreKeterampilan);
+    const nilaiPertemuan = [e.scorePengetahuan, e.scoreKeterampilan].filter((v): v is number => v !== null);
+    const materi = e.journal.materi?.trim();
+    if (materi && nilaiPertemuan.length) {
+      const daftar = b.materi.get(materi) ?? [];
+      daftar.push(nilaiPertemuan.reduce((a, c) => a + c, 0) / nilaiPertemuan.length);
+      b.materi.set(materi, daftar);
+    }
     buckets.set(k, b);
   }
 
@@ -57,9 +68,13 @@ export async function getJournalGradeAggregates(opts: {
     const avgPengetahuan = avg(b.p);
     const avgKeterampilan = avg(b.k);
     const combined = [avgPengetahuan, avgKeterampilan].filter((v): v is number => v !== null);
+    const perMateri = [...b.materi.entries()].map(([m, v]) => ({ m, n: v.reduce((a, c) => a + c, 0) / v.length }))
+      .sort((x, y) => y.n - x.n);
     return {
       studentId: b.studentId, subject: b.subject, semester: b.semester,
       avgPengetahuan, avgKeterampilan,
+      materiTerbaik: perMateri[0]?.m ?? null,
+      materiTerendah: perMateri.length > 1 ? perMateri[perMateri.length - 1].m : null,
       avg: combined.length ? Math.round((combined.reduce((a, c) => a + c, 0) / combined.length) * 100) / 100 : null,
     };
   });

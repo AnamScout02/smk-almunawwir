@@ -19,6 +19,29 @@ function toISO(d: Date): string {
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+/** Format ringkas dd/mm/yyyy untuk buffer ketikan (`typed`) — trigger dulu tampil format panjang
+ * "23 Oktober 2026" sebelum perbaikan ini menjadikannya input yang bisa diketik. */
+function toShort(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+/** Terima ketikan bebas "23/10/26", "23/10/2026", "23-10-26", dst — tahun 2 digit ditebak
+ * pakai aturan umum (00-50 -> 2000-an, 51-99 -> 1900-an, wajar utk sekolah: tanggal lahir
+ * ortu/staf umumnya 1900-an, tanggal lahir siswa/tahun ajaran umumnya 2000-an). Menolak
+ * tanggal yang tidak benar-benar ada (mis. 31/02) — bukan cuma di luar rentang 1-31/1-12. */
+function parseTyped(raw: string): Date | null {
+  const m = raw.trim().match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})$/);
+  if (!m) return null;
+  const day = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  let year = parseInt(m[3], 10);
+  if (m[3].length === 2) year = year <= 50 ? 2000 + year : 1900 + year;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  // Date() diam-diam "menggeser" tanggal yang tidak valid (mis. 31 Feb -> 3 Mar) — cek balik
+  // supaya tanggal semacam itu ditolak, bukan diam-diam diganti.
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return d;
+}
 
 interface DatePickerProps {
   value: string;
@@ -39,9 +62,34 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
   const [mode, setMode] = useState<"day" | "month" | "year">("day");
   const [yearBase, setYearBase] = useState(Math.floor((selected?.getFullYear() ?? today.getFullYear()) / 12) * 12);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  // Buffer ketikan bebas — terpisah dari `value` (ISO, controlled parent) supaya user bisa
+  // mengetik setengah jalan ("23/1") tanpa tiap keystroke dipaksa jadi tanggal valid.
+  const [typed, setTyped] = useState(selected ? toShort(selected) : "");
 
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const btnRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+
+  // Sinkron ulang buffer ketikan tiap kali `value` berubah dari LUAR (dipilih lewat kalender,
+  // di-reset form, dst) — supaya tampilan teks selalu representasi valid dari `value` terkini
+  // saat user TIDAK sedang aktif mengetik (fokus pindah/blur sudah commit atau revert duluan).
+  useEffect(() => {
+    setTyped(selected ? toShort(selected) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  function commitTyped() {
+    const trimmed = typed.trim();
+    if (!trimmed) { onChange(""); return; }
+    const parsed = parseTyped(trimmed);
+    if (parsed) {
+      onChange(toISO(parsed));
+      setViewYear(parsed.getFullYear());
+      setViewMonth(parsed.getMonth());
+    } else {
+      // Ketikan tidak valid — batalkan diam-diam ke nilai valid terakhir, jangan simpan sampah.
+      setTyped(selected ? toShort(selected) : "");
+    }
+  }
 
   // Posisikan popup lewat portal
   function calcPosition() {
@@ -108,10 +156,6 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
   function pickDay(d: Date) { onChange(toISO(d)); setOpen(false); setMode("day"); }
   function clear(e: React.MouseEvent) { e.stopPropagation(); onChange(""); }
 
-  const displayText = selected
-    ? `${selected.getDate()} ${MONTHS_FULL[selected.getMonth()]} ${selected.getFullYear()}`
-    : "";
-
   const popup = (
     <div
       ref={popupRef}
@@ -137,7 +181,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
           </div>
           <div className="grid grid-cols-7 bg-primary-50 border-b border-primary-100">
             {DAYS.map(d => (
-              <div key={d} className="py-1.5 text-center text-[11px] font-bold text-primary-400">{d}</div>
+              <div key={d} className="py-1.5 text-center text-xs font-bold text-primary-500">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 p-2 gap-0.5 bg-white">
@@ -163,7 +207,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
           </div>
           <div className="px-3 pb-3 flex justify-center">
             <button type="button" onClick={() => pickDay(today)}
-              className="text-xs text-primary-600 hover:text-primary-900 font-semibold transition-colors px-3 py-1 rounded-full hover:bg-primary-50">
+              className="text-xs text-primary-700 hover:text-primary-900 font-semibold transition-colors px-3 py-1 rounded-full hover:bg-primary-50">
               Hari Ini
             </button>
           </div>
@@ -241,28 +285,40 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
 
   return (
     <div className={`relative ${className}`}>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={openPicker}
-        disabled={disabled}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-colors text-left
-          ${open
-            ? "border-primary-500 ring-2 ring-primary-100 bg-white"
-            : "border-gray-200 bg-white hover:border-primary-400"}
-          ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}
+      {/* Bisa diklik (buka kalender) MAUPUN diketik langsung "dd/mm/yy" atau "dd/mm/yyyy" —
+          keduanya jalan bareng, bukan salah satu doang. Ketikan cuma di-commit (dipanggil
+          onChange) saat blur/Enter, supaya ketikan setengah jalan tidak dipaksa jadi tanggal. */}
+      <div
+        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-colors
+          ${open ? "border-primary-500 ring-2 ring-primary-100 bg-white" : "border-gray-200 bg-white hover:border-primary-500"}
+          ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
         `}
       >
-        <CalendarDays size={15} className={open ? "text-primary-600" : "text-gray-400"} />
-        <span className={`flex-1 ${displayText ? "text-gray-800 font-medium" : "text-gray-400"}`}>
-          {displayText || placeholder}
-        </span>
-        {displayText && !disabled && (
-          <span onClick={clear} className="p-0.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+        <CalendarDays size={15} className={`shrink-0 ${open ? "text-primary-700" : "text-gray-400"}`} />
+        <input
+          ref={btnRef}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          disabled={disabled}
+          placeholder={`${placeholder} (dd/mm/yy)`}
+          value={typed}
+          onChange={e => setTyped(e.target.value)}
+          onFocus={e => { openPicker(); e.target.select(); }}
+          onBlur={commitTyped}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.currentTarget.blur(); }
+            else if (e.key === "Escape") { setTyped(selected ? toShort(selected) : ""); e.currentTarget.blur(); }
+          }}
+          className={`flex-1 min-w-0 outline-none bg-transparent ${typed ? "text-gray-800 font-medium" : "text-gray-400"} ${disabled ? "cursor-not-allowed" : ""}`}
+        />
+        {typed && !disabled && (
+          <button type="button" onMouseDown={e => e.preventDefault()} onClick={clear}
+            className="shrink-0 p-0.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
             <X size={12} />
-          </span>
+          </button>
         )}
-      </button>
+      </div>
 
       {open && typeof document !== "undefined" && createPortal(popup, document.body)}
     </div>

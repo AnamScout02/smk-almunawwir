@@ -1,313 +1,211 @@
 export const dynamic = "force-dynamic";
 
+import { Fragment } from "react";
+
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { pengumumanUntuk } from "@/lib/pengumuman";
 import { getCurrentWeekType } from "@/lib/schedule-week.server";
 import { getWakilKepalaAgenda } from "@/lib/agenda";
-import { getClassesMissingAttendance } from "@/lib/attendance-gaps";
+import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
+import { cekLibur } from "@/lib/hari-libur";
 import AgendaCalendar from "@/components/shared/AgendaCalendar";
+import JadwalHariIni from "@/components/shared/JadwalHariIni";
+import JadwalMingguan from "@/components/shared/JadwalMingguan";
+import Panel, { PanelKosong, DaftarPengumuman } from "@/components/shared/Panel";
+import StatTile from "@/components/admin/StatTile";
 import {
-  Users, BookOpen, ClipboardList, CheckSquare, Bell, Calendar,
-  UserCog, ArrowRight, Sparkles, TrendingUp, GraduationCap,
+  CalendarClock, CalendarRange, GraduationCap, History, Megaphone, UsersRound, NotebookText, LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
+import PageHeader from "@/components/admin/PageHeader";
+import { MenuGuru } from "@/components/shared/MenuPortal";
+import { konteksMenuGuru, menuFavoritAkun } from "@/lib/menu-konteks";
+
+// Ikon lucide di halaman server ini hanya di markup server & masing-masing sekali; ke komponen klien kirim NAMA ikon (CLAUDE.md #35).
+const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
+const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
 
 export default async function TeacherDashboard() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
+  const konteksMenu = await konteksMenuGuru(session);
+  const favoritAwal = await menuFavoritAkun(session);
 
   const now = new Date();
-  const since7d = new Date();
-  since7d.setDate(since7d.getDate() - 7);
+  // Hari & tanggal menurut WIB — server berjalan di UTC (dulu pukul 00.00–07.00 WIB masih menampilkan hari kemarin).
+  const wib = new Date(now.getTime() + 7 * 3600_000);
+  const tanggalWib = wib.toISOString().slice(0, 10);
+  const hariIni = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"][wib.getUTCDay()];
+  const since7d = new Date(now.getTime() - 7 * 86400_000);
   const currentWeekType = await getCurrentWeekType();
-  const [teacher, announcements, teachingSchedules, agenda] = await Promise.all([
+
+  const [teacher, announcements, teachingSchedules, agenda, libur] = await Promise.all([
     prisma.teacher.findFirst({
       where: { user: { email: session.email } },
       include: {
+        _count: { select: { teachingLoad: true } },
+        jabatan: { select: { jabatan: { select: { name: true } } } },
         homeroomOf: {
           include: {
-            students: { where: { studentStatus: "AKTIF" }, include: { user: { select: { name: true } } } },
-            major: true,
+            students: { where: { studentStatus: "AKTIF" }, select: { id: true } },
+            major: { select: { name: true } },
           },
         },
-        teachingLoad: { include: { subject: { select: { name: true } } }, distinct: ["subjectId"] },
       },
     }),
-    prisma.announcement.findMany({
-      where: {
-        active: true,
-        targetRole: { in: ["ALL", "TEACHER"] },
-        startDate: { lte: now },
-        OR: [{ endDate: null }, { endDate: { gte: now } }],
-      },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-      take: 5,
-    }),
-    // Widget "Jadwal Mengajar" di dashboard sengaja TIDAK menampilkan kelas XII (keputusan
-    // eksplisit user) — jadwal kelas XII belum ikut proses verifikasi/reimport yang sama dgn X/XI.
+    pengumumanUntuk(session, 5).catch(() => []),
+    // Widget jadwal di dashboard sengaja TIDAK menampilkan kelas XII (keputusan eksplisit user) — jadwal kelas XII
+    // belum ikut proses verifikasi/reimport yang sama dgn X/XI.
     prisma.schedule.findMany({
       where: { teacher: { user: { email: session.email } }, weekType: { in: ["SEMUA", currentWeekType] }, scheduleType: "BLOK", class: { grade: { not: 12 } } },
-      include: { class: { include: { major: true } } },
+      include: { class: { select: { name: true } } },
       orderBy: [{ day: "asc" }, { startTime: "asc" }],
     }),
     getWakilKepalaAgenda(),
+    cekLibur(tanggalWib).catch(() => null),
   ]);
 
-  // Nilai sekarang diisi lewat Jurnal Mengajar (bukan halaman Input Nilai terpisah, dihapus per
-  // keputusan user — lihat src/lib/journal-grades.ts). Panel & statistik di bawah menunjukkan
-  // aktivitas Jurnal guru ini, bukan lagi baris Grade.
+  // Nilai diisi lewat Jurnal Mengajar (src/lib/journal-grades.ts) — statistik di sini = aktivitas Jurnal guru ini.
   const [journalCount7d, recentJournals] = teacher ? await Promise.all([
     prisma.teachingJournal.count({ where: { teacherId: teacher.id, date: { gte: since7d } } }),
     prisma.teachingJournal.findMany({
       where: { teacherId: teacher.id },
       orderBy: { date: "desc" },
-      take: 6,
+      take: 5,
       include: { class: { select: { name: true } } },
     }),
   ]) : [0, []];
 
-  // Pengingat "belum absen hari ini" — cuma dicek utk kelas wali guru ini sendiri (bukan lintas
-  // kelas), dan cuma kalau hari ini hari sekolah (getClassesMissingAttendance sendiri sudah balikin
-  // array kosong kalau hari Minggu). Lihat src/lib/attendance-gaps.ts.
-  const todayMidnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const missingAttendanceClasses = teacher?.homeroomOf.length
-    ? await getClassesMissingAttendance(todayMidnightUTC, teacher.homeroomOf.map(c => c.id))
-    : [];
+  const kelasWali = teacher?.homeroomOf ?? [];
+  // Tampilkan hanya yang relevan (permintaan user 17 Sep 2026): jadwal & jurnal untuk yang MENGAJAR, kelas wali untuk WALI KELAS.
+  const mengajar = (teacher?._count.teachingLoad ?? 0) > 0 || teachingSchedules.length > 0;
+  const wali = kelasWali.length > 0;
+  const jabatan = teacher?.jabatan.map(j => j.jabatan.name) ?? [];
+  const totalStudents = kelasWali.reduce((acc, c) => acc + c.students.length, 0);
 
-  const totalStudents = teacher?.homeroomOf.reduce((acc, c) => acc + c.students.length, 0) ?? 0;
+  // JP berurutan pada kelas & mapel yang sama digabung jadi satu blok.
+  const slotHari = (hari: string) => groupConsecutiveSchedules(teachingSchedules.filter(s => s.day === hari), s => `${s.subject}|${s.classId}`)
+    .sort((a, b) => a.first.startTime.localeCompare(b.first.startTime))
+    .map(b => ({ id: b.first.id, mulai: b.first.startTime, selesai: b.last.endTime, judul: b.first.subject, keterangan: b.first.class.name }));
+  const jadwalMinggu = DAYS.map(kode => ({ kode, label: DAY_LABEL[kode], slot: slotHari(kode) })).filter(h => h.slot.length);
+  const slotHariIni = hariIni === "MINGGU" || libur ? [] : slotHari(hariIni);
 
-  const DAYS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
-  const DAY_LABEL: Record<string, string> = { SENIN: "Senin", SELASA: "Selasa", RABU: "Rabu", KAMIS: "Kamis", JUMAT: "Jumat", SABTU: "Sabtu" };
-  const todayDay = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"][now.getDay()];
-  const dateStr = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  const kosongHariIni = libur ? `Hari ini libur — ${libur.nama}.`
+    : hariIni === "MINGGU" ? "Hari Minggu, tidak ada jadwal mengajar."
+    : "Tidak ada jadwal mengajar hari ini.";
+
+  const kartu: { key: string; node: React.ReactNode }[] = [
+    ...(wali ? [
+      { key: "siswa", node: <StatTile tampilan="lembut" ikon="siswa-wali" label="Siswa Wali Kelas" value={totalStudents} color="blue" /> },
+      { key: "kelas", node: <StatTile tampilan="lembut" ikon="buku" label="Kelas Wali" value={kelasWali.length} color="purple" /> },
+    ] : []),
+    ...(mengajar ? [
+      { key: "jurnal", node: <StatTile tampilan="lembut" href="/dashboard/teacher/journal" ikon="tren" label="Jurnal 7 Hari Terakhir" value={journalCount7d} color="emerald" /> },
+      { key: "sesi", node: <StatTile tampilan="lembut" href="/dashboard/teacher/schedule" ikon="jam" label="Sesi Mengajar Hari Ini" value={slotHariIni.length} color="amber" /> },
+    ] : []),
+    ...(!wali && !mengajar ? [
+      { key: "jabatan", node: <StatTile tampilan="lembut" ikon="daftar-centang" label="Jabatan yang dipegang" value={jabatan.length} color="primary" /> },
+      { key: "pengumuman", node: <StatTile tampilan="lembut" ikon="pesan" label="Pengumuman aktif" value={announcements.length} color="blue" /> },
+    ] : []),
+  ];
 
   return (
-    <div className="min-h-screen">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      {/* Header = PageHeader standar (keputusan user 2026-08-23): salam & nama di description, bukan title. */}
+      <PageHeader
+        icon={<LayoutDashboard size={22} />}
+        title="Dashboard Guru"
+        description={<><span className="font-arabic" style={{ lineHeight: 2.2 }}>اَلسَّلَامُ عَلَيْكُمْ</span> — <span className="font-medium">{session.name}</span><span className="hidden sm:inline"> · {dateStr}</span></>}
+      />
 
-      {/* ── Header ── */}
-      <div className="relative overflow-hidden sticky top-14 lg:top-0 z-30"
-        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 50%, #1B2B6B 100%)" }}>
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-        <div className="relative px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <p className="font-arabic text-gold text-2xl mb-1" style={{ lineHeight: 1.8 }}>اَلسَّلَامُ عَلَيْكُمْ</p>
-            <h1 className="font-heading text-2xl font-bold text-white">{session.name}</h1>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Sparkles size={14} className="text-gold" />
-            <p className="text-gold/80 text-xs font-semibold tracking-widest uppercase">{dateStr}</p>
-          </div>
-        </div>
-      </div>
+      <div className="space-y-6">
+        {/* Kisi menu ala aplikasi bank (18 Sep 2026) — seluruh menu portal guru terkumpul di sini. */}
+        <MenuGuru ringkas={12} hrefSemua="/dashboard/teacher/menu" judul="Menu Cepat" favoritAwal={favoritAwal} {...konteksMenu} />
 
-      <div className="px-6 lg:px-8 py-8 space-y-7">
+        <DaftarPengumuman ikon={<Megaphone />} pengumuman={announcements} />
 
-        {/* ── Announcements ── */}
-        {announcements.length > 0 && (
-          <div className="space-y-2">
-            {announcements.map(ann => (
-              <div key={ann.id}
-                className={`flex items-start gap-3 p-4 rounded-2xl border ${
-                  ann.priority === "URGENT" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-100"
-                }`}>
-                <Bell size={15} className={`shrink-0 mt-0.5 ${ann.priority === "URGENT" ? "text-red-500" : "text-amber-600"}`} />
-                <div>
-                  <p className={`font-semibold text-sm ${ann.priority === "URGENT" ? "text-red-800" : "text-amber-900"}`}>
-                    {ann.priority === "URGENT" && <span className="text-red-500 mr-1">[URGENT]</span>}
-                    {ann.title}
-                  </p>
-                  <p className="text-xs mt-0.5 text-gray-600 leading-relaxed">{ann.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Pengingat Belum Absen ── */}
-        {missingAttendanceClasses.length > 0 && (
-          <div className="space-y-2">
-            {missingAttendanceClasses.map(cls => (
-              <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`}
-                className="flex items-center gap-3 p-4 rounded-2xl border bg-amber-50 border-amber-200 hover:bg-amber-100 transition-colors">
-                <CheckSquare size={15} className="shrink-0 text-amber-600" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-amber-900">Absensi {cls.name} hari ini belum diisi</p>
-                  <p className="text-xs text-amber-700/80">Klik untuk isi sekarang, sebelum kelupaan.</p>
-                </div>
-                <ArrowRight size={14} className="shrink-0 text-amber-600" />
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { icon: Users, label: "Siswa Wali Kelas", value: totalStudents, grad: "from-primary-500 to-primary-700", ring: "ring-primary-100" },
-            { icon: BookOpen, label: "Kelas Wali", value: teacher?.homeroomOf.length ?? 0, grad: "from-amber-500 to-amber-600", ring: "ring-amber-100" },
-            { icon: TrendingUp, label: "Jurnal 7 Hari Terakhir", value: journalCount7d, grad: "from-emerald-500 to-emerald-600", ring: "ring-emerald-100" },
-          ].map(({ icon: Icon, label, value, grad, ring }) => (
-            <div key={label} className={`group relative overflow-hidden rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all bg-gradient-to-br ${grad} ring-1 ${ring} min-w-0`}>
-              <div className="absolute -right-3 -bottom-3 opacity-15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Icon size={56} className="text-white" />
-              </div>
-              <div className="relative">
-                <p className="text-white/70 text-xs font-medium mb-1">{label}</p>
-                <p className="font-heading font-bold text-3xl text-white">{value}</p>
-              </div>
-            </div>
-          ))}
+        {/* Pengingat absensi/jurnal yang belum diisi cukup di kotak notifikasi (lonceng) — tidak diulang di sini (gotcha #31). */}
+        <div className={`kisi-kartu ${kartu.length >= 4 ? "kisi-kartu-4" : ""}`}>
+          {kartu.map(k => <Fragment key={k.key}>{k.node}</Fragment>)}
         </div>
 
-        {/* ── Kelas Wali ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50">
-            <GraduationCap size={16} className="text-primary-700" />
-            <h3 className="font-heading font-semibold text-navy">Kelas Wali Saya</h3>
-          </div>
-          {teacher?.homeroomOf.length ? (
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {teacher.homeroomOf.map((cls) => (
-                <div key={cls.id} className="border border-gray-100 rounded-2xl p-5 min-w-0 hover:border-primary-200 hover:shadow-sm transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h4 className="font-heading font-bold text-navy">{cls.name}</h4>
-                      <p className="text-gray-400 text-sm mt-0.5">{cls.major.name}</p>
-                    </div>
-                    <span className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-3 py-1 rounded-full font-semibold">
-                      {cls.students.length} siswa
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Link href={`/dashboard/teacher/dkn/${cls.id}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                      <ClipboardList size={14} /> DKN Kelas
-                    </Link>
-                    <Link href={`/dashboard/teacher/attendance/${cls.id}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                      <CheckSquare size={14} /> Absensi
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-400">
-              <UserCog size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Belum menjadi wali kelas manapun.</p>
-            </div>
-          )}
-        </div>
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-7">
+            {mengajar ? (
+              <>
+                <Panel judul="Jadwal Hari Ini" ikon={<CalendarClock />} keterangan={DAY_LABEL[hariIni] ?? "Minggu"}>
+                  <JadwalHariIni slot={slotHariIni} kosong={kosongHariIni} />
+                </Panel>
 
-        {/* ── Jadwal + Nilai Terakhir ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Jadwal Mengajar */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-50">
-              <Calendar size={16} className="text-primary-700" />
-              <h3 className="font-heading font-semibold text-navy text-sm">Jadwal Mengajar</h3>
-            </div>
-            {teachingSchedules.length > 0 ? (
-              <div className="p-4 space-y-2">
-                {DAYS.filter(d => teachingSchedules.some(s => s.day === d)).map(day => {
-                  const ds = teachingSchedules.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
-                  const isToday = day === todayDay;
-                  return (
-                    <div key={day} className={`rounded-xl overflow-hidden border ${isToday ? "border-primary-300 ring-1 ring-primary-100" : "border-gray-100"}`}>
-                      <div className={`px-4 py-2 text-xs font-semibold flex items-center gap-2 ${isToday ? "bg-primary-700 text-white" : "bg-gray-50 text-gray-500"}`}>
-                        {DAY_LABEL[day]}
-                        {isToday && <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Hari ini</span>}
-                      </div>
-                      <div className="divide-y divide-gray-50">
-                        {ds.map(s => (
-                          <div key={s.id} className="px-4 py-2.5 flex items-center gap-3 text-xs">
-                            <span className="font-mono text-primary-700 font-bold w-20 shrink-0 text-[10px]">{s.startTime}–{s.endTime}</span>
-                            <span className="font-medium text-gray-800 flex-1 min-w-0 truncate">{s.subject}</span>
-                            <span className="text-[10px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-semibold shrink-0">{s.class.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                <Panel judul="Jadwal Mengajar Minggu Ini" ikon={<CalendarRange />}
+                  tautan={{ label: "Jadwal lengkap", href: "/dashboard/teacher/schedule" }}>
+                  <JadwalMingguan hari={jadwalMinggu} hariIni={hariIni} kosong="Belum ada jadwal mengajar." />
+                </Panel>
+              </>
             ) : (
-              <div className="text-center py-10 text-gray-400">
-                <Calendar size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada jadwal tersedia.</p>
-              </div>
+              <AgendaCalendar agenda={agenda} />
             )}
           </div>
 
-          {/* Jurnal Terakhir Diisi */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-primary-700" />
-                <h3 className="font-heading font-semibold text-navy text-sm">Jurnal Terakhir Diisi</h3>
-              </div>
-              <Link href="/dashboard/teacher/journal"
-                className="text-xs text-primary-700 font-semibold hover:text-gold transition flex items-center gap-1">
-                Lihat semua <ArrowRight size={11} />
-              </Link>
-            </div>
-            {recentJournals.length > 0 ? (
-              <div className="divide-y divide-gray-50">
-                {recentJournals.map((j) => (
-                  <div key={j.id} className="flex items-center justify-between px-5 py-3 text-xs hover:bg-gray-50/50 transition-colors">
-                    <div>
-                      <p className="font-semibold text-navy">{j.subject}</p>
-                      <p className="text-gray-400 mt-0.5">{j.class.name} · {j.semester}</p>
-                    </div>
-                    <span className="text-gray-400 text-[11px] font-medium">
-                      {j.date.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 text-gray-400">
-                <ClipboardList size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada jurnal yang diisi.</p>
-              </div>
-            )}
-            <div className="px-5 py-3 border-t border-gray-50">
-              <Link href="/dashboard/teacher/journal"
-                className="flex items-center justify-center gap-1.5 text-xs text-primary-700 font-semibold hover:text-gold transition-colors">
-                Isi jurnal baru <ArrowRight size={11} />
-              </Link>
-            </div>
-          </div>
+          <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-5">
+            {wali && <Panel judul="Kelas Wali Saya" ikon={<GraduationCap />} isi={false}>
+              {kelasWali.length ? (
+                <ul className="divide-y divide-gray-100">
+                  {kelasWali.map(cls => (
+                    <li key={cls.id} className="px-4 py-4 sm:px-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-heading font-bold text-primary-900">{cls.name}</p>
+                          <p className="truncate text-sm text-gray-500">{cls.major.name}</p>
+                        </div>
+                        <span className="angka shrink-0 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700">{cls.students.length} siswa</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Link href={`/dashboard/teacher/attendance/${cls.id}`}
+                          className="sentuh flex items-center justify-center rounded-xl bg-primary-900 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700">
+                          Isi Absensi
+                        </Link>
+                        <Link href={`/dashboard/teacher/dkn/${cls.id}`}
+                          className="sentuh flex items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold text-primary-900 transition-colors hover:bg-gray-50">
+                          DKN Kelas
+                        </Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : <PanelKosong ikon={<UsersRound />} teks="Belum menjadi wali kelas mana pun." />}
+            </Panel>}
 
-        </div>
+            {/* Panel "Akses Cepat" DIHAPUS 18 Sep 2026 — isinya sudah tercakup kisi "Menu Cepat"
+                di atas (keputusan user: jangan ada dua daftar pintasan di satu dashboard). */}
 
-        {/* ── Agenda Wakil Kepala ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AgendaCalendar agenda={agenda} />
-        </div>
+            {mengajar && <Panel judul="Jurnal Terakhir Diisi" ikon={<History />} isi={false}
+              tautan={{ label: "Lihat semua", href: "/dashboard/teacher/journal" }}>
+              {recentJournals.length > 0 ? (
+                <ul className="divide-y divide-gray-100">
+                  {recentJournals.map(j => (
+                    <li key={j.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-primary-900">{j.subject}</p>
+                        <p className="truncate text-xs text-gray-500">{j.class.name} · {j.semester}</p>
+                      </div>
+                      <span className="shrink-0 text-xs font-medium text-gray-500">
+                        {j.date.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <PanelKosong ikon={<NotebookText />} teks="Belum ada jurnal yang diisi.">
+                  <Link href="/dashboard/teacher/journal" className="panel-tautan mt-1">Isi jurnal sekarang</Link>
+                </PanelKosong>
+              )}
+            </Panel>}
 
-        {/* ── Akses Cepat ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-heading font-semibold text-navy text-sm mb-4">Akses Cepat</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: "Jurnal Mengajar", href: "/dashboard/teacher/journal", icon: ClipboardList, color: "bg-primary-700 hover:bg-primary-900" },
-              // Absensi khusus wali kelas — sembunyikan tombolnya dari guru mapel biasa.
-              ...(teacher?.homeroomOf.length ? [{ label: "Absensi", href: "/dashboard/teacher/attendance", icon: CheckSquare, color: "bg-emerald-600 hover:bg-emerald-700" }] : []),
-              { label: "Daftar Siswa", href: "/dashboard/teacher/students",   icon: Users,         color: "bg-blue-600 hover:bg-blue-700" },
-              { label: "Profil Saya",  href: "/dashboard/teacher/profile",     icon: UserCog,       color: "bg-amber-600 hover:bg-amber-700" },
-            ].map(({ label, href, icon: Icon, color }) => (
-              <Link key={label} href={href}
-                className={`flex items-center gap-2.5 ${color} text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md`}>
-                <Icon size={16} className="shrink-0" />
-                {label}
-              </Link>
-            ))}
+            {mengajar && <AgendaCalendar agenda={agenda} />}
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -58,12 +58,12 @@ export default function AdminReportsPage() {
       <PageHeader
         icon={<BarChart2 size={22} />}
         title="Laporan & Ekspor"
-        description="Unduh data dalam format CSV untuk diolah di Excel atau Google Sheets"
+        description="Unduh data sebagai berkas Excel (.xlsx) — langsung rapi per kolom, siap diolah"
       />
 
       <div className="space-y-4">
         {/* Rekapitulasi Jumlah Siswa */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center shrink-0">
             <BarChart2 size={20} className="text-primary-700" />
           </div>
@@ -72,13 +72,13 @@ export default function AdminReportsPage() {
             <p className="text-gray-400 text-sm mt-0.5">Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — siap cetak.</p>
           </div>
           <a href="/dashboard/admin/reports/rekap-siswa"
-            className="shrink-0 inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            className="btn-modal-cancel shrink-0">
             Lihat
           </a>
         </div>
 
         {/* Ekspor Pendaftaran */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
             <ClipboardList size={20} className="text-amber-600" />
           </div>
@@ -89,12 +89,12 @@ export default function AdminReportsPage() {
           </div>
           <a href="/api/admin/export/admissions"
             className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Ekspor Siswa */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
             <Users size={20} className="text-emerald-600" />
           </div>
@@ -104,13 +104,13 @@ export default function AdminReportsPage() {
             <p className="text-xs text-gray-300 mt-1">9 kolom · diurutkan berdasarkan tingkat kelas</p>
           </div>
           <a href="/api/admin/export/students"
-            className="shrink-0 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            className="btn-modal-cancel shrink-0">
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Ekspor Absensi */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
             <CalendarDays size={20} className="text-blue-600" />
           </div>
@@ -123,20 +123,20 @@ export default function AdminReportsPage() {
                 <MonthPicker value={attMonth} onChange={setAttMonth} />
               </div>
               <button onClick={() => { window.location.href = "/api/admin/export/attendance"; }}
-                className="text-xs text-gray-500 hover:text-primary-700 border border-gray-200 hover:border-primary-200 rounded-xl px-3 py-2 transition-colors">
+                className="text-xs text-gray-500 hover:text-primary-700 border border-gray-200 hover:border-primary-100 rounded-xl px-3 py-2 transition-colors">
                 Semua Bulan
               </button>
             </div>
             <p className="text-xs text-gray-300 mt-2">7 kolom · semua status (Hadir, Izin, Sakit, Alpha)</p>
           </div>
           <a href={`/api/admin/export/attendance?month=${attMonth}`}
-            className="shrink-0 self-start inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            className="btn-modal-cancel shrink-0 self-start">
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Ekspor Nilai */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
             <BookOpen size={20} className="text-purple-600" />
           </div>
@@ -173,12 +173,12 @@ export default function AdminReportsPage() {
           </div>
           <a href={gradesUrl()}
             className="shrink-0 self-start inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Ekspor Jadwal Pelajaran */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
             <Calendar size={20} className="text-indigo-600" />
           </div>
@@ -204,12 +204,12 @@ export default function AdminReportsPage() {
           </div>
           <a href={scheduleUrl()}
             className="shrink-0 self-start inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Ekspor PKL */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div className="panel p-5 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
           <div className="w-11 h-11 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
             <Briefcase size={20} className="text-rose-600" />
           </div>
@@ -220,13 +220,13 @@ export default function AdminReportsPage() {
           </div>
           <a href="/api/admin/export/pkl"
             className="shrink-0 inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-            <Download size={15} /> CSV
+            <Download size={15} /> Excel
           </a>
         </div>
 
         {/* Info */}
         <Alert variant="warning" icon={FileSpreadsheet} title="Kompatibel dengan Excel">
-          Semua file CSV menggunakan format UTF-8 BOM sehingga karakter Indonesia (huruf beraksara) tampil dengan benar saat dibuka di Microsoft Excel atau Google Sheets.
+          Semua unduhan berupa berkas Excel (.xlsx) sungguhan, bukan CSV — begitu dibuka, datanya sudah terpisah per kolom (tidak lagi menumpuk di satu kolom), angka tetap terbaca sebagai angka, dan saringan per kolom sudah aktif.
         </Alert>
       </div>
     </div>

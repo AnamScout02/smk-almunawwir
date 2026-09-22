@@ -5,7 +5,7 @@ import { getSettings } from "@/lib/site-settings";
 import { getSession } from "@/lib/session";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, XCircle, GraduationCap, FileText, LogIn } from "lucide-react";
+import { CheckCircle2, XCircle, GraduationCap, FileText, LogIn, ScrollText } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   AKTIF: "Aktif", LULUS: "Lulus", KELUAR: "Keluar", PINDAH: "Pindah",
@@ -39,7 +39,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
       <div className="relative w-full max-w-md">
         <div className="flex justify-center mb-6">
           {settings["logo.full_white"] && (
-            <Image src={settings["logo.full_white"]} alt={settings["school.name"] || "SMK Al Munawwir IIBS"} width={200} height={48} className="h-10 w-auto object-contain" unoptimized />
+            <Image src={settings["logo.full_white"]} alt={settings["school.name"] || "SMK Al Munawwir IIBS"} width={200} height={48} className="h-10 w-auto object-contain" />
           )}
         </div>
 
@@ -68,7 +68,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
                   {student.nisn && <Row label="NISN" value={student.nisn} mono />}
                   <Row label="Kelas" value={student.class?.name ?? "—"} />
                   <Row label="Jurusan" value={student.major.name} />
-                  {student.enrollYear && <Row label="Tahun Masuk" value={String(student.enrollYear)} />}
+                  {student.enrollYear && <Row label="Tahun Angkatan" value={String(student.enrollYear)} />}
                   <Row label="Status" value={STATUS_LABEL[student.studentStatus ?? "AKTIF"] ?? student.studentStatus ?? "—"} />
                 </div>
 
@@ -81,7 +81,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
                   ) : isOwnStudent ? (
                     <Link href="/dashboard/student/rapor"
                       className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold transition">
-                      <FileText size={16} /> Lihat Rapor Lengkap
+                      <ScrollText size={16} /> Lihat Rapor Lengkap
                     </Link>
                   ) : (
                     <Link href="/login"

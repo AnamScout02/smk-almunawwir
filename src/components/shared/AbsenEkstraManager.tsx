@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { CheckSquare, ClipboardList, Pencil, BarChart3, Plus } from "lucide-react";
+import { CheckSquare, ClipboardList, Pencil, BarChart3, Plus, Loader2 } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -172,7 +172,7 @@ export default function AbsenEkstraManager() {
 
           {tab === "catat" && (
             <div ref={formRef} className="scroll-mt-6">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-wrap items-center gap-3">
+              <div className="panel p-5 mb-5 flex flex-wrap items-center gap-3">
                 <label className="label-field mb-0 whitespace-nowrap">Tanggal:</label>
                 <DatePicker value={date} onChange={setDate} />
                 {classOptions.length > 1 && (
@@ -189,12 +189,12 @@ export default function AbsenEkstraManager() {
                 <PageSkeleton />
               ) : (
                 <>
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+                  <div className="panel p-5 mb-5">
                     <label className="label-field">Kegiatan / Materi (opsional)</label>
                     <textarea value={materi} onChange={e => setMateri(e.target.value)} rows={2} className="input-field" placeholder="Kegiatan hari ini..." />
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-wrap items-center justify-between gap-4">
+                  <div className="panel p-5 mb-5 flex flex-wrap items-center justify-between gap-4">
                     <div className="flex gap-3 text-sm flex-wrap">
                       {summary.map(s => (
                         <div key={s.label} className={`px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_COLOR[s.label as AttendanceStatus]}`}>
@@ -209,13 +209,12 @@ export default function AbsenEkstraManager() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
-                    <div className="flex items-center justify-between px-5 py-3"
-                      style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-                      <p className="text-sm font-semibold text-white">
+                  <div className="panel overflow-hidden mb-5">
+                    <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
+                      <p className="text-sm font-semibold text-primary-900">
                         {displayRows.length}{classFilter ? ` dari ${rows.length}` : ""} Peserta
                       </p>
-                      <button onClick={setAllHadir} className="text-xs text-gold font-semibold hover:text-white transition">
+                      <button onClick={setAllHadir} className="text-xs text-primary-700 font-semibold hover:text-primary-900 transition">
                         Tandai {classFilter ? "Kelas Ini" : "Semua"} Hadir
                       </button>
                     </div>
@@ -259,7 +258,7 @@ export default function AbsenEkstraManager() {
                   <div className="flex items-center justify-end gap-4">
                     {saveError && <p className="text-red-600 text-sm font-semibold">{saveError}</p>}
                     {saved && <p className="text-emerald-600 text-sm font-semibold">✓ Absen berhasil disimpan!</p>}
-                    <button onClick={handleSave} disabled={isPending || rows.length === 0} className="btn-gold flex items-center gap-2 text-sm">
+                    <button onClick={handleSave} disabled={isPending || rows.length === 0} className="btn-modal-save">
                       <CheckSquare size={16} /> {isPending ? "Menyimpan..." : "Simpan Absen"}
                     </button>
                   </div>
@@ -269,29 +268,29 @@ export default function AbsenEkstraManager() {
           )}
 
           {tab === "riwayat" && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               {loadingHistory ? (
-                <div className="py-10 text-center text-gray-400 text-sm">Memuat...</div>
+                <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
               ) : history.length === 0 ? (
                 <EmptyState icon={ClipboardList} title="Belum Ada Riwayat" description="Belum ada pertemuan yang tercatat untuk ekstrakurikuler ini." />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="data-table">
                     <thead>
-                      <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
-                        <th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Kegiatan/Materi</th>
-                        <th className="px-4 py-3">Peserta</th><th className="px-4 py-3">H/I/S/A</th><th className="px-4 py-3 text-right">Aksi</th>
+                      <tr>
+                        <th>Tanggal</th><th>Kegiatan/Materi</th>
+                        <th>Peserta</th><th>H/I/S/A</th><th className="text-right">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
                       {history.map(h => (
-                        <tr key={h.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30">
-                          <td className="px-4 py-2.5 whitespace-nowrap">{new Date(h.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                          <td className="px-4 py-2.5 max-w-xs truncate text-gray-600">{h.materi || "—"}</td>
-                          <td className="px-4 py-2.5">{h.totalPeserta}</td>
-                          <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">{h.hadir}/{h.izin}/{h.sakit}/{h.alpha}</td>
-                          <td className="px-4 py-2.5 text-right">
-                            <button onClick={() => editHistoryRow(h)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition"><Pencil size={14} /></button>
+                        <tr key={h.id}>
+                          <td className="whitespace-nowrap">{new Date(h.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                          <td className="max-w-xs truncate text-gray-600">{h.materi || "—"}</td>
+                          <td>{h.totalPeserta}</td>
+                          <td className="text-xs text-gray-500 whitespace-nowrap">{h.hadir}/{h.izin}/{h.sakit}/{h.alpha}</td>
+                          <td className="text-right">
+                            <button onClick={() => editHistoryRow(h)} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition"><Pencil size={14} /></button>
                           </td>
                         </tr>
                       ))}
@@ -337,7 +336,7 @@ function RekapTab({ ekskulId }: { ekskulId: string }) {
 
   return (
     <div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5 flex flex-wrap items-end gap-3">
+      <div className="panel p-5 mb-5 flex flex-wrap items-end gap-3">
         <div>
           <label className="label-field">Dari Tanggal</label>
           <DatePicker value={from} onChange={setFrom} />
@@ -358,32 +357,32 @@ function RekapTab({ ekskulId }: { ekskulId: string }) {
         )}
         <span className="text-xs text-gray-400 pb-2.5">{from || to ? "Rekap dipersempit ke rentang tanggal." : "Belum difilter — total sepanjang waktu tercatat."}</span>
       </div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="panel overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-gray-400 text-sm">Memuat...</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
         ) : displayStudents.length === 0 ? (
           <EmptyState icon={BarChart3} title="Belum Ada Data" description="Belum ada anggota atau catatan absen." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-primary-100 text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">
-                  <th className="px-4 py-3">Siswa</th><th className="px-4 py-3">Hadir</th><th className="px-4 py-3">Izin</th>
-                  <th className="px-4 py-3">Sakit</th><th className="px-4 py-3">Alpha</th><th className="px-4 py-3">% Kehadiran</th>
+                <tr>
+                  <th>Siswa</th><th>Hadir</th><th>Izin</th>
+                  <th>Sakit</th><th>Alpha</th><th>% Kehadiran</th>
                 </tr>
               </thead>
               <tbody>
                 {displayStudents.map(s => (
-                  <tr key={s.studentId} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30">
-                    <td className="px-4 py-2.5">
+                  <tr key={s.studentId}>
+                    <td>
                       <p className="font-semibold text-primary-900">{s.name}</p>
                       <p className="text-xs text-gray-400">{s.nis} · {s.className}</p>
                     </td>
-                    <td className="px-4 py-2.5 text-emerald-600 font-semibold">{s.hadir}</td>
-                    <td className="px-4 py-2.5 text-blue-600 font-semibold">{s.izin}</td>
-                    <td className="px-4 py-2.5 text-amber-600 font-semibold">{s.sakit}</td>
-                    <td className="px-4 py-2.5 text-red-600 font-semibold">{s.alpha}</td>
-                    <td className="px-4 py-2.5 font-semibold text-primary-900">{s.pct}%</td>
+                    <td className="text-emerald-600 font-semibold">{s.hadir}</td>
+                    <td className="text-blue-600 font-semibold">{s.izin}</td>
+                    <td className="text-amber-600 font-semibold">{s.sakit}</td>
+                    <td className="text-red-600 font-semibold">{s.alpha}</td>
+                    <td className="font-semibold text-primary-900">{s.pct}%</td>
                   </tr>
                 ))}
               </tbody>

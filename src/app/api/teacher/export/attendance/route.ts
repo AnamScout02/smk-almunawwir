@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { balasanExcel } from "@/lib/ekspor-excel";
 import { verifyRole } from "@/lib/dal";
 
 export async function GET(req: Request) {
@@ -40,7 +41,6 @@ export async function GET(req: Request) {
     orderBy: [{ date: "asc" }, { student: { nis: "asc" } }],
   });
 
-  const BOM = "﻿";
   const headers = ["No", "Tanggal", "NIS", "Nama Siswa", "Kelas", "Status"];
 
   const rows = records.map((r, i) => [
@@ -52,17 +52,9 @@ export async function GET(req: Request) {
     r.status,
   ]);
 
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const slug = month ?? "semua";
-  const filename = `absensi-${slug}.csv`;
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
+  return balasanExcel({
+    namaFile: `absensi-${month ?? "semua"}`,
+    namaSheet: "Absensi",
+    headers, rows,
   });
 }

@@ -1,4 +1,5 @@
 "use client";
+import TimePicker from "@/components/shared/TimePicker";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Calendar, CalendarDays, Loader2, Wand2, AlertTriangle, CheckCircle2, Printer, Lock } from "lucide-react";
@@ -112,7 +113,13 @@ export default function SchedulesManager({
       setTeachers(tch);
       setSubjects(Array.isArray(subj) ? subj : []);
       setPeriods(Array.isArray(per) ? per : []);
-      if (cls.length > 0) setSelectedClass(cls[0].id);
+      // Tautan dari Pemeriksa Jadwal membawa ?classId= supaya langsung membuka kelas yang
+      // bermasalah. Dibaca dari window (bukan useSearchParams) agar halaman ini tidak perlu
+      // dibungkus <Suspense> hanya untuk satu parameter opsional.
+      const diminta = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("classId") : null;
+      const awal = (diminta && cls.some((c: ClassItem) => c.id === diminta)) ? diminta : cls[0]?.id;
+      if (awal) setSelectedClass(awal);
     }).catch(() => {});
     loadUnscheduled();
     fetch("/api/admin/schedules/lock").then(r => r.json()).then(d => setScheduleLocked(!!d.locked)).catch(() => {});
@@ -365,14 +372,14 @@ export default function SchedulesManager({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-xs font-bold text-primary-700 font-mono">Ke-{period.order}: {s.startTime}–{s.endTime}</span>
-                            {spanPeriods > 1 && <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{spanPeriods} JP</span>}
+                            {spanPeriods > 1 && <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{spanPeriods} JP</span>}
                             {s.room && <span className="text-xs text-gray-400">{s.room}</span>}
                             {locked ? (
-                              <span className="flex items-center gap-1 text-[10px] font-bold text-primary-700 bg-primary-100 px-1.5 py-0.5 rounded-full">
+                              <span className="flex items-center gap-1 text-[11px] font-bold text-primary-700 bg-primary-100 px-1.5 py-0.5 rounded-full">
                                 <Lock size={9} /> REQUEST
                               </span>
                             ) : s.generated && (
-                              <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full">AUTO</span>
+                              <span className="text-[11px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full">AUTO</span>
                             )}
                           </div>
                           <p className="font-semibold text-sm text-gray-800 truncate">{s.subject}</p>
@@ -392,7 +399,7 @@ export default function SchedulesManager({
                       <div key={period.id} className={`px-4 py-3 border-l-4 ${p.conflictWith ? "border-red-400 bg-red-50/60" : "border-dashed border-primary-300 bg-primary-50/40"}`}>
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-xs font-bold text-primary-700 font-mono">Ke-{period.order}: {p.startTime}–{p.endTime}</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${p.conflictWith ? "text-red-700 bg-red-100" : "text-primary-700 bg-primary-100"}`}>
+                          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${p.conflictWith ? "text-red-700 bg-red-100" : "text-primary-700 bg-primary-100"}`}>
                             {p.conflictWith ? "BENTROK" : "REQUEST"}
                           </span>
                         </div>
@@ -445,15 +452,15 @@ export default function SchedulesManager({
         {showPrintLinks && (
           <>
             <Link href="/dashboard/admin/schedules/nonblok"
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              className="btn-modal-cancel">
               <CalendarDays size={16} /> Jadwal Non-Blok
             </Link>
             <Link href="/dashboard/admin/schedules/print?week=A"
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              className="btn-modal-cancel">
               <Printer size={16} /> Cetak Tabel Gabungan
             </Link>
             <Link href={selectedClass ? `/dashboard/admin/schedules/print-class?classId=${selectedClass}&week=${defaultWeek}` : "/dashboard/admin/schedules/print-class"}
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+              className="btn-modal-cancel">
               <Printer size={16} /> Cetak per Kelas
             </Link>
           </>
@@ -473,7 +480,7 @@ export default function SchedulesManager({
           {togglingLock ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
           {scheduleLocked ? "Terkunci" : "Kunci Jadwal"}
         </button>
-        <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+        <button onClick={() => openNew()} className="btn-modal-save sm:ml-auto">
           <Plus size={18} /> Tambah Jadwal
         </button>
       </div>
@@ -487,7 +494,7 @@ export default function SchedulesManager({
       )}
 
       {/* Class Selector */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+      <div className="panel p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas</label>
         {classes.length === 0 ? (
           <p className="text-sm text-gray-400">
@@ -527,7 +534,7 @@ export default function SchedulesManager({
 
       {/* Daftar belum terjadwal — dihitung langsung dari data saat ini, selalu akurat */}
       {unscheduledList.length > 0 && (
-        <div className="mt-6 bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
+        <div className="panel mt-6 border-amber-100 overflow-hidden">
           <button onClick={() => setShowUnscheduled(v => !v)}
             className="w-full px-5 py-3.5 flex items-center justify-between gap-3 bg-amber-500 text-white">
             <span className="flex items-center gap-2 font-heading font-bold text-sm">
@@ -567,7 +574,7 @@ export default function SchedulesManager({
         footer={
           <>
             <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1">
               {saving && <Loader2 size={16} className="animate-spin" />}
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -639,13 +646,11 @@ export default function SchedulesManager({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label-field">Jam Mulai *</label>
-              <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                className="input-field" />
+              <TimePicker value={form.startTime} onChange={v => setForm(f => ({ ...f, startTime: v }))} />
             </div>
             <div>
               <label className="label-field">Jam Selesai *</label>
-              <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                className="input-field" />
+              <TimePicker value={form.endTime} onChange={v => setForm(f => ({ ...f, endTime: v }))} />
             </div>
           </div>
           {msg && <p className="error-msg">{msg}</p>}
@@ -676,7 +681,7 @@ export default function SchedulesManager({
             <button
               disabled={generating || !selectedClass}
               onClick={() => runGenerate("class")}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary-200 text-primary-700 font-semibold text-sm hover:bg-primary-50 transition disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary-100 text-primary-700 font-semibold text-sm hover:bg-primary-50 transition disabled:opacity-60"
             >
               {generating && <Loader2 size={15} className="animate-spin" />}
               Generate untuk kelas ini saja{activeClass ? ` (${activeClass.name})` : ""}

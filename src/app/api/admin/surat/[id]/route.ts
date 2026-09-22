@@ -20,7 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   await verifyTasAccess();
   const { id } = await params;
   const body = await req.json();
-  const { nomor, tanggal, pihak, perihal, keterangan, fileUrl, isRead, klasifikasi, content, penandaTangan } = body;
+  const { nomor, tanggal, pihak, perihal, keterangan, fileUrl, isRead, klasifikasi, content, penandaTangan, templateValue, templateIsi } = body;
 
   const surat = await prisma.surat.update({
     where: { id },
@@ -32,6 +32,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       keterangan: keterangan ?? null,
       fileUrl:    fileUrl ?? null,
       ...(isRead !== undefined ? { isRead } : {}),
+      templateValue: templateValue ?? null,
+      templateIsi: templateIsi ?? undefined,
       ...(klasifikasi !== undefined ? { klasifikasi: klasifikasi || null } : {}),
       ...(content !== undefined ? { content: content || null } : {}),
       ...(penandaTangan !== undefined ? { penandaTangan: penandaTangan || null } : {}),

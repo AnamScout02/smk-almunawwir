@@ -65,7 +65,7 @@ export default function StudentMaterialsPage() {
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<BookOpen size={22} />}
         title="Materi & Tugas"
@@ -74,15 +74,15 @@ export default function StudentMaterialsPage() {
 
       <div className="flex items-center gap-2 mb-5">
         <button onClick={() => setTab("materi")}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "materi" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "materi" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
           Materi
         </button>
         <button onClick={() => setTab("tugas")}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "tugas" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "tugas" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
           Tugas
         </button>
         <button onClick={() => setTab("kuis")}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "kuis" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-200"}`}>
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === "kuis" ? "bg-primary-700 text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-primary-100"}`}>
           Kuis
         </button>
       </div>
@@ -96,10 +96,10 @@ export default function StudentMaterialsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {quizzes.map(q => (
               <Link key={q.id} href={`/dashboard/student/quizzes/${q.id}`}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-primary-200 hover:shadow-md transition-all">
+                className="panel group p-5 hover:border-primary-100 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between mb-1">
                   <div>
-                    <p className="text-xs text-primary-600 font-semibold">{q.subject}</p>
+                    <p className="text-xs text-primary-700 font-semibold">{q.subject}</p>
                     <p className="font-heading font-bold text-primary-900">{q.title}</p>
                   </div>
                   <ChevronRight size={16} className="text-gray-300 group-hover:text-primary-500 transition-colors shrink-0" />
@@ -125,18 +125,18 @@ export default function StudentMaterialsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {materials.map(m => (
-              <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-xs text-primary-600 font-semibold mb-1">{m.subject}</p>
+              <div key={m.id} className="panel p-5">
+                <p className="text-xs text-primary-700 font-semibold mb-1">{m.subject}</p>
                 <p className="font-heading font-bold text-primary-900 mb-1">{m.title}</p>
                 {m.description && <p className="text-sm text-gray-500 mb-2">{m.description}</p>}
                 <div className="flex items-center gap-3 text-xs">
                   {m.fileUrl && (
-                    <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                    <a href={m.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                       <FileText size={12} /> Lampiran
                     </a>
                   )}
                   {m.linkUrl && (
-                    <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                    <a href={m.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                       <Link2 size={12} /> Link
                     </a>
                   )}
@@ -151,10 +151,10 @@ export default function StudentMaterialsPage() {
       ) : (
         <div className="space-y-4">
           {assignments.map(a => (
-            <div key={a.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={a.id} className="panel p-5">
               <div className="flex items-start justify-between mb-1">
                 <div>
-                  <p className="text-xs text-primary-600 font-semibold">{a.subject}</p>
+                  <p className="text-xs text-primary-700 font-semibold">{a.subject}</p>
                   <p className="font-heading font-bold text-primary-900">{a.title}</p>
                 </div>
                 {a.mySubmission ? (
@@ -177,7 +177,7 @@ export default function StudentMaterialsPage() {
               <div className="flex items-center gap-3 text-xs text-gray-400 mt-2">
                 {a.dueDate && <span className="flex items-center gap-1"><Calendar size={12} /> Batas: {fmt(a.dueDate)}</span>}
                 {a.fileUrl && (
-                  <a href={a.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                  <a href={a.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                     <FileText size={12} /> Lihat soal
                   </a>
                 )}
@@ -197,15 +197,15 @@ export default function StudentMaterialsPage() {
                     <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="input-field" />
                   </div>
                   <FileUpload value={fileUrl} onChange={setFileUrl} folder="tugas-jawaban" label="Lampiran Jawaban (opsional)" />
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => setOpenSubmit(null)} className="btn-modal-cancel text-sm px-4">Batal</button>
-                    <button onClick={() => handleSubmit(a.id)} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+                  <div className="alat-aksi justify-end">
+                    <button onClick={() => setOpenSubmit(null)} className="btn-modal-cancel">Batal</button>
+                    <button onClick={() => handleSubmit(a.id)} disabled={saving} className="btn-modal-save">
                       {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Kumpulkan
                     </button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => startSubmit(a)} className="mt-3 text-xs text-primary-600 hover:text-primary-900 font-semibold">
+                <button onClick={() => startSubmit(a)} className="mt-3 text-xs text-primary-700 hover:text-primary-900 font-semibold">
                   {a.mySubmission ? "Ubah pengumpulan" : "Kumpulkan tugas"}
                 </button>
               )}

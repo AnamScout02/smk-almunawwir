@@ -4,7 +4,7 @@ import DatePicker from "@/components/shared/DatePicker";
 import {
   Calendar, Plus, Trash2, CheckCircle, AlertTriangle,
   ChevronDown, Save, BarChart2, Users, TrendingUp, CalendarDays,
-  GraduationCap, MinusCircle, XCircle, Repeat,
+  GraduationCap, MinusCircle, XCircle, Repeat, Loader2,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -42,6 +42,22 @@ interface NaikKelasResult {
   pklWarnings?: string[];
 }
 
+interface NaikKelasPreviewEntry {
+  studentId: string;
+  name: string;
+  fromClass: string | null;
+  toClassName?: string;
+  pklWarning?: boolean;
+}
+interface NaikKelasPreview {
+  promoted: NaikKelasPreviewEntry[];
+  graduated: NaikKelasPreviewEntry[];
+  skipped: NaikKelasPreviewEntry[];
+  errors: string[];
+  pklWarnings: string[];
+  error?: string;
+}
+
 const CLS = "input-field";
 
 function fmtDate(d: string) {
@@ -61,6 +77,8 @@ export default function TahunAjaranPage() {
   const [confirmNaik, setConfirmNaik] = useState(false);
   const [naikLoading, setNaikLoading] = useState(false);
   const [naikResult, setNaikResult] = useState<NaikKelasResult | null>(null);
+  const [naikPreview, setNaikPreview] = useState<NaikKelasPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [statistik, setStatistik] = useState<Statistik | null>(null);
   const [statLoading, setStatLoading] = useState(false);
@@ -122,6 +140,17 @@ export default function TahunAjaranPage() {
     fetchYears();
   }
 
+  async function openNaikKelasModal() {
+    setConfirmNaik(true);
+    setNaikPreview(null);
+    setPreviewLoading(true);
+    const res = await fetch("/api/admin/tahun-ajaran/naik-kelas").catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
+    setPreviewLoading(false);
+    if (res?.ok && data) setNaikPreview(data);
+    else setNaikPreview({ promoted: [], graduated: [], skipped: [], errors: [], pklWarnings: [], error: data?.error ?? "Gagal memuat pratinjau." });
+  }
+
   async function handleNaikKelas() {
     setNaikLoading(true);
     setNaikResult(null);
@@ -129,6 +158,7 @@ export default function TahunAjaranPage() {
     const data = await res.json();
     setNaikLoading(false);
     setConfirmNaik(false);
+    setNaikPreview(null);
     if (res.ok) {
       setNaikResult(data);
       fetchYears();
@@ -151,10 +181,10 @@ export default function TahunAjaranPage() {
         description="Kelola tahun ajaran dan proses kenaikan kelas"
       />
 
-      <div className="flex justify-end mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <button
           onClick={() => { setShowModal(true); setFormError(""); }}
-          className="btn-gold flex items-center gap-2 text-sm"
+          className="btn-modal-save"
         >
           <Plus size={16} /> Buat Tahun Ajaran
         </button>
@@ -163,13 +193,13 @@ export default function TahunAjaranPage() {
       {/* Daftar Tahun Ajaran */}
       <div className="space-y-3 mb-8">
         {loading ? (
-          <div className="text-center py-10 text-gray-400">Memuat data...</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat data...</div>
         ) : years.length === 0 ? (
           <EmptyState icon={Calendar} description="Belum ada tahun ajaran" />
         ) : years.map((year) => (
           <div key={year.id}
             className={`bg-white rounded-2xl border-2 p-5 flex items-start justify-between gap-4 shadow-sm hover:shadow-md transition-shadow ${
-              year.isActive ? "border-primary-400" : "border-gray-100"
+              year.isActive ? "border-primary-500" : "border-gray-100"
             }`}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
@@ -234,7 +264,7 @@ export default function TahunAjaranPage() {
         </div>
 
         <button
-          onClick={() => setConfirmNaik(true)}
+          onClick={openNaikKelasModal}
           disabled={naikLoading}
           className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl font-semibold text-sm hover:bg-amber-700 transition-colors disabled:opacity-50"
         >
@@ -244,7 +274,7 @@ export default function TahunAjaranPage() {
 
         {naikResult && (
           <Alert variant={naikResult.errors.length > 0 ? "warning" : "success"} className="mt-4" title="Hasil Proses Naik Kelas:">
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="kisi-kartu kisi-kartu-3 mb-3">
               <StatTile size="md" color="blue" icon={TrendingUp} value={naikResult.promoted} label="Naik Kelas" />
               <StatTile size="md" color="emerald" icon={GraduationCap} value={naikResult.graduated} label="Lulus" />
               <StatTile size="md" color="gray" icon={MinusCircle} value={naikResult.skipped} label="Dilewati" />
@@ -274,11 +304,11 @@ export default function TahunAjaranPage() {
       </div>
 
       {/* Section Statistik */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4"
           style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.04) 0%, rgba(27,43,107,0.02) 100%)", borderBottom: "1px solid rgba(15,26,69,0.06)" }}>
           <div className="flex items-center gap-2">
-            <BarChart2 className="text-primary-600" size={18} />
+            <BarChart2 className="text-primary-700" size={18} />
             <h2 className="font-heading font-semibold text-primary-900">Statistik Siswa</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -294,7 +324,7 @@ export default function TahunAjaranPage() {
         <div className="p-6">
 
         {statLoading ? (
-          <div className="text-center py-8 text-gray-400">Memuat statistik...</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat statistik...</div>
         ) : statistik ? (
           <div>
             {/* Ringkasan */}
@@ -369,7 +399,7 @@ export default function TahunAjaranPage() {
         footer={
           <>
             <button onClick={() => setShowModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={handleCreate} disabled={saving} className="btn-modal-save flex-1">
               <Save size={15} />
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -422,16 +452,20 @@ export default function TahunAjaranPage() {
         </p>
       </Modal>
 
-      {/* Konfirmasi Naik Kelas */}
+      {/* Konfirmasi Naik Kelas — dengan PRATINJAU (dry-run) nyata dari server, bukan cuma daftar
+          statis "yang akan terjadi", supaya admin benar2 lihat SIAPA naik/lulus/error sebelum
+          menekan tombol yang tidak bisa dibatalkan. */}
       <Modal
         open={confirmNaik}
         onClose={() => setConfirmNaik(false)}
         title={<span className="flex items-center gap-3"><span className="w-9 h-9 bg-amber-500/20 rounded-full flex items-center justify-center shrink-0"><TrendingUp size={16} className="text-amber-300" /></span>Konfirmasi Proses Naik Kelas</span>}
         description="Tindakan ini tidak dapat dibatalkan"
+        size="lg"
+        scrollBody
         footer={
           <>
             <button onClick={() => setConfirmNaik(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={handleNaikKelas} disabled={naikLoading}
+            <button onClick={handleNaikKelas} disabled={naikLoading || previewLoading || !!naikPreview?.error}
               className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-semibold transition-colors disabled:opacity-50">
               <TrendingUp size={15} />
               {naikLoading ? "Memproses..." : "Ya, Proses Sekarang"}
@@ -439,14 +473,53 @@ export default function TahunAjaranPage() {
           </>
         }
       >
-        <Alert variant="warning" title="Yang akan terjadi:">
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li>Semua siswa AKTIF akan disimpan ke riwayat tahun ajaran aktif</li>
-            <li>Siswa grade 10 dipindah ke kelas grade 11 (jurusan sama)</li>
-            <li>Siswa grade 11 dipindah ke kelas grade 12 (jurusan sama)</li>
-            <li>Siswa grade 12 ditetapkan LULUS dan diberi tanggal kelulusan</li>
-          </ul>
-        </Alert>
+        {previewLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
+            <Loader2 size={20} className="animate-spin" /> Menghitung pratinjau...
+          </div>
+        ) : naikPreview?.error ? (
+          <Alert variant="error" title="Tidak bisa memproses">{naikPreview.error}</Alert>
+        ) : naikPreview ? (
+          <div className="space-y-4">
+            <div className="kisi-kartu kisi-kartu-3">
+              <StatTile size="md" color="blue" icon={TrendingUp} value={naikPreview.promoted.length} label="Akan Naik" />
+              <StatTile size="md" color="emerald" icon={GraduationCap} value={naikPreview.graduated.length} label="Akan Lulus" />
+              <StatTile size="md" color="gray" icon={MinusCircle} value={naikPreview.skipped.length} label="Dilewati" />
+            </div>
+
+            {naikPreview.errors.length > 0 && (
+              <Alert variant="error" title={`${naikPreview.errors.length} Error — kelas tujuan tidak ditemukan`}>
+                <ul className="list-disc list-inside space-y-0.5 text-xs">
+                  {naikPreview.errors.slice(0, 6).map((e, i) => <li key={i}>{e}</li>)}
+                  {naikPreview.errors.length > 6 && <li>...dan {naikPreview.errors.length - 6} lainnya</li>}
+                </ul>
+              </Alert>
+            )}
+
+            {naikPreview.pklWarnings.length > 0 && (
+              <Alert variant="warning" title={`${naikPreview.pklWarnings.length} siswa naik ke XII tanpa PKL disetujui (tetap akan naik)`}>
+                <p className="text-xs">{naikPreview.pklWarnings.slice(0, 5).join(", ")}{naikPreview.pklWarnings.length > 5 ? `, dan ${naikPreview.pklWarnings.length - 5} lainnya` : ""}</p>
+              </Alert>
+            )}
+
+            {naikPreview.promoted.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">Contoh siswa yang akan naik kelas:</p>
+                <div className="max-h-40 overflow-y-auto scrollbar-visible rounded-xl border border-gray-100 divide-y divide-gray-50">
+                  {naikPreview.promoted.slice(0, 15).map(p => (
+                    <div key={p.studentId} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                      <span className="text-gray-700">{p.name}</span>
+                      <span className="text-gray-400">{p.fromClass} → <strong className="text-primary-700">{p.toClassName}</strong></span>
+                    </div>
+                  ))}
+                  {naikPreview.promoted.length > 15 && (
+                    <p className="px-3 py-1.5 text-xs text-gray-400">...dan {naikPreview.promoted.length - 15} siswa lainnya</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

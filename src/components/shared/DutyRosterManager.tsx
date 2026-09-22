@@ -105,10 +105,10 @@ export default function DutyRosterManager() {
             {DAYS.map(day => {
               const entries = entriesForDay(day);
               return (
-                <div key={day} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div key={day} className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="font-bold text-primary-900 text-sm">{day}</p>
-                    <button onClick={() => openAdd(day)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Tambah">
+                    <button onClick={() => openAdd(day)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Tambah">
                       <Plus size={15} />
                     </button>
                   </div>
@@ -120,7 +120,7 @@ export default function DutyRosterManager() {
                         <div key={e.id} className="flex items-center justify-between gap-2 bg-primary-50/60 rounded-lg px-3 py-2">
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-primary-900 truncate">{e.userName}</p>
-                            <p className="text-[10px] text-gray-400">
+                            <p className="text-xs text-gray-400">
                               {e.userRole === "TEACHER" ? "Guru" : "Staff/TAS"}{e.userNip ? ` · ${e.userNip}` : ""}
                               {e.weekType === "SEMUA" && weekTab !== "SEMUA" ? " · Tetap" : ""}
                             </p>
@@ -143,9 +143,9 @@ export default function DutyRosterManager() {
                         options={users
                           .filter(u => !entries.some(e => e.userId === u.id))
                           .map(u => ({ value: u.id, label: `${u.name}${u.nip ? ` (${u.nip})` : ""} — ${u.role === "TEACHER" ? "Guru" : "Staff"}` }))} />
-                      {addError && <p className="text-[11px] text-red-500 font-medium">{addError}</p>}
+                      {addError && <p className="text-xs text-red-500 font-medium">{addError}</p>}
                       <button onClick={handleAdd} disabled={!pickUserId || saving}
-                        className="w-full text-xs font-semibold bg-gold hover:bg-gold/90 text-primary-900 rounded-lg py-2 transition disabled:opacity-40 flex items-center justify-center gap-1.5">
+                        className="btn-modal-save w-full">
                         {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Tambahkan
                       </button>
                     </div>

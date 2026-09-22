@@ -6,6 +6,7 @@ import { ArrowLeft, Mail, Loader2, Save, Wand2, FileType2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import DatePicker from "@/components/shared/DatePicker";
 import RichTextEditor from "@/components/shared/RichTextEditor";
+import TemplateSuratPicker from "@/components/admin/TemplateSuratPicker";
 import LetterheadImage from "@/components/shared/LetterheadImage";
 import { useToast } from "@/components/shared/ToastProvider";
 
@@ -59,6 +60,9 @@ export default function SuratKeluarEditPage() {
   const [klasifikasi, setKlasifikasi] = useState("");
   const [content, setContent] = useState("");
   const [penandaTangan, setPenandaTangan] = useState("Kepala SMK Al Munawwir IIBS");
+  // Pilihan template & isian formulirnya ikut disimpan bersama suratnya.
+  const [templateValue, setTemplateValue] = useState<string | null>(null);
+  const [templateIsi, setTemplateIsi] = useState<Record<string, string> | null>(null);
   const [kopAtas, setKopAtas] = useState("");
   const [kopBawah, setKopBawah] = useState("");
   const [principalName, setPrincipalName] = useState("");
@@ -74,12 +78,16 @@ export default function SuratKeluarEditPage() {
   // Begitu masuk mode "Tulis Surat Baru", langsung buat baris draft kosong di database supaya
   // halaman ini (dan tombol Editor Word) punya id nyata sejak awal, tanpa perlu isi+simpan dulu.
   useEffect(() => {
+    // SENGAJA TIDAK membuat baris draft di database saat halaman dibuka.
+    //
+    // Dulu halaman ini langsung POST /api/admin/surat/draft supaya punya id sejak awal (demi
+    // Editor Word). Akibatnya: sekadar membuka lembar kerja lalu berpindah halaman sudah
+    // meninggalkan baris "(belum bernomor)" permanen di Agenda Surat — dan karena tidak ada
+    // penjaga, kadang terbuat dua sekaligus. Itulah asal baris-baris kosong yang ditemukan user
+    // 13 September 2026. Sekarang surat baru hidup di memori sampai benar-benar disimpan;
+    // baris database baru dibuat oleh handleSave (POST /api/admin/surat).
     if (!isNew) return;
-    fetch("/api/admin/surat/draft", { method: "POST" }).then(async r => {
-      if (!r.ok) { setError("Gagal membuat draft surat baru"); setLoading(false); return; }
-      const d = await r.json();
-      router.replace(`/dashboard/admin/persuratan/${d.id}/edit`);
-    }).catch(() => { setError("Gagal membuat draft surat baru"); setLoading(false); });
+    setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew]);
 
@@ -91,26 +99,29 @@ export default function SuratKeluarEditPage() {
       setNomor(d.nomor ?? ""); setTanggal(new Date(d.tanggal).toISOString().slice(0, 10));
       setPihak(d.pihak ?? ""); setPerihal(d.perihal ?? ""); setKlasifikasi(d.klasifikasi ?? "");
       setContent(d.content ?? ""); setPenandaTangan(d.penandaTangan ?? "Kepala SMK Al Munawwir IIBS");
+      setTemplateValue(d.templateValue ?? null);
+      setTemplateIsi(d.templateIsi ?? null);
       setLoading(false);
     }).catch(() => { setLoading(false); });
   }, [id, isNew]);
 
-  async function handleGenerateNomor() {
-    if (!klasifikasi.trim()) { setError("Isi klasifikasi/kode jenis surat dulu sebelum membuat nomor otomatis."); return; }
+  async function handleGenerateNomor(kodeParam?: string) {
+    const kode = (kodeParam ?? klasifikasi).trim();
+    if (!kode) { setError("Isi klasifikasi/kode jenis surat dulu sebelum membuat nomor otomatis."); return; }
     setError("");
     setGenerating(true);
-    const res = await fetch(`/api/admin/surat/next-nomor?klasifikasi=${encodeURIComponent(klasifikasi.trim())}`);
+    const res = await fetch(`/api/admin/surat/next-nomor?klasifikasi=${encodeURIComponent(kode)}`);
     setGenerating(false);
     if (!res.ok) { const d = await res.json(); setError(d.error || "Gagal membuat nomor otomatis"); return; }
     const d = await res.json();
     setNomor(d.nomor);
   }
 
-  async function handleSave() {
-    if (!nomor.trim() || !pihak.trim() || !perihal.trim()) { setError("Nomor, kepada, dan perihal wajib diisi."); return; }
+  async function handleSave(lanjutKe: "cetak" | "word" = "cetak") {
+    if (!nomor.trim() || !perihal.trim()) { setError("Nomor dan perihal wajib diisi."); return; }
     setError("");
     setSaving(true);
-    const body = { tipe: "KELUAR", nomor, tanggal, pihak, perihal, klasifikasi, content, penandaTangan };
+    const body = { tipe: "KELUAR", nomor, tanggal, pihak, perihal, klasifikasi, content, penandaTangan, templateValue, templateIsi };
     const res = await fetch(isNew ? "/api/admin/surat" : `/api/admin/surat/${id}`, {
       method: isNew ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
@@ -120,7 +131,7 @@ export default function SuratKeluarEditPage() {
     if (!res.ok) { const d = await res.json(); setError(d.error || "Gagal menyimpan"); return; }
     const saved = await res.json();
     toast.success("Surat berhasil disimpan");
-    router.push(`/dashboard/admin/persuratan/${saved.id}/cetak`);
+    router.push(`/dashboard/admin/persuratan/${saved.id}/${lanjutKe === "word" ? "edit-word" : "cetak"}`);
   }
 
   if (loading) {
@@ -128,7 +139,7 @@ export default function SuratKeluarEditPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <PageHeader
         icon={<Mail size={22} />}
         title={isNew ? "Tulis Surat Keluar" : "Edit Surat Keluar"}
@@ -136,14 +147,21 @@ export default function SuratKeluarEditPage() {
       />
 
       <div className="flex items-center gap-2 mb-5">
-        {!isNew && (
+        {isNew ? (
+          // Editor Word butuh id nyata, sedangkan surat baru belum punya baris database.
+          // Jadi disimpan dulu, baru dibuka — bukan disembunyikan seperti sebelumnya.
+          <button type="button" onClick={() => handleSave("word")}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+            <FileType2 size={13} /> Simpan &amp; Buka di Editor Word <span className="text-primary-700">(Beta)</span>
+          </button>
+        ) : (
           <Link href={`/dashboard/admin/persuratan/${id}/edit-word`}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
-            <FileType2 size={13} /> Buka di Editor Word <span className="text-primary-600">(Beta)</span>
+            <FileType2 size={13} /> Buka di Editor Word <span className="text-primary-700">(Beta)</span>
           </Link>
         )}
-        <Link href="/dashboard/admin/persuratan" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/admin/persuratan" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
@@ -162,10 +180,32 @@ export default function SuratKeluarEditPage() {
           <label className="label-field">Tanggal Surat</label>
           <DatePicker value={tanggal} onChange={setTanggal} />
         </div>
-        <button type="button" onClick={handleGenerateNomor} disabled={generating}
+        <button type="button" onClick={() => handleGenerateNomor()} disabled={generating}
           className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold transition-colors">
           {generating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Buat Nomor Otomatis
         </button>
+      </div>
+
+      {/* Pilih template dulu (opsional) — mengisi klasifikasi, perihal, tujuan, dan isi surat
+          sekaligus, lalu tetap bebas diedit di lembar kerja di bawah. */}
+      <div className="max-w-[800px] mx-auto mb-5">
+        <TemplateSuratPicker
+          onPakai={(t, html, pihakTerisi, isi) => {
+            setKlasifikasi(t.klasifikasi);
+            setPerihal(t.perihal);
+            if (pihakTerisi) setPihak(pihakTerisi);
+            setContent(html);
+            setTemplateValue(t.value);
+            setTemplateIsi(isi);
+            // Nomor ikut diterbitkan sekalian: template sudah menentukan klasifikasinya, jadi
+            // tidak ada gunanya memaksa petugas menekan "Buat Nomor Otomatis" lagi. Surat yang
+            // sudah punya nomor tidak diganggu.
+            if (!nomor.trim()) handleGenerateNomor(t.klasifikasi);
+          }}
+          adaIsi={content.trim().length > 0}
+          templateAwal={templateValue}
+          isiAwal={templateIsi}
+        />
       </div>
 
       {/* Slot toolbar RichTextEditor — dirender lewat portal, sengaja diletakkan DI LUAR kertas
@@ -203,7 +243,7 @@ export default function SuratKeluarEditPage() {
           <RichTextEditor value={content} onChange={setContent} placeholder="Dengan hormat, ..." toolbarSlot={toolbarSlot} />
         </div>
 
-        <div className="flex justify-end">
+        <div className="alat-aksi justify-end">
           <div className="text-sm text-center min-w-[220px]">
             <p className="mb-1 text-primary-900">Singojuruh, {fmtLong(tanggal)}</p>
             <div className="mb-14"><BlankInput value={penandaTangan} onChange={setPenandaTangan} className="text-center" /></div>
@@ -216,7 +256,7 @@ export default function SuratKeluarEditPage() {
       </div>
 
       <div className="flex justify-center mb-8 max-w-[800px] mx-auto">
-        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 text-sm px-8">
+        <button onClick={() => handleSave()} disabled={saving} className="btn-modal-save px-8">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Surat
         </button>
       </div>

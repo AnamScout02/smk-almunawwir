@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition, useEffect, useRef } from "react";
-import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
+import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import Select from "@/components/admin/Select";
 import type { Lang } from "@/lib/lang";
@@ -104,13 +104,23 @@ type FormData = {
   previousSchool: string; email: string; guardianName: string; chosenMajor: string; jalur: string;
 };
 
-const JALUR_OPTIONS: { value: string; label: string }[] = [
-  { value: "REGULER", label: "Reguler" },
-  { value: "PRESTASI_AKADEMIK", label: "Prestasi Akademik" },
-  { value: "PRESTASI_NON_AKADEMIK", label: "Prestasi Non-Akademik" },
-  { value: "TAHFIDZ", label: "Tahfidz Qur'an" },
-  { value: "AFIRMASI", label: "Afirmasi" },
-];
+const JALUR_OPTIONS: Record<Lang, { value: string; label: string }[]> = {
+  id: [
+    { value: "REGULER", label: "Reguler" },
+    { value: "PRESTASI_AKADEMIK", label: "Prestasi Akademik" },
+    { value: "PRESTASI_NON_AKADEMIK", label: "Prestasi Non-Akademik" },
+    { value: "TAHFIDZ", label: "Tahfidz Qur'an" },
+    { value: "AFIRMASI", label: "Afirmasi" },
+  ],
+  en: [
+    { value: "REGULER", label: "Regular" },
+    { value: "PRESTASI_AKADEMIK", label: "Academic Achievement" },
+    { value: "PRESTASI_NON_AKADEMIK", label: "Non-Academic Achievement" },
+    { value: "TAHFIDZ", label: "Qur'an Memorization (Tahfidz)" },
+    { value: "AFIRMASI", label: "Affirmation" },
+  ],
+};
+const LABEL_JALUR: Record<Lang, string> = { id: "Jalur Pendaftaran", en: "Admission Track" };
 
 type DocUrls = Partial<Record<DocKey, string>>;
 type DocStatus = Partial<Record<DocKey, "idle" | "uploading" | "done" | "error">>;
@@ -164,7 +174,7 @@ function FileUploadField({
         {config.label} {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {status === "idle" || status === "error" ? (
-        <label className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary-400 bg-gray-50 hover:bg-primary-50 cursor-pointer transition-colors">
+        <label className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary-500 bg-gray-50 hover:bg-primary-50 cursor-pointer transition-colors">
           <Icon size={22} className="text-gray-300 mb-1" />
           <span className="text-xs text-gray-400 font-medium">{t.clickUpload}</span>
           <span className="text-xs text-gray-300 mt-0.5">{config.hint}</span>
@@ -174,7 +184,7 @@ function FileUploadField({
         </label>
       ) : status === "uploading" ? (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <Loader2 size={20} className="animate-spin text-primary-500" />
           <span className="text-sm text-gray-500">{t.uploading} {fileName}…</span>
         </div>
       ) : (
@@ -274,7 +284,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
         </p>
         <p className="font-arabic text-primary-700 text-xl mb-6">جَزَاكُمُ اللَّهُ خَيْرًا</p>
         <button onClick={() => { setForm(EMPTY); setDocUrls({}); setSuccess(false); }}
-          className="text-sm text-primary-600 hover:text-primary-900 underline underline-offset-2 transition-colors">
+          className="text-sm text-primary-700 hover:text-primary-900 underline underline-offset-2 transition-colors">
           {t.registerAgain}
         </button>
       </div>
@@ -384,15 +394,15 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
 
         {/* Jalur Pendaftaran */}
         <div>
-          <label className={labelClass}>Jalur Pendaftaran</label>
-          <Select value={form.jalur} onChange={v => setField("jalur", v)} options={JALUR_OPTIONS}
+          <label className={labelClass}>{LABEL_JALUR[lang]}</label>
+          <Select value={form.jalur} onChange={v => setField("jalur", v)} options={JALUR_OPTIONS[lang]}
             buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
         </div>
 
         {/* Dokumen Pendukung */}
         <div className="pt-2">
           <div className="flex items-center gap-2 mb-4">
-            <Upload size={16} className="text-primary-600" />
+            <Upload size={16} className="text-primary-700" />
             <h3 className="font-heading font-bold text-navy text-base">{t.docsTitle}</h3>
           </div>
           <div className="space-y-4">

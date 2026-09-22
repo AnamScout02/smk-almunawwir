@@ -94,6 +94,7 @@ const translations = {
     footer_hours_title: "Jam Operasional",
     footer_hours_closed: "Minggu: Tutup",
     footer_copyright: "Hak cipta dilindungi.",
+    footer_privacy: "Kebijakan Privasi",
     footer_links: [
       { name: "Tentang Kami", href: "/about" },
       { name: "Konsentrasi Keahlian", href: "/programs" },
@@ -203,6 +204,7 @@ const translations = {
     footer_hours_title: "Operating Hours",
     footer_hours_closed: "Sunday: Closed",
     footer_copyright: "All rights reserved.",
+    footer_privacy: "Privacy Policy",
     footer_links: [
       { name: "About Us", href: "/about" },
       { name: "Areas of Expertise", href: "/programs" },

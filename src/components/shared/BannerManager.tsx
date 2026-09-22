@@ -75,8 +75,8 @@ export default function BannerManager() {
         description="Kelola foto dan teks yang tampil di halaman utama website"
       />
 
-      <div className="flex justify-end mb-5">
-        <button onClick={openNew} className="btn-gold flex items-center gap-2 text-sm">
+      <div className="alat-aksi justify-end mb-5">
+        <button onClick={openNew} className="btn-modal-save">
           <Plus size={18} /> Tambah Banner
         </button>
       </div>
@@ -93,7 +93,7 @@ export default function BannerManager() {
                 {b.imageUrl ? (
                   <Image src={b.imageUrl} alt={b.title} fill sizes="(max-width: 640px) 100vw, 192px" className="object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-700 flex items-center justify-center">
                     <span className="text-white/40 text-xs">Tanpa Foto</span>
                   </div>
                 )}
@@ -105,7 +105,7 @@ export default function BannerManager() {
                     <div>
                       <h3 className="font-semibold text-primary-900">{b.title}</h3>
                       <p className="text-gray-500 text-sm mt-0.5 line-clamp-2">{b.subtitle}</p>
-                      {b.linkText && <span className="text-xs text-primary-600 mt-1 block">Tombol: {b.linkText}</span>}
+                      {b.linkText && <span className="text-xs text-primary-700 mt-1 block">Tombol: {b.linkText}</span>}
                     </div>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function BannerManager() {
         footer={
           <>
             <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1">
               {saving && <Loader2 size={16} className="animate-spin" />}
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -162,7 +162,7 @@ export default function BannerManager() {
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-primary-600" />
+            <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded accent-primary-700" />
             <span className="text-sm text-gray-700">Tampilkan banner ini di website</span>
           </label>
           {msg && <p className="error-msg">{msg}</p>}

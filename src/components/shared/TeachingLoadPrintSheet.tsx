@@ -50,14 +50,17 @@ export default async function TeachingLoadPrintSheet({ backHref }: { backHref: s
 
   return (
     <>
-      <div className="print:hidden sticky top-0 z-30 bg-primary-900 text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={backHref} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowLeft size={16} />
+      <div className="print:hidden sticky top-0 z-30 relative overflow-hidden text-white px-6 py-4 flex items-center justify-between"
+        style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        <div className="relative flex items-center gap-3">
+          <Link href={backHref} className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
+            <ArrowLeft size={16} /> Kembali
           </Link>
           <h1 className="font-heading font-bold">Cetak Pembagian Tugas Mengajar</h1>
         </div>
-        <PrintButton />
+        <div className="relative"><PrintButton /></div>
       </div>
 
       <div className="print-doc p-4 print:p-2">

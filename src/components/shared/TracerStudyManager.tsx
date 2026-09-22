@@ -85,7 +85,7 @@ export default function TracerStudyManager() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<UserCheck size={22} />}
         title="Tracer Study Alumni"
@@ -94,9 +94,9 @@ export default function TracerStudyManager() {
 
       {!loading && items.length > 0 && (
         <div className="relative max-w-sm mb-5">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama, NIS, jurusan, atau institusi..." className="input-field pl-9 text-sm" />
+            placeholder="Cari nama, NIS, jurusan, atau institusi..." className="input-field pl-10" />
         </div>
       )}
 
@@ -107,37 +107,37 @@ export default function TracerStudyManager() {
       ) : filteredItems.length === 0 ? (
         <EmptyState icon={Search} title="Tidak Ditemukan" description="Tidak ada alumni yang cocok dengan pencarian." />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                <tr>
                   {["Alumni", "Jurusan", "Angkatan", "Status", "Institusi/Perusahaan", ""].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                    <th key={h} className="whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.map(item => (
-                  <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                    <td className="px-5 py-3.5">
+                  <tr key={item.id}>
+                    <td>
                       <p className="font-semibold text-primary-900">{item.user.name}</p>
                       <p className="text-gray-400 text-xs font-mono">{item.nis}</p>
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{item.major.code}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{item.enrollYear ?? "—"}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="text-gray-500 text-xs whitespace-nowrap">{item.major.code}</td>
+                    <td className="text-gray-500 text-xs whitespace-nowrap">{item.enrollYear ?? "—"}</td>
+                    <td>
                       {item.alumniTracer ? (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.alumniTracer.status] ?? STATUS_BADGE.LAINNYA}`}>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_BADGE[item.alumniTracer.status] ?? STATUS_BADGE.LAINNYA}`}>
                           {STATUS_OPTIONS.find(s => s.value === item.alumniTracer!.status)?.label ?? item.alumniTracer.status}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-200 whitespace-nowrap">Belum Disurvei</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-200 whitespace-nowrap">Belum Disurvei</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{item.alumniTracer?.institutionName || "-"}</td>
-                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Isi/Ubah">
+                    <td className="text-gray-500 text-xs">{item.alumniTracer?.institutionName || "-"}</td>
+                    <td className="text-right whitespace-nowrap">
+                      <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Isi/Ubah">
                         <Edit2 size={14} />
                       </button>
                     </td>
@@ -156,7 +156,7 @@ export default function TracerStudyManager() {
         footer={
           <>
             <button type="button" onClick={() => setModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-modal-save flex-1">
               {saving ? <Loader2 size={14} className="animate-spin" /> : null} Simpan
             </button>
           </>

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { BookOpen, Loader2, CalendarClock, CheckCircle2, AlertTriangle, BookMarked } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import Paginasi from "@/components/shared/Paginasi";
+import { usePaginasi } from "@/lib/use-paginasi";
 
 interface Loan {
   id: string;
@@ -40,6 +42,7 @@ export default function MyLibraryLoans() {
 
   const active = loans.filter(l => l.status === "DIPINJAM");
   const history = loans.filter(l => l.status !== "DIPINJAM");
+  const halRiwayat = usePaginasi(history, 20);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -54,7 +57,7 @@ export default function MyLibraryLoans() {
           <div>
             <h2 className="font-heading font-bold text-primary-900 text-sm mb-3">Sedang Dipinjam ({active.length})</h2>
             {active.length === 0 ? (
-              <p className="text-sm text-gray-400 bg-white rounded-2xl border border-gray-100 p-5 text-center">Tidak ada buku yang sedang dipinjam.</p>
+              <p className="panel text-sm text-gray-400 p-5 text-center">Tidak ada buku yang sedang dipinjam.</p>
             ) : (
               <div className="space-y-2.5">
                 {active.map(l => (
@@ -96,11 +99,11 @@ export default function MyLibraryLoans() {
           <div>
             <h2 className="font-heading font-bold text-primary-900 text-sm mb-3">Riwayat Peminjaman ({history.length})</h2>
             {history.length === 0 ? (
-              <p className="text-sm text-gray-400 bg-white rounded-2xl border border-gray-100 p-5 text-center">Belum ada riwayat peminjaman selesai.</p>
+              <p className="panel text-sm text-gray-400 p-5 text-center">Belum ada riwayat peminjaman selesai.</p>
             ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="panel overflow-hidden">
                 <div className="divide-y divide-gray-50">
-                  {history.map(l => (
+                  {halRiwayat.potongan.map(l => (
                     <div key={l.id} className="flex items-start gap-3 px-4 py-3.5">
                       <div className="shrink-0 mt-0.5 p-2 rounded-xl bg-gray-50 text-gray-400"><CheckCircle2 size={18} /></div>
                       <div className="flex-1 min-w-0">
@@ -117,6 +120,7 @@ export default function MyLibraryLoans() {
                     </div>
                   ))}
                 </div>
+                <Paginasi hal={halRiwayat} satuan="riwayat" className="border-t border-gray-100" />
               </div>
             )}
           </div>

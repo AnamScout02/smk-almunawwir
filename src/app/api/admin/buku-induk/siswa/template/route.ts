@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import * as XLSX from "xlsx";
 
 export async function GET() {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const headers = [
     // Identitas utama
@@ -56,7 +56,7 @@ export async function GET() {
     // Masuk sekolah
     "Kode Jurusan (TKJ/AK/ATU/DKV/DPIB)",
     "Nama Kelas (contoh: X DPIB 1)",
-    "Tahun Masuk",
+    "Tahun Angkatan",
     "Tanggal Diterima (DD/MM/YYYY)",
     // Orang tua ayah
     "Nama Ayah",
@@ -208,7 +208,7 @@ export async function GET() {
     ["Diterima di Tingkat", "Contoh: X (Sepuluh) / XI (Sebelas) / XII (Dua Belas)", "Opsional"],
     ["Kode Jurusan", "Kode jurusan: TKJ / AK / ATU / DKV / DPIB — Bidang/Program/Konsentrasi Keahlian otomatis mengikuti kode ini, tidak perlu diisi terpisah", "Ya"],
     ["Nama Kelas", "Nama kelas persis seperti di menu Kelas, contoh: X DPIB 1 — kalau tidak cocok/kosong, siswa tetap disimpan tanpa kelas (bisa diatur manual nanti)", "Opsional"],
-    ["Tahun Masuk", "Tahun masuk SMK, contoh: 2025", "Opsional"],
+    ["Tahun Angkatan", "Tahun awal tahun ajaran saat angkatannya di kelas X, contoh: 2025 (pindahan mengikuti angkatan teman sekelas)", "Opsional"],
     ["Tanggal Diterima", "Format DD/MM/YYYY", "Opsional"],
     ["Nama Ayah", "Nama lengkap ayah kandung", "Opsional"],
     ["NIK Ayah", "NIK ayah kandung", "Opsional"],

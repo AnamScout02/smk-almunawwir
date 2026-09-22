@@ -32,26 +32,28 @@ export default function NotulenRapatPage() {
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<NotebookPen size={22} />}
         title="Notulen Rapat"
         description="Catatan hasil rapat — bisa dicetak lengkap dengan daftar hadir & dokumentasi"
       />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/admin/notulen-rapat/new" className="btn-gold flex items-center gap-2 text-sm">
-          <Plus size={16} /> Tambah Notulen
-        </Link>
-      </div>
-
-      {meetings.length > 0 && (
-        <div className="relative max-w-sm mb-5">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari topik, pemimpin rapat, atau tempat..." className="input-field pl-9 text-sm" />
+      {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026). */}
+      <div className="baris-alat mb-5">
+        {meetings.length > 0 && (
+          <div className="alat-cari">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Cari topik, pemimpin rapat, atau tempat..." className="input-field pl-10" />
+          </div>
+        )}
+        <div className="alat-aksi">
+          <Link href="/dashboard/admin/notulen-rapat/new" className="btn-modal-save">
+            <Plus size={16} /> Tambah Notulen
+          </Link>
         </div>
-      )}
+      </div>
 
       {(() => {
         const q = search.toLowerCase();
@@ -70,16 +72,16 @@ export default function NotulenRapatPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map(m => (
-            <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={m.id} className="panel p-5">
               <div className="flex items-start justify-between mb-2">
                 <p className="font-heading font-bold text-primary-900">{m.topic || "Rapat"}</p>
                 <div className="flex items-center gap-1 shrink-0">
                   <Link href={`/dashboard/admin/notulen-rapat/${m.id}/cetak`}
-                    className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Cetak">
+                    className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Cetak">
                     <Printer size={14} />
                   </Link>
                   <Link href={`/dashboard/admin/notulen-rapat/${m.id}`}
-                    className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+                    className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
                     <Edit2 size={14} />
                   </Link>
                   <button onClick={() => handleDelete(m.id, m.topic)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
@@ -90,7 +92,7 @@ export default function NotulenRapatPage() {
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1"><Calendar size={12} /> {fmt(m.date)}{m.time ? ` · ${m.time}` : ""}</span>
                 {m.place && <span className="flex items-center gap-1"><MapPin size={12} /> {m.place}</span>}
-                <span className="flex items-center gap-1 ml-auto text-primary-600 font-semibold"><Users size={12} /> {m.attendees.length} hadir</span>
+                <span className="flex items-center gap-1 ml-auto text-primary-700 font-semibold"><Users size={12} /> {m.attendees.length} hadir</span>
               </div>
               {m.leader && <p className="text-xs text-gray-400 mt-1">Pemimpin Rapat: {m.leader}</p>}
             </div>

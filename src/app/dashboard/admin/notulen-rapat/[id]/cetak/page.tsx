@@ -1,11 +1,18 @@
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
-import LetterheadImage from "@/components/shared/LetterheadImage";
+import LembarSurat from "@/components/shared/LembarSurat";
 import PrintButton from "@/components/shared/PrintButton";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import { buildPrintFilename } from "@/lib/print-filename";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const meeting = await prisma.meetingMinutes.findUnique({ where: { id }, select: { topic: true, date: true } });
+  return { title: { absolute: buildPrintFilename("NOTULEN_RAPAT", meeting?.topic, meeting ? fmtLong(meeting.date) : null) } };
+}
 
 interface StructureRow { role: string; name: string; highlight?: boolean }
 
@@ -62,9 +69,7 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
 
       <div className="flex flex-col gap-6 print:gap-0 print:block overflow-x-auto print:overflow-visible">
         {/* Halaman 1 — Notulen */}
-        <div className="a4-page print-doc shadow-lg break-after-page bg-white text-primary-900 mx-auto shrink-0">
-          <LetterheadImage url={kopAtas} alt="Kop Surat" />
-          <div className="a4-page-body">
+        <LembarSurat kopAtas={kopAtas} kopBawah={kopBawah}>
             <h1 className="text-center font-bold text-lg uppercase underline mb-6">Notulen Rapat</h1>
 
             <div className="text-sm mb-8">
@@ -101,14 +106,10 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
                 <p className="font-bold underline">( {principalName || "__________________"} )</p>
               </div>
             </div>
-          </div>
-          <LetterheadImage url={kopBawah} alt="Kop Bawah" />
-        </div>
+        </LembarSurat>
 
         {/* Halaman 2 — Dokumentasi & Daftar Hadir */}
-        <div className="a4-page print-doc shadow-lg break-after-page bg-white text-primary-900 mx-auto shrink-0">
-          <LetterheadImage url={kopAtas} alt="Kop Surat" />
-          <div className="a4-page-body">
+        <LembarSurat kopAtas={kopAtas} kopBawah={kopBawah}>
             {meeting.photos.length > 0 ? (
               meeting.photos.length === 1 ? (
                 <div className="flex justify-center mb-8">
@@ -159,23 +160,17 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
               </tbody>
             </table>
             <p className="text-[10px] text-gray-500 mt-1">✓ menandakan kehadiran telah dikonfirmasi sistem saat notulen dibuat.</p>
-          </div>
-          <LetterheadImage url={kopBawah} alt="Kop Bawah" />
-        </div>
+        </LembarSurat>
 
         {/* Halaman 3 — Hasil Keputusan */}
-        <div className="a4-page print-doc shadow-lg bg-white text-primary-900 mx-auto shrink-0">
-          <LetterheadImage url={kopAtas} alt="Kop Surat" />
-          <div className="a4-page-body">
+        <LembarSurat kopAtas={kopAtas} kopBawah={kopBawah} terakhir>
             <h2 className="text-center font-bold text-sm uppercase mb-6">Hasil Keputusan Rapat</h2>
             <div className="text-sm leading-8" style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #d1d5db 32px)" }}>
               {(meeting.decisions || "").split("\n").map((line, i) => (
                 <p key={i}>{line || " "}</p>
               ))}
             </div>
-          </div>
-          <LetterheadImage url={kopBawah} alt="Kop Bawah" />
-        </div>
+        </LembarSurat>
       </div>
     </div>
   );

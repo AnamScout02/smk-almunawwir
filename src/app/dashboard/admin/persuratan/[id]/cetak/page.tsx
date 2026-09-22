@@ -2,13 +2,23 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { uploadUrlToDiskPath } from "@/lib/onlyoffice-docx";
-import LetterheadImage from "@/components/shared/LetterheadImage";
+import { randomBytes } from "crypto";
+import LembarSurat from "@/components/shared/LembarSurat";
+import { generateQrDataUrl } from "@/lib/qrcode";
+import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 import PrintButton from "@/components/shared/PrintButton";
 import Link from "next/link";
 import { ArrowLeft, FileDown } from "lucide-react";
 import { notFound } from "next/navigation";
 import { readFile } from "fs/promises";
 import mammoth from "mammoth";
+import { buildPrintFilename } from "@/lib/print-filename";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const surat = await prisma.surat.findUnique({ where: { id }, select: { perihal: true, nomor: true } });
+  return { title: { absolute: buildPrintFilename("Surat", surat?.perihal, surat?.nomor) } };
+}
 
 interface StructureRow { role: string; name: string; highlight?: boolean }
 
@@ -32,6 +42,13 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
     getSettings(["letterhead.bukuInduk", "letterhead.kopBawah", "letterhead.ttdKepalaSekolah", "school.structure"]),
   ]);
   if (!surat || surat.tipe !== "KELUAR") notFound();
+  // QR keaslian surat (17 Sep 2026): token dibuat sekali saat surat pertama kali dicetak.
+  let token = surat.verifikasiToken;
+  if (!token) {
+    token = randomBytes(18).toString("base64url");
+    await prisma.surat.update({ where: { id }, data: { verifikasiToken: token } }).catch(() => { token = surat.verifikasiToken; });
+  }
+  const qrSurat = token ? await generateQrDataUrl(`${ALAMAT_APLIKASI}/verify/surat/${token}`) : null;
   const penandaTangan = surat.penandaTangan || "Kepala SMK Al Munawwir IIBS";
   const isKepalaSekolah = penandaTangan.trim() === "Kepala SMK Al Munawwir IIBS";
   const principalName = isKepalaSekolah ? getPrincipalName(s["school.structure"]) : "";
@@ -60,7 +77,7 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
           </Link>
           <div className="flex items-center gap-2">
             <a href={surat.docxUrl} download
-              className="flex items-center gap-2 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-gray-50 transition">
+              className="btn-modal-cancel">
               <FileDown size={15} /> Unduh Word
             </a>
             <PrintButton />
@@ -68,17 +85,13 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
         </div>
 
         <div className="overflow-x-auto print:overflow-visible">
-          <div className="a4-page print-doc shadow-lg bg-white text-primary-900 mx-auto shrink-0">
-            <LetterheadImage url={s["letterhead.bukuInduk"]} alt="Kop Surat" />
-            <div className="a4-page-body">
+          <LembarSurat kopAtas={s["letterhead.bukuInduk"]} kopBawah={s["letterhead.kopBawah"]} terakhir>
               {bodyHtml ? (
                 <div className="docx-print-body text-sm" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
               ) : (
                 <p className="text-sm text-gray-400 italic">Gagal memuat isi surat.</p>
               )}
-            </div>
-            <LetterheadImage url={s["letterhead.kopBawah"]} alt="Kop Bawah" />
-          </div>
+            </LembarSurat>
         </div>
       </div>
     );
@@ -92,7 +105,7 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
         </Link>
         <div className="flex items-center gap-2">
           <a href={`/api/admin/surat/${id}/export-word`}
-            className="flex items-center gap-2 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-gray-50 transition">
+            className="btn-modal-cancel">
             <FileDown size={15} /> Unduh Word
           </a>
           <PrintButton />
@@ -100,9 +113,7 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
       </div>
 
       <div className="overflow-x-auto print:overflow-visible">
-        <div className="a4-page print-doc shadow-lg bg-white text-primary-900 mx-auto shrink-0">
-          <LetterheadImage url={s["letterhead.bukuInduk"]} alt="Kop Surat" />
-          <div className="a4-page-body">
+        <LembarSurat kopAtas={s["letterhead.bukuInduk"]} kopBawah={s["letterhead.kopBawah"]} terakhir>
             <table className="text-sm mb-4">
               <tbody>
                 <tr><td className="pr-2 align-top">Nomor</td><td className="pr-2 align-top">:</td><td className="align-top font-semibold">{surat.nomor}</td></tr>
@@ -110,8 +121,15 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
               </tbody>
             </table>
 
-            <p className="text-sm mb-1">Kepada Yth.</p>
-            <p className="text-sm font-semibold mb-6">{surat.pihak}</p>
+            {/* Surat Keterangan / Pernyataan / SK memang tidak punya alamat tujuan — blok ini
+                disembunyikan kalau kolom "Kepada" dikosongkan, bukan dicetak sebagai
+                "Kepada Yth." yang menggantung tanpa nama. */}
+            {surat.pihak?.trim() ? (
+              <>
+                <p className="text-sm mb-1">Kepada Yth.</p>
+                <p className="text-sm font-semibold mb-6">{surat.pihak}</p>
+              </>
+            ) : null}
 
             {surat.content ? (
               <div className="prose-surat-print text-sm text-justify mb-10" dangerouslySetInnerHTML={{ __html: surat.content }} />
@@ -119,7 +137,14 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
               <p className="text-sm text-gray-400 italic mb-10">Isi surat belum ditulis.</p>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex items-end justify-between gap-4">
+              {qrSurat ? (
+                <div className="text-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrSurat} alt="QR keaslian surat" className="h-[22mm] w-[22mm]" />
+                  <p className="mt-1 max-w-[30mm] text-[9px] leading-tight text-gray-600">Pindai untuk memeriksa keaslian surat</p>
+                </div>
+              ) : <span />}
               <div className="text-sm text-center min-w-[220px]">
                 <p className="mb-1">Singojuruh, {fmtLong(surat.tanggal)}</p>
                 <p className={isKepalaSekolah && s["letterhead.ttdKepalaSekolah"] ? "mb-2" : "mb-16"}>{penandaTangan}</p>
@@ -130,9 +155,7 @@ export default async function CetakSuratKeluarPage({ params }: { params: Promise
                 <p className="font-bold underline">{principalName ? `( ${principalName} )` : " "}</p>
               </div>
             </div>
-          </div>
-          <LetterheadImage url={s["letterhead.kopBawah"]} alt="Kop Bawah" />
-        </div>
+          </LembarSurat>
       </div>
     </div>
   );

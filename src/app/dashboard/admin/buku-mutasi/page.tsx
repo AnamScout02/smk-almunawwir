@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Repeat, Printer, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Repeat, Printer, ArrowDownCircle, ArrowUpCircle, Loader2, Users } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import StatTile from "@/components/admin/StatTile";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 interface MutasiMasuk {
   id: string; tanggal: string; nis: string; nama: string; kelas: string; jurusan: string;
@@ -16,6 +18,7 @@ interface MutasiKeluar {
 }
 interface RekapRow { grade: number; label: string; L: number; P: number; jumlah: number }
 interface TahunAjaran { id: string; name: string; isActive: boolean }
+interface BulanMutasi { bulan: number; tahun: number; masuk: number; keluar: number }
 
 function formatTgl(d: string) {
   if (!d) return "-";
@@ -23,6 +26,60 @@ function formatTgl(d: string) {
 }
 
 const BULAN_LABEL = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+const BULAN_SINGKAT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const WARNA_MASUK = "#0284c7";
+const WARNA_KELUAR = "#dc2626";
+
+/** Grafik mutasi satu tahun pelajaran (Juli–Juni) — khusus layar (permintaan user 17 Sep 2026). Batang berkelompok per bulan,
+ * angka hanya di batang yang berisi, bulan terpilih disorot; klik bulan untuk membuka daftarnya. Warna tervalidasi (dataviz). */
+function GrafikMutasiTahunan({ data, bulanAktif, onPilih, tahunPelajaran }: {
+  data: BulanMutasi[]; bulanAktif: number; onPilih: (b: number) => void; tahunPelajaran: string;
+}) {
+  const maks = Math.max(1, ...data.flatMap(d => [d.masuk, d.keluar]));
+  const totalMasuk = data.reduce((a, d) => a + d.masuk, 0);
+  const totalKeluar = data.reduce((a, d) => a + d.keluar, 0);
+  const TINGGI = 128;
+  const batang = (n: number, warna: string) => (
+    <span className="flex w-2.5 flex-col items-center justify-end sm:w-3.5" style={{ height: TINGGI + 18 }}>
+      {n > 0 && <span className="angka mb-0.5 text-xs font-semibold text-gray-700">{n}</span>}
+      <span className="bar-tumbuh block w-full rounded-t-[4px]"
+        style={{ height: n > 0 ? Math.max(4, (n / maks) * TINGGI) : 2, background: n > 0 ? warna : "#e5e7eb" }} />
+    </span>
+  );
+  return (
+    <div className="panel mb-6 print:hidden">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-gray-100 px-5 py-3.5">
+        <h3 className="font-heading font-bold text-primary-900 text-sm">Mutasi Tahun Pelajaran {tahunPelajaran} · Juli–Juni</h3>
+        <div className="ml-auto flex flex-wrap items-center gap-4 text-xs text-gray-600">
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: WARNA_MASUK }} /> Masuk <strong className="angka text-primary-900">{totalMasuk}</strong></span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: WARNA_KELUAR }} /> Keluar <strong className="angka text-primary-900">{totalKeluar}</strong></span>
+        </div>
+      </div>
+      <div className="overflow-x-auto px-3 pb-3 pt-4 sm:px-5">
+        <div className="grid min-w-[30rem] grid-cols-12 gap-1">
+          {data.map(d => {
+            const aktif = d.bulan === bulanAktif;
+            const judul = `${BULAN_LABEL[d.bulan - 1]} ${d.tahun}: ${d.masuk} masuk, ${d.keluar} keluar`;
+            return (
+              <button key={`${d.tahun}-${d.bulan}`} type="button" onClick={() => onPilih(d.bulan)} title={judul} aria-label={judul} aria-pressed={aktif}
+                className={`flex flex-col items-center rounded-lg px-0.5 pb-1.5 pt-1 transition ${aktif ? "bg-primary-50 ring-1 ring-primary-100" : "hover:bg-gray-50"}`}>
+                <span className="flex items-end gap-[2px] border-b border-gray-200">
+                  {batang(d.masuk, WARNA_MASUK)}
+                  {batang(d.keluar, WARNA_KELUAR)}
+                </span>
+                <span className={`mt-1.5 text-xs ${aktif ? "font-bold text-primary-900" : "text-gray-500"}`}>{BULAN_SINGKAT[d.bulan - 1]}</span>
+              </button>
+            );
+          })}
+        </div>
+        {totalMasuk + totalKeluar === 0 && (
+          <p className="mt-2 text-center text-xs text-gray-500">Belum ada siswa pindahan masuk maupun keluar pada tahun pelajaran ini.</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   PINDAH: "Pindah Sekolah", KELUAR: "Keluar", LULUS: "Lulus",
@@ -62,6 +119,7 @@ export default function BukuMutasiPage() {
   const [rekap, setRekap] = useState<RekapRow[]>([]);
   const [totalAktif, setTotalAktif] = useState(0);
   const [totalAwalBulan, setTotalAwalBulan] = useState(0);
+  const [perBulan, setPerBulan] = useState<BulanMutasi[]>([]);
   const [tahun, setTahun] = useState(now.getFullYear());
   const [loading, setLoading] = useState(true);
 
@@ -87,6 +145,7 @@ export default function BukuMutasiPage() {
     setRekap(Array.isArray(d.rekap) ? d.rekap : []);
     setTotalAktif(d.totalAktif ?? 0);
     setTotalAwalBulan(d.totalAwalBulan ?? 0);
+    setPerBulan(Array.isArray(d.perBulan) ? d.perBulan : []);
     if (d.tahun) setTahun(d.tahun);
     setLoading(false);
   }, [tahunPelajaran, bulan]);
@@ -94,6 +153,7 @@ export default function BukuMutasiPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const bulanLabel = BULAN_LABEL[parseInt(bulan) - 1];
+  usePrintTitle(buildPrintFilename("BUKU_MUTASI", tab === "MASUK" ? "Masuk" : "Keluar", bulanLabel, tahun));
   const totalRekap = rekap.reduce((a, r) => a + r.jumlah, 0);
   const totalL = rekap.reduce((a, r) => a + r.L, 0);
   const totalP = rekap.reduce((a, r) => a + r.P, 0);
@@ -105,7 +165,7 @@ export default function BukuMutasiPage() {
   const thCls = "border border-gray-800 px-2 py-1.5 text-[11px] font-bold text-center";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0">
       <PageHeader
         icon={<Repeat size={22} />}
         title="Buku Mutasi Siswa"
@@ -114,30 +174,43 @@ export default function BukuMutasiPage() {
       />
       {/* Filter & cetak di baris terpisah (bukan di actions PageHeader) — actions berbagi baris
           dengan judul, jadi kalau diisi banyak elemen judulnya kepepet & wrap. */}
-      <div className="flex flex-wrap items-center gap-3 mb-5 print:hidden">
-        <Select className="w-auto" value={bulan} onChange={setBulan}
-          options={BULAN_LABEL.map((b, i) => ({ value: String(i + 1), label: b }))} />
-        <Select className="w-auto" value={tahunPelajaran} onChange={setTahunPelajaran}
-          options={tahunAjaranList.map(y => ({ value: y.name, label: `${y.name}${y.isActive ? " (Aktif)" : ""}` }))}
-          placeholder="Pilih tahun ajaran" />
-        <button onClick={() => window.print()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
-          <Printer size={15} /> Cetak
-        </button>
+      <div className="baris-alat mb-5 print:hidden">
+        <div className="alat-saring">
+          <Select value={bulan} onChange={setBulan}
+            options={BULAN_LABEL.map((b, i) => ({ value: String(i + 1), label: b }))} />
+        </div>
+        <div className="alat-saring">
+          <Select value={tahunPelajaran} onChange={setTahunPelajaran}
+            options={tahunAjaranList.map(y => ({ value: y.name, label: `${y.name}${y.isActive ? " (Aktif)" : ""}` }))}
+            placeholder="Pilih tahun ajaran" />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={() => window.print()} className="btn-modal-cancel">
+            <Printer size={15} /> Cetak
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
       {!loading && (
-        <div className="grid grid-cols-2 gap-4 mb-6 print:hidden">
-          <StatTile color="blue" icon={ArrowDownCircle} value={masuk.length} label="Siswa Masuk" sublabel={`${bulanLabel} ${tahun}`} />
-          <StatTile color="red" icon={ArrowUpCircle} value={keluar.length} label="Siswa Keluar" sublabel={`${bulanLabel} ${tahun}`} />
+        <div className="kisi-kartu kisi-kartu-4 mb-6 print:hidden">
+          <StatTile color="blue" icon={ArrowDownCircle} value={masuk.length} label="Siswa masuk" sublabel={`${bulanLabel} ${tahun}`} />
+          <StatTile color="red" icon={ArrowUpCircle} value={keluar.length} label="Siswa keluar" sublabel={`${bulanLabel} ${tahun}`} />
+          <StatTile color="purple" icon={Repeat} value={`${perBulan.reduce((a, x) => a + x.masuk, 0)} / ${perBulan.reduce((a, x) => a + x.keluar, 0)}`}
+            label="Masuk / keluar setahun" sublabel={`Tahun pelajaran ${tahunPelajaran}`} />
+          <StatTile color="emerald" icon={Users} value={totalAktif} label="Siswa aktif saat ini" sublabel={`L ${totalL} · P ${totalP}`} />
         </div>
       )}
 
+      {!loading && perBulan.length === 12 && (
+        <GrafikMutasiTahunan data={perBulan} bulanAktif={parseInt(bulan)} onPilih={b => setBulan(String(b))} tahunPelajaran={tahunPelajaran} />
+      )}
+
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 print:hidden">
+      <div className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 mb-5 print:hidden scrollbar-hide">
         {(["MASUK", "KELUAR"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${tab === t ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
             {t === "MASUK" ? <ArrowDownCircle size={15} /> : <ArrowUpCircle size={15} />}
             Siswa {t === "MASUK" ? "Masuk" : "Keluar"}
             <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full border ${t === "MASUK" ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-600 border-red-200"}`}>
@@ -148,12 +221,12 @@ export default function BukuMutasiPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400 print:hidden">Memuat data...</div>
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat data...</div>
       ) : tab === "MASUK" ? (
         <>
           {/* Tabel on-screen */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-visible">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
@@ -188,7 +261,7 @@ export default function BukuMutasiPage() {
           </div>
 
           {/* Cetak resmi — Masuk */}
-          <div className="hidden print:block">
+          <div className="hidden print:block print-doc bg-white lembar-mutasi">
             <div className="text-center mb-4">
               <h2 className="text-lg font-bold uppercase">Data Mutasi Siswa Yang Masuk</h2>
               <p className="text-xl font-bold uppercase">SMK Al Munawwir IIBS</p>
@@ -270,7 +343,7 @@ export default function BukuMutasiPage() {
         <>
           {/* Tabel on-screen */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-visible">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
@@ -308,7 +381,7 @@ export default function BukuMutasiPage() {
           </div>
 
           {/* Cetak resmi — Keluar */}
-          <div className="hidden print:block">
+          <div className="hidden print:block print-doc bg-white lembar-mutasi">
             <div className="text-center mb-4">
               <h2 className="text-lg font-bold uppercase">Data Mutasi Siswa Yang Keluar</h2>
               <p className="text-xl font-bold uppercase">SMK Al Munawwir IIBS</p>
@@ -372,7 +445,14 @@ export default function BukuMutasiPage() {
 
       <style>{`
         @media print {
-          @page { size: A4 landscape; margin: 1.2cm; }
+          /* Margin kertas sengaja 0 di @page, lalu 1,2cm dipasang sebagai padding wadah cetak
+             di bawah. Alasannya: dropdown "Margins" di dialog cetak Chrome MENGALAHKAN @page —
+             kalau petugas memilih "None" (lazim, karena cetak Buku Induk memang butuh tanpa
+             margin), margin @page hilang dan isi tabel menempel ke tepi kertas (temuan user
+             13 September 2026, lewat tangkapan layar dialog cetak). Padding wadah tidak bisa
+             dimatikan dari dialog, jadi hasilnya sama apa pun setelan browsernya. */
+          @page { size: A4 landscape; margin: 0; }
+          .lembar-mutasi { padding: 1.2cm; }
         }
       `}</style>
     </div>

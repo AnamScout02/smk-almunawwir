@@ -49,7 +49,7 @@ export default function AdminMessagesPage() {
       />
 
       {unread > 0 && (
-        <div className="flex justify-end mb-5">
+        <div className="alat-aksi justify-end mb-5">
           <button
             onClick={async () => {
               await fetch("/api/admin/messages", { method: "PATCH" });
@@ -68,15 +68,15 @@ export default function AdminMessagesPage() {
       ) : (
         <div className="space-y-2">
           {items.map(item => (
-            <div key={item.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${!item.isRead ? "border-primary-200 shadow-primary-50" : "border-gray-100"}`}>
+            <div key={item.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${!item.isRead ? "border-primary-100 shadow-primary-50" : "border-gray-100"}`}>
               <div className="p-4 flex items-start gap-3 cursor-pointer" onClick={() => openMsg(item)}>
-                <div className={`mt-0.5 shrink-0 ${!item.isRead ? "text-primary-600" : "text-gray-300"}`}>
+                <div className={`mt-0.5 shrink-0 ${!item.isRead ? "text-primary-700" : "text-gray-300"}`}>
                   {item.isRead ? <MailOpen size={18} /> : <Mail size={18} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`font-semibold text-sm ${!item.isRead ? "text-primary-900" : "text-gray-700"}`}>{item.name}</span>
-                    {!item.isRead && <span className="px-1.5 py-0.5 rounded-full text-xs bg-primary-50 text-primary-700 border border-primary-200 font-semibold">Baru</span>}
+                    {!item.isRead && <span className="px-1.5 py-0.5 rounded-full text-xs bg-primary-50 text-primary-700 border border-primary-100 font-semibold">Baru</span>}
                     <span className="text-xs text-gray-400 ml-auto">{new Date(item.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
                   </div>
                   <p className="text-sm text-gray-600 mt-0.5 font-medium">{item.subject}</p>
@@ -96,7 +96,7 @@ export default function AdminMessagesPage() {
                   </div>
                   <div className="flex gap-2">
                     <a href={`mailto:${item.email}?subject=Re: ${item.subject}`}
-                      className="inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+                      className="btn-modal-save">
                       Balas via Email
                     </a>
                     <button onClick={() => markRead(item.id, !item.isRead)}

@@ -1,20 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
-
-function generateSemesters(): string[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const currentTahunAjaran = month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
-  const prevTahunAjaran = month >= 7 ? `${year - 1}/${year}` : `${year - 2}/${year - 1}`;
-  return [
-    `Ganjil ${prevTahunAjaran}`,
-    `Genap ${prevTahunAjaran}`,
-    `Ganjil ${currentTahunAjaran}`,
-    `Genap ${currentTahunAjaran}`,
-  ];
-}
+import { semesterRapor as generateSemesters } from "@/lib/rapor-verifikasi";
+import { logActivity } from "@/lib/activity-log";
+import { segarkanAntrean } from "@/lib/antrean-kerja";
 
 async function assertKepsekOrAdmin(session: { role: string; email: string }) {
   if (session.role === "ADMIN") return;
@@ -32,16 +21,24 @@ export async function GET() {
     await assertKepsekOrAdmin(session);
 
     const semesters = generateSemesters();
-    const [classes, approvals] = await Promise.all([
-      prisma.class.findMany({ select: { id: true, name: true, grade: true }, orderBy: [{ grade: "asc" }, { name: "asc" }] }),
+    const [classes, approvals, kunci] = await Promise.all([
+      prisma.class.findMany({
+        select: { id: true, name: true, grade: true, homeroom: { select: { user: { select: { name: true } } } } },
+        orderBy: [{ grade: "asc" }, { name: "asc" }],
+      }),
       prisma.raporApproval.findMany(),
+      prisma.raporKunci.findMany(),
     ]);
     const approvalMap = new Map(approvals.map(a => [`${a.classId}::${a.semester}`, a]));
+    const kunciMap = new Map(kunci.map(k => [`${k.classId}::${k.semester}`, k]));
 
     const rows = classes.flatMap(cls => semesters.map(semester => {
       const approval = approvalMap.get(`${cls.id}::${semester}`);
+      const k = kunciMap.get(`${cls.id}::${semester}`);
       return {
         classId: cls.id, className: cls.name, grade: cls.grade, semester,
+        waliKelas: cls.homeroom?.user.name ?? null,
+        locked: !!k, lockedBy: k?.lockedBy ?? null, lockedAt: k?.lockedAt ?? null,
         approved: !!approval, approvalId: approval?.id ?? null,
         approvedBy: approval?.approvedBy ?? null, approvedAt: approval?.approvedAt ?? null,
       };
@@ -61,18 +58,34 @@ export async function POST(req: NextRequest) {
     const session = await verifyRole(["TEACHER", "ADMIN"]);
     await assertKepsekOrAdmin(session);
 
-    const { classId, semester, note } = await req.json();
-    if (!classId || !semester) {
+    const body = await req.json() as { classId?: string; classIds?: string[]; semester?: string; note?: string };
+    const { semester, note } = body;
+    // Satu kelas (classId) atau banyak sekaligus (classIds — tombol "Sahkan Semua yang Siap", permintaan user 17 Sep 2026).
+    const daftar = [...new Set(Array.isArray(body.classIds) ? body.classIds.filter(x => typeof x === "string") : body.classId ? [body.classId] : [])];
+    if (!daftar.length || !semester) {
       return Response.json({ error: "Kelas dan semester wajib diisi." }, { status: 400 });
     }
 
-    const approval = await prisma.raporApproval.upsert({
+    // Verifikasi bertingkat (17 Sep 2026): pengesahan hanya setelah wali kelas mengunci nilai.
+    const kunci = await prisma.raporKunci.findMany({ where: { classId: { in: daftar }, semester }, select: { classId: true } });
+    const siap = daftar.filter(id => kunci.some(k => k.classId === id));
+    if (!siap.length) {
+      return Response.json({ error: "Wali kelas belum mengunci nilai kelas ini untuk semester tersebut." }, { status: 409 });
+    }
+
+    const approvals = await prisma.$transaction(siap.map(classId => prisma.raporApproval.upsert({
       where: { classId_semester: { classId, semester } },
       create: { classId, semester, approvedBy: session.name, note: note || null },
       update: { approvedBy: session.name, approvedAt: new Date(), note: note || null },
-    });
+    })));
 
-    return Response.json(approval);
+    const kelas = await prisma.class.findMany({ where: { id: { in: siap } }, select: { name: true }, orderBy: { name: "asc" } });
+    await logActivity(session, {
+      action: "SAHKAN_RAPOR", entity: "RaporApproval", entityId: siap.length === 1 ? approvals[0].id : semester,
+      description: `Mengesahkan rapor semester ${semester}: ${kelas.map(k => k.name).join(", ")}`,
+    }).catch(() => {});
+    segarkanAntrean();
+    return Response.json(siap.length === 1 && body.classId ? approvals[0] : { disahkan: siap.length, dilewati: daftar.length - siap.length });
   } catch (e) {
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Kepala Sekolah." }, { status: 403 });

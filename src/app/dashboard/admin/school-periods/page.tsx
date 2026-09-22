@@ -1,4 +1,5 @@
 "use client";
+import TimePicker from "@/components/shared/TimePicker";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, Clock, Loader2, Wand2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -111,7 +112,7 @@ export default function SchoolPeriodsPage() {
             {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Ganti dengan Default
           </button>
         )}
-        <button onClick={() => openNew()} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
+        <button onClick={() => openNew()} className="btn-modal-save sm:ml-auto">
           <Plus size={15} /> Tambah Jam
         </button>
       </div>
@@ -140,7 +141,7 @@ export default function SchoolPeriodsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-bold text-primary-700 font-mono">{p.startTime}–{p.endTime}</span>
-                        {p.isBreak && <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">ISTIRAHAT</span>}
+                        {p.isBreak && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">ISTIRAHAT</span>}
                       </div>
                       <p className="font-semibold text-sm text-gray-800 truncate">
                         {p.isBreak ? (p.label || "Istirahat") : `Jam ke-${byDay[day].filter(x => !x.isBreak).findIndex(x => x.id === p.id) + 1}`}
@@ -165,7 +166,7 @@ export default function SchoolPeriodsPage() {
         footer={
           <>
             <button onClick={() => setShowForm(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button onClick={save} disabled={saving} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button onClick={save} disabled={saving} className="btn-modal-save flex-1">
               {saving && <Loader2 size={16} className="animate-spin" />}
               {saving ? "Menyimpan..." : "Simpan"}
             </button>
@@ -191,13 +192,11 @@ export default function SchoolPeriodsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label-field">Jam Mulai *</label>
-              <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                className="input-field" />
+              <TimePicker value={form.startTime} onChange={v => setForm(f => ({ ...f, startTime: v }))} />
             </div>
             <div>
               <label className="label-field">Jam Selesai *</label>
-              <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                className="input-field" />
+              <TimePicker value={form.endTime} onChange={v => setForm(f => ({ ...f, endTime: v }))} />
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-600">

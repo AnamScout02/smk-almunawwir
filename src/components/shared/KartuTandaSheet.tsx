@@ -7,6 +7,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import PrintButton from "@/components/shared/PrintButton";
 import { KartuTemplate, KartuBox, KartuFieldContext, resolveKartuText, resolveShape } from "@/lib/kartu-tanda-template";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 const SHAPE_CLASS: Record<"square" | "rounded" | "circle", string> = { square: "", rounded: "rounded-lg", circle: "rounded-full" };
 
@@ -183,6 +185,9 @@ export default function KartuTandaSheet({ classes, template, logoEmblem, signatu
     setLoading(false);
   }
 
+  const selectedClassName = classId ? classes.find(c => c.id === classId)?.name : undefined;
+  usePrintTitle(data ? buildPrintFilename("Kartu_Tanda", TYPE_LABEL[type], selectedClassName) : null);
+
   const hasFrontTemplate = !!template?.front.imageUrl;
   const hasBackTemplate = !!template?.back.imageUrl;
   const kontakSekolah = [phone, email].filter(Boolean).join(" · ");
@@ -221,11 +226,11 @@ export default function KartuTandaSheet({ classes, template, logoEmblem, signatu
           </div>
         )}
         <button onClick={load} disabled={loading}
-          className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 disabled:opacity-60">
+          className="btn-modal-cancel disabled:opacity-60">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <IdCard size={15} />} Muat Kartu
         </button>
         <Link href="/dashboard/admin/kartu-tanda/editor"
-          className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-600 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200">
+          className="btn-modal-cancel">
           <Pencil size={14} /> Desain Kartu
         </Link>
         {data && data.length > 0 && <div className="sm:ml-auto"><PrintButton /></div>}

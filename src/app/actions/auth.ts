@@ -1,9 +1,15 @@
 "use server";
 import { redirect } from "next/navigation";
+import { cookies, headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createSession, deleteSession } from "@/lib/session";
+import { setPendingTotpCookie, getPendingTotp, clearPendingTotpCookie } from "@/lib/session";
+import { masukkanSesi, keluarkanSesiIni } from "@/lib/sesi-server";
+import { checkRateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
+import { verifyTotpToken, consumeBackupCode } from "@/lib/totp";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { BENDAHARA_JABATAN } from "@/lib/bendahara-guard";
 
 const loginSchema = z.object({
   email: z.string().includes("@"),
@@ -12,7 +18,32 @@ const loginSchema = z.object({
 
 export type LoginState = {
   error?: string;
+  /** true kalau email+password sudah benar TAPI akun ini butuh kode 2FA sebelum sesi dibuat —
+   * lihat verifyLoginTotp() di bawah. Form login.tsx harus ganti tampilan jadi input kode kalau ini true. */
+  needsTotp?: boolean;
 } | undefined;
+
+const REDIRECT_MAP: Record<string, string> = {
+  ADMIN: "/dashboard/admin",
+  TAS: "/dashboard/admin",
+  TEACHER: "/dashboard/teacher",
+  STUDENT: "/dashboard/student",
+  PARENT: "/dashboard/parent",
+};
+
+/** Staf (TEACHER/TAS) yang jabatannya CUMA Bendahara (Sekolah/BOS/BPOPP — tidak ada jabatan lain
+ * sama sekali) langsung diarahkan ke portal Bendahara sendiri begitu login, bukan lewat Dashboard
+ * Guru/Admin dulu — keputusan eksplisit user 2026-08-28. Kalau punya jabatan lain juga, tetap ke
+ * dashboard biasa (menu "Bendahara" tetap ada di situ sbg pintu masuk tambahan). ADMIN/STUDENT/
+ * PARENT tidak pernah kena override ini (jabatan cuma berlaku utk TEACHER/TAS). */
+async function resolveRedirectTarget(role: string, email: string): Promise<string> {
+  const base = REDIRECT_MAP[role] ?? "/dashboard/student";
+  if (role === "TEACHER" || role === "TAS") {
+    const names = await getJabatanNames(email);
+    if (names.length > 0 && names.every(n => BENDAHARA_JABATAN.includes(n))) return "/dashboard/bendahara";
+  }
+  return base;
+}
 
 export async function login(state: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = loginSchema.safeParse({
@@ -25,6 +56,18 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
   }
 
   const { email, password } = parsed.data;
+  // "Ingat saya" — lihat src/lib/session.ts: tidak dicentang = sesi habis saat browser ditutup /
+  // 8 jam tanpa aktivitas (bawaan, aman untuk komputer TU/lab bersama); dicentang = 30 hari.
+  const ingatSaya = formData.get("ingat") === "on";
+
+  // Rate-limit login — celah brute-force nyata sebelum ini (endpoint publik lain sudah pakai
+  // helper yang sama, login belum). Dua lapis: per-IP (longgar, 1 IP sering dipakai banyak orang
+  // di lab/jaringan sekolah yang sama) DAN per-email (ketat, melindungi SATU akun spesifik dari
+  // percobaan berulang biarpun penyerang gonta-ganti IP).
+  const ip = getClientIpFromHeaders(await headers());
+  if (!checkRateLimit(`login-ip:${ip}`, 20, 5 * 60_000) || !checkRateLimit(`login-email:${email}`, 5, 5 * 60_000)) {
+    return { error: "Terlalu banyak percobaan login. Coba lagi dalam beberapa menit." };
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
@@ -43,23 +86,69 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
     }
   }
 
-  await createSession({
-    userId: user.id,
-    role: user.role,
-    name: user.name,
-    email: user.email,
-  });
+  // 2FA — KHUSUS admin yang sudah mengaktifkan (lihat src/lib/totp.ts kenapa dibatasi role ini
+  // saja, bukan semua role). Password sudah benar, tapi sesi SUNGGUHAN belum dibuat sampai kode
+  // TOTP juga benar — lihat verifyLoginTotp() di bawah.
+  if (user.role === "ADMIN" && user.totpEnabled) {
+    await setPendingTotpCookie(user.id, ingatSaya);
+    return { needsTotp: true };
+  }
 
-  const redirectMap: Record<string, string> = {
-    ADMIN: "/dashboard/admin",
-    TAS: "/dashboard/admin",
-    TEACHER: "/dashboard/teacher",
-    STUDENT: "/dashboard/student",
-  };
-  redirect(redirectMap[user.role] ?? "/dashboard/student");
+  await masukkanSesi({ id: user.id, name: user.name, email: user.email, role: user.role }, ingatSaya);
+
+  redirect((await ambilLanjut()) ?? await resolveRedirectTarget(user.role, user.email));
+}
+
+/** Tujuan setelah masuk yang dititipkan tautan QR (cookie `lanjut_masuk`, 10 menit). Hanya jalur internal
+ * berawalan /aset/ atau /hadir/ (presensi kegiatan) — bukan pengalihan bebas (open redirect). */
+async function ambilLanjut(): Promise<string | null> {
+  const jar = await cookies();
+  const v = jar.get("lanjut_masuk")?.value;
+  if (!v) return null;
+  jar.delete("lanjut_masuk");
+  return /^\/aset\/[A-Za-z0-9_-]{1,40}$/.test(v) || /^\/hadir\/[A-Za-z0-9_-]{1,40}\?t=\d{1,12}\.[A-Za-z0-9_-]{1,32}$/.test(v) ? v : null;
+}
+
+/** Langkah kedua login kalau login() tadi mengembalikan `needsTotp: true` — verifikasi kode 6
+ * digit dari authenticator app (atau salah satu kode cadangan sekali-pakai), baru sesi
+ * sungguhan dibuat di sini. */
+export async function verifyLoginTotp(state: LoginState, formData: FormData): Promise<LoginState> {
+  const code = String(formData.get("code") ?? "").trim();
+  if (!code) return { needsTotp: true, error: "Masukkan kode dari aplikasi authenticator." };
+
+  const pending = await getPendingTotp();
+  const pendingUserId = pending?.userId;
+  if (!pending || !pendingUserId) {
+    return { error: "Sesi login kadaluarsa (lebih dari 5 menit). Silakan login ulang." };
+  }
+
+  // Rate-limit percobaan kode — tanpa ini kode 6-digit (1 juta kemungkinan) bisa ditebak brute-force.
+  if (!checkRateLimit(`totp-verify:${pendingUserId}`, 8, 5 * 60_000)) {
+    await clearPendingTotpCookie();
+    return { error: "Terlalu banyak percobaan kode salah. Silakan login ulang." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: pendingUserId } });
+  if (!user || !user.totpEnabled || !user.totpSecret) {
+    await clearPendingTotpCookie();
+    return { error: "Sesi login tidak valid. Silakan login ulang." };
+  }
+
+  let valid = await verifyTotpToken(code, user.totpSecret);
+  if (!valid) valid = await consumeBackupCode(user.id, code);
+  if (!valid) return { needsTotp: true, error: "Kode salah atau sudah kedaluwarsa." };
+
+  await clearPendingTotpCookie();
+  await masukkanSesi({ id: user.id, name: user.name, email: user.email, role: user.role }, pending.ingatSaya);
+  redirect((await ambilLanjut()) ?? REDIRECT_MAP[user.role] ?? "/dashboard/student");
 }
 
 export async function logout() {
-  await deleteSession();
-  redirect("/login");
+  // Mencabut baris UserSession perangkat ini (bukan sekadar menghapus cookie) — token segar yang
+  // sama tidak bisa dipakai lagi walau sempat tersalin. Selama "Masuk Sebagai", yang tercabut
+  // adalah sesi admin itu sendiri, jadi tidak ada lagi cookie impersonator basi yang tertinggal.
+  await keluarkanSesiIni();
+  await clearPendingTotpCookie();
+  // ?keluar=1 → halaman login melepas langganan notifikasi push perangkat ini (lihat login/page.tsx).
+  redirect("/login?keluar=1");
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, CheckSquare, Square, Printer, QrCode } from "lucide-react";
 import PrintButton from "@/components/shared/PrintButton";
 import PageHeader from "@/components/admin/PageHeader";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 interface Book { id: string; title: string; barcode: string | null; barcodeQr: string | null; stock: number }
 interface BarcodeCell { key: string; title: string; barcode: string; qr: string }
@@ -19,6 +21,12 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [qty, setQty] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
+
+  const selectedBooks = books.filter(b => selected.has(b.id));
+  usePrintTitle(showPreview ? buildPrintFilename(
+    "Barcode_Buku",
+    selectedBooks.length === 1 ? selectedBooks[0].title : `${selectedBooks.length}-Judul`,
+  ) : null);
 
   useEffect(() => {
     fetch("/api/perpustakaan/books").then(r => r.json()).then((data: Book[]) => {
@@ -59,7 +67,7 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
 
       <PageHeader icon={<QrCode size={22} />} title="Cetak Barcode Buku" description="Pilih buku & jumlah label yang mau dicetak per buku" printHidden />
       <div className="flex items-center justify-between mb-5 print:hidden">
-        <Link href={backHref} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><ArrowLeft size={18} /></Link>
+        <Link href={backHref} className="btn-modal-cancel"><ArrowLeft size={18} /> Kembali</Link>
         {showPreview && (
           <button onClick={() => setShowPreview(false)}
             className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
@@ -99,9 +107,9 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
               ))}
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="alat-aksi justify-end">
             <button onClick={() => setShowPreview(true)} disabled={cells.length === 0}
-              className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              className="btn-modal-save">
               <Printer size={16} /> Lanjut ke Pratinjau Cetak ({cells.length} label)
             </button>
           </div>
@@ -109,7 +117,7 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
       ) : (
         // ===== Langkah 2: pratinjau + cetak =====
         <>
-          <div className="flex justify-end mb-4 print:hidden">
+          <div className="alat-aksi justify-end mb-4 print:hidden">
             <PrintButton />
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 print:grid-cols-5 gap-4 print:gap-3">

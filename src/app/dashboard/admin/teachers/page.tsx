@@ -138,56 +138,55 @@ export default function AdminTeachersPage() {
 
 function TeacherTable({ items, onManageJabatan }: { items: Teacher[]; onManageJabatan: (t: Teacher) => void }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto scrollbar-visible">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Guru</th>
-            <th className="text-center px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Kode</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden sm:table-cell">NIP</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Mata Pelajaran</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Jabatan</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">HP</th>
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Nama Guru</th>
+            <th className="text-center">Kode</th>
+            <th className="hidden sm:table-cell">NIP</th>
+            <th>Mata Pelajaran</th>
+            <th className="hidden md:table-cell">Jabatan</th>
+            <th className="hidden lg:table-cell">HP</th>
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {items.map(t => (
-            <tr key={t.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5">
+            <tr key={t.id}>
+              <td>
                 <p className="font-semibold text-primary-900">{t.user.name}</p>
                 <p className="text-gray-400 text-xs mt-0.5">{t.user.email}</p>
               </td>
-              <td className="px-5 py-3.5 text-center">
+              <td className="text-center">
                 {t.shortCode
                   ? <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full font-mono">{t.shortCode}</span>
                   : <span className="text-gray-300">—</span>}
               </td>
-              <td className="px-5 py-3.5 font-mono text-xs text-gray-500 hidden sm:table-cell">{t.nip}</td>
-              <td className="px-5 py-3.5">
+              <td className="font-mono text-xs text-gray-500 hidden sm:table-cell">{t.nip}</td>
+              <td>
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                  <BookOpen size={13} className="text-primary-400 shrink-0" />
+                  <BookOpen size={13} className="text-primary-500 shrink-0" />
                   {t.subject}
                 </span>
               </td>
-              <td className="px-5 py-3.5 hidden md:table-cell">
+              <td className="hidden md:table-cell">
                 {t.jabatan.length === 0 ? (
                   <span className="text-gray-300 text-xs">—</span>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {t.jabatan.map(j => (
-                      <span key={j.jabatan.id} className="text-[10px] font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">
+                      <span key={j.jabatan.id} className="text-xs font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">
                         {j.jabatan.name}
                       </span>
                     ))}
                   </div>
                 )}
               </td>
-              <td className="px-5 py-3.5 text-xs text-gray-500 hidden lg:table-cell">
+              <td className="text-xs text-gray-500 hidden lg:table-cell">
                 {t.phone ?? <span className="text-gray-300">—</span>}
               </td>
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-1">
                   <button onClick={() => onManageJabatan(t)}
                     className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition" title="Kelola Jabatan">

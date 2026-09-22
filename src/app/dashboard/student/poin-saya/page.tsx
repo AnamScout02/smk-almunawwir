@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert, Loader2, TrendingDown, TrendingUp, Award, BookOpenCheck } from "lucide-react";
+import StatTile from "@/components/admin/StatTile";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 
@@ -37,7 +38,7 @@ export default function PoinSayaPage() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<ShieldAlert size={22} />} title="Poin Saya" description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" />
 
-      <div className="flex justify-end mb-5">
+      <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/student/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
           <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
         </Link>
@@ -51,25 +52,11 @@ export default function PoinSayaPage() {
         <>
           <p className="text-xs text-gray-400 mb-4">Semester: {data.semester} — akumulasi maksimal poin pelanggaran per tahun ajaran adalah 100.</p>
 
-          <div className={`grid grid-cols-2 gap-4 mb-6 ${data.totalRemisi > 0 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 text-red-500 mb-1"><TrendingDown size={16} /><span className="text-xs font-semibold">Poin Pelanggaran</span></div>
-              <p className="font-heading font-bold text-2xl text-primary-900">{data.totalPelanggaran}</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 text-emerald-500 mb-1"><TrendingUp size={16} /><span className="text-xs font-semibold">Poin Prestasi</span></div>
-              <p className="font-heading font-bold text-2xl text-primary-900">{data.totalPrestasi}</p>
-            </div>
-            {data.totalRemisi > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="flex items-center gap-2 text-blue-500 mb-1"><Award size={16} /><span className="text-xs font-semibold">Poin Remisi</span></div>
-                <p className="font-heading font-bold text-2xl text-primary-900">{data.totalRemisi}</p>
-              </div>
-            )}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 col-span-2 sm:col-span-1">
-              <div className="flex items-center gap-2 text-primary-700 mb-1"><ShieldAlert size={16} /><span className="text-xs font-semibold">Poin Bersih</span></div>
-              <p className="font-heading font-bold text-2xl text-primary-900">{data.netPoints} <span className="text-sm font-normal text-gray-400">/ 100</span></p>
-            </div>
+          <div className={`kisi-kartu mb-6 ${data.totalRemisi > 0 ? "kisi-kartu-4" : "kisi-kartu-3"}`}>
+            <StatTile value={data.totalPelanggaran} label="Poin Pelanggaran" icon={TrendingDown} color="red" />
+            <StatTile value={data.totalPrestasi} label="Poin Prestasi" icon={TrendingUp} color="emerald" />
+            {data.totalRemisi > 0 && <StatTile value={data.totalRemisi} label="Poin Remisi" icon={Award} color="blue" />}
+            <StatTile value={<>{data.netPoints} <span className="text-sm font-normal text-gray-400">/ 100</span></>} label="Poin Bersih" icon={ShieldAlert} color="primary" />
           </div>
 
           <div className={`rounded-2xl border p-5 mb-6 ${LEVEL_COLOR[data.level] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>
@@ -77,7 +64,7 @@ export default function PoinSayaPage() {
             <p className="text-xs mt-1">{data.levelDesc}</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-50"><h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat</h3></div>
             {data.records.length === 0 ? (
               <div className="text-center py-10 text-gray-400">

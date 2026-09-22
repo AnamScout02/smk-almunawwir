@@ -9,12 +9,17 @@ const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir
 /** Widget kontak WhatsApp — HANYA untuk halaman publik (beranda, tentang, kontak, dll), bukan
  * portal internal. Dipasang di root layout (dipakai semua halaman), jadi disaring sendiri di sini
  * lewat pathname — sembunyi total di /dashboard/** (admin/guru/siswa) supaya tidak nyangkut/tumpang
- * tindih dengan UI internal (temuan user 2026-08-13: bubble WA nongol di atas dashboard). */
+ * tindih dengan UI internal (temuan user 2026-08-13: bubble WA nongol di atas dashboard). Juga
+ * disembunyikan di portal ujian (/pusat-ujian staf & /ujian-online siswa) yang berada di luar
+ * /dashboard tapi tetap UI internal — jangan sampai bubble WA nongol saat siswa mengerjakan ujian. */
+// + portal perpustakaan (petugas & anggota) — temuan user 15 Sep 2026: bubble WA menutupi bottom navbar di HP.
+const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei"];
+
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/dashboard")) return null;
+  if (HIDDEN_PREFIXES.some(p => pathname?.startsWith(p))) return null;
 
   const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 

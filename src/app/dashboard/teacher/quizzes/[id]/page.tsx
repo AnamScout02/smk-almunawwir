@@ -111,7 +111,7 @@ export default function TeacherQuizBuilderPage() {
   const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<HelpCircle size={22} />}
         title={isNew ? "Buat Kuis Baru" : "Edit Kuis"}
@@ -133,14 +133,14 @@ export default function TeacherQuizBuilderPage() {
             <Trash2 size={18} />
           </button>
         )}
-        <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/teacher/materials" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 space-y-3">
+      <div className="panel p-5 mb-6 space-y-3">
         <div>
           <label className="label-field">Judul Kuis</label>
           <input value={title} onChange={e => setTitle(e.target.value)} className="input-field" placeholder="cth: Kuis Bab 3 — Jurnal Umum" />
@@ -157,7 +157,7 @@ export default function TeacherQuizBuilderPage() {
 
       <div className="space-y-4 mb-6">
         {questions.map((q, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div key={i} className="panel p-5">
             <div className="flex items-start justify-between mb-3">
               <p className="font-heading font-bold text-primary-900 text-sm">Soal #{i + 1}</p>
               {questions.length > 1 && (
@@ -182,26 +182,25 @@ export default function TeacherQuizBuilderPage() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-2">Klik huruf di samping pilihan untuk menandai kunci jawaban (sekarang: {q.correctAnswer}).</p>
+            <p className="text-xs text-gray-400 mt-2">Klik huruf di samping pilihan untuk menandai kunci jawaban (sekarang: {q.correctAnswer}).</p>
           </div>
         ))}
-        <button onClick={addQuestion} className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-primary-300 hover:text-primary-600 transition-colors flex items-center justify-center gap-2 text-sm font-semibold">
+        <button onClick={addQuestion} className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-primary-300 hover:text-primary-700 transition-colors flex items-center justify-center gap-2 text-sm font-semibold">
           <Plus size={16} /> Tambah Soal
         </button>
       </div>
 
-      <div className="flex justify-end mb-8">
-        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+      <div className="alat-aksi alat-teks justify-end mb-8">
+        <button onClick={handleSave} disabled={saving} className="btn-modal-save">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Kuis
         </button>
       </div>
 
       {!isNew && detail && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3"
-            style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
-            <p className="text-sm font-semibold text-white flex items-center gap-2"><Trophy size={15} className="text-gold" /> Hasil Pengerjaan</p>
-            <p className="text-xs text-white/60">{detail.attempts.length} dari {detail.class.students.length} siswa</p>
+        <div className="panel overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white">
+            <p className="text-sm font-semibold text-primary-900 flex items-center gap-2"><Trophy size={15} className="text-primary-700" /> Hasil Pengerjaan</p>
+            <p className="text-xs text-gray-500">{detail.attempts.length} dari {detail.class.students.length} siswa</p>
           </div>
           {detail.attempts.length === 0 ? (
             <div className="py-10 text-center text-gray-400 text-sm">Belum ada siswa yang mengerjakan.</div>

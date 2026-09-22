@@ -1,12 +1,18 @@
 import { prisma } from "./prisma";
 
 export const DEFAULTS: Record<string, string> = {
+  // Keamanan sesi: peran yang dibatasi satu perangkat aktif (JSON array) — lihat sesi-server.ts
+  "auth.sesiTunggal": "[]",
+  // Tingkat kelas yang jam mengajarnya dipantau guru piket (Buku Piket, skor kedisiplinan).
+  // Kelas XII dikecualikan selama sedang PKL — lihat src/lib/kehadiran-guru.ts.
+  "kedisiplinan.tingkat": "10,11",
   // Ayat & Hadis
   "islamic.cta_arabic": "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا",
   "islamic.cta_trans": "Dan barangsiapa bertakwa kepada Allah, niscaya Dia akan membukakan jalan keluar baginya.",
   "islamic.cta_source": "QS. Ath-Thalaq: 2",
   "islamic.footer_arabic": "النور يهدي إلى النور",
   "islamic.login_arabic": "اقْرَأْ بِاسْمِ رَبِّكَ",
+  "islamic.login_label": "Iqra' Bismi Rabbik",
   "islamic.quote1_arabic": "اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ",
   "islamic.quote1_trans": "Bacalah dengan nama Tuhanmu yang menciptakan.",
   "islamic.quote1_source": "QS. Al-Alaq: 1",
@@ -57,6 +63,22 @@ export const DEFAULTS: Record<string, string> = {
   // Info Sekolah
   "school.tagline": "Mendidik Generasi Qurani & Terampil",
   "school.hero_subtitle": "Memadukan kurikulum vokasional nasional dengan pendidikan Islam intensif — menyiapkan generasi berakhlak mulia dan siap dunia kerja global.",
+  // Keunggulan Kami (beranda) — bahasa Indonesia, diubah lewat Konten Halaman. Bahasa Inggris memakai translations.ts.
+  "why.label": "Keunggulan Kami",
+  "why.heading": "Kenapa Memilih SMK Al Munawwir IIBS?",
+  "why.sub": "Perpaduan pendidikan vokasi berstandar industri dengan pembinaan karakter Islami sepanjang hari.",
+  "why.1_title": "Boarding 24 Jam",
+  "why.1_desc": "Pembinaan akhlak & kemandirian sepanjang hari dalam lingkungan pesantren modern.",
+  "why.2_title": "Vokasi + Tahfidz",
+  "why.2_desc": "Kompetensi keahlian industri dipadukan program tahfidz Al-Qur'an terjadwal.",
+  "why.3_title": "Guru Berpengalaman",
+  "why.3_desc": "Tenaga pendidik profesional dan bersertifikat di bidang keahliannya masing-masing.",
+  "why.4_title": "PKL & Mitra Industri",
+  "why.4_desc": "Praktik kerja lapangan nyata bersama mitra dunia usaha & dunia industri (DU/DI).",
+  "why.5_title": "Fasilitas Lengkap",
+  "why.5_desc": "Laboratorium komputer, bengkel praktik, dan asrama yang representatif.",
+  "why.6_title": "Lingkungan Qurani",
+  "why.6_desc": "Nilai-nilai Islam tertanam dalam keseharian, bukan sekadar mata pelajaran.",
   "school.struktur_year": "2025/2026",
   "school.kode": "026", // kode sekolah, dipakai di format nomor surat otomatis
 
@@ -99,9 +121,79 @@ export const DEFAULTS: Record<string, string> = {
   "schedule.locked": "0",
   // Perpustakaan — denda keterlambatan per hari (Rupiah), 0 = tidak ada denda
   "perpustakaan.dendaPerHari": "500",
+  "perpustakaan.maksPinjamAktif": "3", // batas buku dipinjam bersamaan per anggota (Meja Sirkulasi)
+  "perpustakaan.maksReservasi": "2", // batas pesanan aktif per anggota (Katalog anggota)
+  // Notifikasi push (src/lib/pengingat-terjadwal.ts) — jam WIB dipisah koma; tanggal libur YYYY-MM-DD dipisah koma.
+  // Absen mandiri pindai QR (src/lib/absensi-qr.ts) — jam WIB.
+  "absensiQr.jamBuka": "05:30",
+  "absensiQr.jamTutup": "10:00",
+  "notifikasi.aktif": "1",
+  "notifikasi.jamAbsensi": "07:30,09:30",
+  "notifikasi.jamPiket": "09:00,12:00",
+  "notifikasi.jamJurnal": "14:30",
+  "notifikasi.tanggalLibur": "",
+  "notifikasi.liburNasional": "1", // ikuti tanggal merah nasional (src/lib/hari-libur.ts)
+  "libur.nasional": "", // salinan tanggal merah nasional (JSON) — diperbarui otomatis tiap minggu
+  "notifikasi.jamPeringatanDini": "07:15", // hanya hari Senin
+  "notifikasi.jamPerpustakaan": "06:45", // jatuh tempo besok & terlambat 1/3/7 hari
+  "notifikasi.jamRekapKelas": "10:00", // rekap kehadiran harian ke wali kelas (17 Sep 2026)
+  "notifikasi.jamRingkasanOrtu": "16:00", // ringkasan mingguan ke orang tua tiap Sabtu (17 Sep 2026)
   // Cek Kelulusan — jadwal buka/tutup halaman publik, kosong = selalu buka
   "kelulusan.tanggalBuka": "",
   "kelulusan.tanggalTutup": "",
+
+  // Nominatif Kelas XII (UKK/USP) — data administratif yang TIDAK bisa dihitung dari data
+  // siswa (identitas pejabat penandatangan, kode sekolah resmi Dinas, info server ujian).
+  // Diedit langsung di halaman /dashboard/admin/nominatif (NominatifManager.tsx), bukan di
+  // Konten Halaman — keputusan eksplisit user 2026-09-11.
+  "nominatif.pengawasNama": "",
+  "nominatif.pengawasNip": "",
+  "nominatif.dinasNama": "",
+  "nominatif.dinasNip": "",
+  "nominatif.dinasPangkat": "",
+  "nominatif.dinasWilayah": "",
+  "nominatif.nss": "",
+  "nominatif.npsn": "",
+  "nominatif.kdProp": "",
+  "nominatif.kdRayon": "",
+  "nominatif.kdSekolah": "",
+  "nominatif.statusAkreditasiSekolah": "",
+  "nominatif.kecamatan": "",
+  "nominatif.kabKota": "",
+  "nominatif.kodePos": "",
+  "nominatif.jumlahServerUtama": "1",
+  "nominatif.jumlahServerCadangan": "1",
+  "nominatif.tempatUjian": "",
+  // JSON: { "<AcademicYear.name>": { "<Major.code>": <pagu number> } } — satu-satunya angka
+  // Pagu PPDB yang genuinely tidak bisa diturunkan dari data pendaftar (target sebelum
+  // pendaftaran terjadi), diedit per jurusan per tahun ajaran di halaman yang sama.
+  "nominatif.pagu": "{}",
+
+  // Pengaturan Ujian (CBT) — nilai BAWAAN untuk ujian yang baru dibuat, diedit proktor/kurikulum
+  // di /pusat-ujian/pengaturan. Ujian yang sudah ada tidak ikut berubah. "1"/"0" = ya/tidak.
+  "ujian.durasiBawaan": "90",
+  "ujian.acakSoal": "1",
+  "ujian.acakOpsi": "1",
+  "ujian.satuSoalPerHalaman": "1",
+  "ujian.tampilkanNilai": "0",
+  "ujian.batasPindahTab": "0",
+  // Token ujian berganti otomatis tiap N menit (0 = tidak) & batas putar audio listening per
+  // soal (0 = bebas) — dua-duanya bawaan ujian baru.
+  "ujian.tokenOtomatisMenit": "0",
+  // Safe Exam Browser — Browser Exam Key & Config Key dari SEB Configuration Tool di komputer
+  // sekolah (server ini tidak membangkitkannya). Kosong = pemeriksaan SEB dilewati.
+  "ujian.sebKunci": "",
+  "ujian.sebConfigKey": "",
+  "ujian.pinAplikasi": "", // PIN keluar Aplikasi Ujian Android saat mengerjakan (kosong = cukup konfirmasi)
+  "ujian.batasPutarAudio": "0",
+  // Alat bantu di layar peserta untuk ujian baru: kalkulator ilmiah & kertas coretan digital.
+  "ujian.izinKalkulator": "0",
+  "ujian.izinCoretan": "1",
+  // Pengerjaan DIKUNCI kalau siswa terputus (tanpa denyut) lebih dari N menit, lalu harus dibuka
+  // pengawas. 0 = tidak pernah dikunci otomatis. Berlaku untuk SEMUA ujian.
+  "ujian.kunciTerputusMenit": "0",
+  // Petunjuk tambahan dari sekolah yang tampil di halaman Konfirmasi peserta (kosong = tidak ada).
+  "ujian.petunjukTambahan": "",
 };
 
 export async function getSettings(keys?: string[]): Promise<Record<string, string>> {

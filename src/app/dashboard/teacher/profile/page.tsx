@@ -4,6 +4,8 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { Mail, BookOpen, IdCard, Phone, UserCircle, Award } from "lucide-react";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import PageHeader from "@/components/admin/PageHeader";
 
@@ -32,12 +34,12 @@ export default async function TeacherProfilePage() {
   ];
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<UserCircle size={22} />} title="Profil Saya" description="Informasi akun dan data guru" />
 
       <div className="max-w-2xl">
       {/* Info profil */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+      <div className="panel p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <AvatarUpload currentAvatar={teacher?.user.avatar} name={session.name} />
           <span className="text-xs bg-primary-50 text-primary-700 font-semibold px-2.5 py-1 rounded-full border border-primary-100">Guru</span>
@@ -89,10 +91,14 @@ export default async function TeacherProfilePage() {
       </div>
 
       {/* Ganti password */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="panel p-6">
         <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
         <ChangePasswordForm />
       </div>
+
+      <NotifikasiPerangkat />
+
+      <PerangkatAktif />
       </div>
     </div>
   );

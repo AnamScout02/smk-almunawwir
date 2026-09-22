@@ -18,7 +18,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const { name, category, quantity, condition, location, acquiredDate, fundingSource, notes } = body;
+    const { name, category, quantity, condition, location, acquiredDate, fundingSource, notes, kodeInventaris } = body;
+    const sebelum = await prisma.asset.findUnique({ where: { id }, select: { location: true } });
 
     if (labOnly) {
       const existing = await prisma.asset.findUnique({ where: { id }, select: { category: true, location: true } });
@@ -43,8 +44,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         acquiredDate: acquiredDate === null ? null : acquiredDate ? new Date(acquiredDate) : undefined,
         fundingSource: fundingSource ?? undefined,
         notes: notes ?? undefined,
+        kodeInventaris: kodeInventaris === undefined ? undefined : (String(kodeInventaris).trim().slice(0, 60) || null),
       },
     });
+    // Riwayat mutasi ruang (17 Sep 2026): setiap perubahan lokasi tercatat.
+    if (sebelum && location !== undefined && (sebelum.location ?? "") !== (asset.location ?? "")) {
+      await prisma.mutasiAset.create({ data: { assetId: id, dari: sebelum.location, ke: asset.location, olehNama: session.name, catatan: typeof body.catatanMutasi === "string" ? body.catatanMutasi.slice(0, 300) : null } }).catch(() => null);
+    }
     return NextResponse.json(asset);
   } catch (e) {
     if (e instanceof Error && e.message === "FORBIDDEN") {

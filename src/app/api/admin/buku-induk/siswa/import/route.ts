@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
-import { toProperCase, toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
+import type { Prisma } from "@prisma/client";
+import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { syncParentAccountForStudent } from "@/lib/parent-account";
 import * as XLSX from "xlsx";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { ambilFotoSheet } from "@/lib/xlsx-foto";
 
 function parseDate(val: unknown): Date | null {
   if (!val) return null;
@@ -35,20 +40,50 @@ function dateStr(val: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "File tidak ditemukan" }, { status: 400 });
 
   const buf = Buffer.from(await file.arrayBuffer());
-  const wb = XLSX.read(buf, { type: "buffer", cellDates: true });
+  // `bookFiles: true` ikut membawa isi mentah ZIP .xlsx — dibutuhkan untuk mengambil FOTO yang
+  // tertanam di lembar kerja (foto tidak disimpan di dalam sel, lihat src/lib/xlsx-foto.ts).
+  const wb = XLSX.read(buf, { type: "buffer", cellDates: true, bookFiles: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
 
   if (rows.length === 0) return NextResponse.json({ error: "Tidak ada data di file" }, { status: 400 });
 
-  const results = { created: 0, updated: 0, errors: [] as string[] };
+  const results = { created: 0, updated: 0, foto: 0, errors: [] as string[] };
+
+  // Peta baris -> foto. Baris ke-i pada `rows` = baris Excel ke-(i+2) = baris 0-based (i+1),
+  // karena baris pertama berkas adalah judul kolom.
+  const fotoPerBaris = new Map<number, { ext: string; data: Buffer }>();
+  try {
+    for (const f of ambilFotoSheet(wb, wb.SheetNames[0])) {
+      if (!["jpg", "jpeg", "png"].includes(f.ext)) continue;   // lewati emf/wmf (logo, bukan pas foto)
+      if (!fotoPerBaris.has(f.row)) fotoPerBaris.set(f.row, { ext: f.ext === "jpeg" ? "jpg" : f.ext, data: f.data });
+    }
+  } catch (e) { console.error("[import siswa] gagal baca foto tertanam", e); }
+  const fotoDir = join(process.cwd(), "public", "uploads", "buku-induk", "masuk");
+  if (fotoPerBaris.size > 0) await mkdir(fotoDir, { recursive: true }).catch(() => {});
+
+  /** Simpan foto milik satu baris ke disk, kembalikan URL-nya (null kalau tidak ada fotonya). */
+  async function simpanFoto(indeksBaris: number, nisSiswa: string): Promise<string | null> {
+    const f = fotoPerBaris.get(indeksBaris + 1);
+    if (!f) return null;
+    try {
+      const nama = `${nisSiswa.replace(/[^a-zA-Z0-9]/g, "")}-${Date.now()}.${f.ext}`;
+      await writeFile(join(fotoDir, nama), new Uint8Array(f.data));
+      // URL lewat /api/uploads/** (bukan /uploads/**): berkas yang ditulis saat server sudah jalan
+      // tidak ikut terbaca static-serving Next.js sampai container di-restart.
+      return `/api/uploads/buku-induk/masuk/${nama}`;
+    } catch (e) {
+      console.error("[import siswa] gagal simpan foto", e);
+      return null;
+    }
+  }
 
   const majors = await prisma.major.findMany({ select: { id: true, code: true, bidangKeahlian: true, programKeahlian: true, kompetensiKeahlian: true } });
   const majorMap = Object.fromEntries(majors.map(m => [m.code.toUpperCase(), m.id]));
@@ -90,7 +125,8 @@ export async function POST(req: NextRequest) {
       rombel = kelasNama.match(/(\d+)\s*$/)?.[1] ?? "1";
     }
 
-    const enrollYearRaw = s(row["Tahun Masuk"]);
+    // Templat sejak 17 Sep 2026 berjudul "Tahun Angkatan"; templat lama "Tahun Masuk" tetap diterima.
+    const enrollYearRaw = s(row["Tahun Angkatan"]) || s(row["Tahun Masuk"]);
     const enrollYear = enrollYearRaw ? parseInt(enrollYearRaw) : null;
 
     const basicData = {
@@ -105,9 +141,13 @@ export async function POST(req: NextRequest) {
       parentName:     s(row["Nama Ayah"]) ? toProperCaseName(s(row["Nama Ayah"])) : null,
       parentPhone:    s(row["No. HP Orang Tua"]) || null,
       parentJob:      s(row["Pekerjaan Ayah"]) || null,
-      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) ? toProperCase(s(row["Asal Sekolah (SMP/MTs)"])) : null,
+      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) ? toProperCaseSchoolName(s(row["Asal Sekolah (SMP/MTs)"])) : null,
       enrollYear:     enrollYear && !isNaN(enrollYear) ? enrollYear : null,
       studentStatus:  s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"]).toUpperCase() || "AKTIF",
+      // Kolom exitDate WAJIB ikut diisi saat impor — Buku Mutasi & laporan lain membacanya dari
+      // sini, bukan dari bukuIndukData. Sebelum diperbaiki (audit 2026-09-12), seluruh data hasil
+      // impor punya exitDate kosong sehingga Buku Mutasi tampil 0 siswa selamanya.
+      exitDate:       parseDate(row["Tanggal Pindah/Keluar (DD/MM/YYYY)"]) ?? parseDate(row["Tanggal Lulus (DD/MM/YYYY)"]),
       studentNotes:   s(row["Keterangan"]) || null,
     };
 
@@ -207,14 +247,27 @@ export async function POST(req: NextRequest) {
       alasanPindah:     s(row["Alasan Pindah/Keluar"]) || null,
     };
 
-    const bukuIndukDataNorm = normalizeBukuIndukText(bukuIndukData);
+    const bukuIndukDataNorm = normalizeBukuIndukText(bukuIndukData) as Record<string, unknown>;
     try {
       const existing = await prisma.student.findUnique({ where: { nis } });
+
+      // Foto yang tertanam di berkas Excel ikut diimpor. Foto yang SUDAH ada di sistem tidak
+      // ditimpa — kalau TU sudah mengunggah foto yang lebih baik lewat form, berkas Excel lama
+      // tidak boleh menggantikannya.
+      const fotoLama = (existing?.bukuIndukData as Record<string, unknown> | null)?.["fotoMasukUrl"];
+      if (!fotoLama) {
+        const urlFoto = await simpanFoto(i, nis);
+        if (urlFoto) { bukuIndukDataNorm["fotoMasukUrl"] = urlFoto; results.foto++; }
+      } else {
+        bukuIndukDataNorm["fotoMasukUrl"] = fotoLama;
+      }
+
       if (existing) {
         await prisma.student.update({
           where: { nis },
-          data: { ...basicData, majorId, bukuIndukData: bukuIndukDataNorm, ...(classId ? { classId } : {}) },
+          data: { ...basicData, majorId, bukuIndukData: bukuIndukDataNorm as Prisma.InputJsonValue, ...(classId ? { classId } : {}) },
         });
+        await syncParentAccountForStudent(existing.id, basicData.parentPhone, basicData.parentName).catch(() => {});
         results.updated++;
       } else {
         // Email login = NIS (BUKAN lagi NISN — keputusan eksplisit user 2026-08-09: NISN belum
@@ -237,9 +290,10 @@ export async function POST(req: NextRequest) {
             },
           });
         }
-        await prisma.student.create({
-          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData: bukuIndukDataNorm, ...(classId ? { classId } : {}) },
+        const created = await prisma.student.create({
+          data: { nis, userId: user.id, majorId, ...basicData, bukuIndukData: bukuIndukDataNorm as Prisma.InputJsonValue, ...(classId ? { classId } : {}) },
         });
+        await syncParentAccountForStudent(created.id, basicData.parentPhone, basicData.parentName).catch(() => {});
         results.created++;
       }
     } catch (e: unknown) {

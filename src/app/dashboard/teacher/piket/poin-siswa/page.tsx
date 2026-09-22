@@ -73,13 +73,13 @@ export default function PiketPoinSiswaPage() {
       <PageHeader icon={<ShieldAlert size={22} />} title="Catat Poin Siswa (Piket)"
         description="Khusus Terlambat & seragam/atribut tidak sesuai ketentuan — jenis pelanggaran lain hubungi BK/Wakasek Kesiswaan" />
 
-      <div className="flex justify-end mb-5">
-        <Link href="/dashboard/teacher/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/teacher/tata-tertib" className="btn-modal-cancel btn-teks">
           <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
         </Link>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl space-y-5">
+      <div className="panel p-6 max-w-2xl space-y-5">
         <div>
           <label className="label-field">Siswa</label>
           {student ? (
@@ -131,7 +131,7 @@ export default function PiketPoinSiswaPage() {
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="input-field" placeholder="Detail kejadian..." />
         </div>
 
-        <button onClick={handleSubmit} disabled={saving} className="btn-gold flex items-center gap-2 text-sm">
+        <button onClick={handleSubmit} disabled={saving} className="btn-modal-save">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Catatan
         </button>
       </div>

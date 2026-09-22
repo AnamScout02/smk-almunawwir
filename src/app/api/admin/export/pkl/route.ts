@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { balasanExcel } from "@/lib/ekspor-excel";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 
 export async function GET() {
@@ -19,7 +20,6 @@ export async function GET() {
     ],
   });
 
-  const BOM = "﻿";
   const headers = [
     "No", "NIS", "Nama Siswa", "Kelas", "Tingkat", "Jurusan",
     "Status PKL", "Perusahaan", "Posisi", "Supervisor",
@@ -44,14 +44,5 @@ export async function GET() {
     fmt(s.internship?.endDate),
   ]);
 
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="data-pkl.csv"`,
-    },
-  });
+  return balasanExcel({ namaFile: "data-pkl", namaSheet: "Data PKL", headers, rows });
 }

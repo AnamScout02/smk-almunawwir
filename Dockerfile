@@ -2,7 +2,12 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+# Tahan gangguan jaringan (21 Sep 2026): npm ci gagal ECONNRESET berulang saat cache build terhapus — puluhan koneksi
+# serentak diputus jaringan sekolah. Koneksi dibatasi, percobaan ulang diperpanjang, dan unduhan disimpan di cache
+# BuildKit sehingga build berikutnya tidak mengunduh ulang walau lapisan ini harus dibangun lagi.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund \
+      --maxsockets=6 --fetch-retries=6 --fetch-retry-mintimeout=15000 --fetch-retry-maxtimeout=120000
 
 # ===== STAGE 2: Builder =====
 FROM node:20-alpine AS builder

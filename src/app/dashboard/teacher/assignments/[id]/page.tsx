@@ -68,7 +68,7 @@ export default function TeacherAssignmentDetailPage() {
   const submissionByStudent = Object.fromEntries(data.submissions.map(s => [s.studentId, s]));
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<ClipboardList size={22} />}
         title={data.title}
@@ -79,24 +79,24 @@ export default function TeacherAssignmentDetailPage() {
         <button onClick={handleDeleteAssignment} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition">
           <Trash2 size={18} />
         </button>
-        <Link href="/dashboard/teacher/materials" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition sm:ml-auto">
-          <ArrowLeft size={18} />
+        <Link href="/dashboard/teacher/materials" className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
         </Link>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="panel p-5 mb-6">
         {data.description && <p className="text-sm text-gray-600 mb-3">{data.description}</p>}
         <div className="flex items-center gap-4 text-xs text-gray-400">
           {data.dueDate && <span className="flex items-center gap-1"><Calendar size={12} /> Batas waktu: {fmt(data.dueDate)}</span>}
           {data.fileUrl && (
-            <a href={data.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+            <a href={data.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
               <FileText size={12} /> Lihat lampiran soal
             </a>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="divide-y divide-gray-50">
           {data.class.students.map(student => {
             const sub = submissionByStudent[student.id];
@@ -115,7 +115,7 @@ export default function TeacherAssignmentDetailPage() {
                     <div className="flex-1 min-w-0 text-xs text-gray-500">
                       {sub.note && <p className="mb-1">{sub.note}</p>}
                       {sub.fileUrl && (
-                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-600 hover:text-primary-900 font-semibold">
+                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary-700 hover:text-primary-900 font-semibold">
                           <FileText size={12} /> Lihat file
                         </a>
                       )}

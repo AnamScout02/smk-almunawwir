@@ -1,97 +1,85 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
-import { resolveTeacherId } from "@/lib/teacher-context";
+import { bacaKelasIds, buatTokenUnik, filterDaftarUjian, periksaKelasPeserta, petaNamaKelas, ujianUntukKelas } from "@/lib/ujian-server";
+import { ambilPengaturan, siapkanSoalUjian, terapkanJadwalKelas } from "@/lib/ujian-pengaturan";
 import { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 
-const TOKEN_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // tanpa karakter ambigu (0/O, 1/I)
-function randomToken(length = 6) {
-  let out = "";
-  for (let i = 0; i < length; i++) out += TOKEN_CHARS[Math.floor(Math.random() * TOKEN_CHARS.length)];
-  return out;
-}
+export const dynamic = "force-dynamic";
 
-async function generateUniqueToken() {
-  for (let i = 0; i < 10; i++) {
-    const token = randomToken();
-    const exists = await prisma.exam.findUnique({ where: { token } });
-    if (!exists) return token;
-  }
-  throw new Error("Gagal membuat token unik");
-}
-
+/** Daftar ujian. Guru melihat ujian buatannya + ujian mapel yang ia ampu di salah satu kelas
+ * pesertanya. `?classId=` = ujian yang DIIKUTI kelas itu (termasuk ujian banyak-kelas). */
 export async function GET(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-    const { searchParams } = new URL(req.url);
-    const classId = searchParams.get("classId");
-    const subject = searchParams.get("subject");
+    const sp = new URL(req.url).searchParams;
+    const classId = sp.get("classId") || undefined;
+    const subject = sp.get("subject") || undefined;
+    const filterGuru = await filterDaftarUjian(session);
 
-    const include = {
-      class: { select: { name: true } },
-      _count: { select: { questions: true, attempts: true } },
-      attempts: { where: { submittedAt: { not: null } }, select: { score: true } },
+    const where: Prisma.ExamWhereInput = {
+      AND: [filterGuru ?? {}, classId ? ujianUntukKelas(classId) : {}],
+      ...(subject ? { subject } : {}),
     };
-
-    if (session.role === "ADMIN" || session.role === "TAS") {
-      const exams = await prisma.exam.findMany({
-        where: { ...(classId ? { classId } : {}), ...(subject ? { subject } : {}) },
-        include,
-        orderBy: { createdAt: "desc" },
-      });
-      return Response.json(exams);
-    }
-
-    const teacher = await prisma.teacher.findFirst({ where: { user: { email: session.email } }, select: { id: true } });
-    if (!teacher) return Response.json([]);
-
     const exams = await prisma.exam.findMany({
-      where: {
-        teacherId: teacher.id,
-        ...(classId ? { classId } : {}),
-        ...(subject ? { subject } : {}),
+      where,
+      include: {
+        class: { select: { name: true } },
+        teacher: { select: { user: { select: { name: true } } } },
+        kegiatan: { select: { id: true, nama: true, singkatan: true, token: true } },
+        _count: { select: { questions: true, attempts: true } },
+        attempts: { where: { submittedAt: { not: null } }, select: { score: true } },
       },
-      include,
       orderBy: { createdAt: "desc" },
     });
-    return Response.json(exams);
+    const kelas = await petaNamaKelas(exams);
+    return Response.json(exams.map(e => ({ ...e, kelasNama: kelas.daftar(e) })));
   } catch {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
 
-interface QuestionInput { question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctAnswer: string }
-
+/** Buat ujian. `kelasIds` = semua kelas peserta (satu ujian boleh untuk banyak kelas); `classId`
+ * tunggal dari klien lama tetap diterima. */
 export async function POST(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-
-    const { classId, subject, title, description, duration, startTime, endTime, questions } = await req.json();
-    if (!classId || !subject?.trim() || !title?.trim() || !duration || !startTime || !endTime) {
+    const body = await req.json();
+    const { subject, questions } = body;
+    const kelasIds = bacaKelasIds(body);
+    const p = ambilPengaturan(body);
+    if (!kelasIds.length || !String(subject ?? "").trim() || !p.title || !p.duration || !p.startTime || !p.endTime) {
       return Response.json({ error: "Kelas, mata pelajaran, judul, durasi, dan jadwal wajib diisi." }, { status: 400 });
     }
-    const qs = (questions ?? []) as QuestionInput[];
-    if (qs.length === 0 || qs.some(q => !q.question?.trim() || !q.optionA?.trim() || !q.optionB?.trim() || !q.optionC?.trim() || !q.optionD?.trim() || !["A", "B", "C", "D"].includes(q.correctAnswer))) {
-      return Response.json({ error: "Minimal 1 soal, semua pilihan jawaban dan kunci jawaban wajib diisi." }, { status: 400 });
+    if ((p.startTime as Date) >= (p.endTime as Date)) return Response.json({ error: "Waktu mulai harus sebelum waktu selesai." }, { status: 400 });
+    const galatJadwal = terapkanJadwalKelas(p, body, kelasIds, { startTime: p.startTime as Date, endTime: p.endTime as Date });
+    if (galatJadwal) return Response.json({ error: galatJadwal }, { status: 400 });
+    if (p.kegiatanId && !(await prisma.kegiatanUjian.findUnique({ where: { id: p.kegiatanId as string }, select: { id: true } }))) {
+      return Response.json({ error: "Kegiatan ujian tidak ditemukan." }, { status: 400 });
     }
-    if (new Date(startTime) >= new Date(endTime)) {
-      return Response.json({ error: "Waktu mulai harus sebelum waktu selesai." }, { status: 400 });
-    }
+    const { data: qs, error } = siapkanSoalUjian(Array.isArray(questions) ? questions : []);
+    if (error) return Response.json({ error }, { status: 400 });
 
-    const teacherId = await resolveTeacherId(session, { classId, subject });
-    if (!teacherId) {
-      return Response.json({ error: "Anda tidak mengajar mapel ini di kelas tersebut." }, { status: 403 });
-    }
+    // Guru hanya boleh memilih kelas yang ia ampu mapelnya (celah lama: guru bisa membuat ujian
+    // untuk kelas mana pun). Admin/TAS/Kurikulum bebas; pemiliknya guru pengampu kelas pertama.
+    const cek = await periksaKelasPeserta(session, String(subject).trim(), kelasIds);
+    if ("error" in cek) return Response.json({ error: cek.error }, { status: 403 });
 
-    const token = await generateUniqueToken();
     const exam = await prisma.exam.create({
       data: {
-        teacherId, classId, subject: subject.trim(), title: title.trim(),
-        description: description?.trim() || null, duration: Number(duration),
-        startTime: new Date(startTime), endTime: new Date(endTime), token,
-        questions: { create: qs.map((q, i) => ({ ...q, order: i })) },
+        teacherId: cek.pemilik, classId: kelasIds[0], kelasIds,
+        subject: String(subject).trim(), token: await buatTokenUnik(),
+        ...(p as { title: string; duration: number; startTime: Date; endTime: Date }),
+        questions: {
+          create: qs.map((q, i) => ({
+            tipe: q.tipe, pertanyaan: q.pertanyaan, opsi: q.opsi as object, kunci: (q.kunci ?? undefined) as object | undefined,
+            skor: q.skor ?? 1, kd: q.kd ?? null, pembahasan: q.pembahasan ?? null, stimulusId: q.stimulusId ?? null,
+            materi: q.materi ?? null, indikator: q.indikator ?? null, levelKognitif: q.levelKognitif ?? null,
+            order: i, posisiKunci: q.posisiKunci,
+          })),
+        },
       },
     });
-
     return Response.json(exam);
   } catch {
     return Response.json({ error: "Gagal menyimpan ujian." }, { status: 500 });

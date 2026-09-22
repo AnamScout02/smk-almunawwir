@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertUks } from "@/lib/uks-guard";
+import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     await assertUks(session);
 
     const body = await req.json();
-    const { studentId, visitDate, complaint, treatment, notes, medicineUsages } = body;
+    const { studentId, visitDate, complaint, treatment, notes, medicineUsages, rujukan, kabarOrtu } = body;
 
     if (!studentId || !complaint) {
       return NextResponse.json({ error: "Siswa dan keluhan wajib diisi" }, { status: 400 });
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
           studentId,
           visitDate: visitDate ? new Date(visitDate) : new Date(),
           complaint, treatment: treatment || null, notes: notes || null,
+          rujukan: typeof rujukan === "string" && rujukan.trim() ? rujukan.trim().slice(0, 200) : null,
+          kabarOrtu: !!kabarOrtu,
           usages: { create: usages },
         },
         include: {
@@ -63,6 +66,18 @@ export async function POST(req: NextRequest) {
         },
       });
     });
+    // Kabar ke orang tua (dipilih petugas) — isi ringkas, tanpa rincian obat.
+    if (visit.kabarOrtu) {
+      kirimLatar(async () => {
+        const ortu = await prisma.parent.findMany({ where: { children: { some: { studentId } } }, select: { userId: true } });
+        await kirimNotifikasi({
+          userIds: ortu.map(o => o.userId), jenis: "UKS", kunci: `uks-kunjungan:${visit.id}`,
+          judul: `${visit.student.user.name} ditangani UKS`,
+          isi: `Keluhan: ${visit.complaint.slice(0, 80)}${visit.rujukan ? ` · Rujukan: ${visit.rujukan}` : ""}`,
+          url: "/dashboard/parent/kesehatan", tag: `uks-${visit.id}`,
+        });
+      });
+    }
     return NextResponse.json(visit, { status: 201 });
   } catch (e) {
     if (e instanceof Error && e.message === "FORBIDDEN") {

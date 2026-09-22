@@ -8,6 +8,8 @@ import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import Paginasi from "@/components/shared/Paginasi";
+import { usePaginasi } from "@/lib/use-paginasi";
 import { useToast } from "@/components/shared/ToastProvider";
 
 interface User {
@@ -202,28 +204,29 @@ export default function UsersPage() {
   const studentsList = filtered.filter(u => u.role === "STUDENT");
 
   return (
-    <div className="p-6 md:p-8 pt-16 lg:pt-8">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader
         icon={<UserCog size={22} />}
         title="Akun Pengguna"
         description="Kelola akun login admin, guru, dan siswa"
       />
 
-      <div className="flex items-center gap-2 flex-wrap mb-5">
-        <Link href="/dashboard/admin/users/cetak-akun"
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap">
-          <Printer size={15} /> Cetak Akun Guru &amp; Pegawai
-        </Link>
-        <button onClick={openCreate} className="btn-gold flex items-center gap-2 text-sm sm:ml-auto">
-          <Plus size={16} /> Tambah Akun
-        </button>
-      </div>
-
       {/* Cari */}
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
-          className="input-field pl-10" />
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
+            className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          <Link href="/dashboard/admin/users/cetak-akun"
+            className="btn-modal-cancel">
+            <Printer size={15} /> Cetak Akun Guru &amp; Pegawai
+          </Link>
+          <button onClick={openCreate} className="btn-modal-save">
+            <Plus size={16} /> Tambah Akun
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -234,22 +237,22 @@ export default function UsersPage() {
         <div className="space-y-6">
           {admins.length > 0 && (
             <GroupedSection title="Admin" count={admins.length} icon={ShieldCheck}>
-              <UserTable items={admins} onEdit={openEdit} onDelete={handleDelete} />
+              <UserTable kunci={search} items={admins} onEdit={openEdit} onDelete={handleDelete} />
             </GroupedSection>
           )}
           {teachersList.length > 0 && (
             <GroupedSection title="Guru" count={teachersList.length} icon={GraduationCap}>
-              <UserTable items={teachersList} onEdit={openEdit} onDelete={handleDelete} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
+              <UserTable kunci={search} items={teachersList} onEdit={openEdit} onDelete={handleDelete} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
             </GroupedSection>
           )}
           {tasList.length > 0 && (
             <GroupedSection title="TAS (Tenaga Administrasi Sekolah)" count={tasList.length} icon={ClipboardList}>
-              <UserTable items={tasList} onEdit={openEdit} onDelete={handleDelete} onManageJabatan={openJabatan} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
+              <UserTable kunci={search} items={tasList} onEdit={openEdit} onDelete={handleDelete} onManageJabatan={openJabatan} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
             </GroupedSection>
           )}
           {studentsList.length > 0 && (
             <GroupedSection title="Siswa" count={studentsList.length} icon={Users}>
-              <UserTable items={studentsList} onEdit={openEdit} onDelete={handleDelete} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
+              <UserTable kunci={search} items={studentsList} onEdit={openEdit} onDelete={handleDelete} onImpersonate={isSuperAdmin ? handleImpersonate : undefined} impersonatingId={impersonatingId} />
             </GroupedSection>
           )}
           <p className="text-xs text-gray-400">Total: {filtered.length} pengguna</p>
@@ -419,48 +422,49 @@ export default function UsersPage() {
   );
 }
 
-function UserTable({ items, onEdit, onDelete, onManageJabatan, onImpersonate, impersonatingId }: {
-  items: User[]; onEdit: (u: User) => void; onDelete: (id: string, name: string) => void; onManageJabatan?: (u: User) => void;
+function UserTable({ items, kunci, onEdit, onDelete, onManageJabatan, onImpersonate, impersonatingId }: {
+  items: User[]; kunci?: string; onEdit: (u: User) => void; onDelete: (id: string, name: string) => void; onManageJabatan?: (u: User) => void;
   onImpersonate?: (id: string, name: string) => void; impersonatingId?: string | null;
 }) {
+  const hal = usePaginasi(items, 50, kunci);
   return (
+    <div>
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-primary-100"
-            style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden sm:table-cell">Email</th>
-            <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Bergabung</th>
-            {onManageJabatan && <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden lg:table-cell">Jabatan</th>}
-            <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+          <tr>
+            <th>Nama</th>
+            <th className="hidden sm:table-cell">Email</th>
+            <th className="hidden md:table-cell">Bergabung</th>
+            {onManageJabatan && <th className="hidden lg:table-cell">Jabatan</th>}
+            <th className="text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
-          {items.map(u => (
-            <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-              <td className="px-5 py-3.5">
+          {hal.potongan.map(u => (
+            <tr key={u.id}>
+              <td>
                 <p className="font-semibold text-primary-900">{u.name}</p>
                 <p className="text-gray-400 text-xs sm:hidden mt-0.5">{u.email}</p>
               </td>
-              <td className="px-5 py-3.5 text-gray-500 hidden sm:table-cell">{u.email}</td>
-              <td className="px-5 py-3.5 text-gray-400 text-xs hidden md:table-cell">
+              <td className="text-gray-500 hidden sm:table-cell">{u.email}</td>
+              <td className="text-gray-400 text-xs hidden md:table-cell">
                 {new Date(u.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
               </td>
               {onManageJabatan && (
-                <td className="px-5 py-3.5 hidden lg:table-cell">
+                <td className="hidden lg:table-cell">
                   {u.staffJabatan.length === 0 ? (
                     <span className="text-gray-300 text-xs">—</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {u.staffJabatan.map(j => (
-                        <span key={j.jabatan.id} className="text-[10px] font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">{j.jabatan.name}</span>
+                        <span key={j.jabatan.id} className="text-xs font-semibold text-gold bg-primary-900 px-2 py-0.5 rounded-full">{j.jabatan.name}</span>
                       ))}
                     </div>
                   )}
                 </td>
               )}
-              <td className="px-5 py-3.5 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-2">
                   {onImpersonate && (
                     <button onClick={() => onImpersonate(u.id, u.name)} disabled={impersonatingId === u.id}
@@ -471,7 +475,7 @@ function UserTable({ items, onEdit, onDelete, onManageJabatan, onImpersonate, im
                   {onManageJabatan && (
                     <button onClick={() => onManageJabatan(u)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition" title="Kelola Jabatan"><Award size={15} /></button>
                   )}
-                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"><Edit2 size={15} /></button>
+                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition"><Edit2 size={15} /></button>
                   <button onClick={() => onDelete(u.id, u.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={15} /></button>
                 </div>
               </td>
@@ -479,6 +483,8 @@ function UserTable({ items, onEdit, onDelete, onManageJabatan, onImpersonate, im
           ))}
         </tbody>
       </table>
+    </div>
+    <Paginasi hal={hal} satuan="akun" className="border-t border-gray-100" />
     </div>
   );
 }

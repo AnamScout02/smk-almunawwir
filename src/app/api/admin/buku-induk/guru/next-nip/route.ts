@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * melanjutkan nomor urut placeholder itu, sama pola dgn next-nis siswa. Kalau suatu saat NIP asli
  * mulai diisi, nomor itu otomatis diabaikan (tidak match pola TMP-nnn) — tidak mempengaruhi urutan. */
 export async function GET() {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const teachers = await prisma.teacher.findMany({ where: { nip: { startsWith: "TMP-" } }, select: { nip: true } });
   let max = 0;

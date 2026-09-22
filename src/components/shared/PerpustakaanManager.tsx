@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState, type ChangeEvent } from "react";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { BookMarked, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, Library, History, QrCode, Download, Upload, ScanLine, Search, IdCard, BookmarkPlus, ArrowRightCircle, Footprints } from "lucide-react";
 import Image from "next/image";
 import PageHeader from "@/components/admin/PageHeader";
+import Paginasi from "@/components/shared/Paginasi";
+import { usePaginasi } from "@/lib/use-paginasi";
 import EmptyState from "@/components/admin/EmptyState";
 import Alert from "@/components/admin/Alert";
 import Modal from "@/components/admin/Modal";
@@ -103,6 +107,7 @@ export default function PerpustakaanManager() {
   const [convertDueDate, setConvertDueDate] = useState(defaultDueDate());
 
   const [barcodeBook, setBarcodeBook] = useState<Book | null>(null);
+  usePrintTitle(barcodeBook ? buildPrintFilename("Barcode", barcodeBook.title) : null);
   const [scanInput, setScanInput] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [dendaPerHari, setDendaPerHari] = useState(0);
@@ -302,45 +307,24 @@ export default function PerpustakaanManager() {
   const totalTitles = books.length;
   const totalStock = books.reduce((a, b) => a + b.stock, 0);
   const totalBorrowed = books.reduce((a, b) => a + b.borrowed, 0);
+  const qAktif = activeSearch.trim().toLowerCase();
+  const filteredActive = activeLoans.filter(l =>
+    !qAktif || l.book.barcode === activeSearch.trim() || l.book.title.toLowerCase().includes(qAktif) ||
+    l.borrower.name.toLowerCase().includes(qAktif) || l.borrower.identifier.toLowerCase().includes(qAktif)
+  );
+  const halBuku = usePaginasi(books, 25);
+  const halAktif = usePaginasi(filteredActive, 25, activeSearch);
+  const halReservasi = usePaginasi(reservations, 25);
+  const halRiwayat = usePaginasi(allLoans, 25);
 
   return (
     <>
-    <div className="p-6 lg:p-8 print:hidden">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:hidden">
       <PageHeader
         icon={<BookMarked size={22} />}
         title="Perpustakaan"
         description="Katalog buku, peminjaman, dan riwayat sirkulasi"
       />
-
-      <div className="flex flex-wrap justify-end gap-2 mb-5">
-        {tab === "katalog" ? (
-          <>
-            <a href={`${basePath}/perpustakaan/cetak-barcode`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-              <QrCode size={15} /> Cetak Semua Barcode
-            </a>
-            <a href="/api/perpustakaan/books/template"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-              <Download size={15} /> Template
-            </a>
-            <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-100 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer">
-              <Upload size={15} /> {importLoading ? "Mengimpor..." : "Import Excel"}
-              <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportBooks} disabled={importLoading} />
-            </label>
-            <button onClick={openAddBook} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-              <Plus size={15} /> Tambah Buku
-            </button>
-          </>
-        ) : tab === "peminjaman" ? (
-          <button onClick={openLoan} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Pinjamkan Buku
-          </button>
-        ) : tab === "reservasi" ? (
-          <button onClick={openReservation} className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-primary-900 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-            <Plus size={15} /> Reservasi Baru
-          </button>
-        ) : null}
-      </div>
 
       {tab === "katalog" && importResult && (
         <Alert variant={importResult.errors.length > 0 ? "warning" : "success"} className="mb-4"
@@ -355,23 +339,54 @@ export default function PerpustakaanManager() {
       )}
 
       {!loading && tab === "katalog" && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="kisi-kartu kisi-kartu-3 mb-6">
           <StatTile color="primary" value={totalTitles} label="Total Judul" icon={Library} />
           <StatTile color="blue" value={totalStock} label="Total Eksemplar" icon={BookMarked} />
           <StatTile color="amber" value={totalBorrowed} label="Sedang Dipinjam" icon={CheckCircle2} />
         </div>
       )}
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-5 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
-            <t.icon size={15} /> {t.label}
-          </button>
-        ))}
+      <div className="baris-alat mb-5">
+        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+              <t.icon size={15} /> {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="alat-aksi">
+          {tab === "katalog" ? (
+            <>
+              <a href={`${basePath}/perpustakaan/cetak-barcode`}
+                className="btn-modal-cancel whitespace-nowrap">
+                <QrCode size={15} /> Cetak Semua Barcode
+              </a>
+              <a href="/api/perpustakaan/books/template"
+                className="btn-modal-cancel btn-teks whitespace-nowrap">
+                <Download size={15} /> Template
+              </a>
+              <label className="btn-modal-cancel whitespace-nowrap cursor-pointer">
+                <Upload size={15} /> {importLoading ? "Mengimpor..." : "Import Excel"}
+                <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportBooks} disabled={importLoading} />
+              </label>
+              <button onClick={openAddBook} className="btn-modal-save whitespace-nowrap">
+                <Plus size={15} /> Tambah Buku
+              </button>
+            </>
+          ) : tab === "peminjaman" ? (
+            <button onClick={openLoan} className="btn-modal-save btn-teks">
+              <Plus size={15} /> Pinjamkan Buku
+            </button>
+          ) : tab === "reservasi" ? (
+            <button onClick={openReservation} className="btn-modal-save btn-teks">
+              <Plus size={15} /> Reservasi Baru
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3.5 flex items-center gap-3 mb-5">
+      <div className="panel p-3.5 flex items-center gap-3 mb-5">
         <Footprints size={16} className="text-primary-700 shrink-0" />
         <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Catat Kunjungan:</span>
         <input value={visitScanInput} onChange={e => setVisitScanInput(e.target.value)} onKeyDown={handleScanVisit}
@@ -386,23 +401,23 @@ export default function PerpustakaanManager() {
           {books.length === 0 ? (
             <EmptyState icon={Library} title="Belum Ada Buku" description="Tambahkan buku ke katalog perpustakaan." />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                    <tr>
                       {["Judul", "Penulis", "Kategori", "Barcode", "Stok", "Tersedia", "Lokasi", ""].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                        <th key={h} className="whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {books.map(b => (
-                      <tr key={b.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                        <td className="px-5 py-3.5">
+                    {halBuku.potongan.map(b => (
+                      <tr key={b.id}>
+                        <td>
                           <div className="flex items-center gap-3">
                             {b.coverUrl ? (
-                              <Image src={b.coverUrl} alt={b.title} width={32} height={44} className="rounded object-cover shrink-0 w-8 h-11" unoptimized />
+                              <Image src={b.coverUrl} alt={b.title} width={32} height={44} className="rounded object-cover shrink-0 w-8 h-11" />
                             ) : (
                               <div className="w-8 h-11 rounded bg-gray-100 flex items-center justify-center shrink-0">
                                 <Library size={14} className="text-gray-300" />
@@ -411,15 +426,15 @@ export default function PerpustakaanManager() {
                             <span className="font-semibold text-primary-900">{b.title}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs">{b.author || "-"}</td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{b.category}</td>
-                        <td className="px-5 py-3.5 text-gray-400 text-xs font-mono whitespace-nowrap">{b.barcode || "-"}</td>
-                        <td className="px-5 py-3.5 text-center text-gray-600">{b.stock}</td>
-                        <td className="px-5 py-3.5 text-center">
+                        <td className="text-gray-500 text-xs">{b.author || "-"}</td>
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{b.category}</td>
+                        <td className="text-gray-400 text-xs font-mono whitespace-nowrap">{b.barcode || "-"}</td>
+                        <td className="text-center text-gray-600">{b.stock}</td>
+                        <td className="text-center">
                           <span className={`font-bold ${b.available > 0 ? "text-emerald-600" : "text-red-500"}`}>{b.available}</span>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{b.location || "-"}</td>
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <td className="text-gray-500 text-xs whitespace-nowrap">{b.location || "-"}</td>
+                        <td className="text-right whitespace-nowrap">
                           {b.fileUrl && (
                             <a href={b.fileUrl} target="_blank" rel="noopener noreferrer"
                               className="inline-flex p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Unduh File Digital">
@@ -427,11 +442,11 @@ export default function PerpustakaanManager() {
                             </a>
                           )}
                           {b.barcode && (
-                            <button onClick={() => setBarcodeBook(b)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Lihat/Cetak Barcode">
+                            <button onClick={() => setBarcodeBook(b)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Lihat/Cetak Barcode">
                               <QrCode size={14} />
                             </button>
                           )}
-                          <button onClick={() => openEditBook(b)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition" title="Ubah">
+                          <button onClick={() => openEditBook(b)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Ubah">
                             <Edit2 size={14} />
                           </button>
                           <button onClick={() => handleDeleteBook(b)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition" title="Hapus">
@@ -443,12 +458,13 @@ export default function PerpustakaanManager() {
                   </tbody>
                 </table>
               </div>
+              <Paginasi hal={halBuku} satuan="judul buku" className="border-t border-gray-100" />
             </div>
           )}
         </>
       ) : tab === "peminjaman" ? (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 flex-wrap">
+          <div className="panel p-4 flex items-center gap-3 flex-wrap">
             <span className="text-xs font-semibold text-gray-500">Denda keterlambatan:</span>
             <span className="text-xs text-gray-400">Rp</span>
             <input type="number" min={0} value={dendaInput} onChange={e => setDendaInput(e.target.value)}
@@ -479,43 +495,38 @@ export default function PerpustakaanManager() {
                   className="input-field pl-10 font-mono" />
               </div>
               {(() => {
-                const q = activeSearch.trim().toLowerCase();
-                const filteredActive = activeLoans.filter(l =>
-                  !q || l.book.barcode === activeSearch.trim() || l.book.title.toLowerCase().includes(q) ||
-                  l.borrower.name.toLowerCase().includes(q) || l.borrower.identifier.toLowerCase().includes(q)
-                );
                 return filteredActive.length === 0 ? (
                   <EmptyState icon={BookMarked} title="Tidak ada yang cocok" description="Coba kata kunci lain atau scan ulang." />
                 ) : (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="panel overflow-hidden">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                      <table className="data-table">
                         <thead>
-                          <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                          <tr>
                             {["Siswa", "Buku", "Tgl Pinjam", "Jatuh Tempo", "Status", "Denda", ""].map(h => (
-                              <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                              <th key={h} className="whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredActive.map(l => (
-                            <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                              <td className="px-5 py-3.5">
+                          {halAktif.potongan.map(l => (
+                            <tr key={l.id}>
+                              <td>
                                 <p className="font-semibold text-primary-900">{l.borrower.name}</p>
                                 <p className="text-gray-400 text-xs">{l.borrower.className ?? BORROWER_TYPE_LABEL[l.borrower.type]} · {l.borrower.identifier}</p>
                               </td>
-                              <td className="px-5 py-3.5 text-gray-600">{l.book.title}</td>
-                              <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(l.borrowDate)}</td>
-                              <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(l.dueDate)}</td>
-                              <td className="px-5 py-3.5">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${l.isOverdue ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"}`}>
+                              <td className="text-gray-600">{l.book.title}</td>
+                              <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(l.borrowDate)}</td>
+                              <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(l.dueDate)}</td>
+                              <td>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${l.isOverdue ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"}`}>
                                   {l.isOverdue ? "Terlambat" : "Dipinjam"}
                                 </span>
                               </td>
-                              <td className="px-5 py-3.5 text-xs whitespace-nowrap">
+                              <td className="text-xs whitespace-nowrap">
                                 {l.fineAmount > 0 ? <span className="text-red-600 font-semibold">{fmtRupiah(l.fineAmount)}</span> : <span className="text-gray-300">—</span>}
                               </td>
-                              <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                              <td className="text-right whitespace-nowrap">
                                 <button onClick={() => handleReturn(l)}
                                   className="text-xs font-semibold text-primary-700 hover:text-gold transition-colors">
                                   Kembalikan
@@ -526,6 +537,7 @@ export default function PerpustakaanManager() {
                         </tbody>
                       </table>
                     </div>
+                    <Paginasi hal={halAktif} satuan="peminjaman" className="border-t border-gray-100" />
                   </div>
                 );
               })()}
@@ -536,37 +548,37 @@ export default function PerpustakaanManager() {
         reservations.length === 0 ? (
           <EmptyState icon={BookmarkPlus} title="Tidak Ada Reservasi" description="Catat reservasi untuk buku yang sedang habis dipinjam — petugas bisa proses saat eksemplarnya kembali." />
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                  <tr>
                     {["Peminjam", "Buku", "Tgl Reservasi", "Tersedia?", ""].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                      <th key={h} className="whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {reservations.map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                      <td className="px-5 py-3.5">
+                  {halReservasi.potongan.map(r => (
+                    <tr key={r.id}>
+                      <td>
                         <p className="font-semibold text-primary-900">{r.borrower.name}</p>
                         <p className="text-gray-400 text-xs">{r.borrower.className ?? BORROWER_TYPE_LABEL[r.borrower.type]} · {r.borrower.identifier}</p>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-600">{r.book.title}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(r.reservedDate)}</td>
-                      <td className="px-5 py-3.5">
+                      <td className="text-gray-600">{r.book.title}</td>
+                      <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(r.reservedDate)}</td>
+                      <td>
                         {(() => {
                           const book = books.find(b => b.title === r.book.title);
                           const available = book ? book.available : 0;
                           return available > 0 ? (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Tersedia ({available})</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Tersedia ({available})</span>
                           ) : (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-200">Belum Tersedia</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-200">Belum Tersedia</span>
                           );
                         })()}
                       </td>
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <td className="text-right whitespace-nowrap">
                         {convertingId === r.id ? (
                           <div className="flex items-center gap-2 justify-end">
                             <DatePicker value={convertDueDate} onChange={setConvertDueDate} />
@@ -588,49 +600,50 @@ export default function PerpustakaanManager() {
                 </tbody>
               </table>
             </div>
+            <Paginasi hal={halReservasi} satuan="reservasi" className="border-t border-gray-100" />
           </div>
         )
       ) : tab === "riwayat" ? (
         allLoans.length === 0 ? (
           <EmptyState icon={History} title="Belum Ada Riwayat" description="Riwayat peminjaman akan tampil di sini." />
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
+                  <tr>
                     {["Siswa", "Buku", "Tgl Pinjam", "Jatuh Tempo", "Tgl Kembali", "Status", "Denda"].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                      <th key={h} className="whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {allLoans.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                      <td className="px-5 py-3.5">
+                  {halRiwayat.potongan.map(l => (
+                    <tr key={l.id}>
+                      <td>
                         <p className="font-semibold text-primary-900">{l.borrower.name}</p>
                         <p className="text-gray-400 text-xs">{l.borrower.className ?? BORROWER_TYPE_LABEL[l.borrower.type]} · {l.borrower.identifier}</p>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-600">{l.book.title}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(l.borrowDate)}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{fmt(l.dueDate)}</td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{l.returnDate ? fmt(l.returnDate) : "-"}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                      <td className="text-gray-600">{l.book.title}</td>
+                      <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(l.borrowDate)}</td>
+                      <td className="text-gray-500 text-xs whitespace-nowrap">{fmt(l.dueDate)}</td>
+                      <td className="text-gray-500 text-xs whitespace-nowrap">{l.returnDate ? fmt(l.returnDate) : "-"}</td>
+                      <td>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
                           l.status === "DIKEMBALIKAN" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : l.isOverdue ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"
                         }`}>
                           {l.status === "DIKEMBALIKAN" ? "Dikembalikan" : l.isOverdue ? "Terlambat" : "Dipinjam"}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-xs whitespace-nowrap">
+                      <td className="text-xs whitespace-nowrap">
                         {l.fineAmount > 0 ? (
                           <div className="flex items-center gap-2">
                             <span className="text-red-600 font-semibold">{fmtRupiah(l.fineAmount)}</span>
                             {l.finePaid ? (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Lunas</span>
+                              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Lunas</span>
                             ) : (
-                              <button onClick={() => handleMarkPaid(l)} className="text-[10px] font-semibold text-primary-600 hover:text-primary-900 underline">
+                              <button onClick={() => handleMarkPaid(l)} className="text-xs font-semibold text-primary-700 hover:text-primary-900 underline">
                                 Tandai Lunas
                               </button>
                             )}
@@ -642,14 +655,15 @@ export default function PerpustakaanManager() {
                 </tbody>
               </table>
             </div>
+            <Paginasi hal={halRiwayat} satuan="riwayat" className="border-t border-gray-100" />
           </div>
         )
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm text-center py-16 text-gray-400">
+        <div className="panel text-center py-16 text-gray-400">
           <IdCard size={40} className="mx-auto mb-3 text-gray-200" />
           <p className="font-medium text-gray-500">Sudah Pindah ke Kartu Tanda</p>
           <p className="text-sm mt-1 max-w-md mx-auto">Cetak kartu anggota (siswa/guru/pegawai) sekarang jadi satu di halaman Kartu Tanda — kartu identitas resmi sekolah yang QR-nya tetap bisa dipakai scan di Perpustakaan.</p>
-          <Link href="/dashboard/admin/kartu-tanda" className="btn-gold inline-flex items-center gap-2 text-sm mt-4">
+          <Link href="/dashboard/admin/kartu-tanda" className="btn-modal-save mt-4">
             <IdCard size={16} /> Buka Kartu Tanda
           </Link>
         </div>
@@ -662,7 +676,7 @@ export default function PerpustakaanManager() {
         footer={
           <>
             <button type="button" onClick={() => setBookModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSaveBook} disabled={savingBook} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSaveBook} disabled={savingBook} className="btn-modal-save flex-1">
               {savingBook ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -719,7 +733,7 @@ export default function PerpustakaanManager() {
         footer={
           <>
             <button type="button" onClick={() => setLoanModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSaveLoan} disabled={savingLoan} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSaveLoan} disabled={savingLoan} className="btn-modal-save flex-1">
               {savingLoan ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -743,7 +757,7 @@ export default function PerpustakaanManager() {
               {(["SISWA", "GURU", "PEGAWAI"] as const).map(t => (
                 <button key={t} type="button"
                   onClick={() => setLoanForm(p => ({ ...p, borrowerType: t, classId: "", borrowerId: "" }))}
-                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${loanForm.borrowerType === t ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${loanForm.borrowerType === t ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                   {BORROWER_TYPE_LABEL[t]}
                 </button>
               ))}
@@ -790,7 +804,7 @@ export default function PerpustakaanManager() {
         footer={
           <>
             <button type="button" onClick={() => setReservationModal(false)} className="btn-modal-cancel flex-1">Batal</button>
-            <button type="button" onClick={handleSaveReservation} disabled={savingReservation} className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+            <button type="button" onClick={handleSaveReservation} disabled={savingReservation} className="btn-modal-save flex-1">
               {savingReservation ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
             </button>
           </>
@@ -804,7 +818,7 @@ export default function PerpustakaanManager() {
               {(["SISWA", "GURU", "PEGAWAI"] as const).map(t => (
                 <button key={t} type="button"
                   onClick={() => setReservationForm(p => ({ ...p, borrowerType: t, classId: "", borrowerId: "" }))}
-                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${reservationForm.borrowerType === t ? "bg-white shadow text-primary-700" : "text-gray-500 hover:text-gray-700"}`}>
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${reservationForm.borrowerType === t ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                   {BORROWER_TYPE_LABEL[t]}
                 </button>
               ))}

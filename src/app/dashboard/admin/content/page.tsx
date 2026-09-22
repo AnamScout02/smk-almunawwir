@@ -7,7 +7,7 @@ import KaprodiEditor from "@/components/admin/KaprodiEditor";
 import AchievementsEditor from "@/components/admin/AchievementsEditor";
 import PageHeader from "@/components/admin/PageHeader";
 import Alert from "@/components/admin/Alert";
-import { FileText, ImageIcon, Users, Trophy } from "lucide-react";
+import { FileText, ImageIcon, Users, Trophy, UsersRound, ScrollText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +57,7 @@ export default async function ContentPage() {
         <section>
           <div className="flex items-center gap-2 mb-5">
             <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center">
-              <Users size={14} className="text-primary-700" />
+              <UsersRound size={14} className="text-primary-700" />
             </div>
             <h2 className="font-heading text-base font-semibold text-navy">Kepala Kompetensi Keahlian</h2>
           </div>
@@ -79,7 +79,7 @@ export default async function ContentPage() {
         <section>
           <div className="flex items-center gap-2 mb-5">
             <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center">
-              <FileText size={14} className="text-primary-700" />
+              <ScrollText size={14} className="text-primary-700" />
             </div>
             <h2 className="font-heading text-base font-semibold text-navy">Teks & Konten</h2>
           </div>

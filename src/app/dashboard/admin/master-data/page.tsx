@@ -119,7 +119,7 @@ export default function MasterDataPage() {
           {masterData.map((item) => (
             <div
               key={item.category}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all p-4 flex flex-col gap-3"
+              className="panel hover:shadow-md hover:-translate-y-0.5 transition-all p-4 flex flex-col gap-3"
             >
               {/* Kartu header */}
               <div className="flex items-center justify-between gap-2">
@@ -145,7 +145,7 @@ export default function MasterDataPage() {
                 {(item.items as string[]).slice(0, 6).map((val, i) => (
                   <span
                     key={i}
-                    className="text-xs bg-primary-50 text-primary-600 border border-primary-100 rounded-md px-2 py-0.5"
+                    className="text-xs bg-primary-50 text-primary-700 border border-primary-100 rounded-md px-2 py-0.5"
                   >
                     {val}
                   </span>
@@ -187,7 +187,7 @@ export default function MasterDataPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="btn-modal-save flex-1 flex items-center justify-center gap-2"
+                className="btn-modal-save flex-1"
               >
                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                 Simpan
@@ -256,7 +256,7 @@ export default function MasterDataPage() {
               <button
                 onClick={addItem}
                 disabled={!newItem.trim()}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-700 text-white text-sm font-medium hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn-modal-save shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus size={15} />
                 Tambah

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
+import { jsonBesar } from "@/lib/json-besar";
 import bcrypt from "bcryptjs";
 import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  await verifyTasAccess();
+export async function GET(req: Request) {
+  await verifyBukuIndukFullAccess();
   const teachers = await prisma.teacher.findMany({
     include: {
       user: { select: { name: true, email: true } },
@@ -15,11 +16,11 @@ export async function GET() {
     },
     orderBy: { user: { name: "asc" } },
   });
-  return NextResponse.json(teachers);
+  return jsonBesar(teachers, req);
 }
 
 export async function POST(req: NextRequest) {
-  await verifyTasAccess();
+  await verifyBukuIndukFullAccess();
 
   const body = await req.json();
   const {

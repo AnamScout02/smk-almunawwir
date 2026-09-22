@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { balasanExcel } from "@/lib/ekspor-excel";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
 
@@ -37,7 +38,6 @@ export async function GET(req: Request) {
       || a.subject.localeCompare(b.subject)
     );
 
-  const BOM = "﻿";
   const headers = ["No", "NIS", "Nama Siswa", "Kelas", "Tingkat", "Jurusan", "Semester", "Mata Pelajaran", "Nilai Pengetahuan", "Nilai Keterampilan", "Rata-rata", "Guru"];
 
   const rows = rowsData.map((g, i) => [
@@ -55,19 +55,10 @@ export async function GET(req: Request) {
     (g.student.class ? teacherByClassSubject.get(`${g.student.class.id}::${g.subject}`) : null) ?? "",
   ]);
 
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const slug = semester
-    ? semester.replace(/\s+/g, "-").toLowerCase()
-    : "semua-semester";
-  const filename = classId ? `nilai-${slug}.csv` : `nilai-${slug}.csv`;
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
+  const slug = semester ? semester.replace(/\s+/g, "-").toLowerCase() : "semua-semester";
+  return balasanExcel({
+    namaFile: `nilai-${slug}`,
+    namaSheet: "Nilai Siswa",
+    headers, rows,
   });
 }

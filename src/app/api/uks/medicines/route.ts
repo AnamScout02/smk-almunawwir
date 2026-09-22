@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
     await assertUks(session);
 
     const body = await req.json();
-    const { name, stock, unit, notes } = body;
+    const { name, stock, unit, notes, kedaluwarsa, stokMinimum } = body;
     if (!name?.trim()) {
       return NextResponse.json({ error: "Nama obat wajib diisi" }, { status: 400 });
     }
 
     const medicine = await prisma.uksMedicine.create({
-      data: { name, stock: Number(stock) || 0, unit: unit || "pcs", notes: notes || null },
+      data: { name, stock: Number(stock) || 0, unit: unit || "pcs", notes: notes || null, kedaluwarsa: kedaluwarsa ? new Date(kedaluwarsa) : null, stokMinimum: Math.max(0, Math.round(Number(stokMinimum ?? 5)) || 0) },
     });
     return NextResponse.json(medicine, { status: 201 });
   } catch (e) {

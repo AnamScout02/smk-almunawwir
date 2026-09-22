@@ -15,11 +15,17 @@ interface FieldProps {
   maxLen?: number;
   readOnly?: boolean;
   placeholder?: string;
+  /** id `<datalist>` eksternal (dirender oleh pemanggil) — kalau diisi, input teks biasa jadi
+   * combobox: saran otomatis dari data yang sudah pernah diinput, TAPI tetap bisa diketik bebas
+   * kalau belum ada di daftar. Pola sama seperti "Asal Sekolah" — dipakai jg utk "Tempat Lahir". */
+  list?: string;
+  /** Keterangan kecil di bawah isian. */
+  hint?: string;
 }
 
 export default function Field({
   label, value, onChange, type = "text", wide = false,
-  options, min, max, maxLen, readOnly, placeholder,
+  options, min, max, maxLen, readOnly, placeholder, list, hint,
 }: FieldProps) {
   const cls = `input-field ${readOnly ? "bg-gray-50 text-gray-500 cursor-default" : ""}`;
   return (
@@ -56,10 +62,11 @@ export default function Field({
       ) : type === "date" ? (
         <DatePicker value={value} onChange={onChange} disabled={readOnly} />
       ) : (
-        <input className={cls} type={type} maxLength={maxLen} placeholder={placeholder}
+        <input className={cls} type={type} maxLength={maxLen} placeholder={placeholder} list={list}
           value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly}
           onBlur={e => { if (!readOnly && e.target.value) onChange(toProperCase(e.target.value)); }} />
       )}
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
   );
 }

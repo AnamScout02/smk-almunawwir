@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Printer, ArrowLeft } from "lucide-react";
 import BukuIndukPrintSheet, { PrintStudent } from "@/components/admin/BukuIndukPrintSheet";
+import { usePrintTitle } from "@/lib/usePrintTitle";
+import { buildPrintFilename } from "@/lib/print-filename";
 
 export default function CetakBukuIndukPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [student, setStudent] = useState<PrintStudent | null>(null);
+  usePrintTitle(student ? buildPrintFilename("BUKU_INDUK", student.user.name, student.nis) : null);
   const [logo, setLogo] = useState("");
   const [principalName, setPrincipalName] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -27,7 +30,7 @@ export default function CetakBukuIndukPage() {
   if (notFound || !student) return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex flex-col items-center justify-center gap-3 min-h-[60vh] text-gray-400">
       <p>Data tidak ditemukan</p>
-      <button onClick={() => router.back()} className="text-primary-600 hover:underline text-sm">Kembali</button>
+      <button onClick={() => router.back()} className="text-primary-700 hover:underline text-sm">Kembali</button>
     </div>
   );
 

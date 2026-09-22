@@ -24,7 +24,7 @@ export default function Alert({ variant, icon: Icon, title, children, className 
   return (
     <div className={`rounded-xl border p-4 flex items-start gap-3 ${s.box} ${className}`}>
       {Icon && <Icon size={18} className={`shrink-0 mt-0.5 ${s.icon}`} />}
-      <div className={`text-sm flex-1 ${s.body}`}>
+      <div className={`text-sm flex-1 min-w-0 [overflow-wrap:anywhere] ${s.body}`}>
         {title && <p className={`font-semibold mb-0.5 ${s.title}`}>{title}</p>}
         {children}
       </div>

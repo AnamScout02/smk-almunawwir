@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
 import { getLang } from "@/lib/lang";
+import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   try {
     const news = await prisma.news.findUnique({ where: { slug } });
-    return { title: news?.title || "Berita", description: news?.content.slice(0, 160) };
+    if (!news) return { title: "Berita" };
+    // Gambar pratinjau saat tautan dibagikan ke WhatsApp/medsos (17 Sep 2026) — alamat mutlak, wajib.
+    const gambar = news.thumbnail ? `${ALAMAT_APLIKASI}${news.thumbnail}` : `${ALAMAT_APLIKASI}/images/logo-full.png`;
+    const ringkas = news.content.replace(/\s+/g, " ").slice(0, 160);
+    return {
+      title: news.title, description: ringkas,
+      openGraph: { title: news.title, description: ringkas, type: "article", locale: "id_ID", images: [{ url: gambar }] },
+      twitter: { card: "summary_large_image", title: news.title, description: ringkas, images: [gambar] },
+    };
   } catch {
     return { title: "Berita" };
   }
@@ -33,6 +42,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     news = await prisma.news.findUnique({ where: { slug, published: true } });
   } catch { /* DB unavailable */ }
   if (!news) notFound();
+  // Jumlah pembaca (tanpa memblokir render).
+  prisma.news.update({ where: { id: news.id }, data: { views: { increment: 1 } } }).catch(() => null);
 
   let related: Awaited<ReturnType<typeof prisma.news.findMany>> = [];
   try {
@@ -88,7 +99,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                         {n.thumbnail ? (
                           <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-600 flex items-center justify-center">
+                          <div className="w-full h-full bg-gradient-to-br from-primary-900 to-primary-700 flex items-center justify-center">
                             <span className="font-arabic text-white/20 text-4xl">المنور</span>
                           </div>
                         )}

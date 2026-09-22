@@ -9,7 +9,8 @@ export async function GET() {
   await verifyTasAccess();
 
   const years = await prisma.academicYear.findMany({
-    orderBy: { createdAt: "desc" },
+    // Urut tahun (terbaru di atas) — dulu urutan pembuatan, sehingga tahun hasil impor lama tampil acak (temuan user 17 Sep 2026).
+    orderBy: [{ name: "desc" }, { createdAt: "desc" }],
     include: {
       _count: { select: { studentHistory: true } },
     },

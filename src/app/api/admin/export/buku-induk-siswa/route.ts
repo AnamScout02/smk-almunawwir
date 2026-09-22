@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { assertBukuIndukSiswaScope } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import { SISWA_COLUMNS } from "@/lib/buku-induk-siswa-columns";
 import * as XLSX from "xlsx";
 
 export async function GET(req: NextRequest) {
-  await verifyTasAccess();
+  const scope = await assertBukuIndukSiswaScope();
   const classId = req.nextUrl.searchParams.get("classId");
   const enrollYear = req.nextUrl.searchParams.get("enrollYear");
   const status = req.nextUrl.searchParams.get("status");
+  // Wali kelas (scope CLASS) cuma boleh export kelas walinya — kalau classId yang diminta bukan
+  // miliknya (atau tidak ada filter kelas sama sekali), tetap di-scope ke kelas walinya, bukan
+  // seluruh sekolah. Pola sama persis GET list di /api/admin/buku-induk/siswa/route.ts.
+  const classFilter = scope.scope === "ALL"
+    ? (classId ? { classId } : {})
+    : { classId: classId && scope.classIds.includes(classId) ? classId : { in: scope.classIds } };
 
   const students = await prisma.student.findMany({
     where: {
-      ...(classId ? { classId } : {}),
+      ...classFilter,
       ...(enrollYear ? { enrollYear: parseInt(enrollYear) } : {}),
       ...(status ? { studentStatus: status } : {}),
     },

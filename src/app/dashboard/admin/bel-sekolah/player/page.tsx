@@ -88,7 +88,7 @@ export default function BelSekolahPlayerPage() {
           <p className="text-white/60 text-sm mb-8">
             Klik tombol di bawah untuk mengaktifkan pemutaran otomatis. Browser mengharuskan interaksi ini sekali sebelum bel bisa berbunyi otomatis sepanjang hari. Biarkan halaman ini terbuka di layar penuh.
           </p>
-          <button onClick={handleStart} className="btn-gold flex items-center gap-2 text-base mx-auto px-8 py-3.5">
+          <button onClick={handleStart} className="btn-modal-save text-base mx-auto px-8 py-3.5">
             <Play size={18} /> Aktifkan Bel
           </button>
           <Link href="/dashboard/admin/bel-sekolah" className="flex items-center justify-center gap-1.5 text-white/40 hover:text-white/70 text-xs mt-8 transition">

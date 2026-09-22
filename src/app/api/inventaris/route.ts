@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const labOnly = await resolveLabOnly(session);
 
     const body = await req.json();
-    const { name, category, quantity, condition, location, acquiredDate, fundingSource, notes } = body;
+    const { name, category, quantity, condition, location, acquiredDate, fundingSource, notes, kodeInventaris } = body;
 
     if (!name || !category) {
       return NextResponse.json({ error: "Nama barang dan kategori wajib diisi" }, { status: 400 });
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         acquiredDate: acquiredDate ? new Date(acquiredDate) : null,
         fundingSource: fundingSource || null,
         notes: notes || null,
+        kodeInventaris: kodeInventaris ? String(kodeInventaris).trim().slice(0, 60) : null,
       },
     });
     return NextResponse.json(asset, { status: 201 });

@@ -58,9 +58,9 @@ export default function VerifikasiDataPage() {
 
       {!loading && requests.length > 0 && (
         <div className="relative max-w-sm mb-5">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama atau NIS siswa..." className="input-field pl-9 text-sm" />
+            placeholder="Cari nama atau NIS siswa..." className="input-field pl-10" />
         </div>
       )}
 
@@ -81,7 +81,7 @@ export default function VerifikasiDataPage() {
             const expanded = expandedId === req.id;
             const changeCount = Object.keys(req.changes).length;
             return (
-              <div key={req.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={req.id} className="panel overflow-hidden">
                 <button onClick={() => setExpandedId(expanded ? null : req.id)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-primary-50/30 transition-colors">
                   <div>
@@ -93,26 +93,26 @@ export default function VerifikasiDataPage() {
                 {expanded && (
                   <div className="border-t border-gray-50 px-5 py-4">
                     <div className="overflow-x-auto mb-4">
-                      <table className="w-full text-sm">
+                      <table className="data-table">
                         <thead>
-                          <tr className="text-left text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 border-b border-gray-100">
-                            <th className="py-2 pr-3">Field</th>
-                            <th className="py-2 pr-3">Data Lama</th>
-                            <th className="py-2 pr-3">Data Baru</th>
+                          <tr>
+                            <th>Field</th>
+                            <th>Data Lama</th>
+                            <th>Data Baru</th>
                           </tr>
                         </thead>
                         <tbody>
                           {Object.entries(req.changes).map(([key, c]) => (
-                            <tr key={key} className="border-b border-gray-50 last:border-0">
-                              <td className="py-2 pr-3 font-medium text-primary-900">{c.label}</td>
-                              <td className="py-2 pr-3 text-gray-400">{displayVal(c.old)}</td>
-                              <td className="py-2 pr-3 text-emerald-600 font-medium">{displayVal(c.new)}</td>
+                            <tr key={key}>
+                              <td className="font-medium text-primary-900">{c.label}</td>
+                              <td className="text-gray-400">{displayVal(c.old)}</td>
+                              <td className="text-emerald-600 font-medium">{displayVal(c.new)}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                    <div className="flex justify-end gap-2">
+                    <div className="alat-aksi justify-end">
                       <button onClick={() => decide(req.id, "REJECT")} disabled={processingId === req.id}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-colors">
                         <X size={14} /> Tolak

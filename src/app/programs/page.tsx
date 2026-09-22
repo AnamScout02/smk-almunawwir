@@ -81,7 +81,7 @@ export default async function ProgramsPage() {
               const career = m.career?.length ? m.career : p?.career ?? [];
               const customColor = m.themeColor;
               const gradientStyle = customColor ? { background: themeGradientRight(customColor) } : undefined;
-              const fallbackClass = p?.color ?? "from-primary-600 to-primary-900";
+              const fallbackClass = p?.color ?? "from-primary-700 to-primary-900";
               return (
                 <div key={m.id} id={slug}
                   className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
@@ -90,7 +90,7 @@ export default async function ProgramsPage() {
                       style={gradientStyle}>
                       {m.logoUrl ? (
                         <span className="relative w-4 h-4 shrink-0">
-                          <Image src={m.logoUrl} alt={m.name} fill sizes="16px" className="object-contain rounded-full" unoptimized />
+                          <Image src={m.logoUrl} alt={m.name} fill sizes="16px" className="object-contain rounded-full" />
                         </span>
                       ) : (
                         <Icon size={16} />

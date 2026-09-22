@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { kirimLatar } from "@/lib/push-server";
+import { beritahuAlphaBeruntun, beritahuOrangTuaAlpha } from "@/lib/notifikasi-kejadian";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 
@@ -89,6 +91,9 @@ export async function POST(req: Request) {
         });
       }
     });
+
+    // ALPHA → notifikasi orang tua; alpha ≥3 hari beruntun → wali kelas & BK. Tanpa menunggu, tidak menggagalkan simpan.
+    kirimLatar(async () => { await beritahuOrangTuaAlpha(list); await beritahuAlphaBeruntun(list); });
 
     return Response.json({ success: true }, { status: 201 });
   } catch {

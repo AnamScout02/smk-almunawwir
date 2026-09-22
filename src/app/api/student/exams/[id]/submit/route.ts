@@ -1,47 +1,42 @@
 import { prisma } from "@/lib/prisma";
+import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
+import { siswaDariSesi, tenggat, TOLERANSI_MS, simpanNilaiAttempt, jagaAttempt, tambahJejak, HEADER_PERANGKAT, ujianUntukKelas } from "@/lib/ujian-server";
 import { NextRequest } from "next/server";
 
+export const dynamic = "force-dynamic";
+
+/** Kumpulkan. Jawaban sudah tersimpan lewat autosave; di sini hanya menutup dan menilai.
+ * Toleransi beberapa menit setelah tenggat untuk jaringan lambat - lewat itu tetap DITERIMA
+ * (jawaban yang sudah masuk tidak dibuang), hanya ditandai. Body opsional { otomatis: true }
+ * kalau dikumpulkan karena waktu habis (dicatat di jejak). */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await verifyRole(["STUDENT"]);
-    const student = await prisma.student.findFirst({ where: { user: { email: session.email } }, select: { id: true, classId: true } });
+    const student = await siswaDariSesi(session);
     if (!student?.classId) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
     const { id } = await params;
-    const exam = await prisma.exam.findFirst({
-      where: { id, classId: student.classId, isPublished: true },
-      include: { questions: true },
+    const body = await req.json().catch(() => ({})) as { otomatis?: boolean };
+    const [exam, attempt] = await Promise.all([
+      prisma.exam.findFirst({ where: { id, ...ujianUntukKelas(student.classId), isPublished: true }, select: { duration: true, startTime: true, endTime: true, jadwalKelas: true, tampilkanNilai: true } }),
+      prisma.examAttempt.findUnique({ where: { examId_studentId: { examId: id, studentId: student.id } } }),
+    ]);
+    if (!exam || !attempt) return Response.json({ error: "Ujian tidak ditemukan" }, { status: 404 });
+    if (attempt.submittedAt) return Response.json({ ok: true, sudah: true });
+    const jaga = await jagaAttempt(attempt, req.headers.get(HEADER_PERANGKAT));
+    if (jaga.tolak) return jaga.tolak;
+
+    const batas = tenggat(attempt.startedAt, exam.duration, jendelaKelas(exam, student.classId).endTime, attempt.tambahanMenit).getTime();
+    const terlambat = Date.now() > batas + TOLERANSI_MS;
+    await prisma.examAttempt.update({
+      where: { id: attempt.id },
+      data: {
+        submittedAt: new Date(),
+        jejak: tambahJejak(jaga.jejak, { jenis: body.otomatis ? "KUMPUL_OTOMATIS" : "KUMPUL", ket: terlambat ? "melewati tenggat" : undefined }) as object,
+      },
     });
-    if (!exam) return Response.json({ error: "Ujian tidak ditemukan" }, { status: 404 });
-
-    const attempt = await prisma.examAttempt.findUnique({ where: { examId_studentId: { examId: id, studentId: student.id } } });
-    if (!attempt) return Response.json({ error: "Anda belum bergabung ke ujian ini." }, { status: 400 });
-    if (attempt.submittedAt) return Response.json({ error: "Ujian ini sudah pernah Anda kumpulkan." }, { status: 400 });
-
-    const deadline = Math.min(attempt.startedAt.getTime() + exam.duration * 60000, exam.endTime.getTime());
-    const GRACE_MS = 5 * 60 * 1000; // toleransi keterlambatan jaringan
-    if (Date.now() > deadline + GRACE_MS) {
-      return Response.json({ error: "Waktu ujian sudah habis. Hubungi guru pengampu untuk penyesuaian." }, { status: 403 });
-    }
-
-    const { answers } = await req.json() as { answers: Record<string, string> };
-    if (!answers || typeof answers !== "object") {
-      return Response.json({ error: "Jawaban tidak lengkap" }, { status: 400 });
-    }
-
-    let correct = 0;
-    for (const q of exam.questions) {
-      if (answers[q.id] === q.correctAnswer) correct++;
-    }
-    const score = Math.round((correct / exam.questions.length) * 100);
-
-    const updated = await prisma.examAttempt.update({
-      where: { examId_studentId: { examId: id, studentId: student.id } },
-      data: { answers, score, submittedAt: new Date() },
-    });
-
-    return Response.json(updated);
+    const h = await simpanNilaiAttempt(attempt.id);
+    return Response.json({ ok: true, terlambat, nilai: exam.tampilkanNilai ? h?.nilai ?? null : null, menungguKoreksi: h?.menungguKoreksi ?? 0 });
   } catch {
     return Response.json({ error: "Gagal mengumpulkan ujian." }, { status: 500 });
   }

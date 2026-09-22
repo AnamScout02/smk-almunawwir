@@ -113,9 +113,9 @@ export default function PklRegistrationReview() {
               </button>
             ))}
             <div className="relative flex-1 min-w-48 ml-auto">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Cari nama atau NIS siswa..." className="input-field pl-9 text-sm" />
+                placeholder="Cari nama atau NIS siswa..." className="input-field pl-10" />
             </div>
           </div>
           {(() => {
@@ -124,11 +124,11 @@ export default function PklRegistrationReview() {
               return !q || reg.student.user.name.toLowerCase().includes(q) || reg.student.nis.toLowerCase().includes(q);
             });
             return loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-400" size={28} /></div>
+            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
           ) : filtered.length === 0 ? (
             <EmptyState icon={FileCheck2} title="Tidak Ada Pendaftaran" description={search ? "Tidak ada yang cocok dengan pencarian." : `Belum ada pendaftaran PKL berstatus ${STATUS_META[statusFilter].label.toLowerCase()}.`} />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="divide-y divide-gray-50">
                 {filtered.map(reg => (
                   <div key={reg.id} className="px-5 py-3.5 flex items-center justify-between gap-3">
@@ -148,12 +148,12 @@ export default function PklRegistrationReview() {
           })()}
         </>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-xl">
+        <div className="panel p-5 max-w-xl">
           <p className="text-xs text-gray-400 mb-4">Daftar dokumen yang wajib diunggah siswa kelas XI saat mendaftar PKL. Nonaktifkan (bukan hapus) kalau dokumen tidak lagi dipakai tapi datanya masih ingin disimpan.</p>
           <div className="flex gap-2 mb-4">
             <input value={newReqName} onChange={e => setNewReqName(e.target.value)} placeholder="Nama dokumen baru (mis. Surat Izin Orang Tua)"
               className="input-field flex-1" onKeyDown={e => e.key === "Enter" && addRequirement()} />
-            <button onClick={addRequirement} className="btn-gold flex items-center gap-1.5 text-sm shrink-0"><Plus size={14} /> Tambah</button>
+            <button onClick={addRequirement} className="btn-modal-save shrink-0"><Plus size={14} /> Tambah</button>
           </div>
           {reqLoading ? (
             <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-gray-300" /></div>
@@ -180,9 +180,9 @@ export default function PklRegistrationReview() {
         footer={detail?.status === "PENDING" ? (
           <>
             <button type="button" onClick={() => decide(detail.id, "REJECTED")} disabled={deciding}
-              className="btn-modal-cancel flex-1 flex items-center justify-center gap-2 text-red-600"><XCircle size={14} /> Tolak</button>
+              className="btn-modal-cancel flex-1 text-red-600"><XCircle size={14} /> Tolak</button>
             <button type="button" onClick={() => decide(detail.id, "APPROVED")} disabled={deciding}
-              className="btn-modal-save flex-1 flex items-center justify-center gap-2">
+              className="btn-modal-save flex-1">
               {deciding ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Setujui
             </button>
           </>

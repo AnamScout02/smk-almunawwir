@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ===== DATABASE =====
   postgres:
@@ -9,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: smk_almunawwir
       POSTGRES_USER: smk_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smk_secure_password_2026}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-GANTI-DI-ENV}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -30,7 +28,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-smk_secure_password_2026}@postgres:5432/smk_almunawwir
+      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-GANTI-DI-ENV}@postgres:5432/smk_almunawwir
       SESSION_SECRET: ${SESSION_SECRET:-smk-almunawwir-iibs-secret-change-in-production-2026}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SCHOOL_NAME: SMK Al-Munawwir IIBS
@@ -43,11 +41,20 @@ services:
       NEXT_PUBLIC_ONLYOFFICE_URL: ${NEXT_PUBLIC_ONLYOFFICE_URL:-}
       ONLYOFFICE_INTERNAL_URL: ${ONLYOFFICE_INTERNAL_URL:-http://onlyoffice}
       APP_INTERNAL_URL: ${APP_INTERNAL_URL:-http://app:3000}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      DAPODIK_URL: ${DAPODIK_URL:-}
+      DAPODIK_NPSN: ${DAPODIK_NPSN:-}
+      DAPODIK_KEY: ${DAPODIK_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:smkalmunawwir@gmail.com}
     volumes:
       - uploads_data:/app/public/uploads
       # Read-only — supaya /api/admin/system/stats baca RAM asli LXC (lewat lxcfs, sudah
       # dijatah Proxmox) bukan RAM fisik host mesin Proxmox-nya. Lihat komentar di route.ts.
       - /proc:/host/proc:ro
+      # Read-only — cgroup v2 milik LXC situs ini, supaya halaman Performa Server menampilkan CPU & RAM
+      # KONTAINER INI SAJA (aplikasi + database + OnlyOffice), bukan load seluruh host Proxmox.
+      - /sys/fs/cgroup:/host/cgroup:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,6 +79,29 @@ services:
       - ./docker/fontconfig/arial-narrow-alias.conf:/etc/fonts/conf.d/00-arial-narrow-alias.conf:ro
     shm_size: 1g
 
+  # ===== REVERSE PROXY + HTTPS OTOMATIS (Caddy) =====
+  # DISIAPKAN 2026-08-24, SENGAJA BELUM DIJALANKAN (`docker compose up -d caddy` belum pernah
+  # dipanggil) — domain smkalmunawwiriibs.sch.id masih "proses pengajuan" (.sch.id butuh
+  # verifikasi institusi dulu sebelum DNS-nya bisa diarahkan ke server ini). Config lengkap +
+  # langkah aktivasi ada di Caddyfile (root repo) — baca komentar di situ sebelum menjalankan ini.
+  # TIDAK mengganggu akses HTTP langsung yang sudah berjalan (port 3000 tetap ke-mapping seperti
+  # biasa di service `app` di atas) — Caddy cuma nambah jalur baru di port 80/443, bukan
+  # menggantikan yang lama.
+  caddy:
+    image: caddy:2-alpine
+    container_name: smk_almunawwir_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_log:/var/log/caddy
+    depends_on:
+      - app
+
   # ===== MIGRATE (jalankan sekali per deploy) =====
   # PENTING: jangan tambahkan seed.ts di sini — script itu menghapus SEMUA data
   # (user, siswa, guru, dll) dan mengganti dengan data dummy. Hanya jalankan
@@ -82,7 +112,7 @@ services:
       dockerfile: Dockerfile
     container_name: smk_almunawwir_migrate
     environment:
-      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-smk_secure_password_2026}@postgres:5432/smk_almunawwir
+      DATABASE_URL: postgresql://smk_user:${POSTGRES_PASSWORD:-GANTI-DI-ENV}@postgres:5432/smk_almunawwir
     command: >
       sh -c "npx prisma migrate deploy"
     depends_on:
@@ -98,4 +128,10 @@ volumes:
   onlyoffice_data:
     driver: local
   onlyoffice_log:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+  caddy_log:
     driver: local

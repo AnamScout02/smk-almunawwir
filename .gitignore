@@ -43,3 +43,12 @@ next-env.d.ts
 # user uploads (handled separately on server)
 /public/uploads/
 .claude/
+
+# Aplikasi Ujian Android: hasil build & singgahan Gradle (sumber tetap di repo; kunci rilis di /root/.cache/android-ujian)
+android-ujian/app/build/
+android-ujian/.gradle/
+android-ujian/build/
+*.jks
+
+# APK hasil build (dibangun ulang dengan android-ujian/bangun-apk.sh)
+public/unduh/*.apk
