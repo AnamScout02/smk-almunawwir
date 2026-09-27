@@ -1,5 +1,5 @@
 #!/bin/bash
-# BANGUN APK Aplikasi Ujian (rilis, ditandatangani) → public/unduh/aplikasi-ujian-smk.apk
+# BANGUN APK MyAlwis Mobile (rilis, ditandatangani) → public/unduh/myalwis-mobile.apk
 # Kunci penandatangan & sandinya di /root/.cache/android-ujian (DI LUAR repo, WAJIB dicadangkan: tanpa kunci yang sama
 # versi baru tidak bisa dipasang menimpa versi lama di HP siswa). Naikkan versionCode/versionName di app/build.gradle,
 # VERSI di MainActivity.java, dan VERSI_APLIKASI di src/lib/aplikasi-ujian.ts setiap rilis baru.
@@ -17,6 +17,6 @@ docker run --rm -v "$KERJA":/proyek -v "$K":/kunci:ro -v "$K/gradle-home":/gradl
   $G/bin/gradle --no-daemon --console=plain assembleRelease
 '
 mkdir -p "$REPO/public/unduh"
-cp "$KERJA/app/build/outputs/apk/release/app-release.apk" "$REPO/public/unduh/aplikasi-ujian-smk.apk"
-ls -la "$REPO/public/unduh/aplikasi-ujian-smk.apk"
+cp "$KERJA/app/build/outputs/apk/release/app-release.apk" "$REPO/public/unduh/myalwis-mobile.apk"
+ls -la "$REPO/public/unduh/myalwis-mobile.apk"
 echo "APK SELESAI"

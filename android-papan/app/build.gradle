@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+
+// MyAlwis Papan (versi 1.0, 24 September 2026) — aplikasi TV sekolah: satu WebView layar penuh.
+//
+// Dibuat karena membuka papan lewat peramban TV menampilkan bilah alamat, sehingga terlihat seperti orang
+// sedang browsing, bukan papan informasi (temuan user 24 Sep 2026). Aplikasi ini SENGAJA serbaguna: alamat yang
+// dibuka dikirim dari dashboard, jadi TV yang sama bisa dipakai sebagai papan informasi ATAU layar presensi QR.
+//
+// Kunci penandatangan sama dengan MyAlwis Mobile: /root/.cache/android-ujian/kunci-rilis.jks (di luar repo).
+android {
+    namespace 'sch.almunawwir.papan'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'sch.almunawwir.papan'
+        minSdk 21          // Android TV lama ikut terjangkau
+        targetSdk 34
+        versionCode 2
+        versionName '1.1'
+    }
+    signingConfigs {
+        rilis {
+            storeFile file(System.getenv('KUNCI_JKS') ?: 'kunci-tidak-ada.jks')
+            storePassword System.getenv('KUNCI_SANDI')
+            keyAlias 'ujian'
+            keyPassword System.getenv('KUNCI_SANDI')
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.rilis
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

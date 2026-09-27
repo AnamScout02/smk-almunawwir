@@ -1,6 +1,6 @@
 plugins { id 'com.android.application' }
 
-// APLIKASI UJIAN SMK AL-MUNAWWIR (22 September 2026) — pengganti Exambro: WebView ke situs ujian + kunci layar.
+// MyAlwis Mobile (versi 2.2, 23 September 2026) — seluruh portal; terkunci otomatis hanya saat mengerjakan ujian.
 // Kunci penandatangan TIDAK di repo: /root/.cache/android-ujian/kunci-rilis.jks (WAJIB dicadangkan — tanpa kunci yang
 // sama, versi berikutnya tidak bisa dipasang menimpa versi lama di HP siswa).
 android {
@@ -10,8 +10,8 @@ android {
         applicationId 'sch.almunawwir.ujian'
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 4
+        versionName '2.2'
     }
     signingConfigs {
         rilis {

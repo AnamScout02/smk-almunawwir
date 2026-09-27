@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nama_aplikasi">Ujian SMK Al-Munawwir</string>
+    <string name="nama_aplikasi">MyAlwis</string>
+    <string name="nama_panjang">MyAlwis Mobile</string>
 </resources>
