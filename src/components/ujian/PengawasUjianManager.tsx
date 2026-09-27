@@ -9,6 +9,7 @@ import PrintButton from "@/components/shared/PrintButton";
 import DatePicker from "@/components/shared/DatePicker";
 import { useToast } from "@/components/shared/ToastProvider";
 import PengawasKelasPanel, { type BarisKelas } from "@/components/ujian/PengawasKelasPanel";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Data {
   kegiatan: { id: string; nama: string; singkatan: string; tanggalMulai: string | null; tanggalSelesai: string | null; mekanisme: string; _count: { exams: number } }[];
@@ -21,7 +22,7 @@ const kunci = (t: string, s: number, r: string) => `${t}|${s}|${r}`;
 const tglWib = (s: string) => new Date(new Date(s).getTime() + 7 * 3600_000).toISOString().slice(0, 10);
 
 /** PEMBAGIAN PENGAWAS UJIAN (18 Sep 2026) — tanggal × sesi × ruang; "Bagi Otomatis" menyebar guru merata & tidak dobel di sesi sama. */
-export default function PengawasUjianManager() {
+export default function PengawasUjianManager({ kembaliHref }: { kembaliHref?: string }) {
   const toast = useToast();
   const [d, setD] = useState<Data | null>(null);
   const [galat, setGalat] = useState("");
@@ -95,6 +96,7 @@ export default function PengawasUjianManager() {
       <style>{`@page { size: A4 landscape; margin: 1cm; }`}</style>
       <PageHeader icon={<UserCheck size={22} />} title="Pembagian Pengawas Ujian"
         description={d?.mekanisme === "KELAS" ? "Per kelas — jadwal tiap kelas, pengawas otomatis guru mapel (bisa diganti)" : "Tanggal × sesi × ruang — bagi otomatis merata, lalu sesuaikan"} printHidden />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
       {galat ? <EmptyState icon={UserCheck} title="Tidak tersedia" description={galat} /> : !d ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : d.kegiatan.length === 0 ? <EmptyState icon={UserCheck} title="Belum ada kegiatan ujian" description="Buat kegiatan ujian dulu di Administrasi Ujian." /> : (

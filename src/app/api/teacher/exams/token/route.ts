@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { filterDaftarUjian, tokenTampilUjian, type TokenTampil } from "@/lib/ujian-server";
@@ -23,7 +24,8 @@ export async function GET(req: NextRequest) {
     const hasil: Record<string, TokenTampil> = {};
     for (const e of exams) hasil[e.id] = await tokenTampilUjian(e, singgahKeg);
     return Response.json(hasil, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Tidak diizinkan" }, { status: 403 });
   }
 }

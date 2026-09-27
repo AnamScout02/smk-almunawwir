@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       perangkat: a.perangkatId ? `…${a.perangkatId.slice(-6)}` : null,
       garis,
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat jejak." }, { status: 500 });
   }
 }

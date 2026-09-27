@@ -95,7 +95,7 @@ export default function KonfirmasiUjianPage() {
     <>
         {muat ? (
           <div className="rounded-2xl border border-primary-100 bg-white shadow-lg py-16 flex justify-center">
-            <Loader2 size={28} className="animate-spin text-primary-500" />
+            <Loader2 size={24} className="animate-spin text-gray-400" />
           </div>
         ) : !info ? (
           <div className="rounded-2xl border border-primary-100 bg-white shadow-lg p-6">

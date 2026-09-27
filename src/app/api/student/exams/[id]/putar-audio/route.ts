@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { siswaDariSesi, jagaAttempt, tambahJejak, HEADER_PERANGKAT, type Jejak, ujianUntukKelas } from "@/lib/ujian-server";
@@ -40,7 +41,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: { lastSeenAt: new Date(), jejak: tambahJejak(jaga.jejak, { jenis: "PUTAR_AUDIO", ket: kunci }) as object },
     });
     return Response.json({ ok: true, sisa: batas > 0 ? batas - sudah - 1 : null });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal." }, { status: 500 });
   }
 }

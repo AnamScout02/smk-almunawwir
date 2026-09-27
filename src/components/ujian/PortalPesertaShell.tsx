@@ -53,7 +53,7 @@ export default function PortalPesertaShell({
   if (!megah) {
     /* ——— kepala RINGKAS: halaman pengerjaan soal ——— */
     return (
-      <div className="min-h-screen flex flex-col bg-cream">
+      <div className="min-h-dvh flex flex-col bg-cream">
         <header className="relative overflow-hidden print:hidden" style={{ background: NAVY }}>
           <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", filter: "invert(1)" }} />
@@ -77,7 +77,7 @@ export default function PortalPesertaShell({
 
   /* ——— kepala MEGAH: beranda & konfirmasi ——— */
   return (
-    <div className="min-h-screen flex flex-col bg-cream">
+    <div className="min-h-dvh flex flex-col bg-cream">
       <header className="relative overflow-hidden text-center px-5 pt-8 pb-20" style={{ background: NAVY }}>
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", filter: "invert(1)" }} />

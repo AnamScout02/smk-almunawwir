@@ -17,6 +17,7 @@ import DatePicker from "@/components/shared/DatePicker";
 import PilihKelasPeserta, { type OpsiKelasPeserta } from "@/components/ujian/PilihKelasPeserta";
 import PesanPesertaPanel from "@/components/ujian/PesanPesertaPanel";
 import { saranSkor, sorotJawaban } from "@/lib/saran-skor";
+import { teksTambahanWaktu, judulTambahanWaktu } from "@/lib/durasi-teks";
 import { CONTOH_VARIABEL, butirBerparameter, isiButirParameter } from "@/lib/soal-parameter";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -30,6 +31,7 @@ import { salinTeks } from "@/lib/salin-teks";
 import { useTokenLangsung } from "@/lib/use-token-langsung";
 import { usePantauLangsung } from "@/lib/use-pantau-langsung";
 import TurunanUjianPanel from "@/components/ujian/TurunanUjianPanel";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface SoalUjian extends ButirForm { id?: string; stimulus?: { id: string; judul: string; konten: string } | null }
 interface BankItem { id: string; tipe: string; pertanyaan: string; opsi: Opsi[]; kunci: Kunci | null; skor: number; kd: string | null; materi?: string | null; indikator?: string | null; levelKognitif?: string | null; pembahasan: string | null; stimulusId: string | null }
@@ -156,7 +158,11 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
   const [izinKalkulator, setIzinKalkulator] = useState(false);
   const [izinCoretan, setIzinCoretan] = useState(true);
   const [daftarKegiatan, setDaftarKegiatan] = useState<KegiatanRingkas[]>([]);
+  /** Kegiatan terpilih BILA ia memakai token bersama — token itulah yang dibacakan ke peserta. */
+  const tokenKegiatan = daftarKegiatan.find(k => k.id === kegiatanId && k.token) ?? null;
   // edit soal live (ujian sudah dikerjakan peserta)
+  const [tambahLive, setTambahLive] = useState(false);
+  const [menyimpanTambah, setMenyimpanTambah] = useState(false);
   const [liveIdx, setLiveIdx] = useState<number | null>(null);
   const [liveButir, setLiveButir] = useState<ButirForm>(BUTIR_KOSONG);
   const [liveSimpan, setLiveSimpan] = useState(false);
@@ -450,12 +456,30 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
     setQuestions(qs => [...qs, { tipe: b.tipe, pertanyaan: b.pertanyaan, opsi: b.opsi ?? [], kunci: b.kunci, skor: b.skor, kd: b.kd ?? "", materi: b.materi ?? "", indikator: b.indikator ?? "", levelKognitif: b.levelKognitif ?? "", pembahasan: b.pembahasan ?? "", stimulusId: b.stimulusId, posisiKunci: null }]);
     toast.success("Soal ditambahkan");
   }
-  function bukaEdit(i: number | null) {
+  function bukaEdit(i: number | null, live = false) {
+    setTambahLive(live);
     setEditIdx(i);
     setEditButir(i === null ? BUTIR_KOSONG : questions[i]);
     setEditBuka(true);
   }
+  /** TAMBAH SOAL SAAT UJIAN BERJALAN (23 September 2026): soal diletakkan di UJUNG naskah dan disambungkan ke
+   *  pengerjaan yang masih jalan (server: /tambah-soal). Yang sudah mengumpulkan tidak terpengaruh nilainya. */
+  async function simpanTambahLive() {
+    setMenyimpanTambah(true);
+    try {
+      const r = await fetch(`/api/teacher/exams/${id}/tambah-soal`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questions: [editButir] }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast.error(d.error ?? "Gagal menambah soal."); return; }
+      toast.success(`Soal nomor ${d.nomorMulai} ditambahkan · ${d.pengerjaanDiperbarui} peserta yang sedang mengerjakan ikut menerimanya`);
+      setEditBuka(false); setEditIdx(null); setEditButir(BUTIR_KOSONG); setTambahLive(false);
+      await muatDetail();
+    } catch { toast.error("Koneksi bermasalah."); }
+    finally { setMenyimpanTambah(false); }
+  }
   function simpanEdit() {
+    if (tambahLive) { simpanTambahLive(); return; }
     if (editIdx === null) setQuestions(qs => [...qs, { ...editButir }]);
     else setQuestions(qs => qs.map((q, k) => (k === editIdx ? { ...q, ...editButir } : q)));
     setEditBuka(false); setEditIdx(null); setEditButir(BUTIR_KOSONG);
@@ -639,7 +663,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
       )}
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Link href={basePath} className="btn-modal-cancel"><ArrowLeft size={18} /> Kembali</Link>
+        <TombolKembali href={basePath} />
         {detail && (
           <>
             <button onClick={salinToken}
@@ -669,7 +693,13 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
         <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-heading font-bold text-primary-900">Soal <span className="text-gray-400 font-normal text-sm">({questions.length} butir · {totalSkor} poin)</span></h3>
+              <h3 className="font-heading font-semibold text-primary-900">Soal <span className="text-gray-400 font-normal text-sm">({questions.length} butir · {totalSkor} poin)</span></h3>
+              {terkunci && (
+                <button onClick={() => bukaEdit(null, true)} className="btn-modal-cancel text-xs"
+                  title="Soal baru diletakkan di ujung naskah dan langsung diterima peserta yang masih mengerjakan. Yang sudah mengumpulkan tidak terpengaruh.">
+                  <Plus size={14} /> Tambah soal di ujung
+                </button>
+              )}
               {!terkunci && (
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => setBankBuka(true)} className="btn-modal-cancel text-xs"><BookMarked size={14} /> Dari bank ({bank.length})</button>
@@ -726,7 +756,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
           {/* pengaturan */}
           <div className="space-y-4">
             <div className="page-card p-4 space-y-3">
-              <h3 className="font-heading font-bold text-primary-900 text-sm">Identitas & Jadwal</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm">Identitas & Jadwal</h3>
               <div>
                 <label className="label-field">Kegiatan ujian</label>
                 <Select value={kegiatanId} placeholder="Tanpa kegiatan (ujian lepas)"
@@ -764,7 +794,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
               <div><label className="label-field">Petunjuk (opsional)</label><textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="input-field w-full" /></div>
               {kelasIds.length > 1 && (
                 <label className="flex items-start gap-2 cursor-pointer">
-                  <input type="checkbox" checked={jamPerKelas} className="mt-0.5 w-4 h-4 accent-[#1B2B6B]"
+                  <input type="checkbox" checked={jamPerKelas} className="mt-0.5 w-4 h-4"
                     onChange={e => {
                       const on = e.target.checked;
                       setJamPerKelas(on);
@@ -807,7 +837,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
               </div>
             </div>
             <div className="page-card p-4 space-y-2">
-              <h3 className="font-heading font-bold text-primary-900 text-sm flex items-center gap-1.5"><ShieldCheck size={14} /> Pengamanan</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm flex items-center gap-1.5"><ShieldCheck size={14} /> Pengamanan</h3>
               {[
                 [acakSoal, setAcakSoal, "Acak urutan soal per siswa", "Wacana & posisi terkunci tetap dihormati"],
                 [acakOpsi, setAcakOpsi, "Acak urutan pilihan", "Tidak berlaku untuk Benar/Salah & Menjodohkan"],
@@ -862,7 +892,15 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
                     </span>
                   </label>
                 </div>
-                <div><label className="label-field">Token berganti tiap</label><input type="number" min={0} value={tokenOtomatis} onChange={e => setTokenOtomatis(e.target.value)} className="input-field w-full" /><p className="text-xs text-gray-400">menit · 0 = tetap</p></div>
+                <div>
+                  <label className="label-field">Token berganti tiap</label>
+                  <input type="number" min={0} max={240} value={tokenOtomatis} onChange={e => setTokenOtomatis(e.target.value)} className="input-field w-full" />
+                  {/* Kegiatan bertoken bersama: yang dibacakan ke peserta adalah token KEGIATAN, jadi angka di sini tidak
+                      berlaku — temuan user 23 Sep 2026 (diisi 240, token tetap berganti tiap 5 menit). */}
+                  {tokenKegiatan
+                    ? <p className="text-xs text-amber-700">Tidak dipakai — kegiatan ini memakai <b>token bersama</b> (berganti tiap {tokenKegiatan.tokenOtomatisMenit || 0} menit). Ubah di Pengaturan Ujian → Kegiatan Ujian.</p>
+                    : <p className="text-xs text-gray-400">menit · 0 = tetap</p>}
+                </div>
                 <div><label className="label-field">Batas putar audio</label><input type="number" min={0} value={batasAudio} onChange={e => setBatasAudio(e.target.value)} className="input-field w-full" /><p className="text-xs text-gray-400">kali · 0 = bebas</p></div>
               </div>
             </div>
@@ -877,9 +915,9 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
 
       {/* ============================ PANTAU ============================ */}
       {tab === "pantau" && (
-        !pantau ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+        !pantau ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
           <>
-            <div className="kisi-kartu kisi-kartu-6 mb-4">
+            <div className="kisi-kartu kisi-kartu-6 mb-5">
               <StatTile value={pantau.ringkas.belum} label="Belum Mulai" icon={Clock} color="gray" size="md" />
               <StatTile value={pantau.ringkas.mengerjakan} label="Mengerjakan" icon={Wifi} color="emerald" size="md" />
               <StatTile value={pantau.ringkas.terputus} label="Terputus" icon={WifiOff} color="amber" size="md" />
@@ -898,7 +936,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
               </span>
               <button onClick={muatPantau} className="flex items-center gap-1 hover:text-primary-700"><RefreshCw size={12} /> segarkan</button>
             </div>
-            <div className="baris-alat mb-3">
+            <div className="baris-alat mb-5">
               <div className="alat-cari">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input value={pantauCari} onChange={e => setPantauCari(e.target.value)}
@@ -938,7 +976,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
                       <td className="text-center">{b.ragu > 0 ? <span className="font-bold text-amber-600">{b.ragu}</span> : <span className="text-gray-300">0</span>}</td>
                       <td className="font-mono text-sm whitespace-nowrap">
                         {b.status === "MENGERJAKAN" || b.status === "TERPUTUS" || b.status === "TERKUNCI" ? fmtSisa(pantauLangsung.sisa(b.sisaDetik)) : "-"}
-                        {b.tambahanMenit > 0 && <span className="ml-1 text-xs font-sans font-semibold text-emerald-600">+{b.tambahanMenit}&apos;</span>}
+                        {b.tambahanMenit > 0 && <span className="ml-1 text-xs font-sans font-semibold text-emerald-600" title={judulTambahanWaktu(b.tambahanMenit)}>{teksTambahanWaktu(b.tambahanMenit)}</span>}
                       </td>
                       <td className="text-center">{b.pelanggaran > 0 ? <span className={`font-bold ${b.pelanggaran >= 3 ? "text-red-600" : "text-amber-700"}`}>{b.pelanggaran}</span> : <span className="text-gray-300">0</span>}</td>
                       <td className="text-xs text-gray-500">{fmtJam(b.lastSeenAt)}</td>
@@ -955,7 +993,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
 
       {/* ============================ KOREKSI ============================ */}
       {tab === "koreksi" && (
-        !koreksi ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        !koreksi ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
         : koreksi.jumlahButirManual === 0 ? <EmptyState icon={ClipboardCheck} title="Tidak ada soal uraian" description="Semua soal dinilai otomatis." />
         : koreksi.daftar.length === 0 ? <EmptyState icon={ClipboardCheck} title="Belum ada yang mengumpulkan" description="Jawaban uraian muncul di sini setelah siswa mengumpulkan." />
         : (
@@ -964,7 +1002,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
                 lebih dianjurkan: guru menilai satu pertanyaan berturut-turut untuk semua siswa,
                 sehingga standar penilaiannya konsisten — bukan berpindah-pindah antar pertanyaan. */}
             <div className="baris-alat">
-              <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
+              <div className="alat-tab flex gap-1 rounded-xl border border-gray-100 bg-white p-1">
                 {([["soal", "Per Soal"], ["siswa", "Per Siswa"]] as const).map(([v, l]) => (
                   <button key={v} onClick={() => setModeKoreksi(v)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${modeKoreksi === v ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
@@ -1074,7 +1112,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
 
       {/* ============================ HASIL ============================ */}
       {tab === "hasil" && (
-        !hasil ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+        !hasil ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
           <div className="space-y-5">
             <div className="kisi-kartu kisi-kartu-5">
               <StatTile value={hasil.statistik.selesai} label={`Selesai dari ${hasil.statistik.peserta}`} icon={Users2} color="primary" size="md" />
@@ -1126,7 +1164,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
               )}
               {kemiripan && (
                 kemiripan.pasangan.length === 0 ? (
-                  <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                  <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                     Tidak ada pasangan yang melewati ambang ({kemiripan.ambang.salahSamaMin} butir salah-sama
                     dan kemiripan ≥ {Math.round(kemiripan.ambang.indeksMin * 100)}%) dari {kemiripan.diperiksa} pengerjaan.
                   </p>
@@ -1280,8 +1318,15 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
 
       {/* ============================ MODAL: soal baru / edit ============================ */}
       <Modal open={editBuka} onClose={() => setEditBuka(false)} title={editIdx === null ? "Soal Baru" : `Edit Soal ${editIdx + 1}`} size="xl" scrollBody
-        footer={<><button onClick={() => setEditBuka(false)} className="btn-modal-cancel">Batal</button><button onClick={simpanEdit} className="btn-modal-save">{editIdx === null ? "Tambahkan" : "Terapkan"}</button></>}>
-        <SoalEditor nilai={editButir} onChange={setEditButir} stimulusDaftar={stimulus} tampilPosisiKunci />
+        footer={<><button onClick={() => setEditBuka(false)} className="btn-modal-cancel">Batal</button><button onClick={simpanEdit} disabled={menyimpanTambah} className="btn-modal-save disabled:opacity-60">{menyimpanTambah ? <Loader2 size={14} className="animate-spin" /> : null}{tambahLive ? (menyimpanTambah ? "Menambahkan..." : "Tambahkan ke ujian berjalan") : editIdx === null ? "Tambahkan" : "Terapkan"}</button></>}>
+        {tambahLive && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
+            Ujian sedang berjalan. Soal ini diletakkan <b>di ujung naskah</b> (nomor {questions.length + 1}) dan langsung diterima
+            peserta yang masih mengerjakan. Peserta yang <b>sudah mengumpulkan tidak terpengaruh</b> — nilainya tetap dihitung
+            dari soal yang benar-benar mereka kerjakan.
+          </div>
+        )}
+        <SoalEditor nilai={editButir} onChange={setEditButir} stimulusDaftar={stimulus} tampilPosisiKunci={!tambahLive} />
       </Modal>
 
       {/* ============================ MODAL: pratinjau ============================ */}

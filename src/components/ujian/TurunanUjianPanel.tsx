@@ -68,7 +68,7 @@ export default function TurunanUjianPanel({ examId, basePath, bolehUbah }: { exa
     <div className="panel p-5">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="font-heading font-bold text-primary-900 text-sm">Ujian susulan & remedial</h3>
+          <h3 className="font-heading font-semibold text-primary-900 text-sm">Ujian susulan & remedial</h3>
           <p className="text-xs text-gray-500">
             {data.susulan.length} siswa belum mengerjakan · {data.remedial.length} siswa di bawah KKM. Soal disalin dari ujian ini, peserta dibatasi. Nilai remedial diakui paling tinggi sama dengan KKM.
           </p>
@@ -124,7 +124,7 @@ export default function TurunanUjianPanel({ examId, basePath, bolehUbah }: { exa
               {daftar.map(s => (
                 <li key={s.id}>
                   <label className="flex items-center gap-2 px-3 py-2 text-sm">
-                    <input type="checkbox" checked={pilih.has(s.id)} className="h-4 w-4 rounded border-gray-300"
+                    <input type="checkbox" checked={pilih.has(s.id)} className="h-4 w-4 rounded"
                       onChange={e => setPilih(p => { const n = new Set(p); if (e.target.checked) n.add(s.id); else n.delete(s.id); return n; })} />
                     <span className="min-w-0 flex-1"><span className="font-medium text-primary-900">{s.nama}</span> <span className="text-xs text-gray-500">· {s.kelas} · {s.nis}</span></span>
                     <span className="shrink-0 text-xs text-gray-500">{s.keterangan}</span>

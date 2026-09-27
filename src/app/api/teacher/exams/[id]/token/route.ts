@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan, buatTokenUnik } from "@/lib/ujian-server";
@@ -17,7 +18,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const token = await buatTokenUnik();
     await prisma.exam.update({ where: { id }, data: { token, tokenLama: exam.token, tokenDiperbarui: new Date() } });
     return Response.json({ ok: true, token });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal mengganti token." }, { status: 500 });
   }
 }

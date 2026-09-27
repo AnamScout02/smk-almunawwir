@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { kegiatanDitahanSiswa } from "@/lib/peserta-ditahan";
 import { verifyRole } from "@/lib/dal";
@@ -75,7 +76,8 @@ export async function GET() {
       },
       aktif, riwayat, serverNow: now.toISOString(),
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat daftar ujian." }, { status: 500 });
   }
 }

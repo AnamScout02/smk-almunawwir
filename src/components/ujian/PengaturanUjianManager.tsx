@@ -23,6 +23,10 @@ interface MuatanKegiatan {
 interface Form {
   jenis: string; nama: string; singkatan: string; semester: string; academicYearId: string;
   tingkat: number[]; tanggalMulai: string; tanggalSelesai: string; aktif: boolean; mekanisme: "RUANG" | "KELAS";
+  /** Perputaran TOKEN BERSAMA kegiatan (menit). Inilah yang berlaku untuk token yang dibacakan ke
+   *  peserta — setelan "Token berganti tiap" di tiap ujian mapel hanya dipakai bila kegiatan ini
+   *  tidak memakai token bersama (temuan user 23 Sep 2026: mengisi 240 di ujian mapel tidak berpengaruh). */
+  tokenOtomatisMenit: string;
 }
 
 const tglPendek = (d: string | null) => d ? new Date(`${d}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -75,6 +79,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
       tanggalMulai: isi?.tanggalMulai ?? "", tanggalSelesai: isi?.tanggalSelesai ?? "", aktif: true,
       // STS lazimnya di kelas masing-masing dengan pengawas guru mapel; kegiatan lain dibagi ke ruang ujian.
       mekanisme: jenis === "STS" ? "KELAS" : "RUANG",
+      tokenOtomatisMenit: atur["ujian.tokenOtomatisMenit"] ?? "0",
     });
     setNamaManual(false); setEditId(null); setErrForm(""); setBukaForm(true);
   }
@@ -83,6 +88,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
       jenis: k.jenis, nama: k.nama, singkatan: k.singkatan, semester: k.semester ?? "",
       academicYearId: k.academicYearId ?? "", tingkat: k.tingkat,
       tanggalMulai: k.tanggalMulai ?? "", tanggalSelesai: k.tanggalSelesai ?? "", aktif: k.aktif, mekanisme: k.mekanisme ?? "RUANG",
+      tokenOtomatisMenit: String(k.tokenOtomatisMenit ?? 0),
     });
     setNamaManual(k.nama !== namaUsulan(k.jenis, k.semester)); setEditId(k.id); setErrForm(""); setBukaForm(true);
   }
@@ -175,7 +181,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
       <PageHeader icon={<Settings2 size={22} />} title="Pengaturan Ujian"
         description="Nama kegiatan ujian yang tampil di layar peserta, bawaan ujian baru, dan petunjuk sekolah" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           {!bolehAtur && (
             <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-2.5">
@@ -247,9 +253,11 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
                                     className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 size={13} /></button>
                                 </>
                               )}
-                              {k.tokenBerganti && (
-                                <span className="text-xs text-gray-400 whitespace-nowrap">ganti {new Date(k.tokenBerganti).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}</span>
-                              )}
+                              <span className="text-xs text-gray-400 whitespace-nowrap">
+                                {k.tokenBerganti
+                                  ? `tiap ${k.tokenOtomatisMenit} mnt · ganti ${new Date(k.tokenBerganti).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}`
+                                  : "tidak berganti"}
+                              </span>
                             </div>
                           ) : bolehAtur ? (
                             <button onClick={() => aturToken(k, "buat")} className="btn-modal-cancel btn-teks px-2.5 text-xs">
@@ -310,7 +318,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label-field">Token berganti tiap (menit)</label>
-                    <input type="number" min={0} value={atur["ujian.tokenOtomatisMenit"] ?? ""} disabled={!bolehAtur}
+                    <input type="number" min={0} max={240} value={atur["ujian.tokenOtomatisMenit"] ?? ""} disabled={!bolehAtur}
                       onChange={e => setAtur(a => ({ ...a, "ujian.tokenOtomatisMenit": e.target.value }))} className="input-field w-full" />
                     <p className="text-xs text-gray-400 mt-1">0 = token tetap</p>
                   </div>
@@ -445,6 +453,16 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
                 {form.mekanisme === "KELAS"
                   ? "Tiap ujian bisa diberi jam berbeda per kelas; pengawas otomatis guru pengampu mapel itu (bisa diganti di Pengawas)."
                   : "Peserta dibagi ke ruang & sesi lewat Denah Ruang; pengawas dibagi per ruang × sesi."}
+              </p>
+            </div>
+            <div>
+              <label className="label-field">Token bersama berganti tiap (menit)</label>
+              <input type="number" min={0} max={240} value={form.tokenOtomatisMenit}
+                onChange={e => ubahForm({ tokenOtomatisMenit: e.target.value })} className="input-field w-full" />
+              <p className="text-xs text-gray-400 mt-1">
+                0 = tetap, maksimum 240 menit. <span className="text-gray-500">Inilah yang berlaku untuk token yang dibacakan
+                ke peserta</span> — setelan &quot;Token berganti tiap&quot; di tiap ujian mapel hanya dipakai bila kegiatan ini
+                tidak memakai token bersama.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">

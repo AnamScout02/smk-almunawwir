@@ -206,7 +206,7 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
         </Link>
       </div>
 
-      {muat ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {muat ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           {!bolehAtur && (
             <Alert variant="info" title="Mode lihat & cetak">
@@ -268,12 +268,6 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
                         </td>
                         {bolehAtur && (
                           <td>
-                            <div className="alat-aksi justify-end">
-                              <button type="button" title="Edit" onClick={() => setForm({ id: r.id, nama: r.nama, lokasi: r.lokasi ?? "", kapasitas: String(r.kapasitas), kolom: String(r.kolom), urutan: String(r.urutan), aktif: r.aktif })}
-                                className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                              <button type="button" title="Hapus" onClick={() => hapusRuang(r)}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 size={14} /></button>
-                            </div>
                           </td>
                         )}
                       </tr>
@@ -310,7 +304,7 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
             {kegiatan.length === 0 ? (
               <EmptyState icon={LayoutGrid} title="Belum ada kegiatan ujian" description="Buat kegiatan (mis. STS) di Pengaturan Pusat Ujian lebih dulu." />
             ) : muatDenah || !denah ? (
-              <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+              <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
             ) : (
               <>
                 <div className="kisi-kartu kisi-kartu-4">
@@ -366,6 +360,13 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-gray-800 truncate">{r.nama}</p>
                               <p className="text-xs text-gray-400">{r.kapasitas} kursi</p>
+                            </div>
+
+                            <div className="alat-aksi justify-end">
+                              <button type="button" title="Edit" onClick={() => setForm({ id: r.id, nama: r.nama, lokasi: r.lokasi ?? "", kapasitas: String(r.kapasitas), kolom: String(r.kolom), urutan: String(r.urutan), aktif: r.aktif })}
+                                className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"><Pencil size={14} /></button>
+                              <button type="button" title="Hapus" onClick={() => hapusRuang(r)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 size={14} /></button>
                             </div>
                             <div className="w-44 shrink-0">
                               <Select value={petaKhusus[r.id] ?? ""} onChange={v => aturKhusus(r.id, v)} placeholder="Otomatis"

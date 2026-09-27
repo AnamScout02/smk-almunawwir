@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { siswaDariSesi } from "@/lib/ujian-server";
@@ -24,23 +25,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!JENIS_SAH.has(jenis)) return Response.json({ error: "Jenis tidak dikenal" }, { status: 400 });
     const attempt = await prisma.examAttempt.findUnique({ where: { examId_studentId: { examId: id, studentId: student.id } }, include: { exam: { select: { batasPindahTab: true } } } });
     if (!attempt || attempt.submittedAt) return Response.json({ ok: true });
-    const daftar = Array.isArray(attempt.pelanggaran) ? (attempt.pelanggaran as { jenis: string; waktu: string }[]) : [];
-    daftar.push({ jenis, waktu: new Date().toISOString() });
-    await prisma.examAttempt.update({ where: { id: attempt.id }, data: { pelanggaran: daftar as object, lastSeenAt: new Date() } });
-    const pindah = daftar.filter(p => p.jenis === "PINDAH_TAB").length;
     const batas = attempt.exam.batasPindahTab;
-    const melebihi = batas > 0 && pindah > batas;
-    if (melebihi && !attempt.terkunci) {
-      await prisma.examAttempt.update({
+
+    // Baris DIKUNCI selama diperbarui (`FOR UPDATE`). Sebelumnya daftar dibaca, ditambah, lalu ditulis
+    // utuh tanpa penguncian — dua catatan yang datang hampir bersamaan saling menimpa dan jumlahnya
+    // bisa TURUN (temuan user 23 Sep 2026: "pelanggaran 5 tapi kok berkurang jadi 4").
+    const hasil = await prisma.$transaction(async (tx) => {
+      const baris = await tx.$queryRaw<{ pelanggaran: unknown; terkunci: boolean }[]>`
+        SELECT "pelanggaran", "terkunci" FROM "ExamAttempt" WHERE id = ${attempt.id} FOR UPDATE`;
+      const daftar = Array.isArray(baris[0]?.pelanggaran) ? (baris[0].pelanggaran as { jenis: string; waktu: string }[]) : [];
+      // SATU kejadian nyata sering memicu dua laporan sekaligus (keluar layar → `visibilitychange` +
+      // `blur`; pintasan → `keydown` + `keyup`), sehingga satu pelanggaran terhitung dua kali. Laporan
+      // berjenis sama dalam 2 detik dianggap kejadian yang sama.
+      const terakhir = [...daftar].reverse().find(p => p.jenis === jenis);
+      const kembar = !!terakhir && Date.now() - new Date(terakhir.waktu).getTime() < 2000;
+      if (!kembar) daftar.push({ jenis, waktu: new Date().toISOString() });
+      const pindah = daftar.filter(p => p.jenis === "PINDAH_TAB").length;
+      const melebihi = batas > 0 && pindah > batas;
+      await tx.examAttempt.update({
         where: { id: attempt.id },
         data: {
-          terkunci: true,
-          alasanKunci: `Keluar dari layar ujian ${pindah} kali (batas ${batas}). Pengerjaan dikunci otomatis — minta pengawas membuka kembali.`,
+          pelanggaran: daftar as object,
+          lastSeenAt: new Date(),
+          ...(melebihi && !baris[0]?.terkunci
+            ? { terkunci: true, alasanKunci: `Keluar dari layar ujian ${pindah} kali (batas ${batas}). Pengerjaan dikunci otomatis — minta pengawas membuka kembali.` }
+            : {}),
         },
       });
-    }
-    return Response.json({ ok: true, jumlah: daftar.length, pindahTab: pindah, melebihiBatas: melebihi, terkunci: melebihi, batas });
-  } catch {
+      return { jumlah: daftar.length, pindah, melebihi };
+    });
+
+    return Response.json({ ok: true, jumlah: hasil.jumlah, pindahTab: hasil.pindah, melebihiBatas: hasil.melebihi, terkunci: hasil.melebihi, batas });
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal mencatat." }, { status: 500 });
   }
 }

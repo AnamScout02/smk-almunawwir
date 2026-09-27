@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { getSettings } from "@/lib/site-settings";
@@ -28,7 +29,8 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "no-store",
       },
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal membuat berkas Excel." }, { status: 500 });
   }
 }

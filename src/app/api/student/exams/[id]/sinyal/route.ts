@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { verifyRole } from "@/lib/dal";
 import { siswaDariSesi } from "@/lib/ujian-server";
 import { tungguSinyal } from "@/lib/sinyal-ujian";
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const hasil = await tungguSinyal(id, student.id, 25_000, req.signal);
     return Response.json({ sinyal: !!hasil, sebar: hasil === "ujian" }, { headers: { "Cache-Control": "no-store, no-transform" } });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal." }, { status: 500 });
   }
 }

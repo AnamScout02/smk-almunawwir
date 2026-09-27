@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { pesanUntukSiswa } from "@/lib/pesan-ujian";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -64,7 +65,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       waktuDiterima: adaWaktu,
       pesan: await pesanUntukSiswa(id, student), // pesan pengawas (src/lib/pesan-ujian.ts)
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal." }, { status: 500 });
   }
 }

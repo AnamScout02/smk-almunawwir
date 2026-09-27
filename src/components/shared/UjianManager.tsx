@@ -298,7 +298,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
           "membingungkan, buat yang simpel"). Dropdown di atas murni SARINGAN. Hak akses tetap
           dijaga server (filterDaftarUjian & cakupan bank soal), bukan oleh pilihan di layar ini. */}
       {loadingList && tab !== "ringkasan" ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : (
         <>
           {/* ============ RINGKASAN ============ */}
@@ -313,7 +313,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="page-card p-5">
-                  <h3 className="font-heading font-bold text-primary-900 flex items-center gap-2 mb-3"><PlayCircle size={16} className="text-emerald-600" /> Sedang Berlangsung</h3>
+                  <h3 className="font-heading font-semibold text-primary-900 flex items-center gap-2 mb-3"><PlayCircle size={16} className="text-emerald-600" /> Sedang Berlangsung</h3>
                   {berlangsung.length === 0 ? <p className="text-sm text-gray-400">Tidak ada ujian yang sedang berjalan.</p> : berlangsung.map(e => (
                     <Link key={e.id} href={`${basePath}/${e.id}?tab=pantau`} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-0 hover:text-primary-700">
                       <span className="min-w-0">
@@ -328,7 +328,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
                   ))}
                 </div>
                 <div className="page-card p-5">
-                  <h3 className="font-heading font-bold text-primary-900 flex items-center gap-2 mb-3"><CalendarClock size={16} className="text-blue-600" /> Akan Datang</h3>
+                  <h3 className="font-heading font-semibold text-primary-900 flex items-center gap-2 mb-3"><CalendarClock size={16} className="text-blue-600" /> Akan Datang</h3>
                   {akanDatang.length === 0 ? <p className="text-sm text-gray-400">Belum ada jadwal ujian berikutnya.</p> : akanDatang.slice(0, 5).map(e => (
                     <Link key={e.id} href={`${basePath}/${e.id}`} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-0 hover:text-primary-700">
                       <span className="min-w-0">
@@ -349,7 +349,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
           {/* ============ DAFTAR UJIAN ============ */}
           {tab === "ujian" && (
             <>
-              <div className="baris-alat mb-4">
+              <div className="baris-alat mb-5">
                 <div className="alat-cari">
                   <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input value={cariUjian} onChange={e => setCariUjian(e.target.value)}
@@ -364,7 +364,7 @@ export default function UjianManager({ basePath }: { basePath: string }) {
                   <span className="text-xs text-gray-400">{ujianTampil.length} dari {exams.length} ujian</span>
                 )}
               </div>
-              <div className="alat-aksi justify-end mb-4">
+              <div className="alat-aksi justify-end mb-5">
                 {/* Membuat ujian tetap butuh kelas & mapel (ujian selalu milik salah satunya) —
                     tapi MELIHAT daftar tidak lagi ditahan (20 September 2026). */}
                 {/* Tidak lagi menunggu pilihan di atas: kelas & mapel ditanyakan di dalam formulir

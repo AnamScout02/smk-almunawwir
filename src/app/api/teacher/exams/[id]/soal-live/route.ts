@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { verifyRole } from "@/lib/dal";
@@ -123,7 +124,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ? `Soal no. ${nomor} diperbaiki. ${dinilaiUlang} pengerjaan yang sudah dikumpulkan dinilai ulang${nilaiBerubah ? ` — ${nilaiBerubah} nilai berubah` : ""}.`
         : `Soal no. ${nomor} diperbaiki. Layar peserta yang sedang mengerjakan diperbarui dalam beberapa detik.`,
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memperbaiki soal." }, { status: 500 });
   }
 }

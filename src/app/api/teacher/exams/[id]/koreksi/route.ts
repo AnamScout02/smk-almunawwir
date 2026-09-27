@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { butirBerparameter, isiButirParameter } from "@/lib/soal-parameter";
 import { variabelSiswaUjian } from "@/lib/soal-parameter-server";
@@ -47,7 +48,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       };
     });
     return Response.json({ daftar, jumlahButirManual: manual.length });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -99,7 +101,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await prisma.examAttempt.update({ where: { id: attemptId }, data: { skorButir: skorButir as object } });
     const h = await simpanNilaiAttempt(attemptId);
     return Response.json({ ok: true, nilai: h?.nilai ?? null, menungguKoreksi: h?.menungguKoreksi ?? 0 });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menyimpan koreksi." }, { status: 500 });
   }
 }

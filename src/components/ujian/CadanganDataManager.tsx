@@ -94,7 +94,7 @@ export default function CadanganDataManager({ basePath, isAdmin }: { basePath: s
       <PageHeader icon={<DatabaseBackup size={22} />} title="Cadangan & Hapus Data Ujian"
         description="Simpan seluruh data ujian sebelum dihapus — soal, kunci, jawaban, dan nilai." />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <>
           {/* ——— NAMA UJIAN YANG SEDANG DILAKUKAN ——— */}
           {berlangsung.length > 0 ? (
@@ -124,7 +124,7 @@ export default function CadanganDataManager({ basePath, isAdmin }: { basePath: s
           ) : (
             <div className="panel border-gray-200 px-4 py-3 mb-5 flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-300 shrink-0" />
-              <p className="text-sm text-gray-500">Tidak ada ujian yang sedang dilakukan saat ini — aman untuk mencadangkan atau membersihkan data.</p>
+              <p className="text-sm text-gray-400">Tidak ada ujian yang sedang dilakukan saat ini — aman untuk mencadangkan atau membersihkan data.</p>
             </div>
           )}
 

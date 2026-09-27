@@ -79,33 +79,26 @@ export default function RekapNilaiUjian() {
     return `/api/ujian/rekap-nilai/ekspor?${p}`;
   };
 
+  /* Baris cari & saringan dipakai tab Per Kelas maupun Per Mapel; disimpan sebagai variabel
+     supaya bisa dipasang SETELAH kartu angka di kedua tab (DESIGN_SYSTEM §19.5). */
+  const barisCari = data && tab !== "ringkasan" ? (
+  <div className="baris-alat mb-5">
+    <div className="alat-cari">
+      <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+      <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau NIS..." className="input-field pl-10" />
+    </div>
+    <div className="alat-saring">
+      {tab === "kelas"
+        ? <Select value={kelasId} onChange={setKelasId} options={data.kelas.map(k => ({ value: k.id, label: `${k.nama} (${data.siswa.filter(s => s.classId === k.id).length} siswa)` }))} />
+        : <Select value={mapel} onChange={setMapel} options={daftarMapel.map(m => ({ value: m, label: m }))} />}
+    </div>
+  </div>
+  ) : null;
+
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<FileSpreadsheet size={22} />} title="Rekap Nilai Ujian"
         description="Leger per kelas, rekap per mapel, dan ringkasan — bisa diunduh sebagai Excel" />
-
-      <div className="baris-alat mb-4">
-        <div className="alat-saring">
-          <Select value={kegiatanId} onChange={v => ambil(v)} placeholder="Pilih kegiatan"
-            options={kegiatan.map(k => ({ value: k.id, label: `${k.singkatan} — ${k.nama}${k.tahunAjaran ? ` ${k.tahunAjaran}` : ""} (${k.jumlahUjian} ujian)` }))} />
-        </div>
-        <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">
-          {([["kelas", "Per Kelas"], ["mapel", "Per Mapel"], ["ringkasan", "Ringkasan"]] as [Tab, string][]).map(([t, l]) => (
-            <button key={t} type="button" onClick={() => setTab(t)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${tab === t ? "bg-primary-900 text-white" : "text-gray-600 hover:bg-white"}`}>{l}</button>
-          ))}
-        </div>
-        {data && tab !== "ringkasan" && (
-          <div className="alat-aksi alat-teks">
-            <a href={unduh(false)} className="btn-modal-cancel"><Download /> Unduh Excel</a>
-            <a href={unduh(true)} className="btn-modal-save"><Sheet /> {tab === "kelas" ? "Semua Kelas" : "Semua Mapel"}</a>
-          </div>
-        )}
-        {data && tab === "ringkasan" && (
-          <div className="alat-aksi alat-teks"><a href={unduh(false)} className="btn-modal-save"><Download /> Unduh Excel</a></div>
-        )}
-      </div>
-
       {muat && !data ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : !data || !data.kelas.length ? (
@@ -113,28 +106,18 @@ export default function RekapNilaiUjian() {
           description={kegiatan.length ? "Kegiatan ini belum punya ujian yang bisa Anda lihat nilainya." : "Belum ada kegiatan ujian yang berisi ujian."} />
       ) : (
         <div className={muat ? "opacity-60 pointer-events-none" : ""}>
-          {tab !== "ringkasan" && (
-            <div className="baris-alat mb-4">
-              <div className="alat-cari">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau NIS..." className="input-field pl-10" />
-              </div>
-              <div className="alat-saring">
-                {tab === "kelas"
-                  ? <Select value={kelasId} onChange={setKelasId} options={data.kelas.map(k => ({ value: k.id, label: `${k.nama} (${data.siswa.filter(s => s.classId === k.id).length} siswa)` }))} />
-                  : <Select value={mapel} onChange={setMapel} options={daftarMapel.map(m => ({ value: m, label: m }))} />}
-              </div>
-            </div>
-          )}
 
+          {/* Baris cari & saringan dipakai tab Per Kelas maupun Per Mapel. Disimpan sebagai variabel
+              supaya bisa dipasang SETELAH kartu angka di kedua tab (§19.5) tanpa markup ganda. */}
           {/* ---------------- PER KELAS (LEGER) ---------------- */}
           {tab === "kelas" && leger && (() => {
             const semuaNilai = leger.baris.flatMap(b => b.sel.map(s => s.n)).filter((x): x is number => x !== null);
             const st = statistik(leger.baris.map(b => b.rata).filter((x): x is number => x !== null));
             const bawah = leger.baris.reduce((n, b) => n + b.sel.filter((s, i) => s.n !== null && s.n < (leger.kkm[leger.mapel[i]] ?? 75)).length, 0);
-            return (
+
+  return (
               <>
-                <div className="kisi-kartu kisi-kartu-4 mb-4">
+                <div className="kisi-kartu kisi-kartu-4 mb-5">
                   <StatTile value={leger.baris.length} label="Siswa" icon={Users} color="primary" size="md" />
                   <StatTile value={st.rata ?? "—"} label="Rata-rata kelas" icon={BarChart3} color="blue" size="md" />
                   <StatTile value={leger.mapel.length} label={leger.mapelDiniyah.length ? `Mapel utama (+${leger.mapelDiniyah.length} Diniyah)` : "Mapel diujikan"} icon={BookOpen} color="emerald" size="md" />
@@ -194,7 +177,7 @@ export default function RekapNilaiUjian() {
           {/* ---------------- PER MAPEL ---------------- */}
           {tab === "mapel" && perMapel && (
             <>
-              <div className="kisi-kartu kisi-kartu-4 mb-4">
+              <div className="kisi-kartu kisi-kartu-4 mb-5">
                 <StatTile value={perMapel.grup.length} label="Kelas" icon={School} color="primary" size="md" />
                 <StatTile value={perMapel.ringkas.ikut} label="Siswa ikut" icon={Users} color="blue" size="md" />
                 <StatTile value={perMapel.ringkas.rata ?? "—"} label="Rata-rata" icon={BarChart3} color="emerald" size="md" />
@@ -284,6 +267,28 @@ export default function RekapNilaiUjian() {
           </p>
         </div>
       )}
+
+      <div className="baris-alat mb-5">
+        <div className="alat-saring">
+          <Select value={kegiatanId} onChange={v => ambil(v)} placeholder="Pilih kegiatan"
+            options={kegiatan.map(k => ({ value: k.id, label: `${k.singkatan} — ${k.nama}${k.tahunAjaran ? ` ${k.tahunAjaran}` : ""} (${k.jumlahUjian} ujian)` }))} />
+        </div>
+        <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1">
+          {([["kelas", "Per Kelas"], ["mapel", "Per Mapel"], ["ringkasan", "Ringkasan"]] as [Tab, string][]).map(([t, l]) => (
+            <button key={t} type="button" onClick={() => setTab(t)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${tab === t ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
+          ))}
+        </div>
+        {data && tab !== "ringkasan" && (
+          <div className="alat-aksi alat-teks">
+            <a href={unduh(false)} className="btn-modal-cancel"><Download /> Unduh Excel</a>
+            <a href={unduh(true)} className="btn-modal-save"><Sheet /> {tab === "kelas" ? "Semua Kelas" : "Semua Mapel"}</a>
+          </div>
+        )}
+        {data && tab === "ringkasan" && (
+          <div className="alat-aksi alat-teks"><a href={unduh(false)} className="btn-modal-save"><Download /> Unduh Excel</a></div>
+        )}
+      </div>
     </div>
   );
 }

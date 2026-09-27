@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { rekamanMilikSendiri } from "@/lib/ujian-lisan";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -70,7 +71,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ok: true, sisaDetik: Math.max(0, Math.floor((batas - Date.now()) / 1000)),
       deadline: new Date(batas).toISOString(), versiSoal: await versiSoal(id),
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menyimpan jawaban." }, { status: 500 });
   }
 }

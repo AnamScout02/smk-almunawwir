@@ -65,7 +65,7 @@ export default function BerandaPesertaPage() {
     <>
       {loading ? (
         <div className="rounded-2xl border border-primary-100 bg-white shadow-lg py-16 flex justify-center">
-          <Loader2 size={28} className="animate-spin text-primary-500" />
+          <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : error ? (
         <div className="rounded-2xl border border-primary-100 bg-white shadow-lg p-6">
@@ -121,8 +121,8 @@ export default function BerandaPesertaPage() {
               className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5 shadow-sm hover:bg-amber-100 transition">
               <Smartphone size={18} className="text-amber-600 shrink-0" />
               <span className="flex-1 min-w-0 text-sm">
-                <span className="font-heading font-bold text-amber-900">Unduh Aplikasi Ujian Android</span>
-                <span className="block text-xs text-amber-800">Beberapa ujian wajib dikerjakan lewat aplikasi ini. Pasang sebelum hari ujian.</span>
+                <span className="font-heading font-bold text-amber-900">Unduh Aplikasi MyAlwis Mobile</span>
+                <span className="block text-xs text-amber-800">Layar terkunci otomatis saat ujian — beberapa ujian mewajibkannya. Pasang sebelum hari ujian.</span>
               </span>
               <ChevronRight size={16} className="text-amber-500 shrink-0" />
             </a>

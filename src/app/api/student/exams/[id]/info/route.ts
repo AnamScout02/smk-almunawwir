@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { alasanDitahan, pesanDitahan } from "@/lib/peserta-ditahan";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -70,7 +71,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         ? Math.max(1, Math.round((now - new Date(a.lastSeenAt).getTime()) / 1000))
         : null,
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat keterangan ujian." }, { status: 500 });
   }
 }

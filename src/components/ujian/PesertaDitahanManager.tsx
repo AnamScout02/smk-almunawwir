@@ -8,6 +8,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import Alert from "@/components/admin/Alert";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Kegiatan { id: string; nama: string; singkatan: string; aktif: boolean }
 interface Ditahan { id: string; alasan: string; oleh: string | null; waktu: string; studentId: string; nama: string; nis: string; kelas: string }
@@ -89,7 +90,7 @@ export default function PesertaDitahanManager({ basePath = "/pusat-ujian" }: { b
             options={kegiatan.map(k => ({ value: k.id, label: `${k.singkatan} — ${k.nama}${k.aktif ? " (aktif)" : ""}` }))} />
         </div>
         <div className="alat-aksi">
-          <Link href={`${basePath}/administrasi`} className="btn-modal-cancel"><ArrowLeft /> Kembali</Link>
+          <TombolKembali href={`${basePath}/administrasi`} />
         </div>
       </div>
 

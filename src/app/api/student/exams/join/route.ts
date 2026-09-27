@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { alasanDitahan, pesanDitahan } from "@/lib/peserta-ditahan";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -16,6 +17,20 @@ export const dynamic = "force-dynamic";
  * - Perangkat yang pertama masuk langsung memegang pengerjaan (kunci perangkat).
  * - Siswa yang sudah pernah mulai boleh masuk lagi walau jam tutup lewat, selama tenggat
  *   pribadinya (termasuk tambahan waktu dari pengawas) belum habis. */
+/** BATAS PERCOBAAN TOKEN per siswa (audit 24 September 2026). Token 6 huruf memang sulit ditebak dan join
+ *  masih disaring kelas peserta, tetapi tanpa pembatas seorang siswa bisa menembaki ribuan tebakan diam-diam.
+ *  Hitungan di memori satu proses — cukup untuk menahan tebakan beruntun, dan hilang saat aplikasi dimuat ulang. */
+const BATAS_TEBAK = 15, JENDELA_TEBAK_MS = 5 * 60_000;
+const tebakan = new Map<string, { n: number; sejak: number }>();
+function tebakanBerlebih(studentId: string) {
+  const t = tebakan.get(studentId);
+  return !!t && Date.now() - t.sejak < JENDELA_TEBAK_MS && t.n >= BATAS_TEBAK;
+}
+function catatTebakanSalah(studentId: string) {
+  const t = tebakan.get(studentId), kini = Date.now();
+  tebakan.set(studentId, t && kini - t.sejak < JENDELA_TEBAK_MS ? { n: t.n + 1, sejak: t.sejak } : { n: 1, sejak: kini });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await verifyRole(["STUDENT"]);
@@ -26,6 +41,9 @@ export async function POST(req: NextRequest) {
     const petunjukUjian = typeof examId === "string" ? examId : null;
     if (!token?.trim()) return Response.json({ error: "Masukkan token ujian." }, { status: 400 });
     const t = String(token).trim().toUpperCase();
+    if (tebakanBerlebih(student.id)) {
+      return Response.json({ error: "Terlalu banyak percobaan token. Tunggu beberapa menit atau minta token terbaru dari pengawas." }, { status: 429 });
+    }
     const perangkat = req.headers.get(HEADER_PERANGKAT);
 
     let exam = await prisma.exam.findUnique({ where: { token: t } });
@@ -96,8 +114,10 @@ export async function POST(req: NextRequest) {
       }
     }
     if (!exam || !pesertaBoleh(exam, student) || !exam.isPublished) {
+      catatTebakanSalah(student.id);
       return Response.json({ error: "Token tidak ditemukan atau ujian ini bukan untuk kelas Anda." }, { status: 404 });
     }
+    tebakan.delete(student.id); // token benar — hitungan direset
     if (exam.examkey && exam.examkey !== String(examkey ?? "").trim()) {
       return Response.json({ error: "Ujian ini hanya bisa dibuka lewat browser ujian sekolah." }, { status: 403 });
     }
@@ -142,7 +162,8 @@ export async function POST(req: NextRequest) {
       },
     });
     return Response.json({ examId: exam.id });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal masuk ujian." }, { status: 500 });
   }
 }

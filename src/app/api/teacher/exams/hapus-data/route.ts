@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { cakupanUjian, ujianDalamCakupan, petaNamaKelas } from "@/lib/ujian-server";
@@ -69,7 +70,8 @@ export async function GET() {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
     return Response.json(await ringkasan(session));
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat data." }, { status: 500 });
   }
 }
@@ -176,7 +178,8 @@ export async function POST(req: NextRequest) {
     }
 
     return Response.json({ error: "Tindakan tidak dikenal." }, { status: 400 });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menghapus data." }, { status: 500 });
   }
 }

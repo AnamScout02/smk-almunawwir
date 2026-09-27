@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
@@ -113,7 +114,8 @@ export async function GET(req: NextRequest) {
       terkunci: aktif.reduce((n, u) => n + u.terkunci, 0),
     };
     return Response.json({ ujian, ringkas, diperbarui: sekarang.toISOString() });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

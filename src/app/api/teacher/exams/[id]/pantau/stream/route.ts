@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan } from "@/lib/ujian-server";
@@ -23,7 +24,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
@@ -64,7 +66,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           } else if (!tulis(": detak\n\n")) {
             break;
           }
-        } catch {
+        } catch (galat) {
+          lemparBilaPengalihan(galat);
           // Database sesaat tak terjangkau: jangan putuskan pengawas, coba lagi di putaran berikut.
           if (!tulis(": galat sementara\n\n")) break;
         }

@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
@@ -32,7 +33,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })));
     const semua = await prisma.examQuestion.findMany({ where: { examId: id }, select: { kd: true, materi: true, indikator: true, levelKognitif: true } });
     return Response.json({ ok: true, disimpan: ubah.length, lengkap: semua.filter(kisiLengkap).length, total: semua.length });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menyimpan kisi-kisi." }, { status: 500 });
   }
 }

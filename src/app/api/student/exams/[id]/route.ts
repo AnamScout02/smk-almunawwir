@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { butirBerparameter, isiButirParameter } from "@/lib/soal-parameter";
 import { variabelSiswaUjian } from "@/lib/soal-parameter-server";
@@ -108,7 +109,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       // Pesan pengawas — hanya di muatan awal (bukan tiap ambil satu soal); selanjutnya lewat denyut.
       pesan: nomorParam || submitted ? undefined : await pesanUntukSiswa(exam.id, student),
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

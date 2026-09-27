@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { verifyRole } from "@/lib/dal";
@@ -38,7 +39,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       attemptCount: exam._count.attempts,
       jumlahSiswa: exam.pesertaIds.length ? exam.pesertaIds.length : kelas.reduce((n, k) => n + k.jumlahSiswa, 0),
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -124,7 +126,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const tersimpan = await prisma.exam.findUnique({ where: { id }, include: { questions: { orderBy: { order: "asc" } } } });
     kirimSinyal(id); // jadwal/durasi mungkin berubah — tenggat peserta diperbarui lewat denyut
     return Response.json(tersimpan);
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memperbarui ujian." }, { status: 500 });
   }
 }
@@ -138,7 +141,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
     await prisma.exam.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menghapus ujian." }, { status: 500 });
   }
 }

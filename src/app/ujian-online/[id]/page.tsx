@@ -12,6 +12,7 @@ import KalkulatorUjian from "@/components/ujian/KalkulatorUjian";
 import KertasCoretan from "@/components/ujian/KertasCoretan";
 import { fetchUjian, pengawasanDitahan } from "@/lib/perangkat-ujian";
 import type { Jawaban } from "@/lib/soal";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 /** Halaman pengerjaan ujian.
  *   - Waktu dihitung dari `deadline` server, dikoreksi selisih jam server-klien (`serverNow`), dan
@@ -369,6 +370,13 @@ export default function StudentExamPage() {
   useEffect(() => { fn.current = { muat, kirimAntrean, muatUlangSoal, perbaruiTenggat, bacaAntrean }; });
   const aktif = !!m && !m.submitted && !blokir;
   useEffect(() => { aktifRef.current = aktif; }, [aktif]);
+  // Aplikasi SMK Al-Munawwir (Android): layar DISEMATKAN otomatis selama pengerjaan (termasuk saat dikunci pengawas),
+  // dilepas begitu dikumpulkan atau halaman ditinggalkan. Di browser biasa `AplikasiSMK` tidak ada — tidak berbuat apa-apa.
+  const modeUjianAplikasi = !!m && !m.submitted;
+  useEffect(() => {
+    (window as unknown as { AplikasiSMK?: { modeUjian: (b: boolean) => void } }).AplikasiSMK?.modeUjian(modeUjianAplikasi);
+  }, [modeUjianAplikasi]);
+  useEffect(() => () => { (window as unknown as { AplikasiSMK?: { modeUjian: (b: boolean) => void } }).AplikasiSMK?.modeUjian(false); }, []);
   useEffect(() => {
     if (!aktif) return;
     let putusSejak: number | null = null;
@@ -552,8 +560,9 @@ export default function StudentExamPage() {
     document.addEventListener("fullscreenchange", onFs);
     document.addEventListener("copy", onCopy);
     document.addEventListener("contextmenu", onMenu);
+    // HANYA keydown: dulu `keyup` ikut dipasang sehingga satu pintasan tercatat dua kali
+    // (temuan user 23 Sep 2026 — jejak "Pintasan keyboard terlarang" berpasangan).
     window.addEventListener("keydown", onKey);
-    window.addEventListener("keyup", onKey);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("blur", onBlur);
@@ -561,7 +570,6 @@ export default function StudentExamPage() {
       document.removeEventListener("copy", onCopy);
       document.removeEventListener("contextmenu", onMenu);
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("keyup", onKey);
     };
   }, [aktif, id]);
 
@@ -632,7 +640,7 @@ export default function StudentExamPage() {
   if (error || !m) return (
     <div className="p-6 lg:p-8">
       <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-sm">{error || "Ujian tidak ditemukan"}</div>
-      <Link href="/ujian-online" className="inline-flex items-center gap-2 mt-4 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-500 text-sm font-semibold"><ArrowLeft size={18} /> Kembali</Link>
+      <TombolKembali href={"/ujian-online"} className="inline-flex items-center gap-2 mt-4 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-500 text-sm font-semibold" />
     </div>
   );
 

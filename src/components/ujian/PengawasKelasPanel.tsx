@@ -100,7 +100,7 @@ export default function PengawasKelasPanel({ kegiatanId, baris, guru, onTersimpa
   }
   return (
     <>
-      <div className="baris-alat mb-4 print:hidden">
+      <div className="baris-alat mb-5 print:hidden">
         <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari kelas, mapel, atau guru..." className="input-field pl-10" />
@@ -171,7 +171,7 @@ export default function PengawasKelasPanel({ kegiatanId, baris, guru, onTersimpa
             </table>
           </div>
         ))}
-        {tampil.length === 0 && <p className="py-8 text-center text-sm text-gray-500">Tidak ada jadwal yang cocok dengan pencarian.</p>}
+        {tampil.length === 0 && <p className="py-10 text-center text-sm text-gray-400">Tidak ada jadwal yang cocok dengan pencarian.</p>}
       </div>
       <p className="mt-3 text-xs text-gray-500 print:hidden">
         Pengawas bawaan = guru pengampu mapel itu di kelas itu (Penugasan Mengajar). Jam yang diubah di sini sama dengan jam per kelas di

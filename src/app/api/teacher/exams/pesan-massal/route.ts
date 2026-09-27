@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { prisma } from "@/lib/prisma";
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
     if (!terkirim) return Response.json({ error: "Tidak ada ujian yang boleh Anda kirimi pesan." }, { status: 403 });
     await logActivity(session, { action: "PESAN_PESERTA_UJIAN", entity: "Exam", entityId: ids[0], description: `Mengirim pesan ke ${terkirim} ujian: ${teks.slice(0, 80)}` }).catch(() => {});
     return Response.json({ ok: true, terkirim });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal mengirim pesan." }, { status: 500 });
   }
 }

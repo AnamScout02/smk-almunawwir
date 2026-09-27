@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan } from "@/lib/ujian-server";
 import { susunPapanPantau } from "@/lib/pantau-ujian";
@@ -15,7 +16,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const exam = await ujianDalamCakupan(session, id);
     if (!exam) return Response.json({ error: "Ujian tidak ditemukan" }, { status: 404 });
     return Response.json(await susunPapanPantau(exam));
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

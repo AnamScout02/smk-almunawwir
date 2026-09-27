@@ -15,6 +15,7 @@ import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 import AksiPesertaUjian, { LABEL_STATUS_PESERTA, GAYA_STATUS_PESERTA, type StatusPeserta } from "@/components/ujian/AksiPesertaUjian";
 import { salinTeks } from "@/lib/salin-teks";
+import { teksTambahanWaktu, judulTambahanWaktu } from "@/lib/durasi-teks";
 import { usePantauLangsung } from "@/lib/use-pantau-langsung";
 
 /** RUANG KENDALI UJIAN - satu layar untuk operator/pengawas memantau SEMUA ujian yang sedang
@@ -132,7 +133,7 @@ export default function RuangKendaliManager({ basePath }: { basePath: string }) 
       <PageHeader icon={<Radio size={22} />} title="Ruang Kendali Ujian"
         description="Semua ujian dalam satu layar - pantau peserta, ganti token, tambah waktu, buka yang terputus, kumpulkan paksa" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <>
           <div className="kisi-kartu kisi-kartu-7 mb-5">
             <StatTile value={data.ringkas.ujianBerlangsung} label="Ujian Berlangsung" icon={Radio} color="primary" size="md" />
@@ -287,7 +288,7 @@ export default function RuangKendaliManager({ basePath }: { basePath: string }) 
                                     <td className="text-center">{b.ragu > 0 ? <span className="font-bold text-amber-600">{b.ragu}</span> : <span className="text-gray-300">0</span>}</td>
                                     <td className="font-mono text-sm whitespace-nowrap">
                                       {b.status === "MENGERJAKAN" || b.status === "TERPUTUS" || b.status === "TERKUNCI" ? fmtSisa(langsung.sisa(b.sisaDetik)) : "-"}
-                                      {b.tambahanMenit > 0 && <span className="ml-1 text-xs font-sans font-semibold text-emerald-600">+{b.tambahanMenit}&apos;</span>}
+                                      {b.tambahanMenit > 0 && <span className="ml-1 text-xs font-sans font-semibold text-emerald-600" title={judulTambahanWaktu(b.tambahanMenit)}>{teksTambahanWaktu(b.tambahanMenit)}</span>}
                                     </td>
                                     <td className="text-center">{b.pelanggaran > 0 ? <span className={`font-bold ${b.pelanggaran >= 3 ? "text-red-600" : "text-amber-700"}`}>{b.pelanggaran}</span> : <span className="text-gray-300">0</span>}</td>
                                     <td className="text-center font-bold text-primary-900">{b.score ?? "-"}{b.menunggu > 0 && <span className="block text-xs font-semibold text-amber-600" title={`${b.menunggu} soal belum dikoreksi`}>sementara</span>}</td>

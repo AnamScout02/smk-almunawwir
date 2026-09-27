@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan } from "@/lib/ujian-server";
@@ -90,7 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     return Response.json({ cocok, total: soal.length, laporan, pengaturan: ex.pengaturan, lembar: ex.lembar });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menerapkan berkas Excel." }, { status: 500 });
   }
 }

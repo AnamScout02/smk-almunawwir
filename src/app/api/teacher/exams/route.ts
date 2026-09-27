@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { bacaKelasIds, buatTokenUnik, filterDaftarUjian, periksaKelasPeserta, petaNamaKelas, ujianUntukKelas } from "@/lib/ujian-server";
@@ -34,7 +35,8 @@ export async function GET(req: NextRequest) {
     });
     const kelas = await petaNamaKelas(exams);
     return Response.json(exams.map(e => ({ ...e, kelasNama: kelas.daftar(e) })));
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -81,7 +83,8 @@ export async function POST(req: NextRequest) {
       },
     });
     return Response.json(exam);
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menyimpan ujian." }, { status: 500 });
   }
 }

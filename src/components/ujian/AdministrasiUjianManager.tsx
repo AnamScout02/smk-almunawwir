@@ -75,7 +75,7 @@ export default function AdministrasiUjianManager({ basePath }: { basePath: strin
         </Link>
       </div>
 
-      {muat ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {muat ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           <div className="page-card p-5 grid gap-4 md:grid-cols-[1fr_1fr_auto] items-end">
             <div>
@@ -111,10 +111,12 @@ export default function AdministrasiUjianManager({ basePath }: { basePath: strin
               <span className="text-xs text-gray-400">{tampil.length} ujian</span>
             </div>
             <div className="px-5 pt-4">
-              <div className="relative">
+              <div className="baris-alat">
+        <div className="alat-cari">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari judul atau mata pelajaran..." className="input-field pl-10" />
               </div>
+      </div>
             </div>
             {tampil.length === 0 ? (
               <EmptyState icon={ClipboardList} title="Tidak ada ujian" description="Tidak ada ujian yang cocok dengan kegiatan dan kelas yang dipilih." />
@@ -134,18 +136,18 @@ export default function AdministrasiUjianManager({ basePath }: { basePath: strin
                         <td className="text-center tabular-nums">{u._count.attempts}</td>
                         <td>
                           <div className="alat-aksi justify-end">
-                            <Link href={`${basePath}/${u.id}/kisi-kisi`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-primary-700 hover:bg-primary-50 whitespace-nowrap">
+                            <Link href={`${basePath}/${u.id}/kisi-kisi`} className="btn-modal-cancel px-3 text-xs">
                               <ListChecks size={13} /> Kisi-kisi
                             </Link>
                             {/* Kartu Soal — satu butir satu halaman, dilampirkan bersama kisi-kisi
                                 ke kurikulum (permintaan user 21 September 2026). */}
-                            <Link href={`${basePath}/${u.id}/kartu-soal`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-primary-700 hover:bg-primary-50 whitespace-nowrap">
+                            <Link href={`${basePath}/${u.id}/kartu-soal`} className="btn-modal-cancel px-3 text-xs">
                               <FileText size={13} /> Kartu Soal
                             </Link>
-                            <Link href={`${basePath}/${u.id}/daftar-hadir${qsKelas}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-primary-700 hover:bg-primary-50 whitespace-nowrap">
+                            <Link href={`${basePath}/${u.id}/daftar-hadir${qsKelas}`} className="btn-modal-cancel px-3 text-xs">
                               <ClipboardList size={13} /> Daftar Hadir
                             </Link>
-                            <Link href={`${basePath}/${u.id}/berita-acara${qsKelas}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-primary-700 hover:bg-primary-50 whitespace-nowrap">
+                            <Link href={`${basePath}/${u.id}/berita-acara${qsKelas}`} className="btn-modal-cancel px-3 text-xs">
                               <FileSignature size={13} /> Berita Acara
                             </Link>
                           </div>

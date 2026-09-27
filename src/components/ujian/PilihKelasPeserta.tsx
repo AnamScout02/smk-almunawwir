@@ -33,7 +33,7 @@ export default function PilihKelasPeserta({
   };
 
   if (!daftar.length) {
-    return <p className="text-xs text-gray-400">Belum ada kelas untuk mapel ini di Penugasan Mengajar.</p>;
+    return <p className="text-sm text-gray-400">Belum ada kelas untuk mapel ini di Penugasan Mengajar.</p>;
   }
 
   const guruLain = new Set(daftar.filter(d => terpilih.includes(d.classId) && d.teacherName).map(d => d.teacherName));

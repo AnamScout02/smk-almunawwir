@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { daftarKegiatanRekap, muatRekapNilai } from "@/lib/rekap-nilai-ujian";
@@ -14,7 +15,8 @@ export async function GET(req: NextRequest) {
     const id = daftar.find(k => k.id === diminta)?.id ?? daftar.find(k => k.aktif)?.id ?? daftar[0]?.id ?? "";
     const data = id ? await muatRekapNilai(session, id) : null;
     return Response.json({ kegiatan: daftar, kegiatanId: id, data });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat rekap nilai." }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
@@ -37,7 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     const h = await simpanNilaiAttempt(attempt.id);
     return Response.json({ ok: true, terlambat, nilai: exam.tampilkanNilai ? h?.nilai ?? null : null, menungguKoreksi: h?.menungguKoreksi ?? 0 });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal mengumpulkan ujian." }, { status: 500 });
   }
 }

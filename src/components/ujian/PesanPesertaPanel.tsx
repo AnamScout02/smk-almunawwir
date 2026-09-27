@@ -191,7 +191,7 @@ export default function PesanPesertaPanel({ examId }: { examId: string }) {
                 {pilihan.length === 0 && <p className="px-3 py-3 text-sm text-gray-400">Tidak ada pilihan.</p>}
                 {pilihan.map(o => (
                   <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50">
-                    <input type="checkbox" checked={pilih.has(o.id)} className="w-4 h-4 accent-[#1B2B6B]"
+                    <input type="checkbox" checked={pilih.has(o.id)} className="w-4 h-4"
                       onChange={e => setPilih(s => { const n = new Set(s); if (e.target.checked) n.add(o.id); else n.delete(o.id); return n; })} />
                     <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{o.label}</span>
                     <span className="text-xs text-gray-400 shrink-0">{o.ket}</span>

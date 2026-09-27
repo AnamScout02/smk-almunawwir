@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { cakupanUjian, petaNamaKelas } from "@/lib/ujian-server";
@@ -109,7 +110,8 @@ export async function GET(req: NextRequest) {
       { nama: "Nilai Siswa", headers: ["Ujian", "NIS", "Nama", "Status", "Nilai", "Pelanggaran", "Mulai", "Dikumpulkan", "Soal Dijawab"], rows: barisNilai },
       { nama: "Bank Soal", headers: ["No", "Mapel", "Jenis", "Pertanyaan", "Kunci", "Pedoman Penskoran", "Skor", "KD", "Guru"], rows: barisBank },
     ]);
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal membuat cadangan." }, { status: 500 });
   }
 }

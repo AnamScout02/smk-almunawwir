@@ -9,6 +9,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
 import { labelTipe } from "@/lib/soal";
 import { LEVEL_KOGNITIF, kisiLengkap } from "@/lib/kisi-kisi";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export interface ButirKisiForm {
   id: string; nomor: number; tipe: string; skor: number; cuplikan: string;
@@ -58,9 +59,7 @@ export default function KisiKisiEditor({ examId, judul, mapel, kelas, bolehUbah,
         description={`${judul} · ${mapel}${kelas.length ? ` · ${kelas.join(", ")}` : ""}`} />
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Link href="/pusat-ujian/administrasi" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/pusat-ujian/administrasi"} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {berubah ? (
             <span className="text-xs font-semibold text-amber-700">Belum disimpan — simpan dulu sebelum mencetak</span>

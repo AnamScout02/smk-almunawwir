@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
@@ -53,7 +54,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await prisma.examAttempt.update({ where: { id: attempt.id }, data: { answers: answers as object, lastSeenAt: new Date() } });
     if (lama.startsWith(`/api/ujian/lisan/${id}/${attempt.id}-`)) await unlink(join(folder, lama.split("/").pop()!)).catch(() => {});
     return Response.json({ ok: true, url });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menyimpan rekaman." }, { status: 500 });
   }
 }

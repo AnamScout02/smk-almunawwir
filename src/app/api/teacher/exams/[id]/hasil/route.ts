@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan, kelasPeserta } from "@/lib/ujian-server";
@@ -150,7 +151,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       { nama: "Analisis Pengecoh", headers: ["No Soal", "Opsi", "Teks Opsi", "Kunci", "Dipilih", "Persen", "Pengecoh", "Tidak Menjawab"], rows: pengecohRows },
       { nama: "Waktu per Soal", headers: ["No", "NIS", "Nama", "Kelas", ...soal.map(q => `S${q.order + 1} (dtk)`), "Total (dtk)"], rows: waktuRows },
     ]);
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat hasil." }, { status: 500 });
   }
 }

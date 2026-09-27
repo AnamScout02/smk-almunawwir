@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -61,7 +62,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
     kirimSinyal(id); return Response.json({ ok: true, jumlah: sasaran.length, pesan: `${sasaran.length} siswa diberi tambahan ${tambah} menit.` });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menjalankan tindakan massal." }, { status: 500 });
   }
 }

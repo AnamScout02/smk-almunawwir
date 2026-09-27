@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
@@ -102,7 +103,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
     return Response.json({ error: "Tindakan tidak dikenal." }, { status: 400 });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memproses." }, { status: 500 });
   }
 }

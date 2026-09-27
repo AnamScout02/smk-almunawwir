@@ -1,3 +1,4 @@
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { NextRequest } from "next/server";
 import { kirimSinyal } from "@/lib/sinyal-ujian";
 import { prisma } from "@/lib/prisma";
@@ -31,7 +32,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       // Nomor URUTAN ASLI naskah — layar siswa menerjemahkannya ke nomor di urutan acaknya sendiri.
       soal: soal.map((q, i) => ({ id: q.id, nomor: i + 1, teks: q.pertanyaan.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 70) })),
     });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat pesan." }, { status: 500 });
   }
 }
@@ -53,7 +55,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }).catch(() => {});
     kirimSinyal(id);
     return Response.json({ ok: true, id: p.id });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal mengirim pesan." }, { status: 500 });
   }
 }
@@ -70,7 +73,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (!n.count) return Response.json({ error: "Pesan tidak ditemukan." }, { status: 404 });
     kirimSinyal(id);
     return Response.json({ ok: true });
-  } catch {
+  } catch (galat) {
+    lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal menarik pesan." }, { status: 500 });
   }
 }
