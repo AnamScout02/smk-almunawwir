@@ -9,6 +9,7 @@ import DatePicker from "@/components/shared/DatePicker";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { hariIniWib, tgl } from "@/components/sarpras/sarpras-umum";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Jadwal {
   id: string; judul: string; lokasi: string | null; intervalHari: number; berikutnya: string; terakhir: string | null; penanggungJawab: string | null;
@@ -24,7 +25,7 @@ const INTERVAL = [
 const tglWib = (s: string) => new Date(new Date(s).getTime() + 7 * 3600_000).toISOString().slice(0, 10);
 
 /** PERAWATAN BERKALA — jadwal servis AC, pembersihan komputer lab, pengecekan APAR, dll. Jatuh tempo masuk "Perlu tindakan". */
-export default function PerawatanManager({ lingkupLab = false }: { lingkupLab?: boolean }) {
+export default function PerawatanManager({ lingkupLab = false, kembaliHref }: { lingkupLab?: boolean; kembaliHref?: string }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [data, setData] = useState<Data | null>(null);
@@ -71,6 +72,7 @@ export default function PerawatanManager({ lingkupLab = false }: { lingkupLab?: 
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Wrench size={22} />} title={lingkupLab ? "Perawatan Lab" : "Perawatan Berkala"}
         description={data ? `${data.daftar.filter(j => j.aktif).length} jadwal aktif · ${jatuhTempo} jatuh tempo` : "Jadwal perawatan rutin sarana & prasarana"} />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
       {galat ? <EmptyState icon={Wrench} title="Tidak tersedia" description={galat} /> : !data ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : (

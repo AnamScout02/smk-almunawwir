@@ -57,7 +57,7 @@ function displayComment(comment: string | undefined) {
   return comment.startsWith("sid:") ? comment.split(" ").slice(1).join(" ") : comment;
 }
 
-export default function JaringanManager() {
+export default function JaringanManager({ tanpaKerangka }: { tanpaKerangka?: boolean } = {}) {
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("Ringkasan");
@@ -311,7 +311,7 @@ export default function JaringanManager() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+      <div className={tanpaKerangka ? "" : "p-6 lg:p-8 pt-16 lg:pt-8"}>
         <PageSkeleton statCount={4} rows={5} />
       </div>
     );
@@ -332,19 +332,14 @@ export default function JaringanManager() {
 
   return (
     <>
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:hidden">
+    <div className={tanpaKerangka ? "print:hidden" : "p-6 lg:p-8 pt-16 lg:pt-8 print:hidden"}>
+      {!tanpaKerangka && (
       <PageHeader
         icon={<Network size={22} />}
         title="Jaringan Sekolah"
         description="Monitoring & manajemen jaringan Mikrotik — status perangkat, bandwidth, hotspot, dan PPPoE"
       />
-
-      <div className="alat-aksi justify-end mb-5">
-        <button onClick={loadAll} className="btn-modal-cancel">
-          <RefreshCw size={15} /> Segarkan
-        </button>
-      </div>
-
+      )}
       {connError && (
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3 mb-5">
           Tidak bisa terhubung ke Mikrotik: {connError}
@@ -359,6 +354,12 @@ export default function JaringanManager() {
           <StatTile color="blue" icon={Router} value={status?.identity?.name ?? "—"} label="Router" size="sm" />
         </div>
       )}
+
+      <div className="alat-aksi justify-end mb-5">
+        <button onClick={loadAll} className="btn-modal-cancel">
+          <RefreshCw size={15} /> Segarkan
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
@@ -389,36 +390,36 @@ export default function JaringanManager() {
             );
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="panel p-4">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold"><Cpu size={13} /> CPU Load</div>
                   <p className="text-xl font-heading font-bold text-primary-900 mt-1">{cpuPct}%</p>
                   {bar(cpuPct)}
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="panel p-4">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold"><Gauge size={13} /> RAM Terpakai</div>
                   <p className="text-xl font-heading font-bold text-primary-900 mt-1">{ramPct}%</p>
                   {bar(ramPct)}
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                <div className="panel p-4 flex items-center gap-3">
                   <div className="relative w-14 h-14 shrink-0 rounded-full transition-all duration-700"
                     style={{ background: `conic-gradient(${barColor(hddPct)} ${hddPct * 3.6}deg, #f1f5f9 ${hddPct * 3.6}deg 360deg)` }}>
-                    <div className="absolute inset-1.5 bg-white rounded-full flex items-center justify-center text-[0.65rem] font-bold text-primary-900">{hddPct}%</div>
+                    <div className="absolute inset-1.5 bg-white rounded-full flex items-center justify-center text-[11px] font-bold text-primary-900">{hddPct}%</div>
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold"><HardDrive size={13} /> Storage</div>
-                    <p className="text-[0.68rem] text-gray-400 mt-1">Terpakai dari total kapasitas</p>
+                    <p className="text-xs text-gray-400 mt-1">Terpakai dari total kapasitas</p>
                   </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="panel p-4">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold"><Thermometer size={13} /> Suhu Perangkat</div>
                   <p className="text-xl font-heading font-bold text-primary-900 mt-1">{temp ? `${temp}°C` : "—"}</p>
-                  <p className="text-[0.68rem] text-gray-400 mt-1.5">Uptime {status.resource.uptime} · RouterOS {status.resource.version}</p>
+                  <p className="text-xs text-gray-400 mt-1.5">Uptime {status.resource.uptime} · RouterOS {status.resource.version}</p>
                 </div>
               </div>
             );
           })()}
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="panel p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <span className="font-heading font-bold text-primary-900 text-sm flex items-center gap-1.5">
                 <Activity size={15} className="text-emerald-500" /> Bandwidth {chartRange === "live" ? "Live" : "Riwayat"}
@@ -436,20 +437,20 @@ export default function JaringanManager() {
               ))}
             </div>
             {historyLoading ? (
-              <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-primary-500" /></div>
+              <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
             ) : chartRange !== "live" && chartData.length === 0 ? (
               <p className="text-center py-10 text-gray-400 text-sm">Belum ada data riwayat untuk rentang ini.</p>
             ) : null}
             {chartData.length > 0 && (
               <div className="flex items-center gap-6 mb-3">
                 <div>
-                  <p className="text-[0.68rem] text-gray-400 font-semibold">Download</p>
+                  <p className="text-xs text-gray-400 font-semibold">Download</p>
                   <p key={`rx-${chartTick}`} className="text-xl font-heading font-bold text-emerald-600 num-flash">
                     {chartData[chartData.length - 1].rx} Mbps
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.68rem] text-gray-400 font-semibold">Upload</p>
+                  <p className="text-xs text-gray-400 font-semibold">Upload</p>
                   <p key={`tx-${chartTick}`} className="text-xl font-heading font-bold text-primary-700 num-flash">
                     {chartData[chartData.length - 1].tx} Mbps
                   </p>
@@ -479,12 +480,12 @@ export default function JaringanManager() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm flex items-center gap-1.5">
                 <Trophy size={15} className="text-gold" /> Pemakai Terbesar Saat Ini
               </div>
               {hotspot.active.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">Belum ada yang online.</p>
+                <p className="text-sm text-gray-400 text-center py-10">Belum ada yang online.</p>
               ) : (
                 <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
                   {[...hotspot.active]
@@ -493,7 +494,7 @@ export default function JaringanManager() {
                     .map((a, i) => (
                       <div key={a[".id"]} className="flex items-center justify-between px-5 py-2.5 text-sm">
                         <div className="flex items-center gap-2.5">
-                          <span className="w-5 h-5 rounded-full bg-primary-50 text-primary-700 text-[0.65rem] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-primary-50 text-primary-700 text-[11px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                           <span className="font-medium text-gray-800">{a.user}</span>
                         </div>
                         <span className="text-gray-400 text-xs font-mono">{fmtBytes(String(Number(a["bytes-in"] ?? 0) + Number(a["bytes-out"] ?? 0)))}</span>
@@ -503,7 +504,7 @@ export default function JaringanManager() {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm flex items-center gap-1.5">
                 <Terminal size={15} className="text-primary-500" /> Aktivitas Terbaru <span className="live-dot text-primary-500" />
               </div>
@@ -514,8 +515,8 @@ export default function JaringanManager() {
                   {logs.slice(0, 20).map((l) => (
                     <div key={l[".id"]} className="px-5 py-2.5">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[0.6rem] font-bold uppercase px-1.5 py-0.5 rounded border ${logColor(l.topics)}`}>{l.topics.split(",")[0]}</span>
-                        <span className="text-gray-300 text-[0.68rem]">{l.time}</span>
+                        <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded border ${logColor(l.topics)}`}>{l.topics.split(",")[0]}</span>
+                        <span className="text-gray-300 text-xs">{l.time}</span>
                       </div>
                       <p className="text-xs text-gray-600">{l.message}</p>
                     </div>
@@ -535,7 +536,7 @@ export default function JaringanManager() {
             <StatTile color="blue" icon={Network} value={status.resource?.version ?? "—"} label="RouterOS" size="md" />
             <StatTile color="amber" icon={Activity} value={`${status.resource?.["cpu-load"] ?? 0}%`} label="CPU Load" size="md" />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm">
               Interface ({status.interfaces.length})
             </div>
@@ -543,10 +544,10 @@ export default function JaringanManager() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tipe</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">RX / TX Total</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Tipe</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">RX / TX Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -572,7 +573,7 @@ export default function JaringanManager() {
       )}
 
       {tab === "Bandwidth" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm flex items-center justify-between">
             <span>Traffic per Interface (live, refresh tiap 10 detik)</span>
           </div>
@@ -583,9 +584,9 @@ export default function JaringanManager() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Interface</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Download (RX)</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Upload (TX)</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Interface</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Download (RX)</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Upload (TX)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -618,16 +619,16 @@ export default function JaringanManager() {
           {filteredLeases.length === 0 ? (
             <EmptyState icon={Users} title="Tidak ada perangkat yang cocok" />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="overflow-x-auto max-h-[65vh]">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-white z-10">
                     <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.08) 0%, rgba(27,43,107,0.05) 100%)" }}>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Perangkat</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">IP Address</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">MAC Address</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Status</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Catatan</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama Perangkat</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">IP Address</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">MAC Address</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Status</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Catatan</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -662,14 +663,14 @@ export default function JaringanManager() {
             <StatTile color="emerald" icon={Wifi} value={hotspot.active.length} label="Sedang Online" size="md" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="panel p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="font-heading font-bold text-primary-900 text-sm">Sinkronkan Akun Siswa, Guru & Pegawai</p>
                 <p className="text-gray-400 text-xs mt-0.5">Buat/perbarui akun hotspot untuk semua siswa aktif (profil per kelas), guru (profil GURU), dan pegawai TAS/Admin (profil ADMIN) — username sesuai NIS/NIP/email. Akun yang pemiliknya sudah tidak aktif dinonaktifkan otomatis.</p>
               </div>
               <button onClick={handleSync} disabled={syncing}
-                className="inline-flex items-center gap-1.5 bg-primary-700 hover:bg-primary-900 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg whitespace-nowrap disabled:opacity-60">
+                className="btn-modal-save whitespace-nowrap">
                 {syncing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Sinkronkan Ulang
               </button>
             </div>
@@ -692,7 +693,7 @@ export default function JaringanManager() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="panel p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="font-heading font-bold text-primary-900 text-sm">Cetak Daftar Akun</p>
@@ -702,14 +703,14 @@ export default function JaringanManager() {
                 <Select className="w-48" value={printProfile} onChange={setPrintProfile}
                   options={[{ value: "", label: "Pilih profil..." }, ...profiles.map(p => ({ value: p.name, label: p.name }))]} />
                 <button onClick={() => printProfile && window.print()} disabled={!printProfile}
-                  className="inline-flex items-center gap-1.5 bg-primary-700 hover:bg-primary-900 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg whitespace-nowrap disabled:opacity-40">
+                  className="btn-modal-save whitespace-nowrap">
                   <Printer size={13} /> Cetak
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">Profil Hotspot ({profiles.length})</span>
               <button onClick={openAddProfile}
@@ -721,11 +722,11 @@ export default function JaringanManager() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama Profil</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Rate Limit</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Shared Users</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Address Pool</th>
-                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama Profil</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Rate Limit</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Shared Users</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Address Pool</th>
+                    <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -738,7 +739,7 @@ export default function JaringanManager() {
                       <td className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => openEditProfile(p)}
-                            className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-primary-50 border border-primary-100">
+                            className="btn-modal-cancel px-3 text-xs">
                             <Edit2 size={12} /> Edit
                           </button>
                           {p.name !== "default" && (
@@ -756,7 +757,7 @@ export default function JaringanManager() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">IP Binding ({ipBindings.length})</span>
               <button onClick={openAddBinding}
@@ -765,17 +766,17 @@ export default function JaringanManager() {
               </button>
             </div>
             {ipBindings.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Belum ada IP binding. Dipakai untuk lewatkan/blokir perangkat tertentu tanpa perlu login hotspot (mis. PC petugas, printer, CCTV).</p>
+              <p className="text-sm text-gray-400 text-center py-10">Belum ada IP binding. Dipakai untuk lewatkan/blokir perangkat tertentu tanpa perlu login hotspot (mis. PC petugas, printer, CCTV).</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">MAC Address</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">IP Address</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Tipe</th>
-                      <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Catatan</th>
-                      <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">MAC Address</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">IP Address</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Tipe</th>
+                      <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Catatan</th>
+                      <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -803,7 +804,7 @@ export default function JaringanManager() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <span className="font-heading font-bold text-primary-900 text-sm shrink-0">Daftar User Hotspot ({filteredHotspotUsers.length}{hotspotSearch ? ` dari ${hotspot.users.length}` : ""})</span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -819,16 +820,16 @@ export default function JaringanManager() {
               </div>
             </div>
             {filteredHotspotUsers.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">Tidak ada user hotspot yang cocok dengan pencarian.</p>
+              <p className="text-sm text-gray-400 text-center py-10">Tidak ada user hotspot yang cocok dengan pencarian.</p>
             ) : (
             <div className="overflow-x-auto max-h-[50vh]">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.08) 0%, rgba(27,43,107,0.05) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Profil</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Pemakaian</th>
-                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Profil</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Pemakaian</th>
+                    <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -851,17 +852,17 @@ export default function JaringanManager() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm">Sesi Aktif ({hotspot.active.length})</div>
             <div className="overflow-x-auto max-h-[50vh]">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.08) 0%, rgba(27,43,107,0.05) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">User</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">IP</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Uptime</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Pemakaian</th>
-                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">User</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">IP</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Uptime</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Pemakaian</th>
+                    <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -893,7 +894,7 @@ export default function JaringanManager() {
             <StatTile color="emerald" icon={Wifi} value={pppoe.active.length} label="Sedang Online" size="md" />
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <span className="font-heading font-bold text-primary-900 text-sm">Daftar User PPPoE</span>
               <button onClick={() => openAddUser("PPPOE")}
@@ -905,10 +906,10 @@ export default function JaringanManager() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Layanan</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Profil</th>
-                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Layanan</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Profil</th>
+                    <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -930,16 +931,16 @@ export default function JaringanManager() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="panel overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-50 font-heading font-bold text-primary-900 text-sm">Sesi Aktif ({pppoe.active.length})</div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">IP</th>
-                    <th className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Uptime</th>
-                    <th className="text-right px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Nama</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">IP</th>
+                    <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 hidden md:table-cell">Uptime</th>
+                    <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -9,6 +9,7 @@ import Paginasi from "@/components/shared/Paginasi";
 import { usePaginasi } from "@/lib/use-paginasi";
 import { useToast } from "@/components/shared/ToastProvider";
 import { KONDISI, tgl } from "@/components/sarpras/sarpras-umum";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Sesi { id: string; judul: string; lingkup: string; status: string; olehNama: string; mulai: string; selesaiPada: string | null; jumlahItem: number; diperiksa: number }
 interface Item {
@@ -99,7 +100,7 @@ export default function StokOpnameManager({ lingkupLab = false }: { lingkupLab?:
         <div className="alat-cari"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" /><input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari barang, kode, lokasi…" className="input-field pl-10" /></div>
         <div className="alat-saring"><Select value={saring} onChange={setSaring} options={[{ value: "", label: "Semua barang" }, { value: "BELUM", label: "Belum dihitung" }, { value: "SUDAH", label: "Sudah dihitung" }, { value: "SELISIH", label: "Ada selisih" }]} /></div>
         <div className="alat-aksi">
-          <button type="button" className="btn-modal-cancel" onClick={async () => { if (await simpan()) { setBuka(null); setDetail(null); muat(); } }}><ArrowLeft /> Kembali</button>
+          <TombolKembali onClick={async () => { if (await simpan()) { setBuka(null); setDetail(null); muat(); } }} />
           <a href={`/api/sarpras/opname/${buka}?format=xlsx`} className="btn-modal-cancel"><Download /> Unduh Excel</a>
           {berjalan && <button type="button" className="btn-modal-cancel" disabled={sibuk || !ubah.size} onClick={simpan}><Save /> Simpan{ubah.size ? ` (${ubah.size})` : ""}</button>}
           {berjalan && <button type="button" className="btn-modal-save btn-teks" disabled={sibuk} onClick={() => setTutup(true)}><CheckCheck /> Selesaikan</button>}
@@ -128,7 +129,7 @@ export default function StokOpnameManager({ lingkupLab = false }: { lingkupLab?:
               })}
             </tbody>
           </table>
-          {baris.length === 0 && <p className="px-4 py-8 text-center text-sm text-gray-500">Tidak ada barang yang cocok.</p>}
+          {baris.length === 0 && <p className="px-4 py-10 text-center text-sm text-gray-400">Tidak ada barang yang cocok.</p>}
           <Paginasi hal={hal} satuan="barang" className="border-t border-gray-100" />
         </div>
       )}

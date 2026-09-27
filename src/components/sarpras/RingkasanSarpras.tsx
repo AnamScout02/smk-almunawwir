@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, ClipboardList, DoorOpen, FlaskConical, Hammer, Loader2, QrCode, Wrench } from "lucide-react";
+import { CalendarClock, ClipboardList, DoorOpen, FlaskConical, Hammer, Loader2, QrCode, Wrench, Boxes } from "lucide-react";
 import StatTile from "@/components/admin/StatTile";
 import Panel, { PanelKosong } from "@/components/shared/Panel";
 import { STATUS_RUSAK, rentang, tgl } from "@/components/sarpras/sarpras-umum";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Ringkasan {
   lab: boolean; tanggal: string;
@@ -18,7 +19,15 @@ interface Ringkasan {
 }
 
 /** Ringkasan Sarpras/Lab untuk Dashboard Sarpras & Dashboard Kepala Lab (satu komponen, `base` = awalan tautan). */
-export default function RingkasanSarpras({ lingkupLab, base, inventarisHref }: { lingkupLab: boolean; base: string; inventarisHref: string }) {
+/** `tambahan` = pintasan milik halaman pemanggil, digabung ke SATU baris pintasan di sini.
+ *  Sebelumnya Dashboard Sarpras punya tiga baris navigasi bersaing (tombol "Inventaris Barang"
+ *  sendirian, empat chip di komponen ini, dan baris pintasannya sendiri) — teguran user 27 Sep 2026:
+ *  "kenapa tidak jadi satu ... dan jadi pintasan juga seperti di kurikulum". */
+export default function RingkasanSarpras(
+  { lingkupLab, base, inventarisHref, tambahan = [] }:
+  { lingkupLab: boolean; base: string; inventarisHref: string;
+    tambahan?: { href: string; label: string; ikon: React.ComponentType<{ size?: number }> }[] },
+) {
   const [d, setD] = useState<Ringkasan | null>(null);
   const [galat, setGalat] = useState("");
   useEffect(() => {
@@ -39,12 +48,14 @@ export default function RingkasanSarpras({ lingkupLab, base, inventarisHref }: {
         <StatTile ikon="menunggu" color={d.menunggu ? "amber" : "blue"} value={d.menunggu} label="Permohonan pinjam menunggu" href={`${base}/peminjaman`} sorot={d.menunggu > 0} />
         <StatTile ikon="perawatan" color={d.perawatan.some(p => tglWib(p.berikutnya) <= hariIni) ? "amber" : "emerald"} value={d.perawatan.filter(p => tglWib(p.berikutnya) <= hariIni).length} label="Perawatan jatuh tempo" href={`${base}/perawatan`} />
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Link href={`${base}/peminjaman`} className="btn-modal-cancel"><CalendarClock /> Peminjaman</Link>
-        <Link href={`${base}/perawatan`} className="btn-modal-cancel"><Wrench /> Perawatan</Link>
-        <Link href={`${base}/stok-opname`} className="btn-modal-cancel"><ClipboardList /> Stok Opname{d.opname ? " (berjalan)" : ""}</Link>
-        <Link href={`${base}/label-aset`} className="btn-modal-cancel"><QrCode /> Label QR</Link>
-      </div>
+      <BarisPintasan items={[
+          { href: inventarisHref, label: "Inventaris Barang", ikon: Boxes },
+          { href: `${base}/peminjaman`, label: "Peminjaman", ikon: CalendarClock },
+          { href: `${base}/perawatan`, label: "Perawatan", ikon: Wrench },
+          { href: `${base}/stok-opname`, label: d.opname ? "Stok Opname (berjalan)" : "Stok Opname", ikon: ClipboardList },
+          { href: `${base}/label-aset`, label: "Label QR", ikon: QrCode },
+          ...tambahan,
+      ]} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
         <div className="space-y-6 xl:col-span-7 min-w-0">
           <Panel judul="Kerusakan belum selesai" ikon={<Hammer />} tautan={{ label: "Kelola", href: inventarisHref }} isi={false}>

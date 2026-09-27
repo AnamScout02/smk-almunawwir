@@ -1,11 +1,11 @@
 "use client";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { Boxes, CalendarClock, Hammer, Loader2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { FormLaporKerusakan, FormPinjam } from "@/components/sarpras/LayananSarprasManager";
 import { KONDISI, STATUS_RUSAK, rentang, tgl } from "@/components/sarpras/sarpras-umum";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Aset { id: string; name: string; category: string; quantity: number; condition: string; location: string | null; kodeInventaris: string | null; acquiredDate: string | null; fundingSource: string | null; notes: string | null;
   perawatan: { id: string; judul: string; berikutnya: string; terakhir: string | null; aktif: boolean }[];
@@ -43,7 +43,9 @@ export default function DetailAset({ id, inventarisHref }: { id: string; inventa
       <PageHeader icon={<Boxes size={22} />} title={a.name} description={`${a.location ?? a.category} · ${KONDISI[a.condition] ?? a.condition}${data.kerusakanTerbuka ? ` · ${data.kerusakanTerbuka} laporan kerusakan belum selesai` : ""}`} />
       <div className="baris-alat mb-5">
         <div className="alat-aksi">
-          {inventarisHref && data.akses.kelola && <Link href={inventarisHref} className="btn-modal-cancel btn-teks"><Boxes /> Inventaris</Link>}
+          {/* Halaman ini juga dibuka dari pindai QR label aset, jadi tujuannya bisa berbeda:
+              pengelola kembali ke daftar Inventaris, yang lain memakai riwayat browser. */}
+          <TombolKembali href={inventarisHref && data.akses.kelola ? inventarisHref : undefined} />
           <button type="button" onClick={() => setLapor(true)} className="btn-modal-cancel btn-teks"><Hammer /> Lapor Kerusakan</button>
           {a.condition !== "RUSAK_BERAT" && <button type="button" onClick={() => setPinjam(true)} className="btn-modal-save btn-teks"><CalendarClock /> Pinjam</button>}
         </div>

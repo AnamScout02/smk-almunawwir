@@ -139,7 +139,7 @@ export function FormPinjam({ buka, tutup, aset, ruang, asetTetap, selesai }: {
         {pakai && (
           <div className="rounded-xl border border-gray-100 p-3">
             <p className="text-xs font-semibold text-gray-600">Pemakaian {f.ruang} 7 hari ke depan</p>
-            {pakai.length === 0 ? <p className="mt-1 text-xs text-emerald-700">Belum ada pemesanan lain.</p> : (
+            {pakai.length === 0 ? <p className="mt-1 text-sm text-emerald-700">Belum ada pemesanan lain.</p> : (
               <ul className="mt-1 space-y-1 text-xs text-gray-600">
                 {pakai.map((p, i) => <li key={i}>{rentang(p.mulai, p.selesai)} · {p.peminjamNama} — {p.keperluan} <span className="text-gray-400">({STATUS_PINJAM[p.status]?.label})</span></li>)}
               </ul>
@@ -188,7 +188,7 @@ export default function LayananSarprasManager() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Wrench size={22} />} title="Layanan Sarpras" description="Laporkan kerusakan fasilitas, pinjam barang, atau pesan ruang" />
       <div className="baris-alat mb-5">
-        <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
+        <div className="alat-tab flex gap-1 rounded-xl border border-gray-100 bg-white p-1">
           {([["rusak", "Laporan Kerusakan"], ["pinjam", "Peminjaman & Ruang"]] as const).map(([k, l]) => (
             <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
           ))}
