@@ -1,6 +1,7 @@
 import "server-only";
 import { butirBerparameter, isiButirParameter } from "@/lib/soal-parameter";
 import { variabelSiswaUjian } from "@/lib/soal-parameter-server";
+import { randomInt } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { nilaiButir, butuhKoreksi, ikutDinilai, durasiLisan, type Opsi, type Kunci, type Jawaban } from "@/lib/soal";
@@ -216,7 +217,8 @@ const HURUF_TOKEN = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // tanpa 0/O & 1/I yang 
 export async function buatTokenUnik(): Promise<string> {
   for (let i = 0; i < 20; i++) {
     let t = "";
-    for (let k = 0; k < 6; k++) t += HURUF_TOKEN[Math.floor(Math.random() * HURUF_TOKEN.length)];
+    // randomInt (bukan Math.random) — token tidak boleh bisa diperkirakan dari token sebelumnya (audit 24 Sep 2026).
+    for (let k = 0; k < 6; k++) t += HURUF_TOKEN[randomInt(HURUF_TOKEN.length)];
     // Token kegiatan & token ujian berada di RUANG YANG SAMA — siswa cuma mengetik satu kotak,
     // jadi satu token tidak boleh menunjuk dua hal berbeda.
     const [bentrokUjian, bentrokKegiatan] = await Promise.all([

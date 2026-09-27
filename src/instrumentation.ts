@@ -46,6 +46,49 @@ export async function register() {
   setTimeout(cekPengingat, 60_000);
   setInterval(cekPengingat, PENGINGAT_INTERVAL_MS);
 
+  // Jadwal mati otomatis TV kelas (24 Sep 2026) — menumpang irama 5 menit yang sama. Hanya MEMATIKAN:
+  // menyalakan TV dari jauh tidak mungkin lewat WiFi (lihat src/lib/layar-jadwal.ts).
+  async function cekJadwalLayar() {
+    try {
+      const { matikanLayarTerjadwal, nyalakanLayarTerjadwal, bukaPapanOtomatis } = await import("@/lib/layar-jadwal");
+      await nyalakanLayarTerjadwal();
+      await matikanLayarTerjadwal();
+      // TV yang baru dinyalakan dan sedang menganggur dikembalikan sendiri ke papan informasi.
+      await bukaPapanOtomatis();
+    } catch {
+      // TV/router tidak terjangkau bukan alasan mengganggu proses server.
+    }
+  }
+  setTimeout(cekJadwalLayar, 90_000);
+  setInterval(cekJadwalLayar, PENGINGAT_INTERVAL_MS);
+
+  // Mode Ujian Jaringan (24 Sep 2026): blokir hiburan di jaringan siswa hanya selama ada yang mengerjakan CBT.
+  // Diperiksa tiap 2 menit — lebih rapat daripada pengingat, supaya blokirnya terasa segera saat ujian dimulai
+  // dan terbuka lagi tak lama setelah selesai. Tidak melakukan apa pun selama modenya masih "MATI".
+  async function cekJaringanUjian() {
+    try {
+      const { sinkronModeUjian } = await import("@/lib/jaringan-ujian");
+      await sinkronModeUjian();
+    } catch {
+      // Router tidak terjangkau — coba lagi 2 menit berikutnya.
+    }
+  }
+  setTimeout(cekJaringanUjian, 120_000);
+  setInterval(cekJaringanUjian, 2 * 60_000);
+
+  // Alarm perangkat jaringan padam (AP/router/switch) — ikut irama 5 menit. Diam di hari libur & di luar jam
+  // sekolah, dan satu kejadian padam hanya diberitahukan sekali (kunci memakai `padamSejak`).
+  async function cekPerangkatJaringan() {
+    try {
+      const { periksaPerangkatPadam } = await import("@/lib/perangkat-jaringan");
+      await periksaPerangkatPadam();
+    } catch {
+      // Router tidak terjangkau — coba lagi siklus berikutnya.
+    }
+  }
+  setTimeout(cekPerangkatJaringan, 150_000);
+  setInterval(cekPerangkatJaringan, PENGINGAT_INTERVAL_MS);
+
   async function sampleOnce() {
     try {
       const rows = await withMikrotik(async (conn) => {

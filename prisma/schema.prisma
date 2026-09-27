@@ -267,6 +267,8 @@ model Asset {
   peminjaman     PeminjamanSarpras[]
   perawatan      JadwalPerawatan[]
   opnameItem     StokOpnameItem[]
+  layar          Layar[] // TV sekolah yang terhubung ke aset ini (24 Sep 2026)
+  perangkatJaringan PerangkatJaringan[] // AP/router/switch yang terhubung ke aset ini (24 Sep 2026)
 }
 
 // Laporan kerusakan & perbaikan barang — riwayat terpisah dari field `condition` yang statis di Asset.
@@ -598,6 +600,7 @@ model Class {
   exams               Exam[]
   pengawasKelasUjian  PengawasKelasUjian[]
   billingSchedules    BillingSchedule[]
+  layar         Layar[] // papan informasi TV yang menampilkan jadwal kelas ini (24 Sep 2026)
 }
 
 // Pengesahan rapor per kelas+semester oleh Kepala Sekolah — siswa baru bisa lihat/cetak rapor
@@ -3150,4 +3153,131 @@ model RaporVerifikasi {
   dibuatAt  DateTime @default(now())
 
   @@unique([studentId, semester, jenis])
+}
+
+/// LAYAR SEKOLAH (TV kelas & koridor, 24 September 2026) — daftar TV yang dipantau Sarpras.
+///
+/// Versi pertama TIDAK butuh aplikasi di TV: status hidup/mati, IP, dan jaringannya dibaca langsung dari MikroTik
+/// (sewa DHCP + tabel hotspot) lalu dicocokkan ke baris ini lewat `mac`. Kolom `kodeDaftar` & `perangkat*` disiapkan
+/// untuk tahap berikutnya, saat aplikasi pemantau di TV mulai melapor sendiri.
+///
+/// Jumlah TV & ruang berubah-ubah, jadi TIDAK ADA daftar tetap di kode: baris dibuat dari perangkat yang terdeteksi
+/// router (atau dari kode pendaftaran yang muncul di layar TV), dan TV yang dilepas cukup ditandai `aktif = false`
+/// supaya riwayat & rekap bulan sebelumnya tidak ikut berubah.
+model Layar {
+  id        String  @id @default(cuid())
+  nama      String // "TV Lab TKJ"
+  ruang     String // dari daftar ruang yang sudah ada (jadwal, ruang ujian, ruang tambahan Sarpras)
+  mac       String  @unique // MAC ASLI perangkat (bukan MAC acak WiFi) — kunci pencocokan dengan router
+  ipTetap   String? // IP hasil sewa statis di router, bila sudah diberikan
+  jaringan  String? // nama VLAN/WiFi terakhir yang terdeteksi (mis. "vlan30_SISWA")
+  aktif     Boolean @default(true) // false = TV dilepas/rusak; alarm berhenti, riwayat tetap tersimpan
+  /// Tautan papan informasi: TV membuka /layar/<token>. Dibuat saat petugas menekan "Buat tautan papan",
+  /// bukan otomatis — layar yang tidak dipakai sebagai papan tidak perlu punya alamat yang bisa dibuka siapa pun.
+  token      String? @unique
+  /// QR presensi mandiri di papan: MATI | JAM_PRESENSI | SELALU.
+  /// JAM_PRESENSI untuk TV siswa (muncul & hilang sendiri mengikuti jam buka–tutup absen, sehingga jendela
+  /// risikonya sempit bila tautan layar bocor). SELALU untuk TV ruang guru — jadwal guru tidak semuanya pagi,
+  /// jadi QR-nya harus tersedia sepanjang hari (keputusan user 25 Sep 2026).
+  papanQr         String  @default("MATI")
+  /// Jenis papan: UMUM (TV kelas/koridor — jadwal, pengumuman, agenda, bel) atau GURU (TV ruang guru &
+  /// ruang rapat). Ruang rapat adalah tempat guru berkumpul dan TIDAK punya jadwal pelajaran, jadi papannya
+  /// menampilkan panel yang BERGILIR: presensi pegawai hari ini, jurnal & absensi yang belum diisi, buku
+  /// piket, dan rekap kehadiran siswa (permintaan user 25 Sep 2026: "gimana kalo bisa bergeser geser setiap
+  /// 2 menit atau berapa"). QR presensi tetap di tempatnya, tidak ikut bergilir.
+  papanJenis      String  @default("UMUM")
+  /// Lama tiap panel tampil sebelum berganti, dalam detik. Hanya berlaku untuk papanJenis GURU.
+  /// Bawaan 60 detik (keputusan user 25 Sep 2026, sebelumnya 120): dengan sembilan panel, dua menit per panel
+  /// berarti satu putaran penuh 18 menit — terlalu lama untuk orang yang lewat sebentar di ruang guru.
+  papanGiliran    Int     @default(60)
+  /// Volume TV (0–100) yang dipakai SELAMA bel berbunyi; kosong = volume TV tidak pernah disentuh.
+  /// Volume sebelumnya dibaca lewat ADB tepat sebelum bel dan dikembalikan persis setelah bel selesai —
+  /// bel sekolah harus terdengar walau TV sedang dikecilkan, tetapi tidak boleh meninggalkan TV keras
+  /// untuk pemakaian berikutnya (permintaan user 25 Sep 2026).
+  volumeBel       Int?
+  /// Sistem membuka papan sendiri saat TV menyala dan SEDANG MENGANGGUR (beranda TV). Tidak pernah merebut
+  /// layar yang sedang dipakai guru — itu syarat mutlak, TV tetap alat mengajar.
+  papanOtomatis   Boolean @default(true)
+  /// Isi papan yang DIKETIK SENDIRI petugas (permintaan user 24 Sep 2026: "bisa manual saja untuk yang
+  /// ditampilkan"). TV lobi/ruang rapat sering perlu tulisan khusus, bukan jadwal pelajaran. Bila
+  /// `papanManualSaja` menyala, papan HANYA menampilkan tulisan ini + jam; bila tidak, tulisan tampil
+  /// sebagai pengumuman utama di atas isi otomatis.
+  papanJudul      String?
+  papanIsi        String?
+  /// Cara pengumuman disampaikan (25 September 2026): TEKS_SUARA (bawaan — papan diambil alih tulisan besar lalu
+  /// dibacakan), TEKS (tampil saja, tidak dibacakan — untuk yang tidak mendesak), atau SUARA (dibacakan sekali,
+  /// papan TETAP menampilkan panel biasa — untuk panggilan singkat yang tidak perlu menutup seluruh layar).
+  papanCara       String  @default("TEKS_SUARA")
+  papanManualSaja Boolean @default(false)
+  /// Kelas yang jadwalnya ditampilkan di papan (TV depan kelas). Kosong = papan umum (agenda & pengumuman saja).
+  kelasId    String?
+  kelas      Class?  @relation(fields: [kelasId], references: [id], onDelete: SetNull)
+  /// Jam NYALA otomatis "HH:MM" (WIB), kosong = tidak dijadwalkan. Hanya berlaku bila TV disetel mode
+  /// "Tanpa layar" (sistem tetap hidup saat layar gelap) — dibuktikan 24 Sep 2026 di TCL Lab TKJ: layar
+  /// dimatikan lewat ADB, ADB tetap menjawab, lalu dibangunkan lagi dari jauh. Pada mode Doze, TV benar-benar
+  /// tidur dan tidak ada perintah apa pun yang sampai.
+  jadwalNyala String?
+  /// Jam mati otomatis "HH:MM" (WIB), kosong = tidak dijadwalkan. Penjadwal menekan tombol daya lewat ADB →
+  /// TV masuk standby. MENYALAKAN kembali TIDAK bisa lewat WiFi (Wake-on-LAN terbukti gagal 24 Sep 2026),
+  /// jadi jadwal ini sengaja hanya satu arah: mati.
+  jadwalMati String?
+  catatan   String?
+  assetId   String? // sambungan ke Inventaris (label QR aset, garansi, mutasi ruang)
+  asset     Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Tahap berikutnya — diisi aplikasi pemantau di TV
+  kodeDaftar       String?   @unique // kode 6 angka yang tampil di layar TV sebelum diklaim petugas
+  kodeKedaluwarsa  DateTime?
+  perangkatModel   String?
+  perangkatVersi   String? // versi Android / versi aplikasi pemantau
+  terakhirDenyut   DateTime?
+  aplikasiDepan    String? // aplikasi yang sedang dibuka saat denyut terakhir
+  ipTerakhir       String?
+
+  dibuatAt   DateTime @default(now())
+  diubahAt   DateTime @updatedAt
+
+  @@index([aktif])
+}
+
+/// PERANGKAT JARINGAN (24 September 2026) — access point, router jurusan, switch, printer, DVR CCTV.
+///
+/// Dipantau dengan cara yang sama seperti `Layar`: dicocokkan ke MikroTik lewat MAC, tanpa memasang apa pun di
+/// perangkatnya. Gunanya untuk Sarpras: begitu sebuah AP mati di jam sekolah, notifikasi terkirim sebelum guru
+/// sempat komplain "WiFi kelas saya hilang", dan riwayat padamnya menunjukkan perangkat mana yang sering ngadat.
+/// TEMPLATE PENGUMUMAN PAPAN (25 September 2026) — kalimat yang sering dipakai, supaya petugas tidak mengetik
+/// ulang dan susunan kalimatnya seragam. Dipilih saat mengirim pengumuman, lalu MASIH BOLEH disunting sebelum
+/// dikirim: template adalah titik awal, bukan kunci mati.
+model TemplatePengumuman {
+  id        String   @id @default(cuid())
+  judul     String
+  isi       String?
+  /// Cara bawaan saat template ini dipakai — petugas tetap bisa mengubahnya di formulir.
+  cara      String   @default("TEKS_SUARA")
+  urutan    Int      @default(0)
+  dibuatAt  DateTime @default(now())
+  diubahAt  DateTime @updatedAt
+
+  @@index([urutan])
+}
+
+model PerangkatJaringan {
+  id               String    @id @default(cuid())
+  nama             String // "AP Ruang XI TKJ 2"
+  jenis            String    @default("AP") // AP | ROUTER | SWITCH | PRINTER | CCTV | SERVER | LAINNYA
+  mac              String    @unique
+  ipTerakhir       String?
+  lokasi           String?
+  aktif            Boolean   @default(true) // false = dilepas/diganti; alarm berhenti, riwayat tetap
+  catatan          String?
+  terakhirTerlihat DateTime?
+  /// Diisi saat perangkat mulai tidak terlihat, dikosongkan saat pulih. Dipakai untuk menghitung lama padam
+  /// dan sebagai bagian kunci notifikasi supaya satu kejadian padam hanya diberitahukan sekali.
+  padamSejak       DateTime?
+  assetId          String?
+  asset            Asset?    @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  dibuatAt         DateTime  @default(now())
+  diubahAt         DateTime  @updatedAt
+
+  @@index([aktif])
 }

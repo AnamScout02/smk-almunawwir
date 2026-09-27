@@ -1,5 +1,6 @@
 import "server-only";
 import { RouterOSAPI } from "node-routeros";
+import { setelanRouter } from "@/lib/router-setelan";
 
 export type MikrotikRow = Record<string, string>;
 
@@ -11,20 +12,14 @@ export type MikrotikRow = Record<string, string>;
  * request (frontend loading selamanya) alih-alih mengembalikan response error yang wajar. Karena
  * itu 'error' WAJIB di-listen dan direlai lewat errorPromise yang di-race melawan fn(conn). */
 export async function withMikrotik<T>(fn: (conn: RouterOSAPI) => Promise<T>): Promise<T> {
-  const host = process.env.MIKROTIK_HOST;
-  const user = process.env.MIKROTIK_USER;
-  const password = process.env.MIKROTIK_PASSWORD;
-  if (!host || !user || !password) {
-    throw new Error("Konfigurasi Mikrotik belum diatur (MIKROTIK_HOST/USER/PASSWORD).");
+  /* Alamat/port/pengguna/sandi boleh diisi petugas dari halaman Jaringan & Layar → Setelan Router;
+   * `.env` tinggal menjadi cadangan (src/lib/router-setelan.ts, 27 September 2026). */
+  const { host, port, user, sandi } = await setelanRouter();
+  if (!host || !user || !sandi) {
+    throw new Error("Sambungan router belum diatur — isi di halaman Jaringan & Layar → Setelan Router.");
   }
 
-  const conn = new RouterOSAPI({
-    host,
-    port: Number(process.env.MIKROTIK_PORT) || 8728,
-    user,
-    password,
-    timeout: 10,
-  });
+  const conn = new RouterOSAPI({ host, port, user, password: sandi, timeout: 10 });
 
   let errorReject: ((e: Error) => void) | null = null;
   const errorPromise = new Promise<never>((_, reject) => { errorReject = reject; });

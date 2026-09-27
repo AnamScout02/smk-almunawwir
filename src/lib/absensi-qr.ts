@@ -1,14 +1,17 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 
-/** QR ABSENSI MANDIRI — token berganti tiap 30 detik, ditandatangani server (HMAC turunan SESSION_SECRET).
+/** QR ABSENSI MANDIRI — token berganti tiap 5 detik, ditandatangani server (HMAC turunan SESSION_SECRET).
  * Isi QR: `SMKABSEN1.<stasiun>.<slot>.<tanda>` — stasiun = "GERBANG" (semua kelas) atau id kelas.
  *
  * Anti titip absen: QR hanya berlaku ±1 menit (difoto lalu dikirim ke teman tidak sempat dipakai lama),
  * siswa wajib login di akun sendiri, dan setiap pindaian dicatat per perangkat (AbsensiPindaiLog) supaya satu
  * HP yang dipakai beberapa siswa langsung terlihat. */
 
-export const LANGKAH_DETIK = 30;
+// 5 detik (dipercepat dari 30 atas permintaan user 25 Sep 2026): gambar QR berganti cepat sehingga foto layar
+// yang diteruskan ke teman langsung basi. MASA BERLAKUNYA TIDAK ikut jadi 5 detik — lihat `periksaToken`:
+// slot lama masih diterima ±1 menit, supaya HP yang lambat fokus tetap berhasil memindai.
+export const LANGKAH_DETIK = 5;
 const AWALAN = "SMKABSEN1";
 
 function tanda(stasiun: string, slot: number) {
@@ -26,15 +29,17 @@ export function tokenStasiun(stasiun: string, sekarang = Date.now()) {
 
 export type HasilToken = { ok: true; stasiun: string } | { ok: false; alasan: string };
 
-/** Token dari slot saat ini atau dua slot sebelumnya (≤ ±90 detik) diterima — memberi waktu siswa yang
- * kameranya lambat fokus, tapi foto QR yang diteruskan ke teman cepat basi. */
+/** Toleransi masa berlaku SENGAJA DIPISAH dari kecepatan pergantian gambar: token diterima sampai 12 slot
+ * ke belakang (± 1 menit) walau gambarnya berganti tiap 5 detik. Tanpa pemisahan ini, mempercepat pergantian
+ * berarti mempersempit masa berlaku dan siswa berkamera lambat akan gagal memindai. */
+const SLOT_MUNDUR = 12; // 12 × 5 detik = 60 detik
 export function periksaToken(isi: string, sekarang = Date.now()): HasilToken {
   const bagian = (isi ?? "").trim().split(".");
   if (bagian.length !== 4 || bagian[0] !== AWALAN) return { ok: false, alasan: "Ini bukan QR absensi sekolah." };
   const [, stasiun, teksSlot, tandaDiterima] = bagian;
   const slot = Number(teksSlot);
   const kini = Math.floor(sekarang / 1000 / LANGKAH_DETIK);
-  if (!Number.isInteger(slot) || slot > kini + 1 || slot < kini - 2) {
+  if (!Number.isInteger(slot) || slot > kini + 1 || slot < kini - SLOT_MUNDUR) {
     return { ok: false, alasan: "QR sudah kedaluwarsa. Pindai QR terbaru yang tampil di layar." };
   }
   const harus = Buffer.from(tanda(stasiun, slot));
