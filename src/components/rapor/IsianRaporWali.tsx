@@ -10,6 +10,7 @@ import {
   BATAS_PILIHAN, NILAI_SIKAP_DINIYAH, PILIHAN_SOSIAL, PILIHAN_SPIRITUAL, PREDIKAT_SIKAP,
   kalimatSosial, kalimatSpiritual, type PilihanSikap,
 } from "@/lib/rapor-sikap";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface BarisIsian {
   id: string; nis: string; nama: string;
@@ -92,17 +93,17 @@ export default function IsianRaporWali({ classId, semester, kembaliHref, cetakHr
         description={`${data.kelas} · Semester ${semester} — sikap, sikap Diniyah${data.genap ? ", dan keputusan akhir tahun" : ""}`} />
 
       <div className="baris-alat mb-5">
-        <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {tabs.map(t => (
             <button key={t.k} type="button" onClick={() => setTab(t.k)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${tab === t.k ? "bg-primary-900 text-white" : "text-gray-600 hover:text-primary-900"}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${tab === t.k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
               {t.label}
               {!!t.sisa && <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[11px] leading-[18px] ${tab === t.k ? "bg-white/20" : "bg-amber-100 text-amber-800"}`}>{t.sisa}</span>}
             </button>
           ))}
         </div>
         <div className="alat-aksi">
-          <Link href={kembaliHref} className="btn-modal-cancel"><ArrowLeft size={15} /> Kembali</Link>
+          <TombolKembali href={kembaliHref} />
           <Link href={cetakHref} className="btn-modal-cancel btn-teks"><Printer size={15} /> Cetak Rapor</Link>
           {!kunci && (
             <button type="button" onClick={simpanSemua} disabled={simpan || !ubah} className="btn-modal-save">

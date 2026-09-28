@@ -108,10 +108,10 @@ export default function CetakRapor({ data, jenis, hrefJenis, kembaliHref, siswaA
       <style>{CSS}</style>
       <div className="print:hidden space-y-3 mb-4">
         <div className="baris-alat">
-          <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">
+          <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1">
             {(Object.keys(JUDUL_JENIS) as JenisRapor[]).filter(j => hrefJenis[j]).map(j => (
               <Link key={j} href={hrefJenis[j]!} replace
-                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${j === jenis ? "bg-primary-900 text-white" : "text-gray-600 hover:text-primary-900"}`}>
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${j === jenis ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 {JUDUL_JENIS[j]}
               </Link>
             ))}

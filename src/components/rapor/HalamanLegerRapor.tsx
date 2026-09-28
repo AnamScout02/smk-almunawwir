@@ -57,7 +57,7 @@ export default async function HalamanLegerRapor({ sp, kembaliHref }: { sp: { cla
         @media print { .leger-rapor { font-size: 8.5pt; } .leger-rapor thead th { font-size: 7pt; } .leger-kertas { overflow: visible !important; } }`}</style>
       <PageHeader icon={<Sheet size={22} />} title="Leger Nilai Rapor" printHidden
         description={`${d.kelas.nama} · Semester ${semester} — nilai dari Form Nilai Rapor yang sudah dikirim guru mapel`} />
-      <div className="baris-alat mb-4 print:hidden">
+      <div className="baris-alat mb-5 print:hidden">
         <p className="alat-saring text-sm text-gray-600">
           {d.mapelTanpaForm.length ? <><b className="text-amber-700">{d.mapelTanpaForm.length} mapel</b> belum dikirim guru (kolom bertanda *).</> : "Semua mapel sudah dikirim guru mapel."}
         </p>

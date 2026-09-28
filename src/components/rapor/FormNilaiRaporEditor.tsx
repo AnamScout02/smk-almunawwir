@@ -9,6 +9,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import StatusForm from "@/components/rapor/StatusForm";
 import { hitungSiswa, type EntriRiwayatWali, type NilaiSiswaForm, type PengaturanForm } from "@/lib/rapor-form";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Siswa { id: string; nis: string; nisn: string | null; jk: string | null; nama: string }
 interface Akses { peran: "GURU" | "WALI" | "PENGELOLA" | "PEMANTAU"; bolehUbah: boolean; bolehKembalikan: boolean }
@@ -211,11 +212,11 @@ export default function FormNilaiRaporEditor({ classId, subject, semester, kemba
       <PageHeader icon={<ClipboardPen size={22} />} title={`${data.mapel.nama} — ${data.kelas.nama}`}
         description={`${semester} · Guru: ${data.guru ?? "-"} · Wali kelas: ${data.kelas.wali ?? "-"}`} />
 
-      <div className="baris-alat mb-4">
+      <div className="baris-alat mb-5">
         <div className="alat-saring flex items-center gap-2 text-sm"><StatusForm status={data.status} dikembalikan={!!data.catatanWali && data.status === "DRAF"} />
           <span className={`text-xs ${simpan === "gagal" ? "text-red-600 font-semibold" : "text-gray-500"}`}>{labelSimpan}</span></div>
         <div className="alat-aksi alat-teks">
-          <button type="button" onClick={kembali} className="btn-modal-cancel"><ArrowLeft /> Kembali</button>
+          <TombolKembali onClick={kembali} />
           {pengaturan.katrol && !diniyah && <Link href={`${basePath}/katrol?${q}`} className="btn-modal-cancel"><Printer /> Form Katrol</Link>}
           {bolehUbah && <button type="button" onClick={() => setBukaAtur(true)} className="btn-modal-cancel"><Settings2 /> TP, LM & Bobot</button>}
           {bolehUbah && <button type="button" onClick={isiOtomatis} disabled={!!sibuk} className="btn-modal-cancel">{sibuk === "usulan" ? <Loader2 className="animate-spin" /> : <Sparkles />} Isi dari Jurnal & CBT</button>}
@@ -274,9 +275,9 @@ export default function FormNilaiRaporEditor({ classId, subject, semester, kemba
         </Alert>
       )}
 
-      <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1 mb-3 w-fit max-w-full overflow-x-auto">
+      <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1 mb-3 w-fit max-w-full overflow-x-auto">
         {TABS.map(([t, l]) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold transition ${tab === t ? "bg-primary-900 text-white" : "text-gray-600 hover:bg-white"}`}>{l}</button>
+          <button key={t} type="button" onClick={() => setTab(t)} className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold transition ${tab === t ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
         ))}
       </div>
 

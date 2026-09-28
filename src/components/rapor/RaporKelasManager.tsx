@@ -172,7 +172,7 @@ export default function RaporKelasManager({ portal = "guru" }: { portal?: "guru"
                     ))}
                   </ol>
                   {s.mapel.length === 0 ? (
-                    <p className="px-5 py-6 text-sm text-gray-500">Belum ada penugasan mengajar untuk kelas ini.</p>
+                    <p className="px-5 py-6 text-sm text-gray-400">Belum ada penugasan mengajar untuk kelas ini.</p>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="data-table">
