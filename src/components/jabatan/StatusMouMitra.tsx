@@ -5,6 +5,8 @@ import { ArrowLeft, Building2, Loader2, User, Phone, Calendar, Users } from "luc
 import PageHeader from "@/components/admin/PageHeader";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
+import { BASE_GURU } from "@/lib/rute-jabatan";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Partner {
   id: string; name: string; address: string | null; contactPerson: string | null; contactPhone: string | null;
@@ -30,7 +32,7 @@ const STATUS_TITLE: Record<Partner["status"], string> = {
 
 /** Dipakai portal GURU (pemegang tugasnya) dan portal ADMIN (superadmin — akses penuh tanpa
  * dilempar ke shell portal guru, keputusan user 19 September 2026). */
-export default function StatusMouMitra() {
+export default function StatusMouMitra({ basePath = BASE_GURU }: { basePath?: string }) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,9 +56,7 @@ export default function StatusMouMitra() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/teacher" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={basePath} />
       </div>
 
       {loading ? (

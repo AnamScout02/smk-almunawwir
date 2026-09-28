@@ -56,7 +56,7 @@ export default function KontakOrangTua() {
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : (
         <>
-          <div className="baris-alat mb-4">
+          <div className="baris-alat mb-5">
             <div className="alat-cari"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" /><input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau NIS…" className="input-field pl-10" /></div>
             {data.kelas.length > 1 && <div className="alat-saring"><Select value={classId} onChange={v => { setClassId(v); muat(v); }} options={data.kelas.map(k => ({ value: k.id, label: k.name }))} /></div>}
             <div className="alat-saring"><Select value={saring} onChange={setSaring} options={[{ value: "", label: "Semua siswa" }, { value: "TANPA_NOMOR", label: "Tanpa nomor" }, { value: "BELUM_PORTAL", label: "Ortu belum masuk portal" }]} /></div>

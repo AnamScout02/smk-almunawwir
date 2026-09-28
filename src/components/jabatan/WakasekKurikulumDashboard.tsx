@@ -4,6 +4,8 @@ import Link from "next/link";
 import { AlertTriangle, CalendarClock, CheckCircle2, ClipboardList, Clock, GraduationCap, Loader2, Lock, NotebookPen, Target, UserX } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Ringkasan {
   semester: string; schoolAvg: number | null; persenTuntas: number | null;
@@ -12,6 +14,11 @@ interface Ringkasan {
   ketuntasan: { mapel: string; dinilai: number; tuntas: number; belumTuntas: number; persenTuntas: number; rata: number; kkm: string }[];
   bebanJp: { nama: string; mengajar: number; ekuivalensi: number; rincian: string[]; total: number }[];
   syaratJp: number;
+  formRapor: {
+    wajib: number; dikirim: number; draf: number;
+    perKelas: { id: string; kelas: string; wali: string | null; wajib: number; dikirim: number; draf: number; dikembalikan: number; belum: number; status: "TERBUKA" | "DIKUNCI" | "DISAHKAN" }[];
+    guruBelum: { nama: string; kelas: string[] }[];
+  };
   missingJournal: { teacherName: string; className: string; subject: string }[];
   classesWithoutSchedule: { id: string; name: string; grade: number }[];
   totalAssignments: number;
@@ -22,14 +29,14 @@ const STATUS = {
   DIKUNCI: { label: "Dikunci", kelas: "bg-blue-50 text-blue-700 border-blue-200", ikon: Lock },
   DISAHKAN: { label: "Disahkan", kelas: "bg-emerald-50 text-emerald-700 border-emerald-200", ikon: CheckCircle2 },
 };
-type Tab = "penilaian" | "ketuntasan" | "jp" | "jurnal";
+type Tab = "penilaian" | "form" | "ketuntasan" | "jp" | "jurnal";
 
 /** DASHBOARD KURIKULUM (diperkaya 17 Sep 2026). */
 /** Dipakai portal GURU (pemegang jabatannya) dan portal ADMIN (superadmin, lewat grup menu
  * "Dashboard Jabatan") — keputusan user 19 September 2026: "superadmin sifatnya full akses ke
  * semuanya ... karena si superadmin bukan pegawai dan bukan guru di situ", jadi ia tidak boleh
  * dilempar ke shell portal guru untuk melihat dashboard ini. */
-export default function WakasekKurikulumDashboard() {
+export default function WakasekKurikulumDashboard({ basePath = BASE_GURU }: { basePath?: string }) {
   const [data, setData] = useState<Ringkasan | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("penilaian");
@@ -46,9 +53,9 @@ export default function WakasekKurikulumDashboard() {
   const dikunci = data.progres.filter(p => p.status !== "TERBUKA").length;
   const kurangJp = data.bebanJp.filter(g => g.total < data.syaratJp);
   const pintasan = [
-    { href: "/dashboard/teacher/wakasek/kurikulum/jadwal", label: "Jadwal Pelajaran", ikon: CalendarClock },
-    { href: "/dashboard/teacher/wakasek/kurikulum/penugasan", label: "Penugasan Mengajar", ikon: ClipboardList },
-    { href: "/dashboard/teacher/wakasek/kurikulum/mapel", label: "Mapel & KKM", ikon: Target },
+    { href: tautanJabatan(basePath, "wakasek/kurikulum/jadwal"), label: "Jadwal Pelajaran", ikon: CalendarClock },
+    { href: tautanJabatan(basePath, "wakasek/kurikulum/penugasan"), label: "Penugasan Mengajar", ikon: ClipboardList },
+    { href: tautanJabatan(basePath, "wakasek/kurikulum/mapel"), label: "Mapel & KKM", ikon: Target },
     { href: "/pusat-ujian", label: "Ujian & Remedial (CBT)", ikon: NotebookPen },
   ];
 
@@ -58,25 +65,21 @@ export default function WakasekKurikulumDashboard() {
         description={`Penilaian, ketuntasan KKM, beban mengajar, dan jurnal — Semester ${data.semester}`} />
 
       <div className="space-y-6">
-        <div className="kisi-kartu kisi-kartu-4">
+        <div className="kisi-kartu kisi-kartu-5">
           <StatTile ikon="tren" color="primary" value={data.schoolAvg ?? "—"} label="Rata-rata nilai sekolah" sublabel={data.persenTuntas === null ? undefined : `${data.persenTuntas}% nilai tuntas KKM`} />
           <StatTile ikon="kelas" color={dikunci < data.progres.length ? "amber" : "emerald"} value={`${dikunci}/${data.progres.length}`} label="Kelas nilai rapornya dikunci/disahkan" />
           <StatTile ikon="guru" color={data.guruBelumMenilai.length ? "red" : "emerald"} value={data.guruBelumMenilai.length} label="Guru belum menilai sebagian kelasnya" />
           <StatTile ikon="jam" color={kurangJp.length ? "amber" : "blue"} value={kurangJp.length} label={`Guru di bawah ${data.syaratJp} JP/minggu`} />
+          <StatTile ikon="daftar-centang" color={data.formRapor.dikirim >= data.formRapor.wajib ? "emerald" : "amber"}
+            value={`${data.formRapor.dikirim}/${data.formRapor.wajib}`} label="Form nilai rapor terkirim"
+            sublabel={data.formRapor.draf ? `${data.formRapor.draf} masih draf` : undefined} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {pintasan.map(p => (
-            <Link key={p.href} href={p.href} className="panel panel-interaktif flex items-center gap-3 p-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white"><p.ikon size={16} /></span>
-              <span className="min-w-0 text-sm font-semibold text-primary-900">{p.label}</span>
-            </Link>
-          ))}
-        </div>
+        <BarisPintasan items={pintasan} />
 
         <div className="baris-alat">
           <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
-            {([["penilaian", "Progres penilaian"], ["ketuntasan", "Ketuntasan KKM"], ["jp", "Beban 24 JP"], ["jurnal", `Jurnal & jadwal (${data.missingJournal.length})`]] as const).map(([k, l]) => (
+            {([["penilaian", "Progres penilaian"], ["form", `Form nilai rapor (${data.formRapor.dikirim}/${data.formRapor.wajib})`], ["ketuntasan", "Ketuntasan KKM"], ["jp", "Beban 24 JP"], ["jurnal", `Jurnal & jadwal (${data.missingJournal.length})`]] as const).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setTab(k)}
                 className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
             ))}
@@ -110,7 +113,7 @@ export default function WakasekKurikulumDashboard() {
               </div>
             </div>
             <div className="panel p-5 xl:col-span-4">
-              <h3 className="font-heading font-bold text-primary-900 text-sm mb-3 flex items-center gap-2"><UserX size={15} className="text-red-600" /> Belum mengisi nilai semester ini</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3 flex items-center gap-2"><UserX size={15} className="text-red-600" /> Belum mengisi nilai semester ini</h3>
               {data.guruBelumMenilai.length === 0 ? <p className="py-6 text-center text-sm text-emerald-600">Semua guru sudah mulai menilai.</p> : (
                 <ul className="max-h-[28rem] space-y-2.5 overflow-y-auto">
                   {data.guruBelumMenilai.map(g => (
@@ -125,10 +128,58 @@ export default function WakasekKurikulumDashboard() {
           </div>
         )}
 
+        {tab === "form" && (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+            <div className="panel overflow-hidden xl:col-span-8">
+              <p className="border-b border-gray-100 px-5 py-3 text-xs text-gray-500">
+                Satu form per kelas &times; mata pelajaran. Guru mengisi lalu <b>mengirim</b>; wali kelas memeriksa, mengunci, dan Kepala Sekolah mengesahkan.
+                Form yang dikembalikan wali kelas dihitung sebagai draf.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead><tr><th>Kelas</th><th>Wali kelas</th><th className="text-right">Terkirim</th><th className="text-right">Draf</th><th className="text-right">Belum diisi</th><th>Kemajuan</th><th>Status rapor</th></tr></thead>
+                  <tbody>
+                    {data.formRapor.perKelas.map(k => {
+                      const st = STATUS[k.status];
+                      const persen = k.wajib ? Math.round((k.dikirim / k.wajib) * 100) : 0;
+                      return (
+                        <tr key={k.id}>
+                          <td className="font-medium text-primary-900 whitespace-nowrap">{k.kelas}</td>
+                          <td className="text-xs text-gray-600">{k.wali ?? "\u2014"}</td>
+                          <td className="text-right tabular-nums font-semibold text-emerald-700">{k.dikirim}/{k.wajib}</td>
+                          <td className="text-right tabular-nums">{k.draf || "\u2014"}{k.dikembalikan > 0 && <span className="block text-xs text-red-600">{k.dikembalikan} dikembalikan</span>}</td>
+                          <td className="text-right tabular-nums">{k.belum || "\u2014"}</td>
+                          <td className="min-w-[8rem]">
+                            <span className="block h-1.5 overflow-hidden rounded-full bg-gray-100"><span className={`block h-full rounded-full ${persen >= 100 ? "bg-emerald-500" : "bg-amber-400"}`} style={{ width: `${persen}%` }} /></span>
+                          </td>
+                          <td><span className={`status-badge ${st.kelas}`}><st.ikon size={12} /> {st.label}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="panel p-5 xl:col-span-4">
+              <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3 flex items-center gap-2"><UserX size={15} className="text-amber-600" /> Belum mengirim form nilai rapor</h3>
+              {data.formRapor.guruBelum.length === 0 ? <p className="py-6 text-center text-sm text-emerald-600">Semua form sudah dikirim.</p> : (
+                <ul className="max-h-[28rem] space-y-2.5 overflow-y-auto">
+                  {data.formRapor.guruBelum.map(g => (
+                    <li key={g.nama} className="text-sm">
+                      <p className="font-semibold text-primary-900">{g.nama} <span className="text-xs font-normal text-gray-500">&middot; {g.kelas.length} kelas-mapel</span></p>
+                      <p className="text-xs text-gray-500">{g.kelas.slice(0, 4).join(" \u00b7 ")}{g.kelas.length > 4 ? ` \u00b7 +${g.kelas.length - 4}` : ""}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
         {tab === "ketuntasan" && (
           <div className="panel overflow-hidden">
             <p className="border-b border-gray-100 px-5 py-3 text-xs text-gray-500">Diurutkan dari mapel dengan ketuntasan terendah. Siswa di bawah KKM bisa diberi ujian remedial lewat Pusat Ujian.</p>
-            {data.ketuntasan.length === 0 ? <p className="py-10 text-center text-sm text-gray-500">Belum ada nilai semester ini.</p> : (
+            {data.ketuntasan.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada nilai semester ini.</p> : (
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead><tr><th>Mata pelajaran</th><th className="text-right">KKM</th><th className="text-right">Dinilai</th><th className="text-right">Belum tuntas</th><th className="text-right">Rata-rata</th><th>Ketuntasan</th></tr></thead>
@@ -182,7 +233,7 @@ export default function WakasekKurikulumDashboard() {
         {tab === "jurnal" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
             <div className="panel p-5">
-              <h3 className="font-heading font-bold text-primary-900 text-sm mb-3 flex items-center gap-2"><AlertTriangle size={15} className="text-amber-600" /> Belum isi jurnal 7 hari terakhir</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3 flex items-center gap-2"><AlertTriangle size={15} className="text-amber-600" /> Belum isi jurnal 7 hari terakhir</h3>
               {data.missingJournal.length === 0 ? <p className="py-6 text-center text-sm text-emerald-600">Semua penugasan punya jurnal minggu ini.</p> : (
                 <ul className="max-h-96 divide-y divide-gray-50 overflow-y-auto">
                   {data.missingJournal.map((m, i) => (
@@ -192,7 +243,7 @@ export default function WakasekKurikulumDashboard() {
               )}
             </div>
             <div className="panel p-5">
-              <h3 className="font-heading font-bold text-primary-900 text-sm mb-3">Kelas tanpa jadwal</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3">Kelas tanpa jadwal</h3>
               {data.classesWithoutSchedule.length === 0 ? <p className="py-6 text-center text-sm text-emerald-600">Semua kelas sudah berjadwal.</p> : (
                 <div className="flex flex-wrap gap-2">
                   {data.classesWithoutSchedule.map(c => <span key={c.id} className="status-badge bg-red-50 text-red-600 border-red-200">{c.name}</span>)}

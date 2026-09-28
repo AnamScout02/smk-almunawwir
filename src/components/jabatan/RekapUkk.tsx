@@ -5,6 +5,7 @@ import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
 
 interface StudentRow { studentId: string; nis: string; name: string; className: string; score: number | null }
 interface MajorUkk {
@@ -15,7 +16,10 @@ interface Summary { majors: MajorUkk[]; semester: string }
 
 /** Dipakai portal GURU (pemegang tugasnya) dan portal ADMIN (superadmin — akses penuh tanpa
  * dilempar ke shell portal guru, keputusan user 19 September 2026). */
-export default function RekapUkk() {
+/** Dipakai portal GURU (Kaprogli) dan portal ADMIN (superadmin). Tautannya WAJIB mengikuti portal
+ *  pemanggil — menautkan /dashboard/teacher/* dari portal admin membuat sidebarnya nyaris kosong
+ *  (CLAUDE.md #45). */
+export default function RekapUkk({ basePath = BASE_GURU }: { basePath?: string }) {
   const [data, setData] = useState<Summary | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,13 +45,6 @@ export default function RekapUkk() {
         title={`Rekap UKK — ${major.majorName}`}
         description={`Uji Kompetensi Keahlian kelas XII — Semester ${data.semester}`}
       />
-
-      <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/teacher/wakasek/kaprogli" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
-      </div>
-
       {data.majors.length > 1 && (
         <div className="flex items-center gap-2 mb-5">
           {data.majors.map((m, i) => (
@@ -59,10 +56,16 @@ export default function RekapUkk() {
         </div>
       )}
 
-      <div className="kisi-kartu kisi-kartu-3 mb-6">
+      <div className="kisi-kartu kisi-kartu-3 mb-5">
         <StatTile color="primary" icon={Users} label="Total Siswa Kelas XII" value={major.totalCount} />
         <StatTile color="emerald" icon={CheckCircle2} label="Sudah Ada Nilai UKK" value={major.completedCount} />
         <StatTile color="blue" icon={FileCheck} label="Rata-rata UKK Jurusan" value={major.classAvg ?? "—"} />
+      </div>
+
+      <div className="alat-aksi justify-end mb-5">
+        <Link href={tautanJabatan(basePath, "wakasek/kaprogli")} className="btn-modal-cancel">
+          <ArrowLeft size={18} /> Kembali
+        </Link>
       </div>
 
       <div className="panel overflow-hidden">

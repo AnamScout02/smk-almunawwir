@@ -77,7 +77,7 @@ export default function KelengkapanPerangkat({ protaHref, rppHref }: { protaHref
             <StatTile value={baris.filter(b => b.rpp === 0).length} label="Belum ada RPP / Modul Ajar" ikon="dokumen" color="red" />
           </div>
 
-          <div className="baris-alat mb-4">
+          <div className="baris-alat mb-5">
             <div className="alat-cari">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari guru, mapel, atau kelas..." className="input-field pl-10 w-full" />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, Database, DatabaseZap, GraduationCap, Link2, Loader2, UserCog } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Butir { label: string; count: number; href: string }
 interface Kelompok { judul: string; total: number; href: string; butir: Butir[] }
@@ -56,25 +57,14 @@ export default function OperatorDashboard() {
           <StatTile ikon="daftar-centang" color="primary" value={data.pasanganManual} label="Pasangan Dapodik dicocokkan manual" href={data.tautan.dapodik} />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {pintasan.map(p => (
-            <Link key={p.href} href={p.href} className="panel panel-interaktif flex items-center gap-3 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white"><p.ikon size={18} /></span>
-              <span className="min-w-0">
-                <span className="block font-heading font-bold text-primary-900 text-sm">{p.label}</span>
-                <span className="block text-xs text-gray-500">{p.ket}</span>
-              </span>
-              <ArrowRight size={16} className="ml-auto shrink-0 text-gray-300" />
-            </Link>
-          ))}
-        </div>
+        <BarisPintasan items={pintasan} />
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-start">
           {data.kelompok.map(k => (
             <div key={k.judul} className="panel overflow-hidden">
               <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3.5">
                 {k.judul.includes("siswa") ? <GraduationCap size={16} className="text-primary-700" /> : <UserCog size={16} className="text-primary-700" />}
-                <h3 className="font-heading font-bold text-primary-900 text-sm">{k.judul}</h3>
+                <h3 className="font-heading font-semibold text-primary-900 text-sm">{k.judul}</h3>
                 <span className="ml-auto text-xs text-gray-500 tabular-nums">{k.total} orang</span>
               </div>
               {k.butir.length === 0 ? (
@@ -108,7 +98,7 @@ export default function OperatorDashboard() {
 
         {data.lainnya.length > 0 && (
           <div className="panel p-5">
-            <h3 className="font-heading font-bold text-primary-900 text-sm mb-2 flex items-center gap-2"><Link2 size={15} className="text-primary-700" /> Menunggu diproses</h3>
+            <h3 className="font-heading font-semibold text-primary-900 text-sm mb-2 flex items-center gap-2"><Link2 size={15} className="text-primary-700" /> Menunggu diproses</h3>
             {data.lainnya.map(b => (
               <Link key={b.label} href={b.href} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm hover:bg-amber-50/60">
                 <AlertTriangle size={14} className="shrink-0 text-amber-500" />

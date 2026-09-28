@@ -895,8 +895,13 @@ section.from-primary-900 > * {
      .btn-modal-save   = aksi utama (Tambah / Simpan / Buat / Kirim): navy padat + ikon
      .btn-modal-cancel = aksi kedua (Batal / Cetak / Ekspor / Impor / Unduh): putih bergaris
      .btn-hapus        = hapus / aksi berbahaya: merah
+     .btn-awas         = TINDAKAN BESAR YANG SULIT DIBATALKAN tapi bukan menghapus: amber (27 September 2026).
+                         Naik Kelas seluruh sekolah, memproses kelulusan, menghapus data ujian satu kegiatan.
+                         Dibuat karena ketiga kelas di atas tidak muat: navy membuatnya terlihat sebiasa
+                         "Simpan", padahal akibatnya menyentuh ribuan baris; merah salah karena tidak menghapus
+                         apa pun. Sebelumnya tiap halaman meracik warnanya sendiri.
      Tinggi sama (min 40px; 44px di layar sentuh), sudut 12px, ikon 16px. */
-  .btn-modal-cancel, .btn-modal-save, .btn-hapus {
+  .btn-modal-cancel, .btn-modal-save, .btn-hapus, .btn-awas {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -918,6 +923,8 @@ section.from-primary-900 > * {
   .btn-modal-save:hover:not(:disabled) { background: var(--color-primary-900); box-shadow: 0 4px 12px rgb(15 26 69 / 0.22); }
   .btn-hapus { color: white; background: #dc2626; box-shadow: 0 1px 2px rgb(220 38 38 / 0.2); }
   .btn-hapus:hover:not(:disabled) { background: #b91c1c; }
+  .btn-awas { color: white; background: #d97706; box-shadow: 0 1px 2px rgb(217 119 6 / 0.2); }
+  .btn-awas:hover:not(:disabled) { background: #b45309; }
   .btn-modal-cancel:active:not(:disabled), .btn-modal-save:active:not(:disabled), .btn-hapus:active:not(:disabled) { transform: scale(0.97); }
   .btn-modal-cancel:focus-visible, .btn-modal-save:focus-visible, .btn-hapus:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
   .btn-modal-cancel:disabled, .btn-modal-save:disabled, .btn-hapus:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -1148,7 +1155,7 @@ section.from-primary-900 > * {
   }
   @media (pointer: coarse) {
     .input-field { min-height: 44px; }
-    .btn-modal-cancel, .btn-modal-save, .btn-hapus { min-height: 44px; }
+    .btn-modal-cancel, .btn-modal-save, .btn-hapus, .btn-awas { min-height: 44px; }
   }
 }
 /* ── KISI KARTU ANGKA & BARIS ALAT (seragam semua halaman, permintaan user 15 Sep 2026) ──
@@ -1195,7 +1202,7 @@ section.from-primary-900 > * {
        layar (audit HP 21 Sep 2026: Absensi Siswa, Layanan Sarpras, Dashboard Humas). */
     .baris-alat > .alat-aksi:is(.alat-teks, :has(> .btn-teks)) { flex: 1 1 100%; margin-left: 0; }
     .alat-aksi:is(.alat-teks, :has(> .btn-teks)) { max-width: 100%; }
-    .alat-aksi:is(.alat-teks, :has(> .btn-teks)) > :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus) { flex: 1 1 auto; min-width: 0; }
+    .alat-aksi:is(.alat-teks, :has(> .btn-teks)) > :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus, .btn-awas) { flex: 1 1 auto; min-width: 0; }
   }
   /* TABEL BANYAK KOLOM DI HP = DIGESER, BUKAN DIJEPIT (audit HP 21 Sep 2026). Tabel 5+ kolom yang dipaksa muat ±358px
      menyusutkan kolom sampai teks patah per kata (tanggal, nama guru, judul ujian jadi 4–6 baris). Dengan lebar minimum
@@ -1211,17 +1218,17 @@ section.from-primary-900 > * {
      ada di DOM (font-size: 0) sehingga pembaca layar & pencarian masih membacanya, dan `JudulTombolIkon`
      menyalin teks itu ke atribut title supaya muncul sebagai tooltip. Tombol di footer Modal TIDAK ikut
      (Batal/Simpan harus jelas berteks) karena aturan ini hanya berlaku di dalam `.alat-aksi`/`.btn-ikon`. */
-  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus):has(> svg),
+  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus, .btn-awas):has(> svg),
   .btn-ikon:has(> svg) {
     font-size: 0; gap: 0; width: 2.75rem; padding-inline: 0; justify-content: center;
   }
   /* Pengecualian sadar: beri `.alat-teks` pada wadah bila SEMUA tombolnya wajib berteks. */
-  .alat-aksi.alat-teks :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus) { font-size: 0.875rem; gap: 0.5rem; width: auto; padding-inline: 1rem; }
+  .alat-aksi.alat-teks :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus, .btn-awas) { font-size: 0.875rem; gap: 0.5rem; width: auto; padding-inline: 1rem; }
   /* Pengecualian PER TOMBOL: `.btn-teks` (temuan user 19 September 2026 — "rekap absensi perkalender
      kok hilang?"). Ikon saja hanya jelas untuk kata kerja umum (Tambah, Cetak, Kembali, Unduh); tombol
      yang NAMANYA membawa arti sendiri — "Kalender Bulanan", "Lapor Kerusakan", "Denah Ruang Ujian" —
      jadi tak bisa ditemukan kalau teksnya disembunyikan, karena ikonnya terbaca sebagai aksi umum. */
-  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus).btn-teks:has(> svg),
+  .alat-aksi :is(.btn-modal-save, .btn-modal-cancel, .btn-hapus, .btn-awas).btn-teks:has(> svg),
   .btn-ikon.btn-teks:has(> svg) { font-size: 0.875rem; gap: 0.5rem; width: auto; padding-inline: 1rem; }
 }
 /* Target sentuh minimal 44px di layar sentuh. */
@@ -1241,6 +1248,20 @@ section.from-primary-900 > * {
   :where(.grid) > * { min-width: 0; }
   :where(.flex-1) { min-width: 0; }
   body { overflow-wrap: break-word; }
+}
+
+/* KOTAK CENTANG & RADIO — SATU warna untuk seluruh aplikasi (27 September 2026).
+ *
+ * Dari 72 kotak centang di aplikasi, 66 sama sekali TIDAK punya kelas: artinya ia memakai warna bawaan
+ * sistem — BIRU terang di Windows/Android, abu di beberapa tema — jadi satu-satunya kontrol berwarna
+ * non-navy di seluruh portal. Lima sisanya diwarnai tangan dengan tiga cara berbeda (`accent-[#1B2B6B]`,
+ * `accent-primary-700`, `border-gray-300`).
+ *
+ * Diselesaikan di SATU tempat, bukan dengan menambahkan kelas di 66 berkas: `accent-color` diwarisi dan
+ * berlaku untuk kotak centang & radio mana pun, termasuk yang ditulis nanti. Dibungkus `@media screen`
+ * karena lembar cetak (daftar hadir, berita acara) memakai kotak KOSONG untuk dicentang tangan. */
+@media screen {
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--color-primary-700); }
 }
 
 /* ============================================================
@@ -1350,3 +1371,124 @@ section.from-primary-900 > * {
    tabel lebar) tetap bisa digulir karena hanya perbesaran yang dimatikan, bukan gulir.
    ============================================================ */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* ---------------- PAPAN INFORMASI TV (24 September 2026) ----------------
+   Dipakai halaman /layar/<token> yang ditampilkan TV kelas/koridor/lab/TU. Gerakannya SANGAT pelan dengan dua
+   tujuan: layar tidak terasa mati saat ruangan kosong, dan gambar tidak benar-benar diam berjam-jam sehingga
+   risiko burn-in panel berkurang. Semua gerak berhenti bila perangkat meminta pengurangan animasi. */
+.papan-motif {
+  position: absolute;
+  inset: -10%;
+  background-image: url('/images/pattern-smk.png');
+  background-size: 180px 180px;
+  opacity: 0.06;
+  filter: invert(1);
+  /* MOTIF DIAM (permintaan user 25 Sep 2026: "patternnya jangan dibuat bergerak"). Geseran pelan tadinya untuk
+     mengurangi risiko burn-in, tetapi latar yang merayap terus terasa mengganggu di ruangan — dan panel isinya
+     sendiri sudah berganti tiap menit, jadi tidak ada piksel yang benar-benar diam berjam-jam. */
+  pointer-events: none;
+}
+/* Sapuan cahaya lembut melintasi layar — penanda halus bahwa papan hidup, bukan gambar beku. */
+.papan-sinar {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 45% at 20% 25%, rgba(232, 160, 32, 0.16), transparent 60%);
+  animation: papanSinar 24s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.papan-masuk { animation: papanMasuk 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* KONFETI PAPAN ULANG TAHUN (25 September 2026). Sengaja TIDAK memakai `.confetti-piece` milik papan peringkat:
+   animasi itu menaikkan elemen 40px ("rise"), sehingga potongan yang ditaruh di atas layar justru bergerak makin
+   keluar dan tidak pernah terlihat. Yang ini benar-benar JATUH dari atas ke bawah sambil berputar dan menyamping. */
+@keyframes papanKonfeti {
+  0%   { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translate3d(var(--geser, 24px), 102vh, 0) rotate(var(--putar, 720deg)); opacity: 0; }
+}
+.papan-konfeti { position: absolute; top: 0; pointer-events: none; animation: papanKonfeti linear infinite; }
+
+/* Cahaya lembut berdenyut di belakang foto — membuat panel terasa merayakan tanpa menambah elemen baru. */
+@keyframes papanCahayaUltah {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50%      { transform: scale(1.12); opacity: 0.6; }
+}
+.papan-cahaya-ultah { animation: papanCahayaUltah 3.2s ease-in-out infinite; }
+
+/* Ucapan bergoyang halus, seperti pita yang tertiup. Amplitudonya kecil supaya tidak melelahkan dilihat berjam-jam. */
+@keyframes papanUcapan {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg); }
+  50%      { transform: translateY(-6px) rotate(0.6deg); }
+}
+.papan-ucapan { animation: papanUcapan 4s ease-in-out infinite; }
+
+@keyframes papanSinar {
+  from { transform: translate3d(0, 0, 0); opacity: 0.8; }
+  to { transform: translate3d(12%, 8%, 0); opacity: 1; }
+}
+@keyframes papanMasuk { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .papan-motif, .papan-sinar, .papan-masuk, .papan-konfeti, .papan-cahaya-ultah, .papan-ucapan { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   TOKEN PELENGKAP — skala spasi, tinggi kartu, ubin pintasan (27 September 2026)
+
+   Permintaan user: aplikasi diseragamkan sebagai design system berstandar enterprise. Fondasinya
+   SUDAH ada (@theme warna/font/bayangan di atas + DESIGN_SYSTEM.md); yang belum ada justru tiga hal
+   yang paling sering jadi sumber ketidakrapian, dan itulah yang ditambahkan di sini — BUKAN sistem
+   variabel kedua yang paralel, karena 272 halaman sudah memakai token yang ada.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* === SKALA SPASI === Kelipatan 4px. Dipakai lewat utilitas Tailwind yang sudah ada
+     (p-1 = 4px … p-12 = 48px); didaftarkan di sini supaya nilainya tertulis, bukan hafalan.   */
+  --spacing-rapat: 0.25rem;   /*  4px — jarak ikon ke teks di dalam chip            */
+  --spacing-kecil: 0.5rem;    /*  8px — antar tombol dalam satu baris               */
+  --spacing-sedang: 1rem;     /* 16px — padding isi panel di HP                     */
+  --spacing-blok: 1.25rem;    /* 20px — jarak bawah baris alat (mb-5)               */
+  --spacing-seksi: 1.5rem;    /* 24px — jarak antar seksi (space-y-6)               */
+  --spacing-halaman: 2rem;    /* 32px — padding halaman di layar lebar (lg:p-8)     */
+  --spacing-lega: 3rem;       /* 48px — jarak sebelum blok penutup                  */
+
+  /* === BENTUK === satu radius per jenis wadah, jangan diracik per halaman */
+  --radius-kartu: 1rem;       /* panel, kartu angka, ubin pintasan */
+  --radius-kontrol: 0.75rem;  /* tombol, isian, dropdown           */
+  --radius-chip: 9999px;      /* badge, pil status, CTA publik     */
+}
+
+@media screen {
+  /* === TINGGI KARTU SERAGAM ===
+     Keluhan user: "tinggi kartu tidak sama". Penyebabnya bukan kartunya, melainkan GRID-nya:
+     label yang lebih panjang membungkus jadi dua baris, dan kartu di sebelahnya ikut meninggi
+     sendiri-sendiri. `align-items: stretch` + anak setinggi penuh membuat semua kartu dalam satu
+     baris setinggi yang tertinggi — tidak ada lagi kartu yang "kependekan". */
+  .kisi-kartu { align-items: stretch; }
+  .kisi-kartu > * { height: 100%; }
+
+  /* === UBIN PINTASAN === satu bentuk untuk seluruh aplikasi.
+     Sebelumnya markupnya disalin-tempel ke belasan berkas sehingga tinggi & padding-nya berbeda;
+     sekarang bentuknya di sini dan markupnya di komponen <BarisPintasan>. */
+  .kisi-pintasan {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-kecil, 0.75rem);
+    align-items: stretch;
+  }
+  @media (min-width: 1024px) { .kisi-pintasan { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .ubin-pintasan {
+    display: flex; align-items: center; gap: 0.75rem;
+    min-height: 3.75rem; height: 100%; padding: 0.875rem;
+  }
+  .ubin-pintasan-ikon {
+    display: flex; align-items: center; justify-content: center;
+    height: 2.25rem; width: 2.25rem; flex-shrink: 0;
+    border-radius: var(--radius-kontrol, 0.75rem);
+    background: var(--color-primary-700); color: #fff;
+  }
+  .ubin-pintasan-label {
+    min-width: 0; font-size: 0.875rem; font-weight: 600;
+    color: var(--color-primary-900); line-height: 1.3;
+  }
+}

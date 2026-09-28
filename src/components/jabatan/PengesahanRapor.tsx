@@ -7,6 +7,8 @@ import GroupedSection from "@/components/admin/GroupedSection";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 import Select from "@/components/admin/Select";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Row {
   classId: string; className: string; grade: number; semester: string;
@@ -20,8 +22,8 @@ const GRADE_LABEL: Record<number, string> = { 10: "Kelas X", 11: "Kelas XI", 12:
  * dilempar ke shell portal guru, keputusan user 19 September 2026). */
 /** `cetakHref` = halaman cetak rapor portal pemakai (guru: /dashboard/teacher/rapor-kelas/cetak, admin: /dashboard/admin/rapor-cetak) —
  * Kepala Sekolah memeriksa lembar rapor sebelum mengesahkan. */
-export default function PengesahanRapor({ cetakHref = "/dashboard/teacher/rapor-kelas/cetak", kembaliHref = "/dashboard/teacher/kepala-sekolah", dariPengesahan = true }: {
-  cetakHref?: string; kembaliHref?: string; dariPengesahan?: boolean;
+export default function PengesahanRapor({ basePath = BASE_GURU, cetakHref = tautanJabatan(basePath, "rapor-kelas/cetak"), kembaliHref = tautanJabatan(basePath, "kepala-sekolah"), dariPengesahan = true }: {
+  basePath?: string; cetakHref?: string; kembaliHref?: string; dariPengesahan?: boolean;
 } = {}) {
   const confirmDialog = useConfirm();
   const toast = useToast();
@@ -114,9 +116,7 @@ export default function PengesahanRapor({ cetakHref = "/dashboard/teacher/rapor-
           <button type="button" onClick={sahkanSemua} disabled={!siapSah || busyKey === "semua"} className="btn-modal-save">
             {busyKey === "semua" ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Sahkan Semua yang Siap ({siapSah})
           </button>
-          <Link href={kembaliHref} className="btn-modal-cancel">
-            <ArrowLeft size={18} /> Kembali
-          </Link>
+          <TombolKembali href={kembaliHref} />
         </div>
       </div>
 

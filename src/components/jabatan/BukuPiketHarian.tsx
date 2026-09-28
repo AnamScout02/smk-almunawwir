@@ -7,6 +7,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Ringkasan {
   tanggal: string; petugas: string; tamu: number; laporan: string; hak: { piketHariIni: boolean; penjaminMutu: boolean; jadwalPiket: boolean };
@@ -21,7 +23,7 @@ const STATUS_GURU: Record<string, string> = { TERLAMBAT: "Terlambat", IZIN: "Izi
 /** DASHBOARD PIKET HARIAN (17 Sep 2026). */
 /** Dipakai portal GURU (pemegang tugasnya) dan portal ADMIN (superadmin — akses penuh tanpa
  * dilempar ke shell portal guru, keputusan user 19 September 2026). */
-export default function BukuPiketHarian() {
+export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: string }) {
   const toast = useToast();
   const [data, setData] = useState<Ringkasan | null>(null);
   const [galat, setGalat] = useState("");
@@ -80,21 +82,14 @@ export default function BukuPiketHarian() {
           <StatTile ikon="kontak" color="purple" value={data.tamu} label="Tamu tercatat" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            ...(data.hak.piketHariIni || data.hak.penjaminMutu ? [{ href: "/dashboard/teacher/wakasek/penjamin-mutu/kedisiplinan", label: "Catat kehadiran guru", ikon: BadgeCheck }] : []),
+        <BarisPintasan items={[
+            ...(data.hak.piketHariIni || data.hak.penjaminMutu ? [{ href: tautanJabatan(basePath, "wakasek/penjamin-mutu/kedisiplinan"), label: "Catat kehadiran guru", ikon: BadgeCheck }] : []),
             data.hak.piketHariIni
-              ? { href: "/dashboard/teacher/piket/poin-siswa", label: "Catat poin (terlambat/atribut)", ikon: ShieldAlert }
-              : { href: "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin siswa", ikon: ShieldAlert },
-            ...(data.hak.piketHariIni ? [{ href: "/dashboard/teacher/absensi-scan", label: "Scan kartu absensi", ikon: ScanLine }] : []),
-            ...(data.hak.jadwalPiket ? [{ href: "/dashboard/teacher/wakasek/penjamin-mutu/jadwal-piket", label: "Jadwal piket", ikon: ClipboardList }] : []),
-          ].map(p => (
-            <Link key={p.href} href={p.href} className="panel panel-interaktif flex items-center gap-3 p-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white"><p.ikon size={16} /></span>
-              <span className="min-w-0 text-sm font-semibold text-primary-900">{p.label}</span>
-            </Link>
-          ))}
-        </div>
+              ? { href: tautanJabatan(basePath, "piket/poin-siswa"), label: "Catat poin (terlambat/atribut)", ikon: ShieldAlert }
+              : { href: tautanJabatan(basePath, "kesiswaan/poin-siswa"), label: "Poin siswa", ikon: ShieldAlert },
+            ...(data.hak.piketHariIni ? [{ href: tautanJabatan(basePath, "absensi-scan"), label: "Scan kartu absensi", ikon: ScanLine }] : []),
+            ...(data.hak.jadwalPiket ? [{ href: tautanJabatan(basePath, "wakasek/penjamin-mutu/jadwal-piket"), label: "Jadwal piket", ikon: ClipboardList }] : []),
+        ]} />
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-start">
           <div className="panel p-5 space-y-4">

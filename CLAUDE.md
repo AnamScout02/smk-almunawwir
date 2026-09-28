@@ -364,7 +364,7 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     Pemasangan hanya jalan lewat HTTPS (`ALAMAT_APLIKASI` di `src/lib/alamat-aplikasi.ts` — ganti saat domain sekolah
     aktif). Tawaran pasang browser ditangkap sedini mungkin di `src/lib/pasang-pwa.ts` (event `beforeinstallprompt` sering
     datang sebelum hydrate) — komponen baru berlangganan ke sana, JANGAN memasang pendengar sendiri di useEffect.
-    Halaman yang dibagikan ke WA: `/pasang-aplikasi`. Uji: `Page.getInstallabilityErrors` lewat CDP harus kosong.
+    Halaman yang dibagikan ke WA: `/pasang-aplikasi` (juga memuat unduhan APK Android sejak 23 Sep 2026). Uji: `Page.getInstallabilityErrors` lewat CDP harus kosong.
 30. **Papan pantau ujian = Server-Sent Events** (`/api/teacher/exams/[id]/pantau/stream`, isi dari `susunPapanPantau` di
     `src/lib/pantau-ujian.ts`, sama dengan GET `/pantau`). Klien WAJIB lewat hook `usePantauLangsung` (otomatis kembali ke
     polling 5 detik bila stream gagal; `sisa(sisaDetik)` untuk hitung mundur). Respons stream WAJIB
@@ -640,6 +640,13 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
       soal bertabel hilang). Gaya tabelnya di `.soal-html table`.
     - Edit soal saat ujian berjalan HANYA lewat tombol pensil oranye (`/api/teacher/exams/[id]/soal-live`). Editor
       biasa mengunci susunan soal begitu ada yang mengerjakan dan Simpan SENGAJA tidak mengirim `questions`.
+      **MENAMBAH soal saat berjalan boleh, tetapi HANYA di ujung** (`POST /api/teacher/exams/[id]/tambah-soal`, tombol
+      "Tambah soal di ujung" yang muncul justru saat susunan terkunci — 23 Sep 2026). Aman karena `nilaiAttempt` menilai
+      dari `ExamAttempt.urutan.urutanSoal` masing-masing: soal baru DISAMBUNGKAN ke urutan pengerjaan yang belum
+      dikumpulkan (opsi diacak dengan benih yang sama — paket denah bila ada), sedangkan yang sudah mengumpulkan tidak
+      disentuh sehingga nilainya tetap dari soal yang benar-benar dikerjakan. `diperbaruiLiveAt` diisi supaya `versiSoal`
+      berubah (layar peserta memuat ulang naskah) dan `kirimSinyal` mempercepatnya. JANGAN menyisipkan di tengah atau
+      menghapus soal — jawaban terikat id soal dan urutan acak sudah beku.
 
 62. **CBT — satu sumber token, alat periksa, dan jalur tahan putus (20–21 September 2026).**
     - **Token yang ditampilkan SATU SUMBER di SEMUA layar**: token bersama kegiatan bila ada, selain itu token
@@ -649,6 +656,14 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
       membuat ujian yang sama tampil dengan dua token berbeda — lebih buruk daripada masalah awalnya.
     - Token bersama **dibuat otomatis** untuk kegiatan aktif (`pastikanTokenKegiatan`, dipanggil dari layar petugas)
       dan mewarisi `ujian.tokenOtomatisMenit` sekolah. Opt-in manual sebelumnya membuat token tidak pernah terbuat.
+      **Tiga tingkat setelan token, jangan tertukar (temuan user 23 Sep 2026: mengisi 240 di ujian mapel, token tetap
+      berganti tiap 5 menit):** (1) Pengaturan Ujian = nilai BAWAAN untuk ujian BARU dan untuk token bersama yang baru
+      dibuat — mengubahnya TIDAK menyentuh ujian/kegiatan yang sudah ada; (2) `Exam.tokenOtomatisMenit` = hanya berlaku
+      bila kegiatannya TIDAK memakai token bersama; (3) `KegiatanUjian.tokenOtomatisMenit` = yang sebenarnya berlaku
+      untuk token yang dibacakan peserta. Sejak 23 Sep 2026 nilai (3) bisa diisi di formulir Kegiatan Ujian
+      (PUT /api/teacher/kegiatan-ujian/[id] memang sudah menerimanya sejak awal, isiannya saja yang belum ada), tabel
+      kegiatan menampilkan "tiap N mnt", dan penyunting ujian menandai isian tokennya "tidak dipakai" bila kegiatan
+      memakai token bersama.
     - **Kemiripan jawaban** (`src/lib/kemiripan-ujian.ts`): sinyalnya SAMA-SAMA SALAH DENGAN PILIHAN SAMA, bukan
       sama-sama benar. Dijalankan saat diminta, keluarannya daftar untuk DIPERIKSA — bukan tuduhan. Uraian/unggah
       tidak dibandingkan.
@@ -755,6 +770,18 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     cache ≤25 GB — cache & image lama sempat memenuhi thin pool Proxmox 95%), sehingga lapisan `npm ci` kadang dibangun ulang dan
     jaringan sekolah memutus koneksi serentak (`ECONNRESET`). Dockerfile memakai cache mount `/root/.npm` + `--maxsockets=6` +
     percobaan ulang. Jangan tambahkan `# syntax=docker/dockerfile:1` — itu menarik image dari Docker Hub tiap build.
+72b. **Pengerasan hasil audit CBT (24 September 2026).** (a) `POST /api/ujian/aplikasi/keluar` (PIN keluar mode ujian)
+    kini WAJIB sesi login dan dibatasi per **akun + IP** — sebelumnya terbuka untuk siapa pun di internet dan satu sekolah
+    berbagi satu IP, jadi PIN pendek bisa ditembaki. (b) `POST /api/student/exams/join` membatasi **15 tebakan token salah
+    per siswa / 5 menit** (hitungan di memori, direset begitu token benar). (c) Token ujian & kegiatan dibuat dengan
+    `randomInt` (node:crypto), bukan `Math.random`. (d) `lemparBilaPengalihan(galat)` (src/lib/galat-rute.ts) dipanggil di
+    baris pertama SETIAP `catch` route CBT (35 berkas): penolakan `verifyRole` berupa redirect diteruskan apa adanya, tidak
+    lagi tertelan jadi 500 palsu — pola ini dipakai juga untuk route baru.
+    Yang DIPERIKSA dan sudah benar (jangan "diperbaiki" tanpa alasan): kunci jawaban hanya dikirim setelah dikumpulkan
+    (`soalUntukSiswa(..., setelahSubmit)`, syarat `submitted && tampilkanNilai`), join tetap menyaring kelas peserta
+    (`pesertaBoleh`), simpan jawaban memeriksa kepemilikan + tenggat + soal harus ada di `urutan` siswa itu + batas ukuran,
+    rekaman lisan hanya bisa diputar pemilik/guru berwenang, dan semua rute guru berlingkup `ujianDalamCakupan`/`cakupanUjian`.
+
 72. **Peserta Ditahan per kegiatan ujian (21 September 2026) — `PesertaDitahanUjian`, src/lib/peserta-ditahan.ts.** Jawaban atas
     "siswa belum menyelesaikan administrasi ujian, bagaimana pengecualiannya": panitia (`bolehAturUjian`) menahan siswa di
     /pusat-ujian/administrasi/ditahan → join token ditolak 403 untuk SEMUA ujian kegiatan itu (pesan + alasan), halaman mulai &
@@ -819,14 +846,241 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     rapor gabungan (cadangan: rata-rata DKN bagian lama), tampil miring; ketikan wali (Grade DKN bernama grup) menimpa, mengosongkan
     sel = DELETE → kembali otomatis. Kolom DKN lain tetap murni manual. Tempat baru yang menampilkan mapel per kelas di dokumen
     rapor/rekap WAJIB memakai `namaGabungan`/`grupMapel`, jangan menampilkan bagian satu per satu.
-78. **Aplikasi Ujian Android (22 September 2026) — pengganti Exambro.** Sumber di `android-ujian/` (WebView Java tanpa pustaka:
-    layar disematkan `startLockTask`, `FLAG_SECURE`, tombol Kembali tidak menutup aplikasi, hanya domain `ALAMAT_APLIKASI`,
-    mikrofon & pemilih berkas didukung). APK dibangun `android-ujian/bangun-apk.sh` (Docker `ghcr.io/cirruslabs/android-sdk:34`
-    + Gradle 8.10.2 disinggahkan di /root/.cache/android-ujian/gradle-home) → `public/unduh/aplikasi-ujian-smk.apk` (tidak masuk git).
-    **Kunci rilis `/root/.cache/android-ujian/kunci-rilis.jks` + `sandi.txt` DI LUAR repo & WAJIB dicadangkan** — tanpa kunci yang
-    sama, versi baru tidak bisa dipasang menimpa versi lama. Situs mengenali aplikasi dari User-Agent `SMKUjianApp/<versi>`
-    (`src/lib/aplikasi-ujian.ts`): `Exam.wajibAplikasi` menolak join dari browser HP Android (komputer & iPhone lolos); keluar saat
-    halaman pengerjaan terbuka butuh PIN `ujian.pinAplikasi` (Pengaturan Ujian, dicek `/api/ujian/aplikasi/keluar`, dibatasi per IP).
-    Sebelum membuka pemilih berkas, aplikasi memanggil `window.__ujianAplikasi.tahan()` (src/lib/perangkat-ujian.ts) supaya tidak
-    tercatat pindah tab — tombol unggah di browser memakai tenggang yang sama. Rilis baru: naikkan versionCode/versionName
-    (app/build.gradle), `VERSI` (MainActivity) & `VERSI_APLIKASI`. Halaman unduh publik: /aplikasi-ujian.
+78. **Aplikasi MyAlwis Mobile (Android, v2.1, 22–23 September 2026) — SATU aplikasi untuk seluruh portal, terkunci HANYA saat ujian.**
+    Keputusan user: "aplikasi tidak fokus ke ujian saja … kalau sudah masuk ujian baru otomatis terkunci". Sumber `android-ujian/`
+    (WebView Java tanpa pustaka). MODE BIASA: mulai di /login, unduhan (DownloadManager + cookie), `window.print` → dialog cetak
+    Android, kamera (pindai QR), lokasi, unggah berkas, tautan luar dibuka di aplikasi lain. MODE UJIAN dinyalakan HALAMAN PENGERJAAN
+    (`/ujian-online/[id]`) lewat `window.AplikasiSMK.modeUjian(true)` selama `m && !m.submitted` dan dimatikan saat dikumpulkan/unmount
+    (+ jaring pengaman URL di aplikasi): layar disematkan (`startLockTask`), `FLAG_SECURE`, tautan luar diblokir, keluar wajib PIN
+    `ujian.pinAplikasi` (/api/ujian/aplikasi/keluar, dibatasi per IP). User-Agent `MyAlwisMobile/<versi>` (`lewatAplikasi`,
+    src/lib/aplikasi-ujian.ts; penanda lama `SMKAlMunawwirApp` & `SMKUjianApp` tetap dikenali — jangan dihapus, aplikasi lama
+    masih terpasang di HP): halaman /login memakai tampilan yang sama di situs & aplikasi (navy + logo bercincin emas + kartu
+    putih, TANPA navbar di keduanya), ajakan pasang PWA disembunyikan di aplikasi, `Exam.wajibAplikasi` menolak join
+    dari browser HP Android (komputer & iPhone lolos). Push web TIDAK jalan di WebView, jadi sejak v2.2 aplikasi
+    MENGAMBIL SENDIRI kabar tiap ±15 menit (`LayananKabar.java`, JobScheduler bawaan — BUKAN WorkManager/AndroidX, supaya APK
+    tetap ±140 KB) dari `GET /api/aplikasi/notifikasi` memakai cookie sesi WebView, lalu memunculkannya sebagai notifikasi
+    Android. Endpoint itu SENGAJA ringan (2 kueri berindeks, maks 5 butir) dan TIDAK menandai dibaca; id yang sudah ditampilkan
+    diingat di SharedPreferences aplikasi. Notifikasi DIAM selama mode ujian (`MainActivity.UJIAN_BERLANGSUNG`), dan ketukan
+    notifikasi membuka `url`-nya di dalam aplikasi (`bukaDariNotifikasi`). Kotak notifikasi (lonceng) tetap jalan.
+    APK dibangun `android-ujian/bangun-apk.sh` (Docker `ghcr.io/cirruslabs/android-sdk:34` + Gradle 8.10.2 disinggahkan) →
+    `public/unduh/myalwis-mobile.apk` (tidak masuk git; salinan nama lama tetap disimpan untuk tautan yang sudah dibagikan).
+    **SATU halaman aplikasi: `/pasang-aplikasi`** — unduh APK + pasang versi browser (PWA) + petunjuk per perangkat + QR bagikan;
+    `/aplikasi` & `/aplikasi-ujian` mengalihkan ke sana (23 Sep 2026, user: "kok double jadinya"). Nama dipilih user 23 Sep 2026
+    ("Alwis" = julukan sekolah): NAMA_APLIKASI "MyAlwis Mobile", label peluncur & `short_name` PWA "MyAlwis" (Android memotong
+    label >±12 huruf). Ganti nama = strings.xml, manifest.ts, src/lib/aplikasi-ujian.ts, dan teks halaman — semuanya lewat
+    konstanta `NAMA_APLIKASI` bila memungkinkan.
+    **Kunci rilis `/root/.cache/android-ujian/kunci-rilis.jks` + `sandi.txt` DI LUAR repo & WAJIB dicadangkan.** Rilis baru: naikkan
+    versionCode/versionName (app/build.gradle), `VERSI` (MainActivity) & `VERSI_APLIKASI`. Sebelum membuka pemilih berkas di mode
+    ujian, aplikasi memanggil `window.__ujianAplikasi.tahan()` (src/lib/perangkat-ujian.ts) — tombol unggah di browser pun sama.
+
+79. **Layar/TV sekolah (Papan & TV, 24 September 2026) — dipantau LEWAT ROUTER, tanpa aplikasi di TV.** Sekolah memasang TCL
+    55P6L (Google TV) di kelas dan TV itu **alat mengajar serbaguna — JANGAN dikunci kiosk**. Model `Layar` menyimpan daftarnya;
+    status hidup/mati, IP, dan jaringan dibaca dari MikroTik (`withMikrotik`, src/lib/layar-server.ts: `daftarLayar`,
+    `kandidatPerangkat`) lalu dicocokkan lewat **MAC**. Halaman `/dashboard/{admin,teacher}/papan-tv` (`PapanTvManager`,
+    jabatan Sarpras/Kepala Lab lewat `aksesSarpras`). Yang perlu diingat:
+    - **Jumlah TV & ruang berubah-ubah** — jangan pernah menulis daftar TV/ruang di kode. Perangkat yang terlihat router muncul
+      sebagai kandidat, ruang diambil dari `daftarRuang()` yang sudah ada. TV dilepas = `aktif=false`, BUKAN dihapus (rekap
+      bulan sebelumnya harus tetap sama).
+    - **MAC acak**: Android mengacak MAC per WiFi (oktet pertama bit 0x02 menyala → `mungkinMacAcak`). Binding/sewa statis yang
+      memakai MAC acak berhenti berlaku diam-diam saat TV menyambung ulang. Selalu minta petugas mematikan MAC acak di TV dulu.
+    - **Kolom `age` sewa DHCP TIDAK ada di API RouterOS** (hanya di CLI `print detail`) — pakai `last-seen`.
+    - Router dihubungi lewat `MIKROTIK_*` di `.env` (API di port khusus, bukan 8728 bawaan). Kalau router tak terjangkau, halaman
+      tetap tampil dengan status OFFLINE — jangan membuat halaman gagal total karena router mati.
+    - Perangkat hotspot punya DUA cara sah berinternet: login (`authorized`) ATAU **dilewatkan lewat IP binding**
+      (`bypassed`). TV sekolah memakai yang kedua, jadi `authorized:false` pada TV ber-binding BUKAN masalah —
+      `BELUM_LOGIN` hanya untuk yang tidak keduanya (temuan user 24 Sep 2026: TV Lab TKJ tertulis "belum login"
+      padahal ping & ADB-nya tembus).
+    - Aktivitas TV dibaca dari tabel hotspot TANPA aplikasi: `idle-time` (diam berapa lama → "menyala tapi tidak
+      ditonton"), `bytes-in/out`, `uptime`.
+
+    **Pantau visual & kendali lewat ADB (`src/lib/layar-adb.ts`, rute `/api/sarpras/layar/[id]/{tangkapan,perangkat,aksi}`):**
+    tangkapan layar TV, nama aplikasi yang sedang dibuka, dan tombol daya/beranda/bisu — tanpa memasang aplikasi di TV.
+    - Syarat di TV, SEKALI per perangkat: Opsi Pengembang → Debugging jaringan, lalu **setujui dialog izin di layar TV**
+      (centang "Selalu izinkan"). Izin terikat pada KUNCI klien; kunci disimpan di volume `adb_keys` (docker-compose)
+      supaya tidak hilang tiap deploy — kalau volume itu dihapus, semua TV minta izin ulang.
+    - `adb` dipasang di image (Alpine `android-tools`, ±2 MB) karena aplikasi berjalan di kontainer.
+    - **Batas yang jangan dijanjikan lebih:** aplikasi ber-DRM (Netflix dsb.) & input HDMI menghasilkan tangkapan layar
+      HITAM; saat TV standby WiFi-nya mati sehingga ADB tidak menjawab sama sekali. **Wake-on-LAN lewat WiFi TERBUKTI
+      GAGAL (diuji 24 Sep 2026)** — menyalakan TV dari jauh hanya mungkin lewat kabel LAN atau colokan pintar.
+    - Setiap tangkapan layar & perintah tombol WAJIB dicatat `logActivity` — fitur ini untuk menindak laporan, bukan
+      merekam diam-diam. Penyegaran berkala di Dinding Layar sengaja OPT-IN dan berhenti saat halaman ditinggalkan.
+
+80. **Mode Ujian Jaringan (24 September 2026) — `src/lib/jaringan-ujian.ts`, halaman /dashboard/admin/jaringan-ujian.**
+    Saat ada siswa yang SEDANG mengerjakan CBT, router menutup hiburan di jaringan siswa; selesai ujian, dibuka lagi
+    sendiri. Aturannya:
+    - **Pemicu = pengerjaan aktif, BUKAN jendela ujian.** Jendela SAS bisa terbuka berhari-hari (21–24 Sep), memakai
+      jendela berarti hiburan mati tiga hari. Dipakai: `ExamAttempt` belum dikumpulkan & berdenyut dalam `tenggang` menit.
+    - **Aturan dibuat SEKALI lalu dinyalakan/dimatikan**, tidak dibuat-hapus tiap kali — menyisipkan aturan baru
+      berulang mengacak urutan firewall yang sudah jalan. Penanda kepemilikan HANYA komentar berawalan `SMK-UJIAN`;
+      jangan pernah menyentuh/menghapus aturan dengan komentar lain.
+    - Blokir memakai `tls-host` + **tutup QUIC (UDP 443)**. Tanpa menutup QUIC, YouTube lewat jalurnya sendiri.
+    - **Bawaannya MATI** (SiteSetting `jaringan.ujianMode`) — fitur ini mengubah internet satu sekolah, tidak boleh
+      menyala diam-diam. Disinkronkan `instrumentation.ts` tiap 2 menit; mode MATI tetap memastikan aturan padam.
+    - Akses halaman & API lewat `assertJaringan` (jabatan pengelola jaringan), dicatat `logActivity`.
+
+81. **Papan informasi TV & aplikasi TV sendiri (24 September 2026).** Halaman `/layar/<token>` (token acak per layar,
+    dibuat dari Papan & TV — TANPA login karena TV tidak bisa mengetik sandi) + APK **MyAlwis Papan**
+    (`android-papan/`, 130 KB, WebView layar penuh, kunci penandatangan sama dengan MyAlwis Mobile). Aturannya:
+    - **Alamat dikirim dari dashboard, tidak ditanam di kode**: `am start -n sch.almunawwir.papan/.MainActivity
+      -e alamat "<url>"`. Aplikasinya SENGAJA serbaguna — TV yang sama bisa menampilkan papan informasi ATAU
+      layar presensi QR. Alamat disimpan di aplikasi, jadi setelah TV dinyalakan ulang papan kembali sendiri.
+    - **Papan dikunci setinggi layar** (`h-dvh overflow-hidden`), isi dibagi EMPAT panel (Jadwal · Pengumuman ·
+      Agenda · Bel) dengan kop logo PANJANG + jam tetap di atas. Jangan memakai `min-h-dvh`: isi yang panjang
+      menjuntai ke bawah dan tidak pernah terlihat karena tidak ada yang menggulir TV di dinding.
+    - Halaman layar publik (`/layar`, `/layar-kegiatan`, `/hadir`) WAJIB masuk `HIDDEN_PREFIXES` di
+      `WhatsAppButton.tsx` — tombol melayang apa pun tidak boleh muncul di papan dinding.
+    - **Buka otomatis** (`bukaPapanOtomatis`, src/lib/layar-jadwal.ts) hanya berjalan bila aplikasi depan TV
+      adalah PELUNCUR (beranda). Kalau guru sedang memakai TV, sistem TIDAK BOLEH merebut layar.
+    - **Tiga setelan tidur TV yang berbeda** dan menu Google TV hanya memperlihatkan sebagian: screensaver,
+      `screen_off_timeout` (paling sering jadi biang), dan `sleep_timeout`. Dimatikan lewat ADB:
+      `settings put secure sleep_timeout -1; settings put system screen_off_timeout 2147483647`.
+    - **Mode daya TV menentukan bisa-tidaknya dinyalakan dari jauh.** Mode "Tanpa layar" = sistem tetap hidup →
+      ADB menjawab dan `KEYCODE_WAKEUP` menyalakan layar (dibuktikan 24 Sep 2026: Awake → Asleep → Awake).
+      Mode Doze = TV benar-benar tidur, Wake-on-LAN lewat WiFi TERBUKTI GAGAL. Jadwal nyala otomatis hanya
+      berlaku untuk TV bermode "Tanpa layar".
+    - **Sebagian TV mencemari keluaran `screencap`**: Polytron mengawali PNG dengan 65 byte log pabrikan
+      ("Init wrapper sys mutex successful…"), sehingga berkasnya ditolak browser dan tampak seperti "TV tidak
+      menjawab". Gambar WAJIB dicari dari TANDA TANGAN PNG-nya, bukan diandaikan mulai di byte pertama.
+    - **`<img>` tidak bisa membaca badan balasan galat.** Saat gambar gagal, klien HARUS menanyakan ulang
+      alasannya lewat fetch — dua kali kejadian pesan menyesatkan (ADB menunggu izin, DVR menjawab 403).
+    - CCTV Dahua: **403 = akun tidak berwenang**, bukan sandi salah. Yang dipakai harus akun LOKAL DVR
+      (biasanya `admin`), bukan akun aplikasi HP (DMSS/Imou, berupa email).
+
+82. **Papan ruang guru = panel BERGILIR (`Layar.papanJenis = "GURU"`, 25 September 2026).** Ruang rapat & ruang guru
+    tidak punya jadwal pelajaran, jadi papan di sana menampilkan "apa yang hari ini belum diisi" — presensi pegawai,
+    jurnal mengajar, absensi kelas, buku piket, rekap kehadiran siswa — satu panel besar sekali tayang, berganti tiap
+    `papanGiliran` detik (bawaan 120). Aturannya:
+    - **Satu sumber angka: `susunPapanPegawai` (src/lib/papan-pegawai.ts)**, dan angkanya sengaja memakai kueri yang
+      SAMA dengan pengingat terjadwal & badge notifikasi (`getClassesMissingAttendance`, jadwal BLOK + minggu A/B,
+      `TeacherScheduleAttendance`, cakupan pegawai `role in [TEACHER, TAS]` seperti halaman Presensi Pegawai). Papan
+      yang menunjukkan angka berbeda dari HP guru lebih buruk daripada tidak ada papan.
+    - **Jenis papan DIPILIH petugas, jangan ditebak dari nama ruang.** Panel ini menyebut NAMA GURU yang belum
+      mengisi, sehingga tidak boleh tampil di TV kelas/koridor. `/api/layar/[token]/pegawai` menolak token layar yang
+      `papanJenis` ≠ GURU — tautan papan kelas yang beredar di grup siswa tetap tidak bisa membacanya.
+    - **Data disegarkan lewat fetch, papan TIDAK memuat ulang halaman.** Memuat ulang mengembalikan giliran ke panel
+      pertama dan menyentak layar di dinding.
+    - **Tidak ada nama siswa.** Kehadiran siswa hanya angka rekap sekolah, sama seperti papan umum.
+    - Hari libur (`cekLibur`) menggantikan panel pegawai dengan satu kartu keterangan; agenda & pengumuman tetap
+      berputar. Ukuran huruf `clamp(… vh …)` seperti papan induk — armada TV bercampur resolusi.
+
+83. **Papan TV dibuka LEWAT APLIKASI, bukan peramban (25 September 2026).** `bukaAlamat` (src/lib/layar-adb.ts)
+    mencoba `am start -n sch.almunawwir.papan/.MainActivity -e alamat <url>` DULU, peramban hanya cadangan —
+    peramban TV menambahkan bilah alamat & penunjuk tetikus di atas papan, dan halaman web tidak bisa
+    menyembunyikan keduanya (laporan user dua kali: "masih muncul alamat di atas"). Berlaku sekaligus untuk buka
+    papan manual, perintah massal, dan penjadwal otomatis. Tombol **Pasang aplikasi papan** di Dinding Layar
+    memasang `public/unduh/myalwis-papan.apk` lewat `adb install -r`.
+    - **Tangkapan layar HITAM = tayangan berproteksi, bukan TV rusak.** YouTube/Netflix/HDMI memakai jalur video
+      terlindungi. Di bawah ~40 KB untuk 1080p pasti bingkai kosong, jadi `tangkapLayar` MENYEBUTKAN aplikasi yang
+      sedang dibuka (status `TERPROTEKSI`) alih-alih mengirim kotak hitam — justru itu yang dicari sekolah.
+    - **Mode Terima Layar** (`modeTerimaLayar`) membuka penerima Miracast TV (TCL: `com.tcl.miracast`) supaya
+      petugas tidak perlu remote, lalu `tahanPapanOtomatis(id, 60)` menahan papan 1 jam. **Miracast = Wi-Fi Direct,
+      hanya laptop Windows**; macOS tidak mendukungnya sama sekali — MacBook memakai Google Cast (port 8008/8009
+      TV terbuka). Gagal mencerminkan layar didiagnosis dari `dumpsys wifip2p`: `groupFormed: false` +
+      `mSavedPeerConfig` kosong = laptop tidak pernah menghubungi TV, bukan masalah di TV atau papan.
+    - **Daftar berjadwal di papan memakai JENDELA, bukan `slice(0, n)`** (`jendela()` di PapanLayar): mulai satu
+      baris sebelum yang akan datang. Dengan `slice` polos, jadwal & bel sore tidak pernah muncul seharian karena
+      enam baris pertama sudah lewat semua (temuan user: "jam yang ke-6 09.45 kok tidak muncul"). Penanda "KINI"
+      memakai indeks ABSOLUT (awal jendela + i), bukan indeks potongan.
+
+84. **Volume TV otomatis saat bel (`Layar.volumeBel`, 25 September 2026).** Permintaan user: "saat bel hidup
+    otomatis volume 100 dan ketika mati kembali volume sebelumnya". Halaman web TIDAK BISA melakukannya —
+    `HTMLMediaElement.volume` hanya meredam suara halamannya sendiri, bukan volume perangkat; jalurnya ADB
+    (`bacaVolume`/`aturVolume` di layar-adb.ts, `cmd media_session volume --stream 3`; perintah `media volume`
+    TIDAK ADA di TV sekolah). Satu sumber logika: `src/lib/volume-bel.ts`.
+    - **Dinaikkan 15 DETIK SEBELUM bel**, bukan saat bel berbunyi: perintah ADB perlu 1–3 detik, dan yang paling
+      perlu terdengar justru detik-detik pertama.
+    - **Dikembalikan setelah suaranya benar-benar habis** — `playBellAudio` sekarang mengembalikan Promise yang
+      selesai pada event `ended` (berkas rusak → nada bawaan lalu tetap selesai, jadi volume tidak pernah
+      tertinggal keras).
+    - **Volume semula disimpan SEKALI.** Bel beruntun tidak boleh menyimpan "100" sebagai nilai semula. Nilai 0
+      (TV sengaja dibisukan) tetap dihormati — penanda "belum disimpan" adalah ketiadaan entri, bukan angka 0.
+    - **Selalu ada pengembalian cadangan** (3 menit) kalau papan mati/lepas jaringan di tengah bel.
+    - Kosong = volume TV tidak pernah disentuh. Angka di formulir adalah PERSEN, diskalakan ke `Max` perangkat
+      (TCL & Polytron sekolah memakai skala 0–100, tetapi jangan diasumsikan — `Max` dibaca dari `dumpsys audio`,
+      dan blok `STREAM_MUSIC` wajib dilingkupi dulu karena dumpsys memuat belasan stream).
+
+85. **Jaringan & Layar = SATU menu (27 September 2026).** Permintaan user: "kenapa fitur papan & tv, perangkat
+    jaringan, dan jaringan sekolah, tidak dijadikan 1 saja dan yang bisa di ringkas". Empat menu lama (Papan & TV,
+    Perangkat Jaringan, Jaringan Sekolah, Mode Ujian Jaringan) dilebur ke `/dashboard/{admin,teacher}/jaringan`
+    (`PusatJaringanManager`) berisi pita tab: Layar & TV · Perangkat · Router & Hotspot · Mode Ujian · Setelan Router.
+    - **Yang digabung hanya KERANGKAnya.** Tiap bagian tetap komponen yang sudah berjalan (`PapanTvManager`,
+      `PerangkatJaringanManager`, `JaringanManager`, `JaringanUjianManager`), dipasang dengan prop **`tanpaKerangka`**
+      yang melepas `PageHeader` + padding halaman supaya tidak dobel. Menulis ulang isi keempatnya hanya demi
+      keseragaman tampilan akan mengorbankan fitur yang sudah terbukti di lapangan. Manager lain yang mau dilebur ke
+      satu halaman memakai prop yang sama, jangan bikin nama baru.
+    - **Hak akses per tab berbeda dan itu disengaja**: Layar & Perangkat = `aksesSarpras().kelola`, tiga sisanya =
+      `bolehJaringan()` (varian tanpa lemparan dari `jaringan-guard.ts`). **Jangan memakai `aksesSarpras().masuk`
+      sebagai gerbang pengelolaan** — nilainya `true` untuk SETIAP guru & staf (itu gerbang "boleh melapor
+      kerusakan", CLAUDE.md #47). Tab yang tidak berhak TIDAK dirender (bukan disembunyikan CSS), dan tiap API di
+      belakangnya tetap memeriksa haknya sendiri — halaman gabungan bukan pengganti penjaga.
+    - Tab aktif ada di `?bagian=layar|perangkat|router|ujian|setelan` (`router.replace`, bukan `push`, supaya tombol
+      kembali peramban tidak menelusuri tiap tab). Tiga rute lama tetap hidup sebagai **pengalihan** ke tab yang
+      sesuai — tautan di catatan petugas, penanda peramban, dan `url` notifikasi lama tidak mati.
+    - **Sambungan router bisa diisi dari halaman** (`src/lib/router-setelan.ts`, tab Setelan Router): alamat/port/
+      pengguna di SiteSetting `jaringan.routerHost|routerPort|routerUser`, sandi di `jaringan.routerSandi`
+      TERENKRIPSI AES-256-GCM berkunci turunan `SESSION_SECRET` — pola persis `dapodik.kunci`. `.env`
+      (`MIKROTIK_*`) tinggal cadangan bila baris DB kosong; isian dikosongkan = baris dihapus = kembali ke `.env`.
+      **Kotak sandi kosong berarti "jangan diubah", bukan "hapus"** — menghapus sandi harus ditekan tegas, kalau
+      tidak sekali simpan setelan lain akan diam-diam memutus sambungan router. Sandi TIDAK PERNAH dikembalikan ke
+      browser maupun masuk `logActivity`; balasan hanya menyebut ada/tidaknya. `withMikrotik` membaca setelan ini
+      (disinggahkan 30 detik, dibuang `lupakanSetelanRouter()` saat disimpan) — jadi **jangan lagi membaca
+      `process.env.MIKROTIK_*` langsung** di modul baru. Simpan selalu diikuti uji sambungan, supaya setelan salah
+      terasa saat itu juga alih-alih muncul sebagai "Router tidak bisa dihubungi" di halaman lain.
+
+86. **Patokan tampilan = Dashboard Kurikulum (27 September 2026).** Keputusan user: "patokan untuk semua
+    halaman adalah dashboard kurikulum untuk beberapa aspeknya" — rinciannya di DESIGN_SYSTEM §19
+    (`space-y-6`, baris pintasan, pita tab PUTIH BERGARIS dengan tab aktif navy, tabel dalam `panel` +
+    `overflow-x-auto`, batang kemajuan tipis). Yang paling mudah terlewat: mengganti latar pita tab ke putih
+    TANPA mengganti `hover:bg-white` pada tab non-aktif — hover putih di atas pita putih tidak terlihat sama
+    sekali. `.page-card` sengaja TIDAK diseragamkan ke `.panel`: di layar keduanya sudah identik.
+    **CCTV ikut dilebur ke Jaringan & Layar (#85) di dalam tab "Perangkat & CCTV"**, bukan tab sendiri —
+    permintaan user: CCTV "dimasukkan ke perangkat jaringan dan teman-temannya tadi jadi satu". Tab itu
+    tampil bila pengguna berhak SALAH SATU isinya (`hak: Hak[]`), dan tiap bagian di dalamnya disaring lagi:
+    CCTV punya guard sendiri yang lebih sempit (`bolehCctv` — Kepala Sekolah, Wakasek Kesiswaan, Wakasek
+    Sarpras), jadi jangan disamakan dengan `aksesSarpras().kelola`.
+
+87. **Keseragaman tampilan punya PEMERIKSA sendiri: `node scripts/cek-keseragaman.mjs` (27 September 2026).**
+    Rinciannya di DESIGN_SYSTEM §19.1. Jalankan pada berkas yang diubah sebelum build, bersama
+    `cek-ikon-kembar.mjs` & `cek-tombol-kembali.mjs`. Pelajaran dari sapuan ini yang mudah terulang:
+    - **Audit mentah selalu kelebihan hitung ±2×.** Dari 166 berkas yang ditandai, 89 ternyata sah
+      (dokumen cetak, matriks padat, lingkaran penghitung, item sidebar, papan TV). Jangan pernah
+      melaporkan angka audit mentah sebagai "sisa pekerjaan" — periksa berkasnya dulu.
+    - **Regex per-atribut `className` melewatkan tombol.** Menyaring satu blok `className="…"` utuh
+      melewatkan yang ditulis template literal (`` `btn-modal-cancel … ${x}` ``) dan yang kelasnya urut
+      lain (`ml-1 p-1.5 …`). Pemeriksa ini memindai BARIS demi baris; itu yang menemukan 11 tombol
+      terakhir setelah putaran pertama sudah "bersih".
+    - **`h-screen` pada `<aside>` desktop WAJIB tetap** (§3.4) — yang diganti `dvh` hanya `min-h-screen`.
+    - **Dokumen cetak jangan disentuh** (§17.4 butir 7): huruf 9–11px, kartu bergaris, dan tabel racikan di
+      halaman cetak memang begitu supaya hasil cetaknya tidak berubah.
+    - **Mayoritas bukan patokan.** Judul kartu portal mayoritasnya `font-bold` (160 tanda), tetapi
+      `.panel-judul` dan Dashboard Kurikulum dua-duanya 600 — jadi yang 160 itu yang salah, dan 61 judul
+      heading portal diturunkan ke `font-semibold` (DESIGN_SYSTEM §19.2). Situs PUBLIK tidak ikut: halaman
+      pemasaran memang lebih tebal.
+    - **Pesan "Belum ada…" punya dua bentuk baku** (DESIGN_SYSTEM §19.3): sebaris `text-sm text-gray-400`,
+      blok tengah `py-10 text-center text-sm text-gray-400`. 96 pesan dengan 46 gaya diseragamkan. Dua
+      kesalahan yang saya buat sendiri dan sudah diperbaiki, jangan diulang: (a) menambahkan
+      `text-gray-400` tanpa memeriksa apakah elemen sudah punya warna LAIN → dua warna bertumpuk di satu
+      elemen; (b) memakai `PrintKop`/`PrintButton` sebagai penanda dokumen cetak di pemeriksa → halaman
+      layar yang kebetulan punya tombol cetak jadi kebal seluruhnya. Pengecualian cetak berlaku per BERKAS,
+      jadi komponen campuran (layar + lembar cetak) tetap harus diperiksa manual.
+    - **Spinner = abu ukuran 24 untuk BLOK memuat** (DESIGN_SYSTEM §19.4); yang SEBARIS menyesuaikan ikon
+      sebelahnya, dan yang di dalam tombol gelap tidak diberi warna sama sekali.
+    - **Jarak bawah blok wajib `mb-5`** untuk `kisi-kartu`/`baris-alat`/`alat-aksi justify-end` (§3.1 & §4.1);
+      49 jarak `mb-3/4/6` diseragamkan. Blok di dalam wadah `space-y-6` tidak memakai `mb-*` sama sekali.
+
+88. **Urutan & jarak isi halaman (27 September 2026, teguran user — DESIGN_SYSTEM §19.5).**
+    `PageHeader` → pemberitahuan (bila ada) → **KARTU ANGKA** → pintasan → baris alat → isi.
+    **Di halaman yang punya kartu angka, kartu WAJIB blok pertama**; tombol/pintasan/baris cari yang
+    berdiri di atasnya terlihat melayang (laporan user: tombol "Inventaris Barang" sendirian di atas kartu
+    Sarpras). Jarak antar blok dari SATU wadah `space-y-6`, bukan `mb-*` per blok — dengan `mb-*`, satu blok
+    yang lupa diberi jarak langsung menempel ("sangat mepet"). Kesalahan saya yang memicu teguran ini:
+    menyisipkan baris pintasan tepat di bawah `PageHeader` di 5 dashboard, padahal patokan Kurikulum
+    menaruhnya SETELAH kartu; dan meninggalkan panel "Pintasan Kesiswaan" lama sehingga tautannya dobel.
+    Periksa dengan `node scripts/cek-keseragaman.mjs` (aturan `urutan-kartu-dulu`).
+
+89. **Ubin pintasan = `<BarisPintasan>` (src/components/shared/BarisPintasan.tsx), JANGAN salin markup**
+    (27 September 2026 — DESIGN_SYSTEM §20). Markup yang sama sempat tersebar di 13 berkas dan bentuknya
+    pelan-pelan berbeda. Token spasi & bentuk ada di blok "TOKEN PELENGKAP" globals.css; tinggi kartu
+    seragam diurus `.kisi-kartu { align-items: stretch }`, bukan per halaman. **Fondasi token TIDAK
+    dibuat ulang** — `@theme` yang ada sudah dipakai 272 halaman; membuat berkas variabel kedua akan
+    menjadi sistem paralel yang bertabrakan.

@@ -271,6 +271,7 @@ manual dari nol:
 | `.btn-modal-save` | navy `primary-700` padat → `primary-900` hover | **Aksi utama portal**: Tambah / Simpan / Buat / Kirim / Unggah (juga footer `Modal`) |
 | `.btn-modal-cancel` | putih, garis abu, teks abu tua | **Aksi kedua portal**: Batal / Cetak / Ekspor / Impor / Unduh Excel / tautan ke halaman terkait |
 | `.btn-hapus` | merah `red-600` padat | Hapus / aksi berbahaya berteks (ikon hapus di baris tabel tetap pola §15.2) |
+| `.btn-awas` | amber `#d97706` padat | **Tindakan besar yang sulit dibatalkan tetapi BUKAN menghapus** (27 Sep 2026): Naik Kelas seluruh sekolah, memproses kelulusan, menghapus data satu kegiatan ujian. Dibuat karena tiga kelas di atas tidak muat — navy membuatnya terlihat sebiasa "Simpan" padahal akibatnya menyentuh ribuan baris, sedangkan merah salah karena tidak menghapus apa pun. **Bukan untuk "Unduh Excel"/"Ekspor"** yang kebetulan pernah dibuat amber — itu aksi kedua (`.btn-modal-cancel`). |
 
 Semua tombol: `border-radius` besar (`9999px` untuk CTA publik, `0.75rem` untuk tombol
 modal/admin), `transition: all 0.3s` atau `0.15s` untuk yang kecil. Ikon di dalam tombol pakai
@@ -290,7 +291,7 @@ halaman cetak lain WAJIB navigasi tab yang sama + punya tombol "Kembali" (`Arrow
   <div className="baris-alat mb-5">            {/* bisa juga di dalam kartu: className="page-card p-4 mb-5 baris-alat" */}
     <div className="alat-cari"><Search className="absolute left-3.5 …" /><input className="input-field pl-10" … /></div>
     <div className="alat-saring"><Select … /></div>      {/* DatePicker/MonthPicker/Select/label centang */}
-    <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">…tab…</div>
+    <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">…tab…</div>
     <div className="alat-aksi"><button className="btn-modal-cancel"><Printer /> Cetak</button><button className="btn-modal-save"><Plus /> Tambah</button></div>
   </div>
   ```
@@ -311,6 +312,23 @@ halaman cetak lain WAJIB navigasi tab yang sama + punya tombol "Kembali" (`Arrow
 - Tombol di kepala `GroupedSection` (mis. "Cetak Kelas") memakai `btn-modal-cancel px-3 text-xs` — kepala grup kini terang.
 
 ---
+
+### 4.2 Tombol "Kembali" — wajib di halaman DI LUAR menu (keputusan user 24 September 2026)
+
+Permintaan user: "cek halaman yang tidak punya tombol kembali, buat sama semua". Aturannya:
+
+- **Halaman yang ADA di menu sidebar/portal TIDAK diberi tombol Kembali** — menunya sendiri sudah jadi jalan
+  pulang, dan tombol Kembali di sana ambigu tujuannya.
+- **Halaman yang TIDAK ada di menu WAJIB punya tombol Kembali**: halaman anak (dibuka dari kartu/tautan halaman
+  lain), halaman cetak, dan halaman yang dibuka dari lonceng notifikasi atau pindai QR.
+- Bentuknya SATU untuk semua: `<BarisKembali href="..." />`
+  (`src/components/shared/TombolKembali.tsx`) — `btn-modal-cancel` + panah kiri + kata "Kembali", pada baris
+  sendiri tepat di bawah `<PageHeader />`. Tanpa `href` tombol memakai riwayat browser (dipakai bila asal
+  halaman bisa berbeda-beda, mis. detail aset yang dibuka dari QR label).
+- Komponen "Manager" yang dipakai DUA portal menerima `kembaliHref?: string`; portal yang halamannya ada di menu
+  tidak mengirimnya, portal yang tidak mengirimkannya. Jangan meracik tombol kembali sendiri lagi.
+- Periksa sebelum build: **`node scripts/cek-tombol-kembali.mjs`** (membandingkan seluruh `page.tsx` dengan
+  daftar href di sidebar & `menu-portal.ts`). Sapuan pertama 24 Sep 2026 menambal 17 halaman.
 
 ## 5. Tabel & Data Display
 
@@ -864,3 +882,235 @@ Semua animasi dimatikan saat `prefers-reduced-motion: reduce`.
    halaman bisa digeser ke samping (temuan user 15 Sep 2026: panel Komposisi dashboard Admin meluber di HP, menu bawah ikut
    terpotong). Menguji luber: bandingkan `scrollWidth` dengan LEBAR LAYAR yang diset (bukan `innerWidth` — browser mode HP
    ikut melebarkan area tampilan mengikuti isi yang meluber) dan ulangi dengan ukuran huruf 115% & 130% seperti setelan HP.
+
+## 18. Halaman gabungan berpita tab (27 September 2026)
+
+Beberapa menu yang **satu urusan** dan dibuka berpindah-pindah dalam satu pekerjaan digabung menjadi satu
+halaman berpita tab, bukan satu menu per modul. Contoh nyata: **Jaringan & Layar** (CLAUDE.md #85) menyatukan
+Papan & TV, Perangkat Jaringan, Jaringan Sekolah, dan Mode Ujian Jaringan — keempatnya membaca router yang sama.
+
+Polanya:
+- Halaman `page.tsx` = **server component** yang menghitung hak akses lalu mengoper boolean ke satu komponen
+  klien kerangka (`PusatJaringanManager`). Tab yang tidak berhak tidak dirender sama sekali.
+- Isi tiap tab = komponen Manager yang **sudah ada**, dipasang dengan prop **`tanpaKerangka`** yang melepas
+  `PageHeader` dan padding halaman (`p-6 lg:p-8 pt-16 lg:pt-8`) supaya tidak dobel. Jangan menyalin/menulis
+  ulang isinya.
+- Pita tab: `alat-tab` + `bg-gray-100 p-1 rounded-xl`, tab aktif **`bg-primary-900 text-white`** (§5.7),
+  `overflow-x-auto` untuk HP, tiap tombol `sentuh` + ikon 15px.
+- Tab aktif tercermin di `?bagian=` lewat `router.replace(..., { scroll: false })` — bisa ditautkan & dimuat
+  ulang tanpa kembali ke tab pertama, dan tombol kembali peramban tidak menelusuri tiap tab.
+- Rute menu lama TIDAK dihapus: diganti berkas `page.tsx` berisi `redirect("…?bagian=…")` supaya tautan lama,
+  penanda peramban, dan `url` notifikasi yang sudah terkirim tetap sampai. `PETA_ILUSTRASI` (§57 CLAUDE.md)
+  mendaftarkan rute gabungan sebagai satu fitur = satu gambar; rute lama tetap terdaftar selama masih hidup.
+
+
+## 19. PATOKAN TAMPILAN: Dashboard Kurikulum (27 September 2026)
+
+**Keputusan user: "patokan untuk semua halaman adalah dashboard kurikulum untuk beberapa aspeknya".**
+`src/components/jabatan/WakasekKurikulumDashboard.tsx` adalah acuan yang dilihat langsung — kalau ragu
+bentuk sesuatu, buka berkas itu dan tiru, jangan meracik varian baru. Aspek yang mengikat:
+
+```tsx
+<div className="p-6 lg:p-8 pt-16 lg:pt-8">
+  <PageHeader icon={<Ikon size={22} />} title="…" description="…" />
+
+  <div className="space-y-6">                             {/* 1. SATU wadah, bukan mb-5 per blok */}
+    <div className="kisi-kartu kisi-kartu-5">…StatTile…</div>          {/* 2. kartu angka */}
+
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">           {/* 3. baris PINTASAN */}
+      {pintasan.map(t => (
+        <Link key={t.href} href={t.href} className="panel panel-interaktif flex items-center gap-3 p-3.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white"><t.ikon size={16} /></span>
+          <span className="min-w-0 text-sm font-semibold text-primary-900">{t.label}</span>
+        </Link>
+      ))}
+    </div>
+
+    <div className="baris-alat">                                       {/* 4. PITA TAB */}
+      <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
+        <button className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+          aktif ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>…</button>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start"> {/* 5. isi dua kolom */}
+      <div className="panel overflow-hidden xl:col-span-8"><div className="overflow-x-auto"><table className="data-table">…</table></div></div>
+      <div className="panel p-5 xl:col-span-4">…</div>
+    </div>
+  </div>
+</div>
+```
+
+Catatan per aspek:
+1. **`space-y-6`** sebagai satu wadah isi — bukan `mb-5`/`mb-6` yang ditempel per blok. Jaraknya jadi sama
+   di semua halaman tanpa perlu diingat satu-satu.
+2. **Baris pintasan = halaman TETANGGA**, bukan pengulangan tab di bawahnya: 3–4 tautan yang memang jadi
+   langkah berikutnya setelah melihat angka. Dari portal guru JANGAN menautkan rute `/dashboard/admin/*`
+   (CLAUDE.md #45) — pakai `tautanJabatan(basePath, …)` atau saring per portal.
+3. **Pita tab PUTIH BERGARIS** (`border border-gray-100 bg-white p-1`), tab aktif `bg-primary-900 text-white`,
+   non-aktif `text-gray-500 hover:bg-gray-50`. Ini MEMBALIK catatan lama `bg-gray-100` di §4.1 — 17 pita
+   disapu 27 Sep 2026, dan `hover:bg-white` pada tab non-aktif wajib ikut diganti (di atas pita putih,
+   hover putih tidak terlihat sama sekali).
+4. Tabel selalu `panel overflow-hidden` → `overflow-x-auto` → `.data-table` (§5.7 butuh wadah itu untuk freeze).
+5. Kemajuan/persentase = batang tipis `h-1.5 rounded-full bg-gray-100` berisi `bg-emerald-500`/`bg-amber-400`,
+   bukan angka persen telanjang. Status = `status-badge` + pasangan warna §2.
+
+**`.page-card` TIDAK perlu diganti `.panel`** — di layar keduanya sudah identik (`@media screen` menyetel
+sudut, garis, dan bayangan `.page-card` persis seperti `.panel`, §17.4 butir 7). Mengganti 37 berkas hanya
+menambah risiko tanpa perubahan tampilan.
+
+### 19.1 Pemeriksa keseragaman — `node scripts/cek-keseragaman.mjs` (27 September 2026)
+
+Permintaan user: "fokus penyeragaman semua halaman baik itu tombol2 dan tata letak dan lain2". Sapuan
+manual selalu luntur karena fitur baru menambah racikan lagi, jadi patokannya dijadikan **pemeriksa**:
+jalankan tanpa argumen untuk seluruh `src`, atau dengan daftar berkas yang diubah. Keluar dengan kode 1
+bila ada temuan, jadi bisa dipasang di rantai build seperti `cek-ikon-kembar.mjs` & `cek-tombol-kembali.mjs`.
+
+Yang diperiksa: tombol racikan · kelas berlebih pada `.btn-*` · huruf <12px di layar · kartu racikan →
+`.panel` · pita tab abu & `hover:bg-white` di pita putih · `min-h-screen` → `min-h-dvh` · token
+`primary-200/400/600/800` · `<select>`/`<input type=date|month|time>` bawaan · `window.confirm` · grid
+kartu angka tanpa `.kisi-kartu` · `PageHeader` dibungkus `print:hidden` · tabel layar tanpa wadah
+`overflow-x-auto` · **jarak bawah blok bukan `mb-5`** · **judul kartu portal masih `font-bold`**.
+
+**Pengecualiannya sudah TERBUKTI, bukan dugaan** — tiap audit, sekitar separuh temuan ternyata sah:
+dokumen cetak & pratinjau kertas (dikenali dari `print-doc`/`a4-page`/`@page`/`PrintKop`), matriks padat
+(jadwal, kalender absensi, pembagian mengajar, Buku Klapper, denah ruang), lingkaran penghitung kecil &
+`<sup>`, item sidebar, tombol melayang, tombol kembali di kepala navy `PortalShell`, dan papan dinding TV
+(ukurannya `vh`-based dan layarnya terkunci setinggi layar — CLAUDE.md #81). Jangan menambah pengecualian
+baru tanpa benar-benar membuka berkasnya; kalau pemeriksa jadi terlalu longgar, angka nol-nya tidak berarti
+apa pun. Cara mengujinya: buat berkas berisi pelanggaran yang disengaja dan pastikan semuanya tertangkap.
+
+**Hasil sapuan 27 September 2026:** 41 tombol racikan → kelas baku (termasuk 4 di situs publik yang
+menyalin `.btn-primary` dengan tangan, 2 tombol Hapus di panel penyunting → `.btn-hapus`, dan 4 tautan
+dokumen ujian); 9 kelas berlebih dibersihkan; 58 `min-h-screen` → `min-h-dvh` di 47 berkas; 25 kartu
+racikan → `.panel`; 50 huruf di bawah 12px dinaikkan (44 di antaranya di `JaringanManager`, berkas yang
+belum pernah ikut sapuan sebelumnya); 1 grid kartu angka → `.kisi-kartu`; 1 tombol hapus baris tabel
+disamakan ke ukuran §15.2.
+
+### 19.2 Dua hal yang baru diseragamkan 27 September 2026 (putaran tata letak)
+
+1. **Jarak bawah blok = `mb-5`.** `kisi-kartu`, `baris-alat`, dan `alat-aksi justify-end` dulu bercampur
+   `mb-3/4/5/6` — 20px di satu halaman, 24px di halaman berikutnya, dan itu terlihat saat berpindah menu.
+   Majoritasnya memang sudah `mb-5` (27/66/47) dan itu pula yang tertulis di §3.1 & §4.1, jadi **49 jarak
+   menyimpang diseragamkan ke `mb-5`**. Blok yang berada di dalam wadah `space-y-6` (pola Kurikulum) tidak
+   memakai `mb-*` sama sekali — jaraknya dari wadahnya.
+2. **Judul kartu/seksi di PORTAL = `font-semibold` (600), bukan `font-bold`.** Patokannya dua-duanya
+   sepakat: `.panel-judul` di globals.css memakai `font-weight: 600`, dan judul kartu Dashboard Kurikulum
+   `font-heading font-semibold text-navy text-sm mb-3`. Yang racikan justru mayoritas `font-bold` (160
+   tanda) — mayoritas di sini BUKAN patokan. **61 judul heading di 31 berkas portal** diturunkan ke 600.
+   **Situs PUBLIK sengaja TIDAK ikut**: halaman pemasaran (Alumni, Program, Ekstrakurikuler) memang lebih
+   tebal, dan menyeragamkannya ke bobot portal akan memucatkan tampilannya tanpa diminta.
+   `text-navy` dan `text-primary-900` adalah hex yang SAMA (§2 menyebut `navy` alias semantik) — keduanya
+   sah, jadi tidak ikut diseragamkan; yang diperbaiki hanya bobotnya.
+
+### 19.3 Pesan "Belum ada…" / "Tidak ada…" (27 September 2026)
+
+Ada 96 pesan kosong racikan dengan **46 gaya berbeda** — ukuran 12px/14px bercampur, warna `gray-400`
+dan `gray-500` bercampur, jarak vertikal `py-2` sampai `py-20`, sebagian miring. Itu paling terasa saat
+berpindah halaman karena keadaan kosong justru sering terlihat.
+
+Dua bentuk baku sekarang:
+```tsx
+{/* Sebaris di dalam panel/kartu */}
+<p className="text-sm text-gray-400">Belum ada data.</p>
+{/* Blok yang ditengahkan */}
+<p className="py-10 text-center text-sm text-gray-400">Belum ada data.</p>
+```
+- **Selalu 14px** (`text-sm`) dan **warna disebut tegas** — jangan mewarisi warna teks sekitarnya.
+- Blok yang ditengahkan **selalu `py-10`**. `EmptyState` (py-16 + ikon besar) tetap untuk keadaan kosong
+  LEVEL HALAMAN/TABEL; `PanelKosong` (py-8 + chip ikon) untuk di dalam panel bila memang mau berikon.
+- **Latar gelap dikecualikan** (papan TV, kiosk, panel navy): `text-white/40` punya skalanya sendiri.
+- Pesan yang memang BERWARNA SEMANTIK (hijau "sudah lengkap", amber "perlu tindakan") tetap warnanya —
+  jangan ditambahi `text-gray-400`. Ini bekas kesalahan nyata: sapuan pertama menambahkan `text-gray-400`
+  pada tiga pesan yang sudah punya warna, sehingga ada DUA warna teks di satu elemen.
+
+**Batas pemeriksa yang perlu diketahui:** pengecualian dokumen cetak bekerja per BERKAS. Komponen campuran
+(punya bagian layar DAN lembar cetak dalam satu berkas — `JaringanManager`, `PengawasKelasPanel`) jadi ikut
+kebal, sehingga penyimpangan di bagian layarnya harus diperiksa manual. Penanda cetaknya juga sengaja hanya
+yang menandai LEMBAR (`print-doc`, `a4-page`, `SheetShell`, `LembarBerhalaman`, `@page`) — `PrintKop` dan
+`PrintButton` TERLALU LEMAH: halaman layar biasa pun punya tombol cetak, dan sekali kata itu muncul seluruh
+berkas jadi kebal (terbukti 27 Sep 2026, `JaringanManager` lolos hanya karena itu).
+
+### 19.4 Spinner memuat (27 September 2026)
+
+Dua gaya beredar: `Loader2 size={24}` ABU di kotak `min-h-[60vh]` (42×) dan `size={28}` NAVY di
+`flex justify-center py-16` (48×) — dua ukuran dan dua warna untuk hal yang sama. Patokannya §15.1 dan
+Dashboard Kurikulum: **abu, ukuran 24**. Disapu: 48 spinner 28→24, 82 `text-primary-500`→`text-gray-400`,
+dan 4 spinner blok berukuran 32 diturunkan.
+
+- **Blok memuat** (halaman & kartu): `<Loader2 size={24} className="animate-spin" />` di wadah bertext
+  `text-gray-400` — `min-h-[60vh]` untuk level halaman, `py-16` untuk di dalam kartu. Keduanya sah.
+- **Spinner SEBARIS menyesuaikan ikon sebelahnya**, bukan 24: 11px di tombol berikon 11px, 14–15px di
+  baris tabel. Pemeriksa sengaja hanya menandai ukuran ≥28 — menyeragamkan yang sebaris ke 24 akan membuat
+  tombol kecil melonjak.
+- **Di dalam tombol gelap JANGAN diberi warna**: spinnernya mewarisi teks putih tombol. Memberi
+  `text-gray-400` di sana membuatnya nyaris tak terlihat — diperiksa setelah sapuan ini, tidak ada satu pun
+  yang kena.
+
+### 19.5 Urutan & jarak isi halaman — WAJIB (27 September 2026, teguran user)
+
+User menemukan lima dashboard dengan **pintasan di ATAS kartu angka** (terbalik dari patokan Kurikulum),
+tombol "Inventaris Barang" melayang sendirian di atas kartu, dan blok-blok yang **"sangat mepet"**.
+Ketiganya berasal dari kesalahan yang sama: blok disisipkan tepat di bawah `PageHeader` dan jaraknya
+diatur `mb-*` per blok, bukan oleh satu wadah.
+
+**Urutan baku (melengkapi §17.3):**
+```
+PageHeader
+  → pemberitahuan yang perlu tindakan (hanya bila ada)   ← notice amber/merah, BOLEH di atas kartu
+  → KARTU ANGKA (.kisi-kartu)                            ← blok pertama yang terlihat
+  → baris pintasan (grid grid-cols-2 gap-3 lg:grid-cols-4)
+  → baris alat (.baris-alat / .alat-aksi)
+  → isi (panel, tabel, grafik)
+```
+**Di halaman yang punya kartu angka, kartu itu WAJIB blok pertama** — bukan tombol, bukan pintasan, bukan
+baris cari. Tombol yang berdiri sendiri di atas kartu terlihat melayang tanpa jangkar. Disapu 27 Sep 2026:
+11 halaman dipindahkan. Pengecualian: pemberitahuan (§17.3) dan `BarisKembali` (§4.2) memang di atas.
+
+**Jarak antar blok TIDAK diatur `mb-*` per blok, melainkan satu wadah `<div className="space-y-6">`**
+tepat di bawah `PageHeader`. Dengan `mb-*` per blok, satu blok yang lupa diberi jarak langsung menempel ke
+tetangganya — dan itulah yang terjadi. Enam dashboard jabatan dibungkus ulang 27 Sep 2026; `mb-*` pada anak
+langsungnya dilepas supaya tidak dobel.
+
+## 20. Fondasi token & komponen bersama (27 September 2026)
+
+Permintaan user: aplikasi diseragamkan sebagai design system berstandar enterprise, dengan keluhan
+konkret — **spasi tidak teratur, tinggi kartu tidak sama, ukuran font acak, bentuk tombol tidak
+seragam, tabel tidak sejajar, dan kartu pintasan bentuknya berbeda-beda**.
+
+**Fondasinya TIDAK dibuat ulang.** Repo ini sudah punya `@theme` (warna, font, bayangan, easing) +
+19 bagian dokumen ini + pemeriksa otomatis. Membuat `variables.css` kedua di sampingnya akan menjadi
+sistem paralel yang bertabrakan dengan 272 halaman yang sudah memakai token lama. Yang ditambahkan
+hanyalah tiga token yang memang BELUM ada dan justru jadi sumber ketidakrapian:
+
+### 20.1 Skala spasi (globals.css, blok "TOKEN PELENGKAP")
+| Token | Nilai | Dipakai untuk |
+|---|---|---|
+| `--spacing-rapat` | 4px | jarak ikon ke teks di dalam chip |
+| `--spacing-kecil` | 8px | antar tombol dalam satu baris |
+| `--spacing-sedang` | 16px | padding isi panel di HP |
+| `--spacing-blok` | 20px | jarak bawah baris alat (`mb-5`, §19.2) |
+| `--spacing-seksi` | 24px | jarak antar seksi (`space-y-6`, §19.5) |
+| `--spacing-halaman` | 32px | padding halaman di layar lebar (`lg:p-8`) |
+| `--spacing-lega` | 48px | jarak sebelum blok penutup |
+
+Bentuk: `--radius-kartu` 16px (panel, kartu angka, ubin pintasan) · `--radius-kontrol` 12px (tombol,
+isian, dropdown) · `--radius-chip` pil (badge, status, CTA publik). Jangan meracik radius per halaman.
+
+### 20.2 Tinggi kartu seragam
+Keluhan "tinggi kartu tidak sama" **bukan** salah kartunya melainkan GRID-nya: label yang membungkus
+dua baris membuat kartu itu lebih tinggi, tetangganya tetap pendek. `.kisi-kartu` sekarang
+`align-items: stretch` dan anaknya `height: 100%`, jadi semua kartu dalam satu baris setinggi yang
+tertinggi. Tidak ada yang perlu diubah di halaman.
+
+### 20.3 `<BarisPintasan>` — satu komponen, bukan salin-tempel
+Markup ubin pintasan sebelumnya **disalin-tempel ke 13 berkas**, sehingga tinggi, padding, dan ukuran
+ikonnya pelan-pelan berbeda — itulah "kartu pintasan bentuknya berbeda-beda". Sekarang:
+```tsx
+import BarisPintasan from "@/components/shared/BarisPintasan";
+<BarisPintasan items={[{ href, label, ikon: Users }, …]} />
+```
+- Bentuknya di `.kisi-pintasan` / `.ubin-pintasan` (globals.css), markupnya hanya di komponen itu.
+- **Dua varian saja**: ringkas (ikon + label) dan berketerangan (`ket` → dua baris + panah).
+  `sorot: true` menandai yang perlu perhatian. Jangan menambah varian ketiga di halaman.
+- Letaknya SELALU setelah kartu angka (§19.5), isinya halaman TETANGGA — bukan pengulangan menu.

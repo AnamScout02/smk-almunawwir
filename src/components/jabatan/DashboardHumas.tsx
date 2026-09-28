@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, FileCheck2, Handshake, Loader2, Newspaper, UserCheck } from "lucide-react";
+import { Building2, FileCheck2, Handshake, Loader2, Newspaper, UserCheck , Briefcase} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 import Panel, { PanelKosong } from "@/components/shared/Panel";
 import { BarDaftar } from "@/components/shared/GrafikRingkas";
 import { useToast } from "@/components/shared/ToastProvider";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Ringkasan {
   mitra: { total: number; mouAktif: number; tanpaMou: number; segeraBerakhir: { id: string; nama: string; sampai: string; kontak: string | null; telepon: string | null }[]; kedaluwarsa: { id: string; nama: string; sampai: string }[]; daftar: { id: string; nama: string; bidang: string | null; kuota: number | null; terisi: number }[] };
@@ -22,7 +24,7 @@ const tgl = (s: string) => new Date(s).toLocaleDateString("id-ID", { day: "numer
  * "Dashboard Jabatan") — keputusan user 19 September 2026: "superadmin sifatnya full akses ke
  * semuanya ... karena si superadmin bukan pegawai dan bukan guru di situ", jadi ia tidak boleh
  * dilempar ke shell portal guru untuk melihat dashboard ini. */
-export default function DashboardHumas() {
+export default function DashboardHumas({ basePath = BASE_GURU }: { basePath?: string }) {
   const toast = useToast();
   const [d, setD] = useState<Ringkasan | null>(null);
   const [galat, setGalat] = useState("");
@@ -45,16 +47,28 @@ export default function DashboardHumas() {
   if (galat) return <div className="p-6 lg:p-8 pt-16 lg:pt-8"><EmptyState icon={Handshake} title="Tidak tersedia" description={galat} /></div>;
   if (!d) return <div className="p-6 lg:p-8 flex items-center justify-center min-h-[60vh] text-gray-400"><Loader2 size={24} className="animate-spin" /></div>;
   const perhatianMou = d.mitra.segeraBerakhir.length + d.mitra.kedaluwarsa.length;
+  /* BARIS PINTASAN (27 September 2026, pola Dashboard Kurikulum). Kartu angka di bawah memang bisa diklik,
+     tetapi pintasan tetap dipasang supaya susunannya sama dengan dashboard jabatan lain. */
+  const pintasan = [
+    { href: tautanJabatan(basePath, "humas/industry-partners"), label: "Mitra Industri", ikon: Building2 },
+    { href: tautanJabatan(basePath, "humas/pkl-pendaftaran"), label: "Pendaftaran PKL", ikon: Briefcase },
+    { href: tautanJabatan(basePath, "humas/tracer-study"), label: "Tracer Study", ikon: UserCheck },
+    { href: tautanJabatan(basePath, "branding/liputan"), label: "Liputan Media", ikon: Newspaper },
+  ];
+
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Handshake size={22} />} title="Dashboard Humas" description="Kemitraan industri, PKL, dan keterserapan lulusan" />
+
       <div className="space-y-6">
         <div className="kisi-kartu kisi-kartu-4">
-          <StatTile ikon="kelas" color="primary" value={d.mitra.total} label={`Mitra industri · ${d.mitra.mouAktif} MoU aktif`} href="/dashboard/teacher/humas/industry-partners" />
-          <StatTile ikon="peringatan" color={perhatianMou ? "amber" : "emerald"} value={perhatianMou} label="MoU berakhir ≤60 hari / kedaluwarsa" sorot={perhatianMou > 0} href="/dashboard/teacher/humas/industry-partners" />
+          <StatTile ikon="kelas" color="primary" value={d.mitra.total} label={`Mitra industri · ${d.mitra.mouAktif} MoU aktif`} href={tautanJabatan(basePath, "humas/industry-partners")} />
+          <StatTile ikon="peringatan" color={perhatianMou ? "amber" : "emerald"} value={perhatianMou} label="MoU berakhir ≤60 hari / kedaluwarsa" sorot={perhatianMou > 0} href={tautanJabatan(basePath, "humas/industry-partners")} />
           <StatTile ikon="pkl" color="blue" value={d.pkl.berjalan} label={`Siswa sedang PKL · ${d.pkl.selesai} selesai`} />
-          <StatTile ikon="menunggu" color={d.pendaftaran ? "amber" : "emerald"} value={d.pendaftaran} label="Pendaftaran PKL menunggu" href="/dashboard/teacher/humas/pkl-pendaftaran" sorot={d.pendaftaran > 0} />
+          <StatTile ikon="menunggu" color={d.pendaftaran ? "amber" : "emerald"} value={d.pendaftaran} label="Pendaftaran PKL menunggu" href={tautanJabatan(basePath, "humas/pkl-pendaftaran")} sorot={d.pendaftaran > 0} />
         </div>
+
+                <BarisPintasan items={pintasan} />
         <div className="kisi-kartu kisi-kartu-4">
           <StatTile ikon="jurnal" color={d.pkl.jurnalMacet.length ? "red" : "emerald"} value={d.pkl.jurnalMacet.length} label="Jurnal PKL berhenti ≥3 hari" />
           <StatTile ikon="daftar-centang" color={d.pkl.belumDinilaiIndustri ? "amber" : "emerald"} value={d.pkl.belumDinilaiIndustri} label="Belum dinilai industri (≤14 hari berakhir)" />
@@ -62,9 +76,9 @@ export default function DashboardHumas() {
           <StatTile ikon="guru" color={d.pkl.tanpaPembimbing ? "red" : "emerald"} value={d.pkl.tanpaPembimbing} label="PKL tanpa guru pembimbing" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/teacher/humas/pkl-pendaftaran" className="btn-modal-cancel"><FileCheck2 /> Pendaftaran PKL</Link>
-          <Link href="/dashboard/teacher/humas/industry-partners" className="btn-modal-cancel"><Building2 /> Mitra Industri</Link>
-          <Link href="/dashboard/teacher/humas/tracer-study" className="btn-modal-cancel"><UserCheck /> Tracer Study</Link>
+          <Link href={tautanJabatan(basePath, "humas/pkl-pendaftaran")} className="btn-modal-cancel"><FileCheck2 /> Pendaftaran PKL</Link>
+          <Link href={tautanJabatan(basePath, "humas/industry-partners")} className="btn-modal-cancel"><Building2 /> Mitra Industri</Link>
+          <Link href={tautanJabatan(basePath, "humas/tracer-study")} className="btn-modal-cancel"><UserCheck /> Tracer Study</Link>
         </div>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
           <div className="kolom-dashboard space-y-6 xl:col-span-7 min-w-0">
@@ -107,7 +121,7 @@ export default function DashboardHumas() {
                 </ul>
               )}
             </Panel>
-            <Panel judul="Tracer study alumni" ikon={<UserCheck />} tautan={{ label: "Rinci", href: "/dashboard/teacher/humas/tracer-study" }}>
+            <Panel judul="Tracer study alumni" ikon={<UserCheck />} tautan={{ label: "Rinci", href: tautanJabatan(basePath, "humas/tracer-study") }}>
               {d.tracer.length === 0 ? <PanelKosong ikon={<UserCheck />} teks="Belum ada data tracer study." /> : <BarDaftar data={d.tracer.map(t => ({ kunci: t.status, label: TRACER[t.status] ?? t.status, nilai: t.jumlah }))} satuan="alumni" />}
             </Panel>
           </div>

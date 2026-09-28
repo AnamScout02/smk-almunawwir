@@ -5,6 +5,8 @@ import { AlertTriangle, BarChart3, Briefcase, Building2, ChevronRight, FileCheck
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from "recharts";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
+import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 interface Ringkasan {
   semester: string;
@@ -31,7 +33,7 @@ const tanggalPanjang = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDat
  * "Dashboard Jabatan") — keputusan user 19 September 2026: "superadmin sifatnya full akses ke
  * semuanya ... karena si superadmin bukan pegawai dan bukan guru di situ", jadi ia tidak boleh
  * dilempar ke shell portal guru untuk melihat dashboard ini. */
-export default function KepalaSekolahDashboard() {
+export default function KepalaSekolahDashboard({ basePath = BASE_GURU }: { basePath?: string }) {
   const [data, setData] = useState<Ringkasan | null>(null);
   const [error, setError] = useState("");
 
@@ -47,10 +49,10 @@ export default function KepalaSekolahDashboard() {
   const totalPkl = data.pklByStatus.ONGOING + data.pklByStatus.COMPLETED + data.pklByStatus.CANCELLED;
 
   const pintasan = [
-    { href: "/dashboard/teacher/kepala-sekolah/rapor", label: "Pengesahan Rapor", ket: data.keputusan.raporSiapSah ? `${data.keputusan.raporSiapSah} kelas siap disahkan` : "Tidak ada yang menunggu", ikon: FileCheck, sorot: data.keputusan.raporSiapSah > 0 },
-    { href: "/dashboard/teacher/peringatan-dini", label: "Peringatan Dini Siswa", ket: data.risiko ? `${data.risiko.tinggi} risiko tinggi · ${data.risiko.sedang} sedang` : "Lihat siswa berisiko", ikon: Siren, sorot: (data.risiko?.tinggi ?? 0) > 0 },
-    { href: "/dashboard/teacher/kepala-sekolah/mitra", label: "Peta Kemitraan Industri", ket: data.keputusan.mouAkanBerakhir ? `${data.keputusan.mouAkanBerakhir} MoU berakhir ≤ 60 hari` : "MoU mitra aman", ikon: Building2, sorot: data.keputusan.mouAkanBerakhir > 0 },
-    { href: "/dashboard/teacher/kinerja-pimpinan", label: "Kinerja Guru & Pimpinan", ket: "Capaian indikator kinerja", ikon: BarChart3, sorot: false },
+    { href: tautanJabatan(basePath, "kepala-sekolah/rapor"), label: "Pengesahan Rapor", ket: data.keputusan.raporSiapSah ? `${data.keputusan.raporSiapSah} kelas siap disahkan` : "Tidak ada yang menunggu", ikon: FileCheck, sorot: data.keputusan.raporSiapSah > 0 },
+    { href: tautanJabatan(basePath, "peringatan-dini"), label: "Peringatan Dini Siswa", ket: data.risiko ? `${data.risiko.tinggi} risiko tinggi · ${data.risiko.sedang} sedang` : "Lihat siswa berisiko", ikon: Siren, sorot: (data.risiko?.tinggi ?? 0) > 0 },
+    { href: tautanJabatan(basePath, "kepala-sekolah/mitra"), label: "Peta Kemitraan Industri", ket: data.keputusan.mouAkanBerakhir ? `${data.keputusan.mouAkanBerakhir} MoU berakhir ≤ 60 hari` : "MoU mitra aman", ikon: Building2, sorot: data.keputusan.mouAkanBerakhir > 0 },
+    { href: tautanJabatan(basePath, "kinerja-pimpinan"), label: "Kinerja Guru & Pimpinan", ket: "Capaian indikator kinerja", ikon: BarChart3, sorot: false },
   ];
 
   return (
@@ -73,22 +75,11 @@ export default function KepalaSekolahDashboard() {
             sublabel={`${h.ujianBerlangsung} ujian berlangsung · ${h.izinMenunggu} izin menunggu`} />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {pintasan.map(p => (
-            <Link key={p.href} href={p.href} className={`panel panel-interaktif flex items-center gap-3 p-4 ${p.sorot ? "ring-2 ring-amber-300" : ""}`}>
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${p.sorot ? "bg-amber-500" : "bg-primary-700"}`}><p.ikon size={18} /></span>
-              <span className="min-w-0">
-                <span className="block font-heading font-bold text-primary-900 text-sm">{p.label}</span>
-                <span className="block text-xs text-gray-500">{p.ket}</span>
-              </span>
-              <ChevronRight size={16} className="ml-auto shrink-0 text-gray-300" />
-            </Link>
-          ))}
-        </div>
+        <BarisPintasan items={pintasan} />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="panel p-5 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900 text-sm mb-1 flex items-center gap-2"><TrendingUp size={15} className="text-emerald-600" /> Kehadiran siswa per bulan</h3>
+            <h3 className="font-heading font-semibold text-primary-900 text-sm mb-1 flex items-center gap-2"><TrendingUp size={15} className="text-emerald-600" /> Kehadiran siswa per bulan</h3>
             <p className="text-xs text-gray-500 mb-3">Persentase hadir dari seluruh catatan absensi, 6 bulan terakhir</p>
             <ResponsiveContainer width="100%" height={210}>
               <BarChart data={data.tren} margin={{ top: 18, right: 8, left: -18, bottom: 0 }}>
@@ -103,7 +94,7 @@ export default function KepalaSekolahDashboard() {
             </ResponsiveContainer>
           </div>
           <div className="panel p-5 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900 text-sm mb-1 flex items-center gap-2"><AlertTriangle size={15} className="text-red-600" /> Pelanggaran tercatat per bulan</h3>
+            <h3 className="font-heading font-semibold text-primary-900 text-sm mb-1 flex items-center gap-2"><AlertTriangle size={15} className="text-red-600" /> Pelanggaran tercatat per bulan</h3>
             <p className="text-xs text-gray-500 mb-3">Jumlah catatan poin pelanggaran, 6 bulan terakhir</p>
             <ResponsiveContainer width="100%" height={210}>
               <BarChart data={data.tren} margin={{ top: 18, right: 8, left: -18, bottom: 0 }}>
@@ -122,7 +113,7 @@ export default function KepalaSekolahDashboard() {
         <div className="panel overflow-hidden">
           <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3.5">
             <GraduationCap size={16} className="text-primary-700" />
-            <h3 className="font-heading font-bold text-primary-900 text-sm">Perbandingan per jurusan</h3>
+            <h3 className="font-heading font-semibold text-primary-900 text-sm">Perbandingan per jurusan</h3>
             <span className="ml-auto text-xs text-gray-500">Kehadiran & pelanggaran 30 hari · nilai semester {data.semester}</span>
           </div>
           <div className="overflow-x-auto">
@@ -146,8 +137,8 @@ export default function KepalaSekolahDashboard() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="panel p-5">
-            <h3 className="font-heading font-bold text-primary-900 text-sm mb-3 flex items-center gap-2"><Briefcase size={15} className="text-primary-700" /> Status PKL siswa</h3>
-            {totalPkl === 0 ? <p className="py-8 text-center text-sm text-gray-500">Belum ada data PKL.</p> : (
+            <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3 flex items-center gap-2"><Briefcase size={15} className="text-primary-700" /> Status PKL siswa</h3>
+            {totalPkl === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada data PKL.</p> : (
               <div className="space-y-2.5">
                 {([["ONGOING", "Sedang PKL", "bg-blue-500"], ["COMPLETED", "Selesai", "bg-emerald-500"], ["CANCELLED", "Dibatalkan", "bg-red-500"]] as const).map(([k, l, warna]) => (
                   <div key={k}>
@@ -159,8 +150,8 @@ export default function KepalaSekolahDashboard() {
             )}
           </div>
           <div className="panel p-5">
-            <h3 className="font-heading font-bold text-primary-900 text-sm mb-3 flex items-center gap-2"><Building2 size={15} className="text-primary-700" /> Mitra PKL terbanyak</h3>
-            {data.topCompanies.length === 0 ? <p className="py-8 text-center text-sm text-gray-500">Belum ada data perusahaan PKL.</p> : (
+            <h3 className="font-heading font-semibold text-primary-900 text-sm mb-3 flex items-center gap-2"><Building2 size={15} className="text-primary-700" /> Mitra PKL terbanyak</h3>
+            {data.topCompanies.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada data perusahaan PKL.</p> : (
               <ul className="divide-y divide-gray-50">
                 {data.topCompanies.map(c => (
                   <li key={c.company} className="flex items-center justify-between gap-3 py-2 text-sm">
