@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Download, Table2, Pencil, Search, History } from "lucide-react";
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
@@ -66,6 +67,23 @@ export default function BukuIndukSiswaManager({ backHref, canManageAccount = tru
   }, []);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  /* Deep link `?edit=<id>` — membuka modal penyunting siswa tertentu langsung, mengikuti pola yang
+     sudah dipakai Buku Induk Guru. Dipakai Dashboard Operator: dari daftar "NISN kosong" dsb.,
+     mengeklik nama langsung membuka penyuntingnya.
+     Membuka modal LANGSUNG (bukan sekadar mengisi kotak cari) memang perlu: tabel ini berpaginasi
+     50 baris, jadi siswa di halaman ke-7 tidak akan terlihat walau sudah tersaring. */
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId || students.length === 0) return;
+    const target = students.find(s => s.id === editId);
+    if (target) setEditing(target);
+    router.replace(pathname);   // bersihkan param supaya refresh tidak membuka modal lagi
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [students, searchParams]);
 
   const classOptions = Array.from(new Map(students.filter(s => s.class).map(s => [s.class!.id, s.class!])).values())
     .sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name));

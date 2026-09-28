@@ -165,6 +165,14 @@ export default function LayananSarprasManager() {
   const confirm = useConfirm();
   const toast = useToast();
   const [tab, setTab] = useState<"rusak" | "pinjam">("rusak");
+  /* Pintasan "Pemesanan Ruang" (Dashboard Sarpras) menautkan `?tab=pinjam` supaya langsung mendarat di
+     tab yang benar — sebelumnya dua ubin berbeda menunjuk alamat yang sama persis. Dibaca dari
+     `window.location` di dalam useEffect, BUKAN `useSearchParams`: hook itu mewajibkan pembungkus
+     Suspense dan bisa menggagalkan build halaman yang belum punya. */
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "pinjam" || t === "rusak") setTab(t);
+  }, []);
   const [laporan, setLaporan] = useState<Laporan[] | null>(null);
   const [pinjam, setPinjam] = useState<{ daftar: Pinjam[]; aset: Aset[]; ruang: string[] } | null>(null);
   const [bukaRusak, setBukaRusak] = useState(false);

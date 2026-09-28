@@ -7,7 +7,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 import RingkasanSarpras from "@/components/sarpras/RingkasanSarpras";
-import { tautanJabatan, BASE_GURU } from "@/lib/rute-jabatan";
+import { tautanJabatan, BASE_GURU, BASE_ADMIN } from "@/lib/rute-jabatan";
 
 interface RoomUsage { room: string; count: number }
 interface Conflict { room: string; day: string; time: string; classA: string; classB: string }
@@ -40,10 +40,16 @@ export default function WakasekSarprasDashboard({ basePath = BASE_GURU }: { base
 
   /* BARIS PINTASAN (27 September 2026) — mengikuti pola Dashboard Kurikulum: empat halaman yang paling sering
      dibuka SETELAH melihat dashboard ini. Bukan daftar semua menu; empat yang benar-benar jadi langkah berikutnya. */
+  /* Tempat SUB-RUTE sarpras (peminjaman, perawatan, stok opname, label QR) berbeda per portal dan
+     BUKAN turunan dari halaman dashboard ini: di admin ada di /dashboard/admin/sarpras, di guru di
+     /dashboard/teacher/wakasek/sarpras. `tautanJabatan(basePath,"wakasek/sarpras")` menunjuk ke
+     DASHBOARD-nya (dashboard-jabatan/sarpras di admin) sehingga `${…}/peminjaman` jadi 404 —
+     laporan user 28 Sep 2026: "beberapa fitur di dashboard sarpras masih menampilkan 404". */
+  const baseSarpras = basePath === BASE_ADMIN ? "/dashboard/admin/sarpras" : "/dashboard/teacher/wakasek/sarpras";
   const pintasan = [
-    { href: tautanJabatan(basePath, "wakasek/sarpras"), label: "Layanan Sarpras", ikon: Wrench },
+    { href: `${basePath}/layanan-sarpras`, label: "Layanan Sarpras", ikon: Wrench },
     { href: `${basePath}/jaringan?bagian=layar`, label: "Layar & TV", ikon: Tv },
-    { href: tautanJabatan(basePath, "wakasek/sarpras"), label: "Pemesanan Ruang", ikon: DoorOpen },
+    { href: `${basePath}/layanan-sarpras?tab=pinjam`, label: "Pemesanan Ruang", ikon: DoorOpen },
   ];
 
   return (
@@ -56,7 +62,7 @@ export default function WakasekSarprasDashboard({ basePath = BASE_GURU }: { base
 
       <div className="space-y-6">
         <div className="">
-          <RingkasanSarpras lingkupLab={false} base={tautanJabatan(basePath, "wakasek/sarpras")}
+          <RingkasanSarpras lingkupLab={false} base={baseSarpras}
             inventarisHref={tautanJabatan(basePath, "wakasek/sarpras/inventaris")} tambahan={pintasan} />
         </div>
 

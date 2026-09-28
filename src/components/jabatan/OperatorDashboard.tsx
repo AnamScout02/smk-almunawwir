@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, Database, DatabaseZap, GraduationCap, Link2, Loader2, UserCog } from "lucide-react";
+import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, Database, DatabaseZap, GraduationCap, Link2, Loader2, Search, UserCog } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Modal from "@/components/admin/Modal";
 import StatTile from "@/components/admin/StatTile";
 import BarisPintasan from "@/components/shared/BarisPintasan";
 
-interface Butir { label: string; count: number; href: string }
+interface Butir { label: string; count: number; href: string; kunci?: string }
+interface Orang { id: string; nama: string; ket: string }
+interface Rincian { judul: string; editHref: string; daftar: Orang[] }
 interface Kelompok { judul: string; total: number; href: string; butir: Butir[] }
 interface Ringkasan {
   totalItems: number; siswaAktif: number; pegawaiAktif: number; pasanganManual: number;
@@ -23,6 +26,20 @@ export default function OperatorDashboard() {
   const [data, setData] = useState<Ringkasan | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [rincian, setRincian] = useState<Rincian | null>(null);
+  const [memuatRincian, setMemuatRincian] = useState<string | null>(null);
+  const [cari, setCari] = useState("");
+
+  /* Daftar nama diambil SAAT DIKETUK, bukan ikut muatan dashboard: butirnya belasan dan tiap butir
+     bisa ratusan nama — memuat semuanya di awal membuat dashboard lambat tanpa ada yang membacanya. */
+  async function bukaRincian(b: Butir) {
+    if (!b.kunci) return;
+    setMemuatRincian(b.kunci); setCari("");
+    const r = await fetch(`/api/teacher/operator/summary?rincian=${encodeURIComponent(b.kunci)}`, { cache: "no-store" }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    setMemuatRincian(null);
+    if (r?.ok && d?.daftar) setRincian(d);
+  }
 
   useEffect(() => {
     fetch("/api/teacher/operator/summary")
@@ -74,7 +91,11 @@ export default function OperatorDashboard() {
                   {k.butir.map(b => {
                     const persen = k.total ? Math.round((b.count / k.total) * 100) : 0;
                     return (
-                      <Link key={b.label} href={b.href} className="group flex items-center gap-3 px-5 py-2.5 hover:bg-amber-50/60">
+                      /* Diketuk → DAFTAR NAMA dulu, bukan langsung ke tabel Buku Induk (permintaan user
+                         28 Sep 2026). Sebelumnya semua baris menuju halaman yang sama berisi seluruh
+                         siswa, jadi operator masih harus mencari sendiri ke-85 yang NISN-nya kosong. */
+                      <button key={b.label} type="button" onClick={() => bukaRincian(b)}
+                        className="group flex w-full items-center gap-3 px-5 py-2.5 text-left hover:bg-amber-50/60">
                         <AlertTriangle size={14} className="shrink-0 text-amber-500" />
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm text-gray-700 group-hover:text-primary-900">{b.label}</span>
@@ -86,8 +107,10 @@ export default function OperatorDashboard() {
                           <span className="block text-sm font-bold text-amber-600">{b.count}</span>
                           <span className="block text-xs text-gray-400">{persen}%</span>
                         </span>
-                        <ArrowRight size={14} className="shrink-0 text-gray-300 group-hover:text-amber-500" />
-                      </Link>
+                        {memuatRincian === b.kunci
+                          ? <Loader2 size={14} className="shrink-0 animate-spin text-gray-400" />
+                          : <ArrowRight size={14} className="shrink-0 text-gray-300 group-hover:text-amber-500" />}
+                      </button>
                     );
                   })}
                 </div>
@@ -113,6 +136,38 @@ export default function OperatorDashboard() {
           Data TU adalah acuan: lengkapi isian yang kosong dari berkas asli (ijazah, KK, akta), lalu samakan Dapodik lewat daftar di Sinkron Dapodik.
         </p>
       </div>
+
+      {/* Daftar nama per butir — mengeklik nama membuka penyuntingnya lewat `?edit=<id>` (pola yang
+          sudah dipakai Buku Induk Guru). Kotak cari disediakan karena satu butir bisa ratusan nama. */}
+      <Modal open={!!rincian} onClose={() => setRincian(null)} title={rincian?.judul ?? ""} size="lg" scrollBody
+        description={rincian ? `${rincian.daftar.length} orang — ketuk nama untuk membuka penyuntingnya` : undefined}>
+        {rincian && (
+          <>
+            {rincian.daftar.length > 8 && (
+              <div className="alat-cari mb-4">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama…" className="input-field pl-10" />
+              </div>
+            )}
+            <div className="divide-y divide-gray-50">
+              {rincian.daftar
+                .filter(o => !cari.trim() || `${o.nama} ${o.ket}`.toLowerCase().includes(cari.trim().toLowerCase()))
+                .map((o, i) => (
+                  <Link key={o.id} href={`${rincian.editHref}?edit=${o.id}`}
+                    className="group flex items-center gap-3 px-1 py-2.5 hover:bg-primary-50/60">
+                    <span className="w-6 shrink-0 text-xs text-gray-400 tabular-nums">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-primary-900">{o.nama}</span>
+                      <span className="block text-xs text-gray-500">{o.ket}</span>
+                    </span>
+                    <ArrowRight size={14} className="shrink-0 text-gray-300 group-hover:text-primary-700" />
+                  </Link>
+                ))}
+            </div>
+            {rincian.daftar.length === 0 && <p className="py-10 text-center text-sm text-gray-400">Tidak ada data.</p>}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
