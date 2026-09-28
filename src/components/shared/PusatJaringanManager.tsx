@@ -126,6 +126,7 @@ export default function PusatJaringanManager(
 }
 
 interface Tampil {
+  uji?: { ok: boolean; pesan: string; mulai: number };
   host: string; port: number; user: string; adaSandi: boolean; sandiRusak: boolean;
   manual: { host: boolean; port: boolean; user: boolean; sandi: boolean };
   bawaanEnv: { host: string; port: number; user: string; adaSandi: boolean };
@@ -144,10 +145,12 @@ function SetelanRouterPanel() {
   const [sandi, setSandi] = useState("");
   const [lihatSandi, setLihatSandi] = useState(false);
   const [sibuk, setSibuk] = useState(false);
-  const [hasilUji, setHasilUji] = useState<{ ok: boolean; pesan: string } | null>(null);
+  const [hasilUji, setHasilUji] = useState<{ ok: boolean; pesan: string; mulai?: number } | null>(null);
+  const [menguji, setMenguji] = useState(false);
   const toast = useToast();
 
-  const muat = () => fetch("/api/jaringan/setelan", { cache: "no-store" })
+  /** `uji` = true saat halaman dibuka & saat tombol ditekan; sisanya cuma memuat setelan. */
+  const muat = (uji = false) => fetch(`/api/jaringan/setelan${uji ? "?uji=1" : ""}`, { cache: "no-store" })
     .then(async r => {
       const d = await r.json().catch(() => null);
       if (!r.ok || !d) { setGalat(d?.error || "Gagal memuat setelan router."); return; }
@@ -155,10 +158,19 @@ function SetelanRouterPanel() {
       setHost(d.manual.host ? d.host : "");
       setPort(d.manual.port ? String(d.port) : "");
       setUser(d.manual.user ? d.user : "");
+      if (d.uji) setHasilUji(d.uji);
     })
     .catch(() => setGalat("Gagal memuat setelan router."));
 
-  useEffect(() => { muat(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Diuji sekali saat halaman dibuka supaya indikatornya langsung berarti; sesudah itu hanya
+     bila petugas menekan "Uji koneksi" — membuka tab lain tidak perlu menghubungi router. */
+  useEffect(() => { setMenguji(true); muat(true).finally(() => setMenguji(false)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ujiSekarang = async () => {
+    setMenguji(true); setHasilUji(null);
+    await muat(true);
+    setMenguji(false);
+  };
 
   const simpan = async (hapusSandi = false) => {
     setSibuk(true); setHasilUji(null);
@@ -187,7 +199,22 @@ function SetelanRouterPanel() {
   return (
     <div className="space-y-5">
       <div className="panel p-5">
-        <h3 className="font-heading text-sm font-semibold text-navy">Sambungan ke router</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-heading text-sm font-semibold text-navy">Sambungan ke router</h3>
+          {/* Indikator status: yang dilihat petugas pertama kali, sebelum membaca isian apa pun. */}
+          <span className={`status-badge ${
+            menguji ? "border-gray-200 bg-gray-50 text-gray-500"
+            : !hasilUji ? "border-gray-200 bg-gray-50 text-gray-500"
+            : hasilUji.ok ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-red-200 bg-red-50 text-red-600"}`}>
+            {menguji
+              ? <><Loader2 size={12} className="animate-spin" /> Menguji…</>
+              : !hasilUji ? <>Belum diuji</>
+              : hasilUji.ok
+                ? <><span className="status-dot bg-emerald-500" /> Terhubung{hasilUji.mulai ? ` · ${hasilUji.mulai} md` : ""}</>
+                : <><span className="status-dot bg-red-500" /> Tidak terhubung</>}
+          </span>
+        </div>
         <p className="mt-1 text-xs text-gray-500">
           Dipakai seluruh fitur yang membaca router: status TV, perangkat jaringan, hotspot, dan Mode Ujian.
           Isian yang dibiarkan kosong memakai nilai bawaan dari berkas <span className="font-mono">.env</span> server.
@@ -238,7 +265,10 @@ function SetelanRouterPanel() {
 
         <div className="baris-alat mt-5">
           <div className="alat-aksi">
-            <button type="button" disabled={sibuk} onClick={() => simpan()} className="btn-modal-save">
+            <button type="button" disabled={sibuk || menguji} onClick={ujiSekarang} className="btn-modal-cancel btn-teks">
+              {menguji ? <Loader2 className="animate-spin" /> : <Plug />} Uji koneksi
+            </button>
+            <button type="button" disabled={sibuk} onClick={() => simpan()} className="btn-modal-save btn-teks">
               {sibuk ? <Loader2 className="animate-spin" /> : <Save />} Simpan &amp; uji sambungan
             </button>
             {data.manual.sandi && (

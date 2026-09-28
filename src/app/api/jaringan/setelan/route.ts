@@ -8,15 +8,40 @@ import { logActivity } from "@/lib/activity-log";
 
 export const dynamic = "force-dynamic";
 
+/** Uji sambungan: satu sumber untuk tombol "Uji koneksi" maupun pengujian sesudah menyimpan,
+ *  supaya pesan yang dilihat petugas selalu sama. Identitas & versi router disebut agar jelas
+ *  bahwa yang terhubung memang perangkat yang dimaksud, bukan sekadar port yang terbuka. */
+async function ujiSambungan(): Promise<{ ok: boolean; pesan: string; mulai: number }> {
+  const mulai = Date.now();
+  return withMikrotik(async conn => {
+    const id = await conn.write("/system/identity/print");
+    const sd = await conn.write("/system/resource/print").catch(() => []);
+    const nama = id[0]?.name ?? "router";
+    const versi = sd[0]?.version ? ` — RouterOS ${sd[0].version}` : "";
+    return { ok: true, pesan: `Tersambung ke "${nama}"${versi}.`, mulai: Date.now() - mulai };
+  }).catch((e: unknown) => ({
+    ok: false,
+    pesan: e instanceof Error ? e.message : "Router tidak menjawab.",
+    mulai: Date.now() - mulai,
+  }));
+}
+
 /** SETELAN SAMBUNGAN ROUTER (27 September 2026) — alamat, port, pengguna, sandi diisi dari halaman.
  *
  * Sandi tidak pernah dikembalikan; balasan hanya menyebut apakah sandi tersimpan. Catatan aktivitas
  * juga sengaja hanya mencatat ALAMAT & PENGGUNA, tidak pernah sandinya. */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
     await assertJaringan(session);
-    return NextResponse.json(await setelanRouterTampil());
+    const setelan = await setelanRouterTampil();
+    /* Uji dijalankan hanya bila diminta: membuka halaman tidak boleh selalu menghubungi router,
+       tetapi indikator yang tidak pernah terisi juga tidak berguna — jadi halaman memintanya
+       sekali saat dibuka, dan setelah itu hanya kalau petugas menekan "Uji koneksi". */
+    if (new URL(req.url).searchParams.get("uji") === "1") {
+      return NextResponse.json({ ...setelan, uji: await ujiSambungan() });
+    }
+    return NextResponse.json(setelan);
   } catch (galat) {
     lemparBilaPengalihan(galat);
     if (galat instanceof Error && galat.message === "FORBIDDEN") {
@@ -43,14 +68,7 @@ export async function PUT(req: NextRequest) {
 
     /* Uji langsung setelah menyimpan: kalau setelan barunya salah, petugas tahu SEKARANG — bukan
      * nanti saat halaman lain melapor "Router tidak bisa dihubungi" tanpa sebab yang jelas. */
-    let uji: { ok: boolean; pesan: string } | null = null;
-    if (b.uji !== false) {
-      uji = await withMikrotik(async conn => {
-        const id = await conn.write("/system/identity/print");
-        const sd = await conn.write("/system/resource/print").catch(() => []);
-        return { ok: true, pesan: `Tersambung ke "${id[0]?.name ?? "router"}"${sd[0]?.version ? ` — RouterOS ${sd[0].version}` : ""}.` };
-      }).catch((e: unknown) => ({ ok: false, pesan: e instanceof Error ? e.message : "Router tidak menjawab." }));
-    }
+    const uji = b.uji === false ? null : await ujiSambungan();
     return NextResponse.json({ ok: true, setelan: kini, uji });
   } catch (galat) {
     lemparBilaPengalihan(galat);
