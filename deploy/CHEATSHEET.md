@@ -1,13 +1,13 @@
 # SMK Al-Munawwir Website — Cheat Sheet Harian
 
-CT Proxmox: `website-smk` — IP lokal `172.15.0.3` — IP publik `<IP-PUBLIK-SERVER>`
+CT Proxmox: `website-smk` — IP lokal `<IP-SERVER>` — IP publik `<IP-PUBLIK-SERVER>`
 SSH: `ssh smk-almunawwir` (dari laptop, sudah pakai SSH key, tanpa password)
 
 ---
 
 ## 1. Akses aplikasi
 
-- Dari LAN sekolah: `http://172.15.0.3:3000`
+- Dari LAN sekolah: `http://<IP-SERVER>:3000`
 - Dari internet: `http://<IP-PUBLIK-SERVER>:3000`
 
 ---
@@ -92,8 +92,8 @@ Port forwarding di MikroTik (comment: "Website SMK Almunawwir" & "SSH Website SM
 
 | Tujuan | Dari luar | Diteruskan ke |
 |---|---|---|
-| Web app | `<IP-PUBLIK-SERVER>:3000` | `172.15.0.3:3000` |
-| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `172.15.0.3:22` |
+| Web app | `<IP-PUBLIK-SERVER>:3000` | `<IP-SERVER>:3000` |
+| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `<IP-SERVER>:22` |
 
 Lihat/ubah rule NAT (Winbox → Terminal MikroTik):
 ```

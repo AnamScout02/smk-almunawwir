@@ -354,7 +354,7 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     (temuan user 14 Sep 2026, di 3 tombol salin token + tombol kode cadangan 2FA yang malah error). `salinTeks`
     memakai Clipboard API bila tersedia, lalu cadangan textarea + `execCommand("copy")`, dan mengembalikan
     `true` HANYA kalau benar tersalin — toast berhasil/gagal wajib mengikuti hasil itu. **Mengujinya jangan lewat
-    `localhost`** (dianggap secure context, bug-nya tersembunyi); pakai IP jaringan server, mis. `http://172.15.0.3:3000`.
+    `localhost`** (dianggap secure context, bug-nya tersembunyi); pakai IP jaringan server, mis. `http://<IP-SERVER>:3000`.
 
 29. **Ikon aplikasi terpasang (PWA) dibangkitkan dari Logo Lambang (`logo.emblem`), bukan gambar statis.**
     `src/lib/ikon-aplikasi.ts` + route `/ikon-aplikasi/[berkas]` (any-192/512 transparan, maskable-192/512 & apple-180
@@ -455,10 +455,10 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     kedua sisi; tingkat kelas hanya dibandingkan bila semester Dapodik = tahun ajaran aktif TU. Kunci `DAPODIK_KEY` hanya di
     header Authorization — jangan dicetak, jangan mencoba variasi kunci. `rows` getSekolah = OBJEK, endpoint daftar = ARRAY;
     penolakan bisa teks polos "Access denied" dengan HTTP 200. Tiga daftar WAJIB diminta BERURUTAN — diminta serentak,
-    Dapodik membalas halaman galat HTML (terbukti 15 Sep 2026). Komputer Dapodik (sejak 16 Sep 2026 PC biasa 192.168.100.99, dulu VM 172.15.0.4) hanya menjawab saat
+    Dapodik membalas halaman galat HTML (terbukti 15 Sep 2026). Komputer Dapodik (sejak 16 Sep 2026 PC biasa <IP-PC-DAPODIK>, dulu VM <IP-PC-DAPODIK-LAMA>) hanya menjawab saat
     menyala, Windows login, dan aplikasi Dapodik dibuka & login; **alamat Dapodik & IP server situs diubah Administrator lewat tombol Ubah**
     (SiteSetting `dapodik.alamat`/`dapodik.ipServer`, kosong = `.env`; hanya IPv4 jaringan lokal karena kunci ikut terkirim). MikroTik
-    me-masquerade semua lalu lintas ke 192.168.100.0/24, jadi Dapodik melihat IP MikroTik — bukan 172.15.0.3. Firewall Windows PC itu
+    me-masquerade semua lalu lintas ke <JARINGAN-DAPODIK>, jadi Dapodik melihat IP MikroTik — bukan <IP-SERVER>. Firewall Windows PC itu
     sempat punya aturan BLOKIR "Apache HTTP Server" (profil Public) yang mengalahkan aturan izin port 5774; bila tidak, halaman menampilkan petunjuk — fitur situs lain tidak
     bergantung padanya. Saat menguji, cetak angka saja.
 39. **Setiap isian Konten Halaman (`ContentEditor`) WAJIB benar-benar dibaca halaman, dan `hint`-nya menyebut letak tampilnya.**
@@ -604,7 +604,7 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
 59. **Dapodik: alamat bebas IP/domain, kolom host & port terpisah (20 September 2026).** `periksaAlamatDapodik`
     menerima IP privat, IP publik, dan nama domain termasuk `localhost`; yang ditolak hanya yang membuatnya bukan
     alamat (skema selain http/https, nama pengguna/sandi, jalur, query). Aturan lama "hanya IPv4 jaringan lokal"
-    menolak alamat yang BENAR: `172.15.x.x` bukan rentang privat RFC1918 (privat mulai 172.**16**), ia dulu lolos
+    menolak alamat yang BENAR: `<BLOK-IP-SERVER>` bukan rentang privat RFC1918 (privat mulai 172.**16**), ia dulu lolos
     hanya lewat jalur "sama /16 dengan bawaan .env". `hostLokal()` kini menghitung host yang SATU BLOK /16 DENGAN
     SERVER SITUS sebagai lokal — dipakai HANYA untuk memutuskan perlu-tidaknya peringatan "kunci Web Service ikut
     terkirim ke alamat ini", bukan untuk menolak. Pembantu yang dipakai halaman ada di `src/lib/dapodik-alamat.ts`

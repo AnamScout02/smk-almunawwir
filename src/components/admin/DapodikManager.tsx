@@ -636,7 +636,7 @@ export default function DapodikManager({ npsn, bolehUbah, ...awal }: Koneksi & {
             <div>
               <label htmlFor="ip-server-dapodik" className="label-field">IP server situs (didaftarkan di Dapodik)</label>
               <input id="ip-server-dapodik" className="input-field font-mono" value={isiIp} onChange={e => setIsiIp(e.target.value)}
-                placeholder="172.15.0.3" autoComplete="off" inputMode="decimal" spellCheck={false} />
+                placeholder="mis. 10.0.0.5" autoComplete="off" inputMode="decimal" spellCheck={false} />
               {galatUbah?.kolom === "ipServer" && <p className="error-msg mt-2">{galatUbah.pesan}</p>}
               <p className="text-xs text-gray-500 mt-1.5">
                 Hanya catatan untuk operator: IP inilah yang ditulis di Dapodik → Pengaturan → Web Service. Isian ini tidak mengubah IP server.

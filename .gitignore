@@ -55,3 +55,6 @@ public/unduh/*.apk
 
 # Arsip cadangan untuk diunduh ke luar server (jangan masuk git)
 unduhan-cadangan/
+
+# Catatan operasional server (IP, port, kelemahan belum ditambal) — repo GitHub PUBLIK
+CATATAN-SERVER.md

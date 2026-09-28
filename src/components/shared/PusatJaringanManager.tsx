@@ -230,7 +230,7 @@ function SetelanRouterPanel() {
           <div className="min-w-0">
             <label className="label-field">Alamat router (IP atau nama host)</label>
             <input value={host} onChange={e => setHost(e.target.value)} className="input-field"
-              placeholder={env.host || "mis. 192.168.100.1"} />
+              placeholder={env.host || "mis. 192.168.1.1"} />
             <p className="mt-1 text-xs text-gray-400">{data.manual.host ? "Diisi dari halaman ini." : `Memakai bawaan .env${env.host ? `: ${env.host}` : " (belum ada)"}.`}</p>
           </div>
           <div className="min-w-0">

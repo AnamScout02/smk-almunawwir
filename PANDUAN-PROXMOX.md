@@ -131,7 +131,7 @@ Server ini sudah expose SSH ke internet lewat port forwarding MikroTik:
 
 | Tujuan | Dari luar (IP publik) | Diteruskan ke |
 |---|---|---|
-| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `172.15.0.3:22` (CT ini) |
+| SSH / VS Code | `<IP-PUBLIK-SERVER>:<PORT-SSH-SERVER>` | `<IP-SERVER>:22` (CT ini) |
 
 Jadi dari laptop mana pun (bukan cuma dari LAN sekolah), VS Code bisa connect langsung ke port **<PORT-SSH-SERVER>** di IP publik **<IP-PUBLIK-SERVER>**.
 
@@ -164,7 +164,7 @@ Edit/tambahkan di `~/.ssh/config` (laptop, buat file kalau belum ada):
 ```
 Host smk-almunawwir
     HostName <IP-PUBLIK-SERVER>
-    Port 2233
+    Port <PORT-SSH-SERVER>
     User root
     IdentityFile ~/.ssh/id_ed25519
 ```

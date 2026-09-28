@@ -46,7 +46,7 @@ Perlu diisi sekolah agar fitur Sarpras terpakai: data inventaris masih kosong (I
 (kolom Ruang di Jadwal Pelajaran kosong, belum ada Ruang Ujian) — tambahkan lewat Peminjaman & Ruang → Daftar Ruang.
 
 Data yang diubah langsung (setelah cadangan DB): tanggal lulus angkatan 2023 (95 siswa Lulus) = 4 Mei 2026; angkatan Meila Safitri
-(pindahan diterima 13 Jan 2025) 2025 → 2024. Dapodik pindah ke PC 192.168.100.99 (NAT MikroTik dikecualikan untuk 172.15.0.3,
+(pindahan diterima 13 Jan 2025) 2025 → 2024. Dapodik pindah ke PC <IP-PC-DAPODIK> (NAT MikroTik dikecualikan untuk <IP-SERVER>,
 aturan blokir "Apache HTTP Server" di firewall Windows dimatikan); token Web Service baru di `.env`.
 
 **Ditunda atas permintaan user (18 September 2026):** sembunyikan SELURUH jejak modul Bendahara (menu portal, halaman
@@ -152,9 +152,9 @@ Dikerjakan bertahap setelah jam sekolah (build & deploy tidak mengganggu kegiata
    **pengingat guru piket** yang belum mengisi.
 2. **Peringatan dini siswa berisiko** (wali kelas & BK) + push.
 3. **Absensi mandiri pindai QR** (QR berganti ±30 dtk; petugas piket pindai kartu pelajar).
-4. **Sinkron Dapodik** baca-saja — VM 102 (Windows) di **172.15.0.4**, Web Service Dapodik **port 5774** terjangkau dari
-   server situs (172.15.0.3); `/WebService/getSekolah?npsn=69896523` tanpa kunci → "Access denied … #1" (layanan hidup,
-   menolak karena belum ada kunci/IP belum didaftarkan). Menunggu operator: daftarkan IP 172.15.0.3 + berikan kunci Web
+4. **Sinkron Dapodik** baca-saja — VM 102 (Windows) di **<IP-PC-DAPODIK-LAMA>**, Web Service Dapodik **port 5774** terjangkau dari
+   server situs (<IP-SERVER>); `/WebService/getSekolah?npsn=69896523` tanpa kunci → "Access denied … #1" (layanan hidup,
+   menolak karena belum ada kunci/IP belum didaftarkan). Menunggu operator: daftarkan IP <IP-SERVER> + berikan kunci Web
    Service (simpan di .env, jangan dicetak).
 5. **Portal Perpustakaan sendiri** seperti Pusat Ujian/Ujian Online.
 Tidak termasuk: AI guru (perlu keputusan biaya & privasi), passkey (tunggu domain).
