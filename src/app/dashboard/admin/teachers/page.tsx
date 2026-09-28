@@ -6,6 +6,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface Teacher {
   id: string;
@@ -21,6 +22,7 @@ interface Teacher {
 interface JabatanOption { id: string; name: string }
 
 export default function AdminTeachersPage() {
+  const toast = useToast();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -50,15 +52,24 @@ export default function AdminTeachersPage() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
+  /* Balasan WAJIB diperiksa — lihat alasan yang sama di Akun Pengguna (28 Sep 2026): perubahan
+     hak akses yang gagal diam-diam membuat orangnya kehilangan menu tanpa ada yang tahu sebabnya. */
   async function saveJabatan() {
     if (!jabatanModal) return;
+    const nama = jabatanModal.user.name;
     setSaving(true);
-    await fetch(`/api/admin/teachers/${jabatanModal.id}/jabatan`, {
+    const res = await fetch(`/api/admin/teachers/${jabatanModal.id}/jabatan`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jabatanIds: selectedIds }),
-    });
+    }).catch(() => null);
     setSaving(false);
+    if (!res?.ok) {
+      const d = await res?.json().catch(() => null);
+      toast.error(d?.error || "Gagal menyimpan jabatan — coba lagi.");
+      return; // modal dibiarkan terbuka supaya centangnya tidak hilang
+    }
     setJabatanModal(null);
+    toast.success(`Jabatan ${nama} tersimpan.`);
     load();
   }
 

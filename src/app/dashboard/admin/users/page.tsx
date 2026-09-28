@@ -104,15 +104,26 @@ export default function UsersPage() {
   function toggleJabatan(id: string) {
     setSelectedJabatanIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
+  /* Balasan WAJIB diperiksa. Sebelumnya hasilnya diabaikan: bila simpan gagal — misalnya karena
+     aplikasi sedang restart saat deploy — modal tetap menutup dan petugas mengira jabatan sudah
+     tersimpan, padahal tidak. Untuk perubahan HAK AKSES gagal diam-diam adalah yang paling buruk:
+     orangnya tetap tidak punya menu dan tidak ada yang tahu kenapa (kejadian nyata 28 Sep 2026). */
   async function saveJabatan() {
     if (!jabatanModal) return;
+    const nama = jabatanModal.name;
     setSavingJabatan(true);
-    await fetch(`/api/admin/users/${jabatanModal.id}/jabatan`, {
+    const res = await fetch(`/api/admin/users/${jabatanModal.id}/jabatan`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jabatanIds: selectedJabatanIds }),
-    });
+    }).catch(() => null);
     setSavingJabatan(false);
+    if (!res?.ok) {
+      const d = await res?.json().catch(() => null);
+      toast.error(d?.error || "Gagal menyimpan jabatan — coba lagi.");
+      return; // modal SENGAJA dibiarkan terbuka supaya centangnya tidak hilang
+    }
     setJabatanModal(null);
+    toast.success(`Jabatan ${nama} tersimpan.`);
     fetchUsers();
   }
 
