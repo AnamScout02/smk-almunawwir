@@ -103,7 +103,7 @@ export default function BelSekolahPage() {
 
       <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/admin/bel-sekolah/player" target="_blank"
-          className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+          className="btn-modal-cancel">
           <MonitorPlay size={15} /> Buka Player
         </Link>
         <button onClick={openCreate} className="btn-modal-save"><Plus size={15} /> Tambah Jadwal</button>
@@ -114,7 +114,7 @@ export default function BelSekolahPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : items.length === 0 ? (
         <EmptyState icon={Bell} title="Belum Ada Jadwal Bel" description="Tambahkan jadwal bel pertama, mis. Bel Masuk jam 06:45." />
       ) : (

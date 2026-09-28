@@ -184,7 +184,7 @@ function FileUploadField({
         </label>
       ) : status === "uploading" ? (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <Loader2 size={20} className="animate-spin text-primary-500" />
+          <Loader2 size={20} className="animate-spin text-gray-400" />
           <span className="text-sm text-gray-500">{t.uploading} {fileName}…</span>
         </div>
       ) : (

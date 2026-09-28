@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { namaPanggilan } from "@/lib/nama-panggilan";
 import { Trophy, AlertTriangle, Maximize2, Minimize2, Medal, Loader2, ChevronLeft, ChevronRight, CalendarDays, BookMarked, Footprints } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
@@ -114,7 +115,7 @@ export default function LibraryLeaderboard() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
         ) : !data || (data.topAktif.length === 0 && data.perluPerhatian.length === 0) ? (
           <EmptyState icon={Trophy} title="Belum Ada Data Periode Ini" description="Papan peringkat akan terisi begitu ada kunjungan/peminjaman tercatat." />
         ) : (
@@ -122,7 +123,7 @@ export default function LibraryLeaderboard() {
             <div className="panel overflow-hidden">
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
                 <Trophy size={18} className="text-gold" />
-                <h3 className="font-heading font-bold text-primary-900">Paling Aktif</h3>
+                <h3 className="font-heading font-semibold text-primary-900">Paling Aktif</h3>
               </div>
               {data.topAktif.length === 0 ? (
                 <p className="text-center py-10 text-gray-400 text-sm">Belum ada data.</p>
@@ -134,7 +135,7 @@ export default function LibraryLeaderboard() {
                         {i < 3 ? <span className="inline-block text-2xl">{RANK_BADGE[i]}</span> : <span className="text-gray-300 text-lg">{i + 1}</span>}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-primary-900 truncate text-sm">{t.name}</p>
+                        <p className="font-semibold text-primary-900 truncate text-sm" title={t.name}>{t.role === "STUDENT" ? namaPanggilan(t.name) : t.name}</p>
                         <p className="text-xs text-gray-400">{roleLine(t)}</p>
                       </div>
                       <div className="text-right shrink-0 flex items-center gap-3">
@@ -150,7 +151,7 @@ export default function LibraryLeaderboard() {
             <div className="panel overflow-hidden">
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.02) 100%)" }}>
                 <AlertTriangle size={18} className="text-red-500" />
-                <h3 className="font-heading font-bold text-primary-900">Perlu Perhatian</h3>
+                <h3 className="font-heading font-semibold text-primary-900">Perlu Perhatian</h3>
                 <span className="ml-auto text-xs text-gray-400">buku terlambat saat ini</span>
               </div>
               {data.perluPerhatian.length === 0 ? (
@@ -161,7 +162,7 @@ export default function LibraryLeaderboard() {
                     <div key={t.userId} className="flex items-center gap-3 px-5 py-3.5 transition-all hover:bg-red-50/30">
                       <Medal size={16} className="text-gray-300 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-primary-900 truncate text-sm">{t.name}</p>
+                        <p className="font-semibold text-primary-900 truncate text-sm" title={t.name}>{t.role === "STUDENT" ? namaPanggilan(t.name) : t.name}</p>
                         <p className="text-xs text-gray-400">{roleLine(t)} · {t.count} buku terlambat</p>
                       </div>
                       <div className="text-right shrink-0">

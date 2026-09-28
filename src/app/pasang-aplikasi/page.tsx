@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
+import path from "path";
+import { stat } from "fs/promises";
 import { headers } from "next/headers";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -9,17 +11,18 @@ import { generateQrDataUrl } from "@/lib/qrcode";
 import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 import { getLang } from "@/lib/lang";
 import PasangAplikasiPanel from "@/components/sections/PasangAplikasiPanel";
+import { BERKAS_APK, HALAMAN_APLIKASI, NAMA_APLIKASI, VERSI_APLIKASI, lewatAplikasi } from "@/lib/aplikasi-ujian";
 
-const TAUTAN = `${ALAMAT_APLIKASI}/pasang-aplikasi`;
+const TAUTAN = `${ALAMAT_APLIKASI}${HALAMAN_APLIKASI}`;
 
 // Pratinjau tautan saat dibagikan ke WhatsApp: URL gambar HARUS absolut ke alamat HTTPS (metadataBase situs
 // masih alamat HTTP, yang tidak bisa dijangkau server pratinjau WhatsApp).
 export const metadata: Metadata = {
-  title: "Pasang Aplikasi — SMK Al Munawwir IIBS",
-  description: "Pasang aplikasi SMK Al Munawwir IIBS di HP, laptop, atau komputer — tanpa Play Store, cukup dari browser.",
+  title: `Pasang ${NAMA_APLIKASI} — SMK Al Munawwir IIBS`,
+  description: `${NAMA_APLIKASI}: satu aplikasi untuk siswa, guru, dan orang tua — portal, ujian, perpustakaan, dan pengumuman sekolah.`,
   openGraph: {
-    title: "Pasang Aplikasi SMK Al Munawwir IIBS",
-    description: "Portal guru, siswa, dan orang tua langsung dari layar utama HP atau laptop.",
+    title: `${NAMA_APLIKASI} — SMK Al Munawwir IIBS`,
+    description: "Portal siswa, guru, dan orang tua langsung dari layar utama HP atau laptop.",
     url: TAUTAN,
     type: "website",
     images: [{ url: `${ALAMAT_APLIKASI}/ikon-aplikasi/any-512.png`, width: 512, height: 512, alt: "Logo SMK Al Munawwir IIBS" }],
@@ -27,24 +30,37 @@ export const metadata: Metadata = {
 };
 
 const TEKS = {
-  id: { label: "Aplikasi Sekolah", judul: "Pasang Aplikasi", isi: "Buka portal guru, siswa, dan orang tua langsung dari layar utama HP atau laptop — tanpa Play Store." },
-  en: { label: "School App", judul: "Install the App", isi: "Open the teacher, student, and parent portals right from your phone or laptop home screen — no Play Store needed." },
+  id: {
+    label: "Aplikasi Resmi Sekolah", judul: NAMA_APLIKASI,
+    isi: "Satu aplikasi untuk siswa, guru, dan orang tua — jadwal, nilai, absensi, pengumuman, perpustakaan, dan ujian. Saat ujian berlangsung, layarnya terkunci otomatis.",
+  },
+  en: {
+    label: "Official School App", judul: NAMA_APLIKASI,
+    isi: "One app for students, teachers, and parents — schedules, grades, attendance, announcements, library, and exams. The screen locks automatically during an exam.",
+  },
 };
 
-/** Halaman yang dibagikan ke grup WhatsApp warga sekolah: tombol pasang (Chrome/Edge), petunjuk per
- * perangkat (Android, iPhone/iPad, laptop), tautan untuk diteruskan, dan QR untuk poster. Aplikasi ini PWA —
- * tidak ada berkas APK yang bisa dikirim; yang dibagikan adalah tautan ini. */
+/** SATU halaman aplikasi (23 September 2026 — permintaan user: /aplikasi & /pasang-aplikasi "kok double jadinya").
+ * Isinya: unduh APK Android, pasang versi browser (PWA) untuk iPhone/laptop, petunjuk per perangkat, tautan & QR
+ * untuk dibagikan ke grup WhatsApp. `/aplikasi` dan `/aplikasi-ujian` sekarang mengalihkan ke sini. */
 export default async function PasangAplikasiPage() {
   const h = await headers();
   const lewatHttps = (h.get("x-forwarded-proto") ?? "http").split(",")[0].trim() === "https";
-  const qr = await generateQrDataUrl(TAUTAN).catch(() => null);
+  const diAplikasi = lewatAplikasi(h.get("user-agent"));
   const lang = await getLang();
   const c = TEKS[lang];
+  const [qr, berkas] = await Promise.all([
+    generateQrDataUrl(TAUTAN).catch(() => null),
+    stat(path.join(process.cwd(), "public", BERKAS_APK)).catch(() => null),
+  ]);
+  const apk = berkas
+    ? { href: BERKAS_APK, ukuran: `${(berkas.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB`, versi: VERSI_APLIKASI }
+    : null;
 
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
@@ -61,7 +77,8 @@ export default async function PasangAplikasiPage() {
 
         <section className="section-padding bg-cream">
           <div className="container-custom max-w-4xl mx-auto">
-            <PasangAplikasiPanel tautan={TAUTAN} alamatAman={ALAMAT_APLIKASI} lewatHttps={lewatHttps} qr={qr} lang={lang} />
+            <PasangAplikasiPanel tautan={TAUTAN} alamatAman={ALAMAT_APLIKASI} lewatHttps={lewatHttps} qr={qr}
+              lang={lang} apk={apk} diAplikasi={diAplikasi} />
           </div>
         </section>
       </main>

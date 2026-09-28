@@ -2,5 +2,5 @@
 import BannerManager from "@/components/shared/BannerManager";
 
 export default function TeacherBrandingBannersPage() {
-  return <BannerManager />;
+  return <BannerManager kembaliHref="/dashboard/teacher/branding" />;
 }

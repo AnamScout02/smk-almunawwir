@@ -30,7 +30,7 @@ export default async function NotFound() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-cream flex items-center justify-center py-20 px-4">
+      <main className="min-h-dvh bg-cream flex items-center justify-center py-20 px-4">
         <div className="text-center max-w-lg mx-auto">
           {/* Angka 404 dekoratif */}
           <div className="relative mb-8 select-none">
@@ -51,7 +51,7 @@ export default async function NotFound() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+              className="btn-primary"
             >
               <Home size={17} />
               {c.beranda}

@@ -12,6 +12,7 @@ import Select from "@/components/admin/Select";
 import ImageUpload from "@/components/admin/ImageUpload";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Achievement { name: string; date: string; level: string; givenBy: string }
 type BukuData = Record<string, unknown>;
@@ -106,9 +107,7 @@ export default function StudentBiodataPage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/student" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/student"} />
       </div>
 
       <div className="max-w-4xl space-y-4">
@@ -271,7 +270,7 @@ export default function StudentBiodataPage() {
             <Section title="I. Prestasi & Penghargaan" icon={Award} open={!!sections.i} onToggle={() => toggleSection("i")} accent="text-yellow-600">
               <div className="col-span-2 space-y-3">
                 {achievements.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic">Belum ada data penghargaan/prestasi</p>
+                  <p className="text-sm text-gray-400">Belum ada data penghargaan/prestasi</p>
                 ) : achievements.map((a, idx) => (
                   <div key={idx} className="border border-gray-200 rounded-lg p-3 grid grid-cols-2 gap-2 relative">
                     <button type="button" onClick={() => removeAchievement(idx)} className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600">

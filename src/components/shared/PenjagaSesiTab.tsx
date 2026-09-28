@@ -81,7 +81,7 @@ export default function PenjagaSesiTab() {
         <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-3.5">
           <UserCog size={26} className="text-amber-600" />
         </div>
-        <h2 className="font-heading font-bold text-primary-900 text-lg">
+        <h2 className="font-heading font-semibold text-primary-900 text-lg">
           {keluar ? "Sesi di browser ini sudah berakhir" : "Akun di tab ini sudah berganti"}
         </h2>
         <p className="text-sm text-gray-600 mt-2 leading-relaxed">

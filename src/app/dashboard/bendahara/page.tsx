@@ -65,7 +65,7 @@ export default async function BendaharaDashboardPage() {
 
       <MenuBendahara ringkas={7} hrefSemua="/dashboard/bendahara/menu" judul="Menu Cepat" />
 
-      <div className="kisi-kartu kisi-kartu-4 min-[420px]:grid-cols-2 mb-6">
+      <div className="kisi-kartu kisi-kartu-4 min-[420px]:grid-cols-2 mb-5">
         <StatTile tampilan="lembut" color="blue" ikon="tagihan" value={formatRupiah(totalTagihan)} size="md" label="Total Tagihan Bulan Ini" />
         <StatTile tampilan="lembut" color="emerald" ikon="lunas" value={formatRupiah(totalTerbayar)} size="md" label="Total Terbayar Bulan Ini" />
         <StatTile tampilan="lembut" color="amber" ikon="menunggu" value={belumLunasCount} size="md" label="Belum Lunas Bulan Ini" sorot={belumLunasCount > 0} />

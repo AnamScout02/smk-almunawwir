@@ -141,6 +141,12 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   pesan: p => <S {...p}><path d="M8 8h32a4 4 0 014 4v17a4 4 0 01-4 4H22l-9 7v-7H8a4 4 0 01-4-4V12a4 4 0 014-4z" fill={W} /><path d="M15 17h18M15 24h12" stroke={N} strokeWidth="2.8" strokeLinecap="round" /></S>,
   jam: p => <S {...p}><circle cx="24" cy="25" r="18" fill={W} /><circle cx="24" cy="25" r="13.5" fill={G} /><path d="M24 16v9.5l6 4" stroke={N} strokeWidth="3" strokeLinecap="round" /><rect x="20" y="3" width="8" height="5" rx="2" fill={B} /></S>,
   prestasi: p => <S {...p}><path d="M14 6h20v10a10 10 0 01-20 0z" fill={W} /><path d="M14 9H8v3a8 8 0 006 7.7M34 9h6v3a8 8 0 01-6 7.7" stroke={B} strokeWidth="2.6" fill="none" /><rect x="21" y="26" width="6" height="8" fill={B} /><path d="M14 42c0-4 4.5-7 10-7s10 3 10 7z" fill={W} /></S>,
+  /* Layar TV di kaki penyangga + siaran — Papan & TV */
+  papanTv: p => <S {...p}><rect x="5" y="8" width="38" height="25" rx="4" fill={W} /><rect x="10" y="13" width="17" height="3" rx="1.5" fill={N} /><rect x="10" y="19" width="12" height="3" rx="1.5" fill={N2} /><path d="M19 33h10l3 8H16z" fill={B} /><path d="M13 41h22" stroke={G} strokeWidth="3" strokeLinecap="round" /></S>,
+  /* Kotak perangkat + antena & gelombang — Perangkat Jaringan (AP/router) */
+  perangkatJaringan: p => <S {...p}><rect x="6" y="26" width="36" height="13" rx="4" fill={W} /><circle cx="14" cy="32.5" r="2.4" fill={N} /><circle cx="21" cy="32.5" r="2.4" fill={N2} /><path d="M33 26V16" stroke={N} strokeWidth="2.6" strokeLinecap="round" /><path d="M27 14a9 9 0 0112 0" stroke={B} strokeWidth="3" strokeLinecap="round" fill="none" /><path d="M23 9a16 16 0 0120 0" stroke={G} strokeWidth="3" strokeLinecap="round" fill="none" /></S>,
+  /* Perisai + gelombang sinyal — Mode Ujian Jaringan (pembatasan saat ujian) */
+  jaringanUjian: p => <S {...p}><path d="M24 4l16 6v14c0 10-7 17-16 20-9-3-16-10-16-20V10z" fill={W} /><path d="M17 23a10 10 0 0114 0" stroke={N} strokeWidth="3" strokeLinecap="round" fill="none" /><path d="M21 29a4.5 4.5 0 016 0" stroke={N2} strokeWidth="3" strokeLinecap="round" fill="none" /><circle cx="24" cy="34" r="2.2" fill={N} /></S>,
   jaringan: p => <S {...p}><circle cx="24" cy="10" r="6" fill={W} /><circle cx="10" cy="36" r="6" fill={B} /><circle cx="38" cy="36" r="6" fill={B} /><path d="M24 16v8M24 24l-11 8M24 24l11 8" stroke={G} strokeWidth="2.8" strokeLinecap="round" /></S>,
   printer: p => <S {...p}><rect x="12" y="5" width="24" height="12" rx="2.5" fill={G} /><rect x="6" y="17" width="36" height="16" rx="4" fill={W} /><circle cx="36" cy="23" r="2.2" fill={N} /><rect x="12" y="29" width="24" height="14" rx="2.5" fill={B} /></S>,
   lab: p => <S {...p}><path d="M20 5h8v13l9 17a5 5 0 01-4.4 7.5H15.4A5 5 0 0111 35l9-17z" fill={W} /><path d="M14.6 31h18.8l3.4 6.2A3 3 0 0134 41H14a3 3 0 01-2.6-4.4z" fill={N} /><rect x="18" y="3" width="12" height="4" rx="2" fill={B} /></S>,
@@ -292,6 +298,20 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
 
 /** Alamat menu → nama ilustrasi. Menu di luar daftar ini tetap memakai ikon lucide biasa. */
 export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
+  // Sarana — layar & jaringan (24 September 2026). WAJIB didaftarkan tegas: aturan kata kunci akan
+  // menyamakan "Papan & TV", "Perangkat Jaringan", "Jaringan Sekolah", dan "Mode Ujian Jaringan"
+  // menjadi gambar yang sama karena sama-sama mengandung kata "jaringan".
+  "/dashboard/admin/papan-tv": "papanTv",
+  "/dashboard/teacher/papan-tv": "papanTv",
+  "/dashboard/admin/perangkat-jaringan": "perangkatJaringan",
+  "/dashboard/teacher/perangkat-jaringan": "perangkatJaringan",
+  "/dashboard/admin/jaringan-ujian": "jaringanUjian",
+  /* Halaman gabungan Jaringan & Layar (27 September 2026) — satu menu, jadi satu gambar. Rute lama di atas
+     tetap terdaftar karena masih hidup sebagai pengalihan. */
+  "/dashboard/admin/jaringan": "jaringan",
+  "/dashboard/teacher/jaringan": "jaringan",
+  "/dashboard/admin/cctv": "cctv",
+  "/dashboard/teacher/cctv": "cctv",
   // Siswa
   "/dashboard/student/materials": "materi",
   "/ujian-online": "ujian",

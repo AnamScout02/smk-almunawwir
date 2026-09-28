@@ -4,5 +4,5 @@ import KepalaSekolahDashboard from "@/components/jabatan/KepalaSekolahDashboard"
  * bukan guru/pegawai, jadi ia melihat dashboard ini TANPA dilempar ke shell portal guru. Isinya
  * komponen yang sama persis — bukan duplikat kode. */
 export default function Page() {
-  return <KepalaSekolahDashboard />;
+  return <KepalaSekolahDashboard basePath="/dashboard/admin" />;
 }

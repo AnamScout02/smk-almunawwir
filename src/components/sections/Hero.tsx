@@ -66,7 +66,7 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
   const next = () => setCurrent(c => (c + 1) % slides.length);
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+    <section className="relative min-h-dvh flex flex-col items-center justify-center overflow-hidden">
       {/* Background: foto jika ada, gradien animasi jika tidak */}
       {slide.imageUrl ? (
         <>

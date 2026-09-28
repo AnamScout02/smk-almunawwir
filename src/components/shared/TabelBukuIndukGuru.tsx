@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, Download, Table2, Search } from "lucide-react";
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import { GURU_COLUMNS as ALL_COLUMNS, type TeacherRow } from "@/lib/buku-induk-guru-columns";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Teacher extends TeacherRow {
   id: string;
@@ -68,11 +69,9 @@ export default function TabelBukuIndukGuru({ basePath = "/dashboard/admin/buku-i
       />
 
       {/* Aksi & filter di baris terpisah (bukan di actions PageHeader) — header cukup ikon+judul+keterangan saja. */}
-      <div className="flex flex-wrap items-center gap-2.5 mb-5">
-        <Link href={basePath} className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
-        <div className="relative w-full sm:w-56">
+      <div className="baris-alat mb-5">
+        <TombolKembali href={basePath} />
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama, NIP, alamat, dll..."
@@ -98,7 +97,7 @@ export default function TabelBukuIndukGuru({ basePath = "/dashboard/admin/buku-i
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : (
         <div className="panel overflow-hidden">
           <div className="overflow-auto max-h-[75vh] scrollbar-visible">

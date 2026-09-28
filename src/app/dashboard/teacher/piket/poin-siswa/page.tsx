@@ -110,7 +110,7 @@ export default function PiketPoinSiswaPage() {
         <div>
           <label className="label-field">Jenis Pelanggaran</label>
           {types.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Belum ada jenis pelanggaran yang boleh dicatat piket. Hubungi Admin/BK.</p>
+            <p className="text-sm text-gray-400">Belum ada jenis pelanggaran yang boleh dicatat piket. Hubungi Admin/BK.</p>
           ) : (
             <Select value={typeId} onChange={pickType}
               options={types.map(t => ({ value: t.id, label: `${t.name} (${t.pointsMin === t.pointsMax ? t.pointsMin : `${t.pointsMin}-${t.pointsMax}`} poin)` }))}

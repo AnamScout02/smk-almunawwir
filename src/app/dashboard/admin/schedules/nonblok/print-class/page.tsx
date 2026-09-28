@@ -4,7 +4,7 @@ import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { TautanIkon } from "@/components/shared/IkonNama";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { buildPrintFilename } from "@/lib/print-filename";
@@ -37,16 +37,14 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
           style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
-          <Link href="/dashboard/admin/schedules/nonblok" className="relative flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
-            <ArrowLeft size={16} /> Kembali
-          </Link>
+          <TautanIkon href="/dashboard/admin/schedules/nonblok" ikon="kembali" ukuran={16} className="relative flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">Kembali</TautanIkon>
           <h1 className="relative font-heading font-bold">Cetak Jadwal Non-Blok per Kelas</h1>
         </div>
         <p className="text-sm text-gray-500 mb-3">Pilih kelas yang mau dicetak:</p>
         <div className="flex flex-wrap gap-2">
           {classes.map(c => (
             <Link key={c.id} href={`/dashboard/admin/schedules/nonblok/print-class?classId=${c.id}`}
-              className="text-sm font-semibold px-3 py-2 rounded-xl border border-gray-200 hover:bg-primary-50 hover:border-primary-300 transition">
+              className="btn-modal-cancel">
               {c.name} — {c.major.name}
             </Link>
           ))}
@@ -87,9 +85,7 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         <div className="relative flex items-center gap-3">
-          <Link href="/dashboard/admin/schedules/nonblok" className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
-            <ArrowLeft size={16} /> Kembali
-          </Link>
+          <TautanIkon href="/dashboard/admin/schedules/nonblok" ikon="kembali" ukuran={16} className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">Kembali</TautanIkon>
           <div>
             <h1 className="font-heading font-bold">Cetak Jadwal Non-Blok — {activeClass.name}</h1>
             <Link href="/dashboard/admin/schedules/nonblok/print-class"

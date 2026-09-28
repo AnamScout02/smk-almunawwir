@@ -10,6 +10,7 @@ import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface NewsItem {
   id: string;
@@ -25,7 +26,7 @@ interface NewsItem {
 const emptyForm = { title: "", slug: "", content: "", thumbnail: "", category: "Umum", published: false };
 const categories = ["Umum", "Prestasi", "Pengumuman", "Kegiatan", "Beasiswa", "SPMB"];
 
-export default function NewsManager() {
+export default function NewsManager({ kembaliHref }: { kembaliHref?: string }) {
   const confirmDialog = useConfirm();
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,7 @@ export default function NewsManager() {
         title="Kelola Berita"
         description={`${items.length} berita tersimpan`}
       />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
 
       {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026); di HP tombol turun ke kanan bawah. */}
       <div className="baris-alat mb-5">
@@ -106,7 +108,7 @@ export default function NewsManager() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={Search} title="Tidak ada berita ditemukan" />
       ) : (

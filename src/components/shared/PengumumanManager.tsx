@@ -11,6 +11,7 @@ import GroupedSection from "@/components/admin/GroupedSection";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import PilihBanyak from "@/components/shared/PilihBanyak";
 import { useToast } from "@/components/shared/ToastProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Pengumuman {
   id: string; title: string; content: string; targetRole: string; priority: string; active: boolean;
@@ -34,7 +35,7 @@ const tglWib = (s: string) => new Date(new Date(s).getTime() + 7 * 3600_000).toI
 
 /** PENGELOLA PENGUMUMAN (17 Sep 2026) — Admin/TU & pimpinan: semua sasaran; wali kelas: siswa & orang tua kelas walinya.
  * Sasaran rinci per kelas/jurusan/jabatan, notifikasi ke kotak masuk, konfirmasi baca + statistik pembaca. */
-export default function PengumumanManager({ kotakHref }: { kotakHref?: string }) {
+export default function PengumumanManager({ kotakHref, kembaliHref }: { kotakHref?: string; kembaliHref?: string }) {
   const confirm = useConfirm();
   const toast = useToast();
   const [data, setData] = useState<Data | null>(null);
@@ -168,16 +169,11 @@ export default function PengumumanManager({ kotakHref }: { kotakHref?: string })
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Bell size={22} />} title="Kelola Pengumuman"
         description={data ? `${aktif.length} aktif · ${nonaktif.length} nonaktif${data.semua ? "" : " · kelas wali Anda"}` : "Buat pengumuman untuk sasaran tertentu dan pantau siapa yang sudah membaca"} />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
       {galat ? <EmptyState icon={Bell} title="Tidak tersedia" description={galat} /> : !data ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : (
         <>
-          <div className="baris-alat mb-5">
-            <div className="alat-aksi">
-              {kotakHref && <Link href={kotakHref} className="btn-modal-cancel btn-teks"><Bell /> Kotak Pengumuman Saya</Link>}
-              <button type="button" onClick={bukaBaru} className="btn-modal-save"><Plus /> Buat Pengumuman</button>
-            </div>
-          </div>
           <p className="mb-5 text-xs text-gray-500">
             Pengumuman aktif tampil di dashboard & kotak pengumuman sasaran. Centang <strong>Wajib konfirmasi dibaca</strong> agar penerima menekan
             &ldquo;Saya sudah membaca&rdquo; — pengumuman itu masuk daftar &ldquo;Perlu tindakan&rdquo; mereka dan angkanya bisa dipantau di kolom Dibaca
@@ -265,6 +261,13 @@ export default function PengumumanManager({ kotakHref }: { kotakHref?: string })
               <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3"><p className="text-xs text-emerald-700">Sudah membaca</p><p className="angka text-xl font-bold text-emerald-800">{pembaca.dibaca}</p></div>
               <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3"><p className="text-xs text-amber-700">Belum</p><p className="angka text-xl font-bold text-amber-800">{pembaca.total - pembaca.dibaca}</p></div>
             </div>
+
+            <div className="baris-alat mb-5">
+    <div className="alat-aksi">
+      {kotakHref && <Link href={kotakHref} className="btn-modal-cancel btn-teks"><Bell /> Kotak Pengumuman Saya</Link>}
+      <button type="button" onClick={bukaBaru} className="btn-modal-save"><Plus /> Buat Pengumuman</button>
+    </div>
+  </div>
             <div className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
               {[["BELUM", "Belum"], ["SUDAH", "Sudah"], ["SEMUA", "Semua"]].map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setSaringBaca(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${saringBaca === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
@@ -284,7 +287,7 @@ export default function PengumumanManager({ kotakHref }: { kotakHref?: string })
                   ))}
                 </tbody>
               </table>
-              {barisPembaca.length === 0 && <p className="px-4 py-6 text-center text-sm text-gray-500">Tidak ada data.</p>}
+              {barisPembaca.length === 0 && <p className="px-4 py-10 text-center text-sm text-gray-400">Tidak ada data.</p>}
               {barisPembaca.length > 500 && <p className="px-4 py-2 text-center text-xs text-gray-500">Menampilkan 500 dari {barisPembaca.length}.</p>}
             </div>
           </div>

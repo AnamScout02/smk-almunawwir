@@ -107,7 +107,7 @@ export default async function ProgramDetailPage({ params }: Props) {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         {/* Hero */}
         <section className={`relative ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white section-padding overflow-hidden`}
           style={heroStyle}>
@@ -288,7 +288,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                     <ArrowRight size={16} />
                   </Link>
                   <Link href="/contact"
-                    className="flex items-center justify-center gap-2 w-full border border-primary-100 text-primary-700 font-semibold py-3 rounded-xl hover:bg-primary-100 transition text-sm mt-2">
+                    className="btn-modal-cancel w-full mt-2">
                     {c.askBtn}
                   </Link>
                 </div>

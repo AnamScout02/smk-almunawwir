@@ -72,7 +72,7 @@ export default function PencarianCepat() {
           ) : kata.trim().length < 2 ? (
             <p className="py-8 text-center text-sm text-gray-500">Ketik minimal 2 huruf. Tekan <kbd className="rounded border border-gray-200 px-1.5 py-0.5 text-xs">Ctrl</kbd>+<kbd className="rounded border border-gray-200 px-1.5 py-0.5 text-xs">K</kbd> kapan saja untuk membuka kotak ini.</p>
           ) : hasil.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">Tidak ada yang cocok.</p>
+            <p className="py-10 text-center text-sm text-gray-400">Tidak ada yang cocok.</p>
           ) : (
             <ul className="divide-y divide-gray-50">
               {hasil.map((h, i) => (

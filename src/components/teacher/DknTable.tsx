@@ -192,7 +192,7 @@ export default function DknTable({ classId, logoUrl, backHref }: { classId: stri
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
       ) : !data || data.students.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Belum Ada Siswa" description="Kelas ini belum punya siswa aktif." />
       ) : (

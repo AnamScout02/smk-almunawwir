@@ -88,7 +88,7 @@ export default function StudentMaterialsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : tab === "kuis" ? (
         quizzes.length === 0 ? (
           <EmptyState icon={HelpCircle} title="Belum Ada Kuis" description="Kuis dari guru akan muncul di sini." />

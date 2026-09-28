@@ -100,7 +100,7 @@ export default function KonselingManager() {
       ) : (
         <>
           <div className="baris-alat mb-5">
-            <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">
+            <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1">
               {[["AKTIF", "Berjalan"], ["SELESAI", "Selesai"], ["SEMUA", "Semua"]].map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setSaring(k)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium ${saring === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>

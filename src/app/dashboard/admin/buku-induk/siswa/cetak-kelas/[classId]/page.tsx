@@ -5,6 +5,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import BukuIndukPrintSheet, { PrintStudent } from "@/components/admin/BukuIndukPrintSheet";
 import { usePrintTitle } from "@/lib/usePrintTitle";
 import { buildPrintFilename } from "@/lib/print-filename";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export default function CetakKelasPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -35,7 +36,7 @@ export default function CetakKelasPage() {
     return (
       <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex flex-col items-center justify-center gap-3 min-h-[60vh] text-gray-400">
         <p>Belum ada siswa di kelas ini</p>
-        <button onClick={() => router.back()} className="text-primary-700 hover:underline text-sm">Kembali</button>
+        <TombolKembali />
       </div>
     );
   }

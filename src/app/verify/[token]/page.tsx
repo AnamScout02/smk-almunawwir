@@ -31,7 +31,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
   const isOwnStudent = session?.role === "STUDENT" && session.userId === student?.userId;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6"
+    <div className="min-h-dvh flex items-center justify-center p-6"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
@@ -75,12 +75,12 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
                 <div className="mt-5 pt-4 border-t border-gray-100">
                   {isAdmin ? (
                     <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`}
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold transition">
+                      className="btn-modal-save w-full">
                       <FileText size={16} /> Lihat Buku Induk Lengkap
                     </Link>
                   ) : isOwnStudent ? (
                     <Link href="/dashboard/student/rapor"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary-700 hover:bg-primary-900 text-white text-sm font-semibold transition">
+                      className="btn-modal-save w-full">
                       <ScrollText size={16} /> Lihat Rapor Lengkap
                     </Link>
                   ) : (

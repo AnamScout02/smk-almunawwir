@@ -117,7 +117,7 @@ export default async function AlumniPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
@@ -224,11 +224,11 @@ export default async function AlumniPage() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="/contact"
-                className="inline-flex px-8 py-3 rounded-full bg-primary-700 hover:bg-primary-900 text-white font-semibold transition">
+                className="btn-primary">
                 {c.ctaAlumniBtn}
               </Link>
               <Link href="/tracer-study"
-                className="inline-flex px-8 py-3 rounded-full border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white font-semibold transition">
+                className="btn-modal-cancel">
                 Isi Tracer Study
               </Link>
             </div>

@@ -230,7 +230,7 @@ export default function UsersPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 flex justify-center"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={Search} title="Tidak ada pengguna ditemukan" />
       ) : (
@@ -405,7 +405,7 @@ export default function UsersPage() {
         }
       >
         {jabatanOptions.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
+          <p className="text-sm text-gray-400 text-center py-10">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
         ) : (
           <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
             {jabatanOptions.map(j => (

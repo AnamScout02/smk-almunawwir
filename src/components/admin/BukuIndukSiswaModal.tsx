@@ -428,7 +428,7 @@ export default function BukuIndukSiswaModal({
                   value={accountForm.nis}
                   onChange={e => setAccountForm(p => ({ ...p, nis: e.target.value }))} />
                 {nisGenerating && (
-                  <Loader2 size={15} className="animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-primary-500" />
+                  <Loader2 size={15} className="animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 )}
               </div>
             </div>
@@ -686,7 +686,7 @@ export default function BukuIndukSiswaModal({
       <Section title="I. Keterangan Perkembangan Siswa" icon={Award} open={!!sections.i} onToggle={() => toggleSection("i")} accent="text-yellow-600">
         <div className="col-span-2 space-y-3">
           {achievements.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Belum ada data penghargaan/prestasi</p>
+            <p className="text-sm text-gray-400">Belum ada data penghargaan/prestasi</p>
           ) : achievements.map((a, idx) => (
             <div key={idx} className="border border-gray-200 rounded-lg p-3 grid grid-cols-2 gap-2 relative">
               <button type="button" onClick={() => removeAchievement(idx)}

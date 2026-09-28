@@ -10,6 +10,7 @@ import {
   FIELD_LABELS, BOX_TYPE_LABELS, resolveKartuText, resolveShape, DEFAULT_WIDTH_PCT, DEFAULT_PHOTO_SIZE, DEFAULT_QR_SIZE,
   emptyKartuTemplate,
 } from "@/lib/kartu-tanda-template";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const SHAPE_LABELS: Record<"square" | "rounded" | "circle", string> = { square: "Persegi", rounded: "Membulat", circle: "Bulat" };
 
@@ -147,9 +148,7 @@ export default function KartuTandaEditorPage() {
         description="Upload gambar latar depan/belakang, atur foto/QR/teks — berlaku sbg template semua kartu. Kosongkan gambar latar utk pakai desain bawaan." />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/kartu-tanda" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/kartu-tanda"} />
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
           {(["front", "back"] as const).map(s => (
             <button key={s} onClick={() => { setSide(s); setSelectedId(null); }}
@@ -232,7 +231,7 @@ export default function KartuTandaEditorPage() {
 
         {/* Side panel */}
         <div className="panel p-5 space-y-4">
-          <h3 className="font-heading font-bold text-primary-900 text-sm">{selected ? `Edit ${BOX_TYPE_LABELS[selected.type]}` : "Daftar Elemen"}</h3>
+          <h3 className="font-heading font-semibold text-primary-900 text-sm">{selected ? `Edit ${BOX_TYPE_LABELS[selected.type]}` : "Daftar Elemen"}</h3>
 
           {!selected && (
             current.boxes.length === 0 ? (
@@ -321,7 +320,7 @@ export default function KartuTandaEditorPage() {
           {selected && (
             <div className="flex gap-2 pt-2">
               <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1">Selesai</button>
-              <button onClick={deleteSelected} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-colors">
+              <button onClick={deleteSelected} className="btn-hapus flex-1 justify-center">
                 <Trash2 size={14} /> Hapus
               </button>
             </div>

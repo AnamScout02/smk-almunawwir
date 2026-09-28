@@ -93,7 +93,7 @@ export default function IzinOrangTuaPage() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
         <form onSubmit={kirim} className="panel p-5 space-y-4 xl:col-span-5">
-          <h3 className="font-heading font-bold text-primary-900">Pengajuan baru</h3>
+          <h3 className="font-heading font-semibold text-primary-900">Pengajuan baru</h3>
           {data.anak.length > 1 && (
             <div>
               <label className="label-field">Anak</label>
@@ -153,7 +153,7 @@ export default function IzinOrangTuaPage() {
         </form>
 
         <div className="panel overflow-hidden xl:col-span-7">
-          <div className="border-b border-gray-100 px-5 py-3.5"><h3 className="font-heading font-bold text-primary-900">Riwayat pengajuan</h3></div>
+          <div className="border-b border-gray-100 px-5 py-3.5"><h3 className="font-heading font-semibold text-primary-900">Riwayat pengajuan</h3></div>
           {data.daftar.length === 0 ? (
             <EmptyState icon={FileText} title="Belum ada pengajuan" description="Pengajuan izin atau sakit yang dikirim akan tampil di sini beserta keputusannya." />
           ) : (

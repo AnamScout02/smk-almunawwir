@@ -111,7 +111,7 @@ export default function MasterDataPage() {
       {/* Grid kartu */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="animate-spin text-primary-700" size={32} />
+          <Loader2 size={24} className="animate-spin text-gray-400" />
           <span className="ml-3 text-gray-500">Memuat data...</span>
         </div>
       ) : (
@@ -232,7 +232,7 @@ export default function MasterDataPage() {
                 </div>
               ))}
               {editItems.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">
+                <p className="text-sm text-gray-400 text-center py-10">
                   Belum ada pilihan
                 </p>
               )}

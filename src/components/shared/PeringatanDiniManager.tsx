@@ -1,10 +1,13 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertOctagon, CalendarX2, Eye, HeartHandshake, Info, Loader2, Search, ShieldAlert, Siren, Users } from "lucide-react";
+import { AlertOctagon, CalendarX2, Eye, HeartHandshake, Info, Loader2, Search, ShieldAlert, Siren, Users, MessagesSquare, NotebookPen, Home, Gavel } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 import Select from "@/components/admin/Select";
+import BarisPintasan from "@/components/shared/BarisPintasan";
 
 type Tingkat = "TINGGI" | "SEDANG" | "PANTAU";
 interface Baris {
@@ -54,6 +57,16 @@ export default function PeringatanDiniManager({ judul = "Peringatan Dini Siswa",
     data.cakupan.ujianBerakhir === 0 && "belum ada ujian online yang berakhir 30 hari terakhir",
   ].filter(Boolean) as string[] : [];
 
+  const jalur = usePathname() ?? "";
+  const adm = jalur.startsWith("/dashboard/admin");
+  const basis = adm ? "/dashboard/admin" : "/dashboard/teacher";
+  const pintasan = [
+    { href: `${basis}/konseling`, label: "Layanan Konseling", ikon: MessagesSquare },
+    { href: adm ? "/dashboard/admin/rekam-bk" : "/dashboard/teacher/kesiswaan/rekam-bk", label: "Rekam BK", ikon: NotebookPen },
+    { href: `${basis}/kunjungan-rumah`, label: "Kunjungan Rumah", ikon: Home },
+    { href: adm ? "/dashboard/admin/poin-siswa" : "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin Siswa", ikon: Gavel },
+  ];
+
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={ikon} title={judul}
@@ -72,6 +85,12 @@ export default function PeringatanDiniManager({ judul = "Peringatan Dini Siswa",
             <StatTile value={data.jumlahSiswa} label="Siswa Aktif Dicek" icon={Users} color="primary" size="md" />
           </div>
 
+          {/* BARIS PINTASAN — hanya saat komponen ini dipakai sebagai DASHBOARD BK. Di halaman
+              "Peringatan Dini Siswa" biasa tidak dipasang: itu halaman fitur yang sudah ada di menu.
+              Letaknya SETELAH kartu angka (DESIGN_SYSTEM §19.5). */}
+          {varian === "bk" && (
+            <BarisPintasan items={pintasan} />
+          )}
           <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
             <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
             <div className="text-sm text-blue-700 leading-relaxed">
@@ -83,8 +102,8 @@ export default function PeringatanDiniManager({ judul = "Peringatan Dini Siswa",
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
+          <div className="baris-alat">
+            <div className="alat-cari">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau NIS..." className="input-field pl-10" />
             </div>

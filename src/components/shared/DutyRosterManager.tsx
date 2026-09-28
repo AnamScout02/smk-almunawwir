@@ -113,7 +113,7 @@ export default function DutyRosterManager() {
                     </button>
                   </div>
                   {entries.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">Belum ada petugas piket.</p>
+                    <p className="text-sm text-gray-400">Belum ada petugas piket.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {entries.map(e => (
@@ -125,7 +125,7 @@ export default function DutyRosterManager() {
                               {e.weekType === "SEMUA" && weekTab !== "SEMUA" ? " · Tetap" : ""}
                             </p>
                           </div>
-                          <button onClick={() => handleDelete(e)} className="p-1 rounded-md hover:bg-red-50 text-red-400 hover:text-red-600 transition shrink-0" title="Hapus">
+                          <button onClick={() => handleDelete(e)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition shrink-0" title="Hapus">
                             <Trash2 size={13} />
                           </button>
                         </div>

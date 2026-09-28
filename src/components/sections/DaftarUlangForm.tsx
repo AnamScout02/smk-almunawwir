@@ -86,7 +86,7 @@ export default function DaftarUlangForm({ lang = "id" }: { lang?: Lang }) {
 
   if (!data) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <div className="panel p-6 sm:p-8">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">{c.namaLengkap}</label>
@@ -108,7 +108,7 @@ export default function DaftarUlangForm({ lang = "id" }: { lang?: Lang }) {
   const isDone = confirmed || !!data.daftarUlangConfirmedAt;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+    <div className="panel p-6 sm:p-8">
       <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
           <CheckCircle2 size={20} className="text-emerald-600" />
@@ -146,7 +146,7 @@ export default function DaftarUlangForm({ lang = "id" }: { lang?: Lang }) {
             </label>
           ) : uploadStatus === "uploading" ? (
             <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
-              <Loader2 size={18} className="animate-spin text-primary-500" />
+              <Loader2 size={18} className="animate-spin text-gray-400" />
               <span className="text-sm text-gray-500">{c.mengunggah(fileName)}</span>
             </div>
           ) : (

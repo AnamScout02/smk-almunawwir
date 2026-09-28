@@ -68,7 +68,7 @@ export default function AdminReportsPage() {
             <BarChart2 size={20} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Rekapitulasi Jumlah Siswa</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Rekapitulasi Jumlah Siswa</h3>
             <p className="text-gray-400 text-sm mt-0.5">Jumlah rombel dan peserta didik menurut jenis kelamin, per jurusan dan tingkat — siap cetak.</p>
           </div>
           <a href="/dashboard/admin/reports/rekap-siswa"
@@ -83,12 +83,12 @@ export default function AdminReportsPage() {
             <ClipboardList size={20} className="text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data Pendaftaran (SPMB)</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data Pendaftaran (SPMB)</h3>
             <p className="text-gray-400 text-sm mt-0.5">Semua data formulir pendaftaran calon siswa baru — nama, asal sekolah, jurusan, status, dan catatan admin.</p>
             <p className="text-xs text-gray-300 mt-1">16 kolom · semua status (Menunggu, Wawancara, Diterima, Ditolak)</p>
           </div>
           <a href="/api/admin/export/admissions"
-            className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            className="btn-modal-cancel shrink-0">
             <Download size={15} /> Excel
           </a>
         </div>
@@ -99,7 +99,7 @@ export default function AdminReportsPage() {
             <Users size={20} className="text-emerald-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data Siswa Aktif</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data Siswa Aktif</h3>
             <p className="text-gray-400 text-sm mt-0.5">Daftar seluruh siswa — NIS, NISN, nama, email, kelas, tingkat, dan jurusan.</p>
             <p className="text-xs text-gray-300 mt-1">9 kolom · diurutkan berdasarkan tingkat kelas</p>
           </div>
@@ -115,7 +115,7 @@ export default function AdminReportsPage() {
             <CalendarDays size={20} className="text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data Absensi</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data Absensi</h3>
             <p className="text-gray-400 text-sm mt-0.5">Rekap absensi harian seluruh siswa — tanggal, nama, kelas, dan status kehadiran.</p>
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <div>
@@ -141,7 +141,7 @@ export default function AdminReportsPage() {
             <BookOpen size={20} className="text-purple-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data Nilai Siswa</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data Nilai Siswa</h3>
             <p className="text-gray-400 text-sm mt-0.5">Semua nilai per siswa — NIS, nama, kelas, mata pelajaran, tipe nilai, skor, dan guru pengampu.</p>
             {loadingClasses ? (
               <div className="mt-3 flex items-center gap-2 text-gray-400 text-xs">
@@ -172,7 +172,7 @@ export default function AdminReportsPage() {
             <p className="text-xs text-gray-300 mt-2">11 kolom · Tugas, Ulangan Harian, UTS, UAS</p>
           </div>
           <a href={gradesUrl()}
-            className="shrink-0 self-start inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            className="btn-modal-cancel shrink-0 self-start">
             <Download size={15} /> Excel
           </a>
         </div>
@@ -183,7 +183,7 @@ export default function AdminReportsPage() {
             <Calendar size={20} className="text-indigo-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data Jadwal Pelajaran</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data Jadwal Pelajaran</h3>
             <p className="text-gray-400 text-sm mt-0.5">Jadwal mengajar seluruh kelas — hari, jam, mata pelajaran, guru pengampu, dan ruang.</p>
             {loadingClasses ? (
               <div className="mt-3 flex items-center gap-2 text-gray-400 text-xs">
@@ -203,7 +203,7 @@ export default function AdminReportsPage() {
             <p className="text-xs text-gray-300 mt-2">9 kolom · diurutkan per kelas, hari, dan jam</p>
           </div>
           <a href={scheduleUrl()}
-            className="shrink-0 self-start inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            className="btn-modal-cancel shrink-0 self-start">
             <Download size={15} /> Excel
           </a>
         </div>
@@ -214,7 +214,7 @@ export default function AdminReportsPage() {
             <Briefcase size={20} className="text-rose-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading font-bold text-primary-900">Data PKL Siswa</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Data PKL Siswa</h3>
             <p className="text-gray-400 text-sm mt-0.5">Status PKL seluruh siswa — nama, kelas, perusahaan, posisi, supervisor, dan tanggal PKL.</p>
             <p className="text-xs text-gray-300 mt-1">12 kolom · termasuk siswa yang belum/sudah/sedang PKL</p>
           </div>

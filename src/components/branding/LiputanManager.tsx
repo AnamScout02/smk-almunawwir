@@ -10,6 +10,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import DatePicker from "@/components/shared/DatePicker";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Usulan { id: string; judul: string; isi: string; tanggalKegiatan: string | null; fotoUrls: string[]; pengusulNama: string; status: string; tanggapan: string | null; newsId: string | null; createdAt: string }
 const STATUS: Record<string, { label: string; kelas: string }> = {
@@ -20,7 +21,7 @@ const STATUS: Record<string, { label: string; kelas: string }> = {
 };
 
 /** PENGAJUAN LIPUTAN (17 Sep 2026) — guru mengirim cerita & foto kegiatan; Tim Branding menyunting jadi berita. */
-export default function LiputanManager({ beritaHref }: { beritaHref: string }) {
+export default function LiputanManager({ beritaHref, kembaliHref }: { beritaHref: string; kembaliHref?: string }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [d, setD] = useState<{ tim: boolean; daftar: Usulan[] } | null>(null);
@@ -44,6 +45,7 @@ export default function LiputanManager({ beritaHref }: { beritaHref: string }) {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Camera size={22} />} title={d?.tim ? "Usulan Liputan Masuk" : "Kirim Liputan Kegiatan"}
         description={d?.tim ? "Cerita & foto dari guru — sunting menjadi berita sekolah" : "Kirim cerita dan foto kegiatan untuk diterbitkan Tim Branding"} />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
       <div className="baris-alat mb-5">
         <div className="alat-aksi">
           {d?.tim && <Link href={beritaHref} className="btn-modal-cancel btn-teks"><FileText /> Kelola Berita</Link>}

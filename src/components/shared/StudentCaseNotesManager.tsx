@@ -165,7 +165,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
           options={[{ value: "", label: "Semua Status" }, { value: "BERJALAN", label: "Berjalan" }, { value: "SELESAI", label: "Selesai" }]} />
       </div>
       {loading ? (
-        <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : notes.length === 0 ? (
         <EmptyState icon={HeartHandshake} title="Belum Ada Catatan" description="Belum ada catatan penanganan siswa." />
       ) : (
@@ -188,7 +188,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => toggleStatus(n)} className="text-xs font-semibold text-primary-700 hover:bg-primary-50 rounded-lg px-2.5 py-1.5 transition whitespace-nowrap">
+                  <button onClick={() => toggleStatus(n)} className="btn-modal-cancel px-3 text-xs whitespace-nowrap">
                     Tandai {n.status === "BERJALAN" ? "Selesai" : "Berjalan"}
                   </button>
                   <button onClick={() => handleDelete(n.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={14} /></button>

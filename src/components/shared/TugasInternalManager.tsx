@@ -100,7 +100,7 @@ export default function TugasInternalManager({ basePath }: { basePath: string })
                 options={[{ value: "", label: "Semua status" }, ...Object.entries(STATUS).map(([value, s]) => ({ value, label: s.label }))]} />
             </div>
             {data.bolehLihatSemua && (
-              <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
+              <div className="alat-tab flex gap-1 rounded-xl border border-gray-100 bg-white p-1">
                 {(["semua", "saya"] as const).map(v => (
                   <button key={v} type="button" onClick={() => setCakupan(v)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${cakupan === v ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>

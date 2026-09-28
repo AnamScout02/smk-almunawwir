@@ -142,7 +142,7 @@ export default async function ParentDashboard({ searchParams }: { searchParams: 
                     </li>
                   ))}
                 </ul>
-              ) : <p className="px-5 py-8 text-center text-sm text-gray-500">Belum ada catatan absensi.</p>}
+              ) : <p className="px-5 py-10 text-center text-sm text-gray-400">Belum ada catatan absensi.</p>}
             </Panel>
 
             <TautanIkon href="/dashboard/parent/rapor" ikon="cetak" ukuran={16} ikonClassName="text-primary-700"

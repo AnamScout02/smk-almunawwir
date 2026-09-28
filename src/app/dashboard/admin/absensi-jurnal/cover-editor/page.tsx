@@ -9,6 +9,7 @@ import {
   CoverTemplate, CoverTextBox, CoverField, COVER_TEMPLATE_KEY,
   FIELD_LABELS, resolveCoverText, defaultCoverTexts, DEFAULT_WIDTH_PCT,
 } from "@/lib/cover-template";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const PREVIEW_CTX = {
   kelas: "X AK 1", kompetensi: "Akuntansi", waliKelas: "Nama Wali Kelas",
@@ -121,9 +122,7 @@ export default function CoverEditorPage() {
       />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/absensi-jurnal" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/absensi-jurnal"} />
         <button onClick={handleSave} disabled={saving}
           className="btn-modal-save sm:ml-auto">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Template
@@ -182,7 +181,7 @@ export default function CoverEditorPage() {
 
         {/* Side panel */}
         <div className="panel p-5 space-y-4">
-          <h3 className="font-heading font-bold text-primary-900 text-sm">
+          <h3 className="font-heading font-semibold text-primary-900 text-sm">
             {selected ? "Edit Teks" : "Daftar Teks"}
           </h3>
 
@@ -241,7 +240,7 @@ export default function CoverEditorPage() {
               </label>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setSelectedId(null)} className="btn-modal-cancel flex-1">Selesai</button>
-                <button onClick={deleteSelected} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-colors">
+                <button onClick={deleteSelected} className="btn-hapus flex-1 justify-center">
                   <Trash2 size={14} /> Hapus
                 </button>
               </div>

@@ -75,7 +75,7 @@ export default function PerformaServerPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 size={28} className="animate-spin" /></div>
+        <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : error || !stats ? (
         <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-sm">{error || "Data tidak tersedia"}</div>
       ) : (

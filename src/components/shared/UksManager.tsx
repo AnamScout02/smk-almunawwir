@@ -173,10 +173,6 @@ export default function UksManager({ base = "/dashboard/teacher/uks" }: { base?:
         description="Catatan kunjungan & stok obat Usaha Kesehatan Sekolah"
       />
 
-      <div className="alat-aksi justify-end mb-4">
-        <Link href={`${base}/pemeriksaan`} className="btn-modal-cancel btn-teks"><Ruler size={15} /> Pemeriksaan TB/BB</Link>
-        <a href={`/api/uks/laporan?bulan=${new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 7)}`} className="btn-modal-cancel btn-teks"><FileSpreadsheet size={15} /> Laporan Bulan Ini</a>
-      </div>
       {!loading && (() => {
         const batas = Date.now() + 30 * 86400000;
         const hampir = medicines.filter(m => m.kedaluwarsa && new Date(m.kedaluwarsa).getTime() <= batas);
@@ -200,15 +196,20 @@ export default function UksManager({ base = "/dashboard/teacher/uks" }: { base?:
       )}
 
       {!loading && tab === "kunjungan" && (
-        <div className="kisi-kartu kisi-kartu-3 mb-6">
+        <div className="kisi-kartu kisi-kartu-3 mb-5">
           <StatTile color="primary" value={visits.length} label="Total Kunjungan" icon={HeartPulse} />
           <StatTile color="blue" value={thisMonth} label="Bulan Ini" icon={CalendarDays} />
           <StatTile color="amber" value={topComplaint ? topComplaint[1] : 0} label={topComplaint ? `Terbanyak: ${topComplaint[0]}` : "Belum Ada Data"} icon={HeartPulse} />
         </div>
       )}
 
+      <div className="alat-aksi justify-end mb-5">
+        <Link href={`${base}/pemeriksaan`} className="btn-modal-cancel btn-teks"><Ruler size={15} /> Pemeriksaan TB/BB</Link>
+        <a href={`/api/uks/laporan?bulan=${new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 7)}`} className="btn-modal-cancel btn-teks"><FileSpreadsheet size={15} /> Laporan Bulan Ini</a>
+      </div>
+
       <div className="baris-alat mb-5">
-        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="alat-tab flex flex-wrap gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>

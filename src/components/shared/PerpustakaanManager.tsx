@@ -339,7 +339,7 @@ export default function PerpustakaanManager() {
       )}
 
       {!loading && tab === "katalog" && (
-        <div className="kisi-kartu kisi-kartu-3 mb-6">
+        <div className="kisi-kartu kisi-kartu-3 mb-5">
           <StatTile color="primary" value={totalTitles} label="Total Judul" icon={Library} />
           <StatTile color="blue" value={totalStock} label="Total Eksemplar" icon={BookMarked} />
           <StatTile color="amber" value={totalBorrowed} label="Sedang Dipinjam" icon={CheckCircle2} />
@@ -347,7 +347,7 @@ export default function PerpustakaanManager() {
       )}
 
       <div className="baris-alat mb-5">
-        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="alat-tab flex flex-wrap gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
@@ -488,12 +488,14 @@ export default function PerpustakaanManager() {
             <EmptyState icon={BookMarked} title="Tidak Ada Peminjaman Aktif" description="Semua buku sudah dikembalikan." />
           ) : (
             <>
-              <div className="relative">
+              <div className="baris-alat">
+        <div className="alat-cari">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input value={activeSearch} onChange={e => setActiveSearch(e.target.value)}
                   placeholder="Scan barcode buku atau cari nama peminjam/judul..."
                   className="input-field pl-10 font-mono" />
               </div>
+      </div>
               {(() => {
                 return filteredActive.length === 0 ? (
                   <EmptyState icon={BookMarked} title="Tidak ada yang cocok" description="Coba kata kunci lain atau scan ulang." />
@@ -880,7 +882,7 @@ export default function PerpustakaanManager() {
     </div>
 
     {barcodeBook && (
-      <div className="hidden print:flex print:flex-col print:items-center print:justify-center print:min-h-screen">
+      <div className="hidden print:flex print:flex-col print:items-center print:justify-center print:min-h-dvh">
         <p className="font-bold text-lg mb-2">{barcodeBook.title}</p>
         {barcodeBook.barcodeQr && (
           // eslint-disable-next-line @next/next/no-img-element

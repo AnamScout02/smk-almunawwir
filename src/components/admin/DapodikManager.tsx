@@ -489,12 +489,14 @@ export default function DapodikManager({ npsn, bolehUbah, ...awal }: Koneksi & {
                     ))}
                   </div>
 
-                  <div className="relative">
+                  <div className="baris-alat">
+        <div className="alat-cari">
                     <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input id="cari-sinkron" value={cari} onChange={e => setCari(e.target.value)}
                       placeholder={tab === "siswa" ? "Cari nama, NISN, kelas, atau rombel..." : "Cari nama, NUPTK, atau jabatan..."}
                       className="input-field pl-10" />
                   </div>
+      </div>
 
                   {tampil.length === 0 ? (
                     <EmptyState icon={CheckCircle2} title="Tidak ada baris" description="Tidak ada data yang sesuai dengan saringan atau pencarian ini." />
@@ -585,7 +587,7 @@ export default function DapodikManager({ npsn, bolehUbah, ...awal }: Koneksi & {
               <div>
                 <label className="label-field">{cocok.tuId ? "Pasangannya di Dapodik" : "Pasangannya di data TU"}</label>
                 {calonCocok.length === 0 ? (
-                  <p className="text-sm text-gray-500">Tidak ada calon yang belum berpasangan.</p>
+                  <p className="text-sm text-gray-400">Tidak ada calon yang belum berpasangan.</p>
                 ) : (
                   <Select value={pilihanCocok} onChange={setPilihanCocok} placeholder="Ketik nama untuk mencari…"
                     options={calonCocok.map(c => ({ value: c.id, label: c.ket ? `${c.nama} — ${c.ket}` : c.nama }))} />

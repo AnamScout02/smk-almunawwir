@@ -161,7 +161,7 @@ export default function AttendancePage() {
           ) : records.length === 0 ? (
             <div className="py-16 text-center text-gray-400">
               <CheckSquare size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Tidak ada data absensi untuk tanggal ini.</p>
+              <p className="text-sm text-gray-400">Tidak ada data absensi untuk tanggal ini.</p>
               <p className="text-xs mt-1 text-gray-300">Input absensi melalui halaman kelas di atas.</p>
             </div>
           ) : (

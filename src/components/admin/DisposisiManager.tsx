@@ -199,7 +199,7 @@ export default function DisposisiManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={Forward} title="Belum Ada Disposisi"
           description="Buat disposisi pertama dari surat masuk yang sudah tercatat di Persuratan." />
@@ -306,7 +306,7 @@ export default function DisposisiManager() {
               placeholder="Pilih surat masuk..."
               options={surat.map(s => ({ value: s.id, label: `${s.perihal} — ${s.pihak} (${fmt(s.tanggal)})` }))} />
             {surat.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">
+              <p className="text-sm text-amber-600 mt-1">
                 Belum ada surat masuk tercatat. Catat dulu di menu Persuratan.
               </p>
             )}

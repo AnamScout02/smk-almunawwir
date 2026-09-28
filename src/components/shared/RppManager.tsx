@@ -111,7 +111,7 @@ export default function RppManager() {
         <PageSkeleton />
       ) : (
         <>
-          <div className="kisi-kartu mb-6">
+          <div className="kisi-kartu mb-5">
             <StatTile color="primary" value={myPlans} label="RPP Saya" icon={NotebookPen} />
             <StatTile color="blue" value={plans.length} label="Total di Bank RPP" icon={BookOpen} />
           </div>

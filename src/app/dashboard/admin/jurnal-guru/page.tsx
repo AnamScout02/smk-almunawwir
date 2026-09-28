@@ -75,7 +75,7 @@ export default function AdminJurnalGuruPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : teachers.length === 0 ? (
         <div className="panel p-10 text-center text-gray-400">
           Belum ada guru dengan penugasan mengajar.
@@ -103,7 +103,7 @@ export default function AdminJurnalGuruPage() {
 
           <div className="panel p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm">Riwayat Pertemuan</h3>
               {selected && (
                 <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-700 hover:text-primary-900 font-semibold">
                   <Printer size={13} /> Cetak Rekap
@@ -111,9 +111,9 @@ export default function AdminJurnalGuruPage() {
               )}
             </div>
             {loadingHistory ? (
-              <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-primary-500" /></div>
+              <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-gray-400" /></div>
             ) : history.length === 0 ? (
-              <p className="text-sm text-gray-400 py-6 text-center">Belum ada pertemuan tercatat untuk pilihan ini.</p>
+              <p className="text-sm text-gray-400 py-10 text-center">Belum ada pertemuan tercatat untuk pilihan ini.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="data-table">

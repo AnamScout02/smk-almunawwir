@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Maximize } from "lucide-react";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Isi { judul: string; tempat: string | null; mulai: string; selesai: string; qr: string; berlakuSampai: string; hadir: number; terakhir: { nama: string; waktu: string }[] }
 
@@ -27,11 +28,11 @@ export default function LayarQrKegiatan({ id, kembaliHref }: { id: string; kemba
   return (
     <div className="flex min-h-dvh flex-col bg-primary-900 px-4 py-6 text-white">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-        <Link href={kembaliHref} className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20"><ArrowLeft size={16} /> Kembali</Link>
+        <TombolKembali href={kembaliHref} className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20" />
         <button type="button" onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})} className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20"><Maximize size={16} /> Layar penuh</button>
       </div>
       {!isi ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-white/70"><Loader2 size={28} className="animate-spin" />{galat}</div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-white/70"><Loader2 size={24} className="animate-spin" />{galat}</div>
       ) : (
         <div className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 items-center gap-8 py-6 lg:grid-cols-[auto_1fr]">
           <div className="mx-auto rounded-3xl bg-white p-4 shadow-2xl">

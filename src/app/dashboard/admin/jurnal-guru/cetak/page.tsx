@@ -53,12 +53,12 @@ function CetakJurnalGuruContent() {
       <style>{`@page { size: A4 landscape; margin: 1.5cm; }`}</style>
 
       <div className="print:hidden sticky top-0 z-10 bg-white border border-gray-200 rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm mb-6">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
-          <ArrowLeft size={16} /> Kembali
+        <button onClick={() => router.back()} className="btn-modal-cancel">
+          <ArrowLeft /> Kembali
         </button>
         <h1 className="text-sm font-semibold text-gray-700">Cetak Rekap Jurnal Mengajar — {className} · {subject}</h1>
-        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm hover:bg-primary-900">
-          <Printer size={15} /> Cetak / Simpan PDF
+        <button onClick={() => window.print()} className="btn-modal-cancel">
+          <Printer /> Cetak / Simpan PDF
         </button>
       </div>
 

@@ -215,7 +215,7 @@ export default async function KebijakanPrivasiPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
@@ -232,7 +232,7 @@ export default async function KebijakanPrivasiPage() {
 
         <section className="section-padding bg-cream">
           <div className="container-custom max-w-3xl mx-auto">
-            <article className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-10 space-y-8">
+            <article className="panel p-6 md:p-10 space-y-8">
               {c.blok.map((b) => (
                 <section key={b.judul} className="space-y-3">
                   <h2 className="font-heading text-xl font-bold text-primary-900">{b.judul}</h2>

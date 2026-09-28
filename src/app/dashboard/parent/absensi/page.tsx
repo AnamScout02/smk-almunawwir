@@ -39,7 +39,7 @@ export default async function ParentAbsensiPage({ searchParams }: { searchParams
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<CalendarDays size={22} />} title="Absensi" description={`Rekap kehadiran — ${child.user.name}`} />
 
-      <div className="kisi-kartu kisi-kartu-5 mb-6">
+      <div className="kisi-kartu kisi-kartu-5 mb-5">
         <StatTile value={`${pct}%`} label="Persentase Hadir" ikon="persen" color="primary" />
         {summary.map(({ status, count, color, ikon }) => (
           <StatTile key={status} value={count} label={status} ikon={ikon} color={color} />

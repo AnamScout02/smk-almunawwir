@@ -207,7 +207,7 @@ export default function SubjectsManager() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={BookMarked} title="Belum ada kode mapel untuk tingkat ini" />
       ) : (

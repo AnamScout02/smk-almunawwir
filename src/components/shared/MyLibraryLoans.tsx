@@ -55,7 +55,7 @@ export default function MyLibraryLoans() {
       ) : (
         <div className="space-y-6">
           <div>
-            <h2 className="font-heading font-bold text-primary-900 text-sm mb-3">Sedang Dipinjam ({active.length})</h2>
+            <h2 className="font-heading font-semibold text-primary-900 text-sm mb-3">Sedang Dipinjam ({active.length})</h2>
             {active.length === 0 ? (
               <p className="panel text-sm text-gray-400 p-5 text-center">Tidak ada buku yang sedang dipinjam.</p>
             ) : (
@@ -97,7 +97,7 @@ export default function MyLibraryLoans() {
           </div>
 
           <div>
-            <h2 className="font-heading font-bold text-primary-900 text-sm mb-3">Riwayat Peminjaman ({history.length})</h2>
+            <h2 className="font-heading font-semibold text-primary-900 text-sm mb-3">Riwayat Peminjaman ({history.length})</h2>
             {history.length === 0 ? (
               <p className="panel text-sm text-gray-400 p-5 text-center">Belum ada riwayat peminjaman selesai.</p>
             ) : (

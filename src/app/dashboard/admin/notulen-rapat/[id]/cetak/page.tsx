@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { buildPrintFilename } from "@/lib/print-filename";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,9 +62,7 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 print:pt-0 bg-gray-100 print:bg-white">
       <div className="print:hidden sticky top-0 z-10 bg-white border border-gray-200 rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm mb-6 max-w-[210mm] mx-auto">
-        <Link href="/dashboard/admin/notulen-rapat" className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-700 font-semibold">
-          <ArrowLeft size={16} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/notulen-rapat"} className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-700 font-semibold" />
         <PrintButton />
       </div>
 

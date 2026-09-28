@@ -7,14 +7,14 @@ import type { SemesterRapor } from "@/lib/rapor-data";
 /** `formatSekolah` = semester yang rapor format buku sekolahnya (Form Nilai Rapor) sudah disahkan — versi jurnal di sini
  * tidak ditampilkan lagi untuk semester itu supaya orang tua tidak melihat dua versi nilai (22 Sep 2026). */
 export default function RaporSemester({ data, formatSekolah = [] }: { data: SemesterRapor[]; formatSekolah?: string[] }) {
-  if (!data.length) return <p className="text-gray-400 text-sm text-center py-8 print:hidden">Belum ada data nilai.</p>;
+  if (!data.length) return <p className="text-gray-400 text-sm text-center py-10 print:hidden">Belum ada data nilai.</p>;
   const sel = "border border-gray-200 px-2.5 py-2";
   return (
     <>
       {data.map(({ sem, disahkan, dikunci, rows, semAvg, kehadiran, catatanWali, ekstra }) => (
         <div key={sem} className="mb-8 break-inside-avoid-page">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <h4 className="font-heading font-bold text-primary-900">Semester: {sem}</h4>
+            <h4 className="font-heading font-semibold text-primary-900">Semester: {sem}</h4>
             {disahkan && semAvg !== null && (
               <span className="text-sm font-bold px-3 py-1 rounded-full border bg-primary-50 text-primary-900 border-primary-100">
                 Rata-rata: {semAvg.toFixed(1)}

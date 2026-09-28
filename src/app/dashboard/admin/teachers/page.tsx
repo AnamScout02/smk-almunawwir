@@ -77,15 +77,17 @@ export default function AdminTeachersPage() {
         description="Atur NIP, mata pelajaran, dan data profil guru"
       />
 
-      <div className="relative mb-5">
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Cari nama, NIP, atau mata pelajaran..."
           className="input-field pl-10" />
       </div>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={BookOpen} title="Tidak ada guru ditemukan" description="Tambah akun guru melalui menu Akun Pengguna." />
       ) : (
@@ -119,7 +121,7 @@ export default function AdminTeachersPage() {
         }
       >
         {jabatanOptions.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
+          <p className="text-sm text-gray-400 text-center py-10">Belum ada katalog jabatan. Tambahkan lewat menu Jabatan.</p>
         ) : (
           <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
             {jabatanOptions.map(j => (

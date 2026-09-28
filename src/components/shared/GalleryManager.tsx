@@ -9,13 +9,14 @@ import EmptyState from "@/components/admin/EmptyState";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface GalleryItem { id: string; title: string; imageUrl: string; category: string; caption?: string; order: number; }
 
 const emptyForm = { title: "", imageUrl: "", category: "Umum", caption: "" };
 const categories = ["Umum", "Kegiatan", "Prestasi", "Fasilitas", "Pembelajaran", "Ekstrakulikuler", "Wisuda"];
 
-export default function GalleryManager() {
+export default function GalleryManager({ kembaliHref }: { kembaliHref?: string }) {
   const confirmDialog = useConfirm();
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +67,7 @@ export default function GalleryManager() {
         title="Galeri Foto"
         description={`${items.length} foto tersimpan`}
       />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
 
       {/* Baris alat: kotak cari & tombol aksi bersanding (permintaan user 15 Sep 2026); di HP tombol turun ke kanan bawah. */}
       <div className="baris-alat mb-5">
@@ -86,7 +88,7 @@ export default function GalleryManager() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={GalleryHorizontal} description="Belum ada foto" />
       ) : (

@@ -3,5 +3,5 @@ import PengesahanRapor from "@/components/jabatan/PengesahanRapor";
 /** Salinan portal ADMIN (19 September 2026) — superadmin berakses penuh tetapi bukan guru/pegawai,
  * jadi halaman ini disediakan di portalnya sendiri. Isinya komponen yang sama, bukan duplikat kode. */
 export default function Page() {
-  return <PengesahanRapor cetakHref="/dashboard/admin/rapor-cetak" kembaliHref="/dashboard/admin" dariPengesahan={false} />;
+  return <PengesahanRapor basePath="/dashboard/admin" cetakHref="/dashboard/admin/rapor-cetak" kembaliHref="/dashboard/admin" dariPengesahan={false} />;
 }

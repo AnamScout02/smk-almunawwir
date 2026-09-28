@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Briefcase, Loader2, Building2, Calendar, MessageSquare, Save, Star } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import PanelPklHumas from "@/components/pkl/PanelPklHumas";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface JournalEntry { id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null; lat: number | null; lng: number | null; akurasi: number | null }
 
@@ -98,9 +99,7 @@ export default function TeacherPklDetailPage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/teacher/pkl" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/teacher/pkl"} />
       </div>
 
       <div className="panel p-5 mb-6">

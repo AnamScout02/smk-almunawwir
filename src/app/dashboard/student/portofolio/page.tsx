@@ -23,19 +23,20 @@ export default async function Page() {
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Trophy size={22} />} title="Portofolio Saya" description="Rangkuman prestasi, ekstrakurikuler, PKL, dan capaian belajar — bisa dicetak untuk melamar kerja atau kuliah" />
-      <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/student/portofolio/cetak" className="btn-modal-cancel"><Printer size={15} /> Cetak Portofolio</Link>
-      </div>
-      <div className="kisi-kartu kisi-kartu-4 mb-6">
+      <div className="kisi-kartu kisi-kartu-4 mb-5">
         <StatTile ikon="prestasi" color="amber" value={p.prestasi.length} label="Prestasi tercatat" />
         <StatTile ikon="daftar-centang" color="purple" value={p.ekstra.length} label="Ekstrakurikuler diikuti" />
         <StatTile ikon="pkl" color="blue" value={p.pkl ? 1 : 0} label={p.pkl ? p.pkl.company : "Belum ada PKL"} />
         <StatTile ikon="tren" color="emerald" value={rataTerakhir != null ? Math.round(rataTerakhir * 10) / 10 : "—"} label={p.rapor[0] ? `Rata-rata ${p.rapor[0].semester}` : "Rapor belum disahkan"} />
       </div>
+
+      <div className="alat-aksi justify-end mb-5">
+        <Link href="/dashboard/student/portofolio/cetak" className="btn-modal-cancel"><Printer size={15} /> Cetak Portofolio</Link>
+      </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-start">
         <div className="panel p-5">
           <p className="label-kecil mb-3">Prestasi</p>
-          {p.prestasi.length === 0 ? <p className="text-sm text-gray-500">Belum ada prestasi tercatat. Laporkan prestasimu ke wali kelas atau Kesiswaan agar masuk portofolio.</p> : (
+          {p.prestasi.length === 0 ? <p className="text-sm text-gray-400">Belum ada prestasi tercatat. Laporkan prestasimu ke wali kelas atau Kesiswaan agar masuk portofolio.</p> : (
             <ul className="space-y-2 text-sm">
               {p.prestasi.map(x => (
                 <li key={x.id} className="flex items-start gap-2">
@@ -57,7 +58,7 @@ export default async function Page() {
           </div>
           <div className="panel p-5">
             <p className="label-kecil mb-3">Praktik Kerja Lapangan</p>
-            {!p.pkl ? <p className="text-sm text-gray-500">Belum ada data PKL.</p> : (
+            {!p.pkl ? <p className="text-sm text-gray-400">Belum ada data PKL.</p> : (
               <p className="flex items-start gap-2 text-sm text-gray-700"><Briefcase size={15} className="mt-0.5 shrink-0 text-primary-700" />
                 <span><strong>{p.pkl.company}</strong> — {p.pkl.position}<span className="block text-xs text-gray-500">{tgl(p.pkl.startDate)} – {tgl(p.pkl.endDate)}{p.pkl.nilaiIndustriRata != null ? ` · nilai industri ${p.pkl.nilaiIndustriRata}` : ""}</span></span></p>
             )}

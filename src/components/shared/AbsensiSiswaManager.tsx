@@ -107,7 +107,7 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
       />
 
       {loadingClasses ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : classes.length === 0 ? (
         <EmptyState icon={CheckSquare} title="Belum Ada Kelas" description="Tambahkan kelas terlebih dahulu." />
       ) : (
@@ -120,7 +120,7 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
               <Select value={classId} onChange={setClassId}
                 options={classes.map(c => ({ value: c.id, label: `${c.name} — ${c.major.name}` }))} />
             </div>
-            <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
+            <div className="alat-tab flex gap-1 rounded-xl border border-gray-100 bg-white p-1">
               <button onClick={() => setTab("tanggal")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === "tanggal" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 <Calendar size={14} /> Per Tanggal
@@ -129,13 +129,6 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === "siswa" ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
                 <Users size={14} /> Per Siswa
               </button>
-            </div>
-            <div className="alat-aksi">
-              {/* Kalender Bulanan SENGAJA bukan tab (2026-08-12) — halaman tersendiri yang sudah WYSIWYG. */}
-              <Link href={classId ? `${kalenderHref}?classId=${classId}` : "#"} className="btn-modal-cancel btn-teks">
-                <Printer size={15} /> Kalender Bulanan
-              </Link>
-              {scanHref && <Link href={scanHref} className="btn-modal-save btn-teks"><ScanLine size={15} /> Scan QR/Barcode</Link>}
             </div>
           </div>
 
@@ -219,6 +212,14 @@ export default function AbsensiSiswaManager({ classesEndpoint = "/api/admin/clas
                   <StatTile color="red" ikon="alpha" value={summary.reduce((a, s) => a + s.ALPHA, 0)} label="Total Alpha" />
                 </div>
               )}
+
+              <div className="alat-aksi">
+              {/* Kalender Bulanan SENGAJA bukan tab (2026-08-12) — halaman tersendiri yang sudah WYSIWYG. */}
+              <Link href={classId ? `${kalenderHref}?classId=${classId}` : "#"} className="btn-modal-cancel btn-teks">
+                <Printer size={15} /> Kalender Bulanan
+              </Link>
+              {scanHref && <Link href={scanHref} className="btn-modal-save btn-teks"><ScanLine size={15} /> Scan QR/Barcode</Link>}
+            </div>
               <div className="panel overflow-hidden">
                 {loadingSummary ? (
                   <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>

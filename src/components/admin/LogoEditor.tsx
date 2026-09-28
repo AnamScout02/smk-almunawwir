@@ -51,7 +51,7 @@ function LogoCard({ settingKey, currentUrl, label, description, isSquare, darkPr
   return (
     <div className="panel p-5">
       <div className="mb-4">
-        <h3 className="font-heading font-bold text-primary-900 text-sm">{label}</h3>
+        <h3 className="font-heading font-semibold text-primary-900 text-sm">{label}</h3>
         <p className="text-gray-400 text-xs mt-0.5 leading-relaxed">{description}</p>
       </div>
 

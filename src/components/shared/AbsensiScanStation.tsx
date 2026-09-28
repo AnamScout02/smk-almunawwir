@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ScanLine, Play, ArrowLeft, CheckCircle2, Info, XCircle, User, Camera, CameraOff } from "lucide-react";
 import { usePindaiKamera } from "@/lib/pindai-kamera";
 import { unlockScanAudio, playScanSuccess, playScanInfo, playScanError } from "@/lib/scan-beep";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface ScanStudent { name: string; avatar: string | null; nis: string; className: string }
 interface LogRow { id: string; time: string; name: string; className: string; kind: "success" | "info" | "error"; message: string }
@@ -104,7 +105,7 @@ export default function AbsensiScanStation({ backHref }: { backHref: string }) {
 
   if (!started) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8"
+      <div className="min-h-dvh flex items-center justify-center p-8"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
         <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-3xl bg-gold/20 text-gold flex items-center justify-center mx-auto mb-6">
@@ -119,9 +120,7 @@ export default function AbsensiScanStation({ backHref }: { backHref: string }) {
           <button onClick={handleStart} className="btn-modal-save text-base mx-auto px-8 py-3.5">
             <Play size={18} /> Aktifkan Stasiun Scan
           </button>
-          <Link href={backHref} className="flex items-center justify-center gap-1.5 text-white/40 hover:text-white/70 text-xs mt-8 transition">
-            <ArrowLeft size={13} /> Kembali
-          </Link>
+          <TombolKembali href={backHref} className="flex items-center justify-center gap-1.5 text-white/40 hover:text-white/70 text-xs mt-8 transition" />
         </div>
       </div>
     );
@@ -134,14 +133,12 @@ export default function AbsensiScanStation({ backHref }: { backHref: string }) {
     : { ring: "ring-red-400/40", bg: "bg-red-500/15", text: "text-red-300", Icon: XCircle };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 relative"
+    <div className="min-h-dvh flex flex-col items-center justify-center p-8 relative"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
 
-      <Link href={backHref} className="absolute top-6 left-6 flex items-center gap-1.5 text-white/40 hover:text-white/70 text-xs transition print:hidden">
-        <ArrowLeft size={13} /> Kembali
-      </Link>
+      <TombolKembali href={backHref} className="absolute top-6 left-6 flex items-center gap-1.5 text-white/40 hover:text-white/70 text-xs transition print:hidden" />
 
       <div className="relative flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-6 bg-emerald-500/10 border border-emerald-400/20 px-4 py-2 rounded-full">
         <CheckCircle2 size={14} /> Stasiun Scan Aktif — jangan tutup halaman ini

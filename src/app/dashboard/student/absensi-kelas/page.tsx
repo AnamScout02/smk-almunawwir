@@ -138,7 +138,7 @@ export default function AbsensiKelasPage() {
               </button>
             </div>
             {students.length === 0 ? (
-              <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
+              <div className="py-10 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
             ) : (
               <div className="divide-y">
                 {students.map((s, i) => (

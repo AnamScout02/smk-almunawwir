@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Phone, Mail, Hash, School, Users, ClipboardList, GraduationCap, UserCircle, Pencil, CircleUserRound, ClipboardX } from "lucide-react";
 import StatTile from "@/components/admin/StatTile";
 import PageHeader from "@/components/admin/PageHeader";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export default async function AdminTeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await verifyTasAccess();
@@ -71,9 +72,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/teachers" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/teachers"} />
         <Link href={`/dashboard/admin/buku-induk/guru?edit=${teacher.id}`}
           className="btn-modal-save whitespace-nowrap">
           <Pencil size={14} /> Edit Biodata
@@ -211,7 +210,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
                 </span>
               </h3>
               {cls.students.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-4">Belum ada siswa di kelas ini</p>
+                <p className="text-gray-400 text-sm text-center py-10">Belum ada siswa di kelas ini</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {cls.students.map((s, i) => (
@@ -233,7 +232,7 @@ export default async function AdminTeacherDetailPage({ params }: { params: Promi
       {gradesBySemester.length === 0 && teacher.homeroomOf.length === 0 && (
         <div className="panel p-10 text-center text-gray-400">
           <ClipboardX size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Belum ada data nilai atau kelas wali yang terhubung</p>
+          <p className="text-sm text-gray-400">Belum ada data nilai atau kelas wali yang terhubung</p>
         </div>
       )}
     </div>

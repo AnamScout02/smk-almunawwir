@@ -111,7 +111,7 @@ export default function ProgramKerjaTeacherPage() {
 
       <div className="baris-alat mb-5">
       {jabatanList.length > 1 && (
-        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="alat-tab flex flex-wrap gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {jabatanList.map(j => (
             <button key={j.id} onClick={() => setActiveJabatan(j.id)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeJabatan === j.id ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>

@@ -183,7 +183,7 @@ export default function EkspedisiManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={Send} title="Belum Ada Pengiriman Bulan Ini"
           description="Catat surat atau dokumen yang dikirim keluar lewat tombol di atas." />

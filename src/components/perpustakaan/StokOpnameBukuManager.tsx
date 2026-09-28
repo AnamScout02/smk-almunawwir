@@ -8,6 +8,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import Paginasi from "@/components/shared/Paginasi";
 import { usePaginasi } from "@/lib/use-paginasi";
 import { useToast } from "@/components/shared/ToastProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Sesi { id: string; judul: string; status: string; olehNama: string; mulai: string; selesaiPada: string | null; jumlahItem: number; diperiksa: number }
 interface Item { id: string; stokSistem: number; dipinjam: number; stokFisik: number | null; catatan: string | null; buku: { title: string; author: string | null; barcode: string | null; category: string; location: string | null } | null }
@@ -86,11 +87,11 @@ export default function StokOpnameBukuManager() {
   if (buka) return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<ClipboardCheck size={22} />} title={detail?.opname.judul ?? "Stok opname buku"} description={detail ? `${detail.item.filter(x => x.stokFisik != null).length}/${detail.item.length} judul terhitung · ${berjalan ? "berjalan" : "selesai"}` : "Memuat…"} />
-      <div className="baris-alat mb-4">
+      <div className="baris-alat mb-5">
         <div className="alat-cari"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" /><input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari judul, barcode…" className="input-field pl-10" /></div>
         <div className="alat-saring"><Select value={saring} onChange={setSaring} options={[{ value: "", label: "Semua judul" }, { value: "BELUM", label: "Belum dihitung" }, { value: "SUDAH", label: "Sudah dihitung" }, { value: "SELISIH", label: "Ada selisih" }]} /></div>
         <div className="alat-aksi">
-          <button type="button" onClick={() => { setBuka(null); muat(); }} className="btn-modal-cancel"><ArrowLeft /> Kembali</button>
+          <TombolKembali onClick={() => { setBuka(null); muat(); }} />
           <a href={`/api/perpustakaan/opname/${buka}?format=xlsx`} className="btn-modal-cancel"><Download /> Unduh Excel</a>
           {berjalan && <button type="button" onClick={() => setTutup(true)} className="btn-modal-save btn-teks"><CheckCheck /> Selesaikan</button>}
         </div>

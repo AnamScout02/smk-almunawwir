@@ -153,7 +153,7 @@ export default function BantuanSiswaManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={HandCoins} title={`Belum Ada Data Tahun ${year}`} description="Catat penerima bantuan lewat tombol di atas." />
       ) : filtered.length === 0 ? (

@@ -122,7 +122,7 @@ export default function AgendaCalendar({ agenda }: { agenda: AgendaItem[] }) {
       <div className="mt-2 border-t border-gray-100 px-4 py-3 sm:px-5">
         <p className="label-kecil mb-2.5">Agenda Wakil Kepala</p>
         {agenda.length === 0 ? (
-          <p className="py-2 text-center text-sm text-gray-500">Belum ada agenda Wakil Kepala.</p>
+          <p className="py-10 text-center text-sm text-gray-400">Belum ada agenda Wakil Kepala.</p>
         ) : (
           <ul className="space-y-3">
             {agenda.slice(0, 4).map(item => {

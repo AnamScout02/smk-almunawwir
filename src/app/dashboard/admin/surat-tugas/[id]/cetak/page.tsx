@@ -10,6 +10,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import LembarSurat from "@/components/shared/LembarSurat";
 import { SUMBER_BIAYA, labelOf } from "@/lib/tu-konstanta";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const tglPanjang = (d: Date | string | null) =>
   d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -75,7 +76,7 @@ export default async function CetakSuratTugasPage({ params }: { params: Promise<
   );
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       {/* margin 0: kop surat asli sekolah memang dicetak penuh sampai tepi kertas,
           sama seperti Persuratan & Surat Keterangan. */}
       <style>{"@page { size: A4 portrait; margin: 0; }"}</style>
@@ -83,10 +84,7 @@ export default async function CetakSuratTugasPage({ params }: { params: Promise<
       <PageHeader icon={<ClipboardSignature size={22} />} title="Cetak Surat Tugas" description={st.nomor} printHidden />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
-        <Link href="/dashboard/admin/surat-tugas"
-          className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/surat-tugas"} />
         <PrintButton />
       </div>
 

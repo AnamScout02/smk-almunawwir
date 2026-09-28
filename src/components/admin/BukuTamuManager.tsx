@@ -201,7 +201,7 @@ export default function BukuTamuManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : entries.length === 0 ? (
         <EmptyState icon={Users} title="Belum Ada Kunjungan Bulan Ini" description="Catat kunjungan tamu pertama lewat tombol di atas." />
       ) : filtered.length === 0 ? (

@@ -117,7 +117,7 @@ export default function PermintaanSuratManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : items.length === 0 ? (
         <EmptyState icon={Inbox}
           title={statusFilter === "DIAJUKAN" ? "Tidak Ada Antrian" : "Belum Ada Data"}

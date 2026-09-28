@@ -120,7 +120,7 @@ export default function LaporanPenagihanManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={BarChart2} title="Tidak Ada Data" description="Coba ubah filter tanggal, kelas, atau jenis biaya." />
       ) : (

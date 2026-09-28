@@ -231,7 +231,7 @@ export default function TeacherJournalPage() {
       ) : (
         <>
           {loadingRows ? (
-            <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+            <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
           ) : (
             <div className="panel overflow-hidden mb-6">
               <div className="overflow-x-auto scrollbar-visible">
@@ -287,7 +287,7 @@ export default function TeacherJournalPage() {
           semester walau hari yang lagi dipilih kosong. */}
       <div className="panel p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat Pertemuan — {semester}</h3>
+          <h3 className="font-heading font-semibold text-primary-900 text-sm">Riwayat Pertemuan — {semester}</h3>
           {selected && (
             <Link href={printHref} className="flex items-center gap-1.5 text-xs text-primary-700 hover:text-primary-900 font-semibold">
               <Printer size={13} /> Cetak Rekap
@@ -295,7 +295,7 @@ export default function TeacherJournalPage() {
           )}
         </div>
         {history.length === 0 ? (
-          <p className="text-sm text-gray-400 py-6 text-center">Belum ada pertemuan tercatat untuk semester ini.</p>
+          <p className="text-sm text-gray-400 py-10 text-center">Belum ada pertemuan tercatat untuk semester ini.</p>
         ) : (
           <div className="overflow-x-auto scrollbar-visible">
             <table className="data-table">

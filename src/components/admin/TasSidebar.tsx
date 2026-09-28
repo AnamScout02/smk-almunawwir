@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Calendar, CalendarCheck, Bell, BarChart2, GraduationCap,
-  UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, ShieldCheck, Award, Building2, ListChecks, Boxes,
+  UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, Award, Building2, ListChecks, Boxes,
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, IdCard,
   ChevronDown, Search, CheckSquare, MoreHorizontal, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, FileText, CalendarOff, HandCoins, ClipboardCheck, ScanSearch,
   Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
-  Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid } from "lucide-react";
+  Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid, 
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -144,13 +145,13 @@ export const menuGroupsTas = [
     items: [
       { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/layanan-sarpras", label: "Layanan Sarpras", icon: Hammer, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/jaringan", label: "Jaringan & Layar", icon: Network, show: (j: string[], full: boolean) => full || j.includes("Pengelola Jaringan Sekolah") },
       { href: "/dashboard/admin/usulan-alat", label: "Usulan Alat & Bahan", icon: Boxes, show: (_j: string[], _full: boolean) => true },
       { href: "/pusat-perpustakaan", label: "Pusat Perpustakaan", icon: Library,
         show: (j: string[]) => j.includes("Koordinator Perpustakaan") || j.includes("Tim Perpustakaan") },
       { href: "/perpustakaan", label: "Perpustakaan Digital", icon: BookOpen, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/buku-saya", label: "Buku Saya", icon: BookOpen, badgeKey: "overdueBooks" as const, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, show: (_j: string[], _full: boolean) => true },
-      { href: "/dashboard/admin/jaringan", label: "Jaringan Sekolah", icon: Network, show: (j: string[]) => j.includes("Pengelola Jaringan Sekolah") },
       { href: "/dashboard/admin/bel-sekolah", label: "Bel Sekolah Otomatis", icon: Bell, show: (_j: string[], full: boolean) => full },
     ],
   },

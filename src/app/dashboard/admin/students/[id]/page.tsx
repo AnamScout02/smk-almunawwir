@@ -9,6 +9,7 @@ import { ArrowLeft, BookOpen, CalendarDays, Briefcase, UserCircle, IdCard, Mail,
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import type { NamaIkon } from "@/components/shared/IkonNama";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const STATUS_COLOR: Record<string, "emerald" | "blue" | "amber" | "red"> = {
   HADIR: "emerald",
@@ -62,11 +63,9 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
       />
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/students" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/students"} />
         <Link href={`/dashboard/admin/buku-induk/siswa/${student.id}/cetak`}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-50 border border-primary-100 hover:bg-primary-100 text-primary-700 rounded-xl font-semibold transition-colors whitespace-nowrap">
+          className="btn-modal-cancel whitespace-nowrap">
           <Printer size={14} /> Lihat Buku Induk
         </Link>
         <Link href={`/dashboard/admin/buku-induk/siswa?edit=${student.id}`}
@@ -117,7 +116,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
         <h3 className="font-heading font-semibold text-primary-900 mb-4 flex items-center gap-2">
           <CalendarDays size={16} className="text-primary-700" /> Kehadiran
         </h3>
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
           {attSummary.map(({ status, count }) => (
             <StatTile key={status} size="md" color={STATUS_COLOR[status]} ikon={STATUS_ICON[status]} value={count} label={status} />
           ))}

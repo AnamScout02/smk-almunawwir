@@ -88,7 +88,7 @@ export default function AchievementsEditor({ initialValue }: { initialValue: str
           </div>
         ))}
         {rows.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-6">Belum ada prestasi. Tambahkan baris baru di bawah.</p>
+          <p className="text-sm text-gray-400 text-center py-10">Belum ada prestasi. Tambahkan baris baru di bawah.</p>
         )}
       </div>
 

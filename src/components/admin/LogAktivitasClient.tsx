@@ -100,13 +100,13 @@ export default function LogAktivitasClient() {
         description="Jejak aksi sensitif: reset password, ubah jabatan, hapus akun, keputusan PPDB, dll — khusus Administrator"
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={q} onChange={e => setQ(e.target.value)}
             placeholder="Cari nama pelaku atau deskripsi..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500"
+            className="input-field pl-10"
           />
         </div>
         <div className="w-full sm:w-64">
@@ -118,7 +118,7 @@ export default function LogAktivitasClient() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
       ) : logs.length === 0 ? (
         <EmptyState icon={History} title="Belum ada log aktivitas" description="Aksi sensitif yang tercatat akan muncul di sini." />
       ) : (

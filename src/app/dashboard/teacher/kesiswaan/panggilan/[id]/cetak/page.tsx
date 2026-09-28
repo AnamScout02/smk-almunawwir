@@ -9,6 +9,7 @@ import { getSettings, getPrincipalName } from "@/lib/site-settings";
 import { aksesPanggilan } from "@/lib/panggilan-akses";
 import LembarSurat from "@/components/shared/LembarSurat";
 import PrintButton from "@/components/shared/PrintButton";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const tglPanjang = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
 
@@ -29,7 +30,7 @@ export default async function CetakPanggilanPage({ params }: { params: Promise<{
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 print:pt-0 bg-gray-100 print:bg-white">
       <div className="print:hidden sticky top-0 z-10 bg-white border border-gray-200 rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm mb-6 max-w-[210mm] mx-auto">
-        <Link href="/dashboard/teacher/kesiswaan/panggilan" className="btn-modal-cancel"><ArrowLeft size={16} /> Kembali</Link>
+        <TombolKembali href={"/dashboard/teacher/kesiswaan/panggilan"} />
         <PrintButton />
       </div>
       <div className="overflow-x-auto print:overflow-visible">

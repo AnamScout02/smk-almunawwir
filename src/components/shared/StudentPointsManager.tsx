@@ -68,7 +68,7 @@ export default function StudentPointsManager({ isAdmin = false }: { isAdmin?: bo
         description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" printHidden />
 
       <div className="alat-aksi justify-end mb-5 print:hidden">
-        <Link href={tataTertibHref} className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+        <Link href={tataTertibHref} className="btn-modal-cancel">
           <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
         </Link>
       </div>
@@ -306,7 +306,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
           <DatePicker value={to} onChange={setTo} />
         </div>
         <button onClick={() => { setFrom(startOfWeekISO()); setTo(todayISO()); }}
-          className="text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition">Minggu Ini</button>
+          className="btn-modal-cancel px-3 text-xs">Minggu Ini</button>
         {(from || to) && (
           <button onClick={() => { setFrom(""); setTo(""); }} className="text-xs font-semibold text-gray-400 hover:text-gray-600 px-3 py-2.5">Reset Tanggal</button>
         )}
@@ -322,7 +322,7 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
 
       <div className="panel print-motif overflow-hidden print:border-0 print:shadow-none">
         {loading ? (
-          <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+          <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
         ) : records.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Belum Ada Catatan" description="Belum ada poin tercatat untuk semester ini." />
         ) : (
@@ -477,7 +477,7 @@ function KelolaJenisTab({ toast, confirmDialog }: { toast: ReturnType<typeof use
         <div className="space-y-6">
           {grouped.map(([category, list]) => (
             <div key={category} className="panel overflow-hidden">
-              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100"><h3 className="font-heading font-bold text-primary-900 text-sm">{category}</h3></div>
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100"><h3 className="font-heading font-semibold text-primary-900 text-sm">{category}</h3></div>
               <div className="divide-y divide-gray-50">
                 {list.map(t => (
                   <div key={t.id} className={`flex items-center justify-between px-5 py-3 ${!t.active ? "opacity-40" : ""}`}>

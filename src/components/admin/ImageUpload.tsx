@@ -103,7 +103,7 @@ export default function ImageUpload({
           className={`${boxSize} border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors`}
         >
           {loading ? (
-            <Loader2 size={32} className="text-primary-500 animate-spin" />
+            <Loader2 size={24} className="animate-spin text-gray-400" />
           ) : (
             <>
               <Upload size={32} className="text-gray-400 mb-2" />

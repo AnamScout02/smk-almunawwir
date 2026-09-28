@@ -231,7 +231,7 @@ export default function AdminAdmissionsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="animate-spin text-primary-500" size={32} />
+          <Loader2 className="animate-spin text-gray-400" size={32} />
         </div>
       ) : (
         <div className="space-y-3">

@@ -99,11 +99,14 @@ export default function DatePicker({ value, onChange, placeholder = "Pilih tangg
     const spaceBelow = window.innerHeight - rect.bottom;
     const above = spaceBelow < popupH && rect.top > popupH;
 
+    const lebar = 288; // ukuran tetap & kompak — jangan ikut lebar tombol pemicu (bisa sangat lebar di form lembar kerja)
     setPopupStyle({
       position: "fixed",
-      left: rect.left,
-      width: 288, // ukuran tetap & kompak — jangan ikut lebar tombol pemicu (bisa sangat lebar di form lembar kerja)
-      top: above ? rect.top - popupH - 4 : rect.bottom + 4,
+      // Ditahan di dalam layar (temuan user 24 Sep 2026: kalender di isian tanggal kanan terpotong dan
+      // halaman jadi bisa digeser ke samping). Sama dengan TimePicker.
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - lebar - 8)),
+      width: lebar,
+      top: Math.max(8, above ? rect.top - popupH - 4 : rect.bottom + 4),
       zIndex: 99999,
     });
   }

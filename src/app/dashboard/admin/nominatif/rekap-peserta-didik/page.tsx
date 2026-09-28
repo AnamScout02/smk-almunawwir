@@ -10,6 +10,10 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 
+/* SATU elemen ikon dipakai kedua cabang — halaman server tidak boleh membuat dua
+   elemen lucide yang sama (CLAUDE.md #35). */
+const ikonHalaman = <Users2 size={22} />;
+
 interface YearRef { id: string; isActive: boolean }
 interface GenderCount { L: number; P: number; jml: number }
 
@@ -74,7 +78,7 @@ export default async function RekapPesertaDidikCetakPage({ searchParams }: { sea
   if (!selectedYear) {
     return (
       <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-        <PageHeader icon={<Users2 size={22} />} title="Rekap Peserta Didik" description="Belum ada Tahun Ajaran" />
+        <PageHeader icon={ikonHalaman} title="Rekap Peserta Didik" description="Belum ada Tahun Ajaran" />
         <p className="text-sm text-gray-400">Tambahkan Tahun Ajaran dulu di menu Tahun Ajaran.</p>
       </div>
     );
@@ -115,12 +119,12 @@ export default async function RekapPesertaDidikCetakPage({ searchParams }: { sea
   }), { pagu: 0, pendaftar: 0, diterima: 0, rombelX: 0, rombelXI: 0, rombelXII: 0, rombelJml: 0, siswaX: ZERO, siswaXI: ZERO, siswaXII: ZERO, uspIni: ZERO, uspLalu: ZERO });
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       {/* Margin 1,5cm (bukan 1cm) — dgn tabel 25 kolom selebar ini, 1cm bikin isi terasa
           menempel ke tepi kertas (terukur 9,7mm, temuan user 2026-09-12). */}
       <style>{"@page { size: A4 landscape; margin: 1.5cm; }"}</style>
 
-      <PageHeader icon={<Users2 size={22} />} title="Rekap Peserta Didik"
+      <PageHeader icon={ikonHalaman} title="Rekap Peserta Didik"
         description={`Tahun Pelajaran ${selectedYear.name}`} printHidden />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">

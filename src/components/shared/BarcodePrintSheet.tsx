@@ -6,6 +6,7 @@ import PrintButton from "@/components/shared/PrintButton";
 import PageHeader from "@/components/admin/PageHeader";
 import { usePrintTitle } from "@/lib/usePrintTitle";
 import { buildPrintFilename } from "@/lib/print-filename";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Book { id: string; title: string; barcode: string | null; barcodeQr: string | null; stock: number }
 interface BarcodeCell { key: string; title: string; barcode: string; qr: string }
@@ -67,7 +68,7 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
 
       <PageHeader icon={<QrCode size={22} />} title="Cetak Barcode Buku" description="Pilih buku & jumlah label yang mau dicetak per buku" printHidden />
       <div className="flex items-center justify-between mb-5 print:hidden">
-        <Link href={backHref} className="btn-modal-cancel"><ArrowLeft size={18} /> Kembali</Link>
+        <TombolKembali href={backHref} />
         {showPreview && (
           <button onClick={() => setShowPreview(false)}
             className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
@@ -81,7 +82,7 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
       ) : !showPreview ? (
         // ===== Langkah 1: pilih buku + jumlah label per buku =====
         <div className="print:hidden">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+          <div className="panel overflow-hidden mb-5">
             <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
               <button onClick={toggleAll} className="flex items-center gap-2 text-sm font-semibold text-primary-700">
                 {selected.size === books.length ? <CheckSquare size={16} /> : <Square size={16} />}
@@ -117,7 +118,7 @@ export default function BarcodePrintSheet({ backHref }: { backHref: string }) {
       ) : (
         // ===== Langkah 2: pratinjau + cetak =====
         <>
-          <div className="alat-aksi justify-end mb-4 print:hidden">
+          <div className="alat-aksi justify-end mb-5 print:hidden">
             <PrintButton />
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 print:grid-cols-5 gap-4 print:gap-3">

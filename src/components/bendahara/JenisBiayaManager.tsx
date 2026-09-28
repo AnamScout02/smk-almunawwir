@@ -70,7 +70,7 @@ export default function JenisBiayaManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : types.length === 0 ? (
         <EmptyState icon={AlertCircle} title="Belum Ada Jenis Biaya" description="Tambahkan jenis biaya seperti SPP atau Uang Gedung untuk mulai." />
       ) : (

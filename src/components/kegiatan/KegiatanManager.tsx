@@ -11,6 +11,7 @@ import PilihBanyak from "@/components/shared/PilihBanyak";
 import { WaktuPilih, hariIniWib, keIso, rentang } from "@/components/sarpras/sarpras-umum";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Opsi { id: string; name: string }
 interface Kegiatan { id: string; judul: string; jenis: string; tempat: string | null; mulai: string; selesai: string; targetRole: string; pembuatNama: string; jumlahHadir: number; milikSaya: boolean; statusPersetujuan: string; catatanPersetujuan: string | null; pemutusNama: string | null }
@@ -81,13 +82,13 @@ export default function KegiatanManager() {
           description={r ? `${rentang(r.kegiatan.mulai, r.kegiatan.selesai)}${r.kegiatan.tempat ? ` · ${r.kegiatan.tempat}` : ""} · ${r.hadir.length} hadir dari ${r.jumlahSasaran} sasaran` : "Memuat…"} />
         <div className="baris-alat mb-5">
           <div className="alat-cari"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" /><input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kelas…" className="input-field pl-10" /></div>
-          <div className="alat-tab flex gap-1 rounded-xl bg-gray-100 p-1">
+          <div className="alat-tab flex gap-1 rounded-xl border border-gray-100 bg-white p-1">
             {([["hadir", `Hadir (${r?.hadir.length ?? 0})`], ["belum", `Belum (${r?.belum.length ?? 0})`]] as const).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
             ))}
           </div>
           <div className="alat-aksi">
-            <button type="button" onClick={() => { setRekap(null); setCari(""); muat(); }} className="btn-modal-cancel"><ArrowLeft /> Kembali</button>
+            <TombolKembali onClick={() => { setRekap(null); setCari(""); muat(); }} />
             <a href={`/api/kegiatan/${rekap.id}/presensi?format=xlsx`} className="btn-modal-cancel"><Download /> Unduh Excel</a>
             <Link href={`/layar-kegiatan/${rekap.id}`} className="btn-modal-save btn-teks"><QrCode /> Tampilkan QR</Link>
           </div>

@@ -146,7 +146,7 @@ export default function AdminClassesPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : classes.length === 0 ? (
         <div className="panel p-16 text-center text-gray-400">
           <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
@@ -157,7 +157,7 @@ export default function AdminClassesPage() {
       ) : (
         <>
           {/* Pencarian & Filter */}
-          <div className="baris-alat mb-6">
+          <div className="baris-alat mb-5">
             <div className="alat-cari">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input

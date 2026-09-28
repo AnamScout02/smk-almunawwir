@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { X, MessageCircle } from "lucide-react";
+import { lewatAplikasi } from "@/lib/aplikasi-ujian";
 
 const WA_NUMBER = "6283878203670";
 const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir IIBS.";
@@ -13,13 +14,19 @@ const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir
  * disembunyikan di portal ujian (/pusat-ujian staf & /ujian-online siswa) yang berada di luar
  * /dashboard tapi tetap UI internal — jangan sampai bubble WA nongol saat siswa mengerjakan ujian. */
 // + portal perpustakaan (petugas & anggota) — temuan user 15 Sep 2026: bubble WA menutupi bottom navbar di HP.
-const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei"];
+// + /login (23 Sep 2026): halaman masuk kini halaman penuh tanpa navbar — bubble hijau merusak tampilannya.
+const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei", "/login",
+  // Papan informasi TV & layar kegiatan: layar publik yang dipajang di dinding — tidak boleh ada tombol apa pun.
+  "/layar", "/layar-kegiatan", "/hadir"];
 
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // Di Aplikasi SMK Al-Munawwir (Android) tidak ada tombol WA melayang — aplikasi bukan situs publik (22 Sep 2026).
+  const [diAplikasi, setDiAplikasi] = useState(false);
+  useEffect(() => { const ua = navigator.userAgent; queueMicrotask(() => setDiAplikasi(lewatAplikasi(ua))); }, []);
 
-  if (HIDDEN_PREFIXES.some(p => pathname?.startsWith(p))) return null;
+  if (diAplikasi || HIDDEN_PREFIXES.some(p => pathname?.startsWith(p))) return null;
 
   const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 

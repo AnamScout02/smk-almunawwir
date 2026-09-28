@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, Loader2, Maximize2, Play, QrCode, Save, ShieldCheck, Users } from "lucide-react";
 import Select from "@/components/admin/Select";
 import { useToast } from "@/components/shared/ToastProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Daftar { gerbang: boolean; kelas: { id: string; name: string }[]; jamBuka: string; jamTutup: string; bolehAtur: boolean }
 interface Layar {
@@ -43,7 +44,7 @@ export default function LayarQrAbsensi({ backHref }: { backHref: string }) {
   if (mulai && stasiun) return <Tampilan stasiun={stasiun} backHref={backHref} onBerhenti={() => setMulai(false)} />;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={latar}>
+    <div className="min-h-dvh flex items-center justify-center p-6" style={latar}>
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 space-y-5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-700 flex items-center justify-center"><QrCode size={24} /></div>
@@ -80,7 +81,7 @@ export default function LayarQrAbsensi({ backHref }: { backHref: string }) {
             </div>
           </>
         )}
-        <Link href={backHref} className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-primary-700 text-xs"><ArrowLeft size={13} /> Kembali</Link>
+        <TombolKembali href={backHref} className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-primary-700 text-xs" />
       </div>
     </div>
   );
@@ -120,7 +121,7 @@ function Tampilan({ stasiun, backHref, onBerhenti }: { stasiun: string; backHref
   useEffect(() => { document.documentElement.requestFullscreen?.().catch(() => {}); return () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }; }, []);
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 flex flex-col lg:flex-row items-center justify-center gap-8 relative"
+    <div className="min-h-dvh p-4 sm:p-8 flex flex-col lg:flex-row items-center justify-center gap-8 relative"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute top-4 left-4 flex gap-3 text-xs">
         <button type="button" onClick={onBerhenti} className="flex items-center gap-1.5 text-white/40 hover:text-white/80"><ArrowLeft size={13} /> Ganti stasiun</button>

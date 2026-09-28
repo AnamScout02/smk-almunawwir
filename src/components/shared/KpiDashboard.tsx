@@ -7,6 +7,7 @@ import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import FileUpload from "@/components/shared/FileUpload";
 import { useToast } from "@/components/shared/ToastProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface BreakdownItem { indicatorId: string; name: string; weight: number; source: string; score: number }
 interface ScoreData { finalScore: number; breakdown: BreakdownItem[]; period: string }
@@ -78,7 +79,7 @@ const JABATAN_OPTIONS = [
   { value: "Bendahara", label: "Bendahara" },
 ];
 
-export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" | "leadership"; onSwitchTab?: () => void }) {
+export default function KpiDashboard({ mode, onSwitchTab, kembaliHref }: { mode: "personal" | "leadership"; onSwitchTab?: () => void; kembaliHref?: string }) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<ScoreData | null>(null);
@@ -160,7 +161,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
   }
 
   if (loading) {
-    return <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
+    return <div className="p-6 lg:p-8 pt-16 lg:pt-8 flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>;
   }
 
   if (mode === "personal") {
@@ -179,7 +180,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
 
             <div className="panel overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50">
-                <h3 className="font-heading font-bold text-primary-900">Rincian per Indikator</h3>
+                <h3 className="font-heading font-semibold text-primary-900">Rincian per Indikator</h3>
               </div>
               <div className="divide-y divide-gray-50">
                 {score.breakdown.map(b => (
@@ -203,7 +204,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
 
             {mySubmissions.length > 0 && (
               <div className="panel overflow-hidden mt-5">
-                <div className="px-5 py-4 border-b border-gray-50"><h3 className="font-heading font-bold text-primary-900">Riwayat Pengajuan</h3></div>
+                <div className="px-5 py-4 border-b border-gray-50"><h3 className="font-heading font-semibold text-primary-900">Riwayat Pengajuan</h3></div>
                 <div className="divide-y divide-gray-50">
                   {mySubmissions.map(s => (
                     <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-3">
@@ -252,6 +253,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
       {!fullscreen && (
       <>
       <PageHeader icon={<Users size={22} className="wiggle-loop" />} title="Kinerja Pegawai" description="Ranking kinerja pegawai berdasarkan KPI bulan berjalan" />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
       <div className="flex flex-wrap items-center gap-2 mb-5">
         {onSwitchTab && (
           <button onClick={onSwitchTab}
@@ -286,7 +288,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
         <div className="panel overflow-hidden mb-5">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
             <ClipboardCheck size={16} className="text-amber-600" />
-            <h3 className="font-heading font-bold text-primary-900">Menunggu Verifikasi ({reviewQueue.length})</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Menunggu Verifikasi ({reviewQueue.length})</h3>
           </div>
           <div className="divide-y divide-gray-50">
             {reviewQueue.map(s => (
@@ -337,7 +339,7 @@ export default function KpiDashboard({ mode, onSwitchTab }: { mode: "personal" |
           <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50"
             style={{ background: "linear-gradient(135deg, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.03) 100%)" }}>
             <Trophy size={18} className="text-gold" />
-            <h3 className="font-heading font-bold text-primary-900">Ranking Kinerja</h3>
+            <h3 className="font-heading font-semibold text-primary-900">Ranking Kinerja</h3>
             <span className="ml-auto text-xs font-bold text-gold/80 uppercase tracking-widest">
               {periodLabel(currentPeriod())}
             </span>

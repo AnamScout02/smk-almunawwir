@@ -38,7 +38,7 @@ export default function AdminCekKelulusanPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : (
         <div className="panel p-5 max-w-2xl">
           <p className="text-xs text-gray-400 mb-4">

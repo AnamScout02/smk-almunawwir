@@ -292,7 +292,7 @@ export default function NonBlokSchedulePage() {
       {renderScheduleGrid()}
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {DAYS.map(day => (
@@ -300,7 +300,7 @@ export default function NonBlokSchedulePage() {
               <div className="px-4 py-2.5 border-b border-gray-100 bg-[#f5f6fa] text-primary-900 text-sm font-bold">{DAY_LABEL[day]}</div>
               <div className="divide-y divide-gray-50">
                 {byDay[day].length === 0 ? (
-                  <p className="px-4 py-3 text-xs text-gray-400">Tidak ada jadwal</p>
+                  <p className="px-4 py-3 text-sm text-gray-400">Tidak ada jadwal</p>
                 ) : (
                   byDay[day].map(s => (
                     <div key={s.id} className="px-4 py-2.5 flex items-center justify-between gap-2 text-xs">

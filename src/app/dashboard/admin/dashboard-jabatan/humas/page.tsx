@@ -4,5 +4,5 @@ import DashboardHumas from "@/components/jabatan/DashboardHumas";
  * bukan guru/pegawai, jadi ia melihat dashboard ini TANPA dilempar ke shell portal guru. Isinya
  * komponen yang sama persis — bukan duplikat kode. */
 export default function Page() {
-  return <DashboardHumas />;
+  return <DashboardHumas basePath="/dashboard/admin" />;
 }

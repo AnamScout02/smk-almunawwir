@@ -39,20 +39,20 @@ export default function PoinSayaPage() {
       <PageHeader icon={<ShieldAlert size={22} />} title="Poin Saya" description="Poin pelanggaran & prestasi sesuai Tata Tertib Peserta Didik" />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/student/tata-tertib" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 px-4 py-2.5 rounded-xl transition">
+        <Link href="/dashboard/student/tata-tertib" className="btn-modal-cancel">
           <BookOpenCheck size={15} /> Baca Tata Tertib Lengkap
         </Link>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : !data ? (
         <EmptyState icon={ShieldAlert} title="Data Tidak Ditemukan" description="Gagal memuat data poin." />
       ) : (
         <>
           <p className="text-xs text-gray-400 mb-4">Semester: {data.semester} — akumulasi maksimal poin pelanggaran per tahun ajaran adalah 100.</p>
 
-          <div className={`kisi-kartu mb-6 ${data.totalRemisi > 0 ? "kisi-kartu-4" : "kisi-kartu-3"}`}>
+          <div className={`kisi-kartu mb-5 ${data.totalRemisi > 0 ? "kisi-kartu-4" : "kisi-kartu-3"}`}>
             <StatTile value={data.totalPelanggaran} label="Poin Pelanggaran" icon={TrendingDown} color="red" />
             <StatTile value={data.totalPrestasi} label="Poin Prestasi" icon={TrendingUp} color="emerald" />
             {data.totalRemisi > 0 && <StatTile value={data.totalRemisi} label="Poin Remisi" icon={Award} color="blue" />}
@@ -65,11 +65,11 @@ export default function PoinSayaPage() {
           </div>
 
           <div className="panel overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-50"><h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat</h3></div>
+            <div className="px-5 py-3 border-b border-gray-50"><h3 className="font-heading font-semibold text-primary-900 text-sm">Riwayat</h3></div>
             {data.records.length === 0 ? (
               <div className="text-center py-10 text-gray-400">
                 <Award size={28} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada catatan poin semester ini.</p>
+                <p className="text-sm text-gray-400">Belum ada catatan poin semester ini.</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">

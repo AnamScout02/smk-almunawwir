@@ -47,7 +47,7 @@ export default async function RekapCalonCetakPage({ params, searchParams }: {
   const tempatUjian = settings["nominatif.tempatUjian"] || "SMK AL MUNAWWIR IIBS";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 1cm; }"}</style>
 
       <PageHeader icon={<ClipboardList size={22} />} title={`Rekap Calon — ${major.name}`}

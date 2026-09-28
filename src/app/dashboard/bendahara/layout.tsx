@@ -9,9 +9,9 @@ export default async function BendaharaLayout({ children }: { children: React.Re
 
   return (
     <div className="dashboard-shell">
-      <div className="flex min-h-screen">
+      <div className="flex min-h-dvh">
         <BendaharaSidebar logoEmblem={s["logo.emblem"]} />
-        <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0 min-h-screen">
+        <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0 min-h-dvh">
           <PusatNotifikasiPortal />
           {children}
         </main>

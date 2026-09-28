@@ -59,7 +59,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
 
   if (result) {
     return (
-      <div className="print-motif bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center print:shadow-none print:border-0">
+      <div className="print-motif panel p-8 text-center print:shadow-none print:border-0">
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${result.lulus ? "bg-emerald-50" : "bg-gray-100"}`}>
           {result.lulus ? <CheckCircle2 size={32} className="text-emerald-600" /> : <XCircle size={32} className="text-gray-400" />}
         </div>
@@ -70,7 +70,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
         </p>
         <div className="flex items-center justify-center gap-3 print:hidden">
           {result.lulus && (
-            <button onClick={() => window.print()} className="inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
+            <button onClick={() => window.print()} className="btn-primary">
               <Printer size={16} /> {t.print}
             </button>
           )}
@@ -83,7 +83,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="panel p-6 space-y-4">
       {error && <p className="error-msg">{error}</p>}
       <div>
         <label className="label-field">{t.nis}</label>
@@ -94,7 +94,7 @@ export default function CekKelulusanForm({ lang = "id" }: { lang?: Lang }) {
         <DatePicker value={birthDate} onChange={setBirthDate} />
       </div>
       <button type="submit" disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-60">
+        className="btn-primary w-full disabled:opacity-60">
         {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />} {t.submit}
       </button>
     </form>

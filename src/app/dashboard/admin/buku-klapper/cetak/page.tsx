@@ -46,7 +46,7 @@ export default async function CetakBukuKlapperPage({ searchParams }: {
   const ARSIR = "repeating-linear-gradient(45deg, #6b7280 0 0.6px, transparent 0.6px 4px)";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 portrait; margin: 1.2cm; }"}</style>
 
       <PageHeader icon={<BookA size={22} />} title="Cetak Buku Klapper"

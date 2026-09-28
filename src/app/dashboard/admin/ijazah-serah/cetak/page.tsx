@@ -39,7 +39,7 @@ export default async function CetakIjazahSerahPage({ searchParams }: { searchPar
   const td = "border border-gray-800 px-2 py-1 align-middle";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 1.2cm; }"}</style>
 
       <PageHeader icon={<GraduationCap size={22} />} title="Cetak Buku Penyerahan Ijazah" description={`Tahun ${y}`} printHidden />

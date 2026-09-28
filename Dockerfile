@@ -32,6 +32,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# ADB untuk modul "Papan & TV" (24 Sep 2026): tangkapan layar TV, nama aplikasi yang sedang dibuka, dan
+# tombol daya jarak jauh. Paket android-tools Alpine ±2 MB — tidak menambah beban berarti.
+# Kunci ADB disimpan di volume (/home/nextjs/.android) supaya izin yang sudah diberikan di layar TV
+# TIDAK hilang tiap kali aplikasi di-deploy ulang; tanpa itu setiap TV minta izin lagi tiap build.
+RUN apk add --no-cache android-tools \
+ && mkdir -p /home/nextjs/.android \
+ && chown -R nextjs:nodejs /home/nextjs
+ENV HOME=/home/nextjs
+
 # Copy built assets
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

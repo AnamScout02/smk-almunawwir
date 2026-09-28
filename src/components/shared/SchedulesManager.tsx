@@ -522,7 +522,7 @@ export default function SchedulesManager({
 
       {/* Timetable */}
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : isRotating ? (
         <div className="space-y-8">
           {renderWeekTimetable("A", "Minggu 1")}

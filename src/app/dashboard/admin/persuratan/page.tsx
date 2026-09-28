@@ -183,8 +183,8 @@ export default function PersuratanPage() {
         description="Buku agenda surat masuk & keluar — surat biasa, Surat Keterangan, dan Surat Tugas tercatat dalam satu urutan nomor"
       />
 
-      <div className="baris-alat mb-6">
-        <div className="alat-tab flex gap-1 bg-gray-100 rounded-xl p-1">
+      <div className="baris-alat mb-5">
+        <div className="alat-tab flex gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {(["MASUK", "KELUAR"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
@@ -218,8 +218,8 @@ export default function PersuratanPage() {
 
 
       {/* Toolbar */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input className="input-field pl-10"
             placeholder="Cari nomor, pihak, perihal..." value={search}

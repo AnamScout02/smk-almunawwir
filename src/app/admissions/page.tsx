@@ -99,7 +99,7 @@ export default async function AdmissionsPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"

@@ -5,43 +5,40 @@ import Image from "next/image";
 import { Menu, X, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
-const navLinks = {
+/** MENU SITUS (22 Sep 2026, permintaan user "terlalu banyak, buat sub menu saja"): 5 menu utama — sisanya di submenu.
+ * Nama menu/label dua bahasa (#41); tujuan tautan tidak berubah. */
+type Tautan = { name: string; href: string };
+type MenuUtama = { key: string; name: string; href?: string; items?: Tautan[] };
+const menuSitus: Record<"id" | "en", MenuUtama[]> = {
   id: [
-    { name: "Beranda", href: "/" },
-    { name: "Tentang", href: "/about" },
-    { name: "Program", href: "/programs" },
-    { name: "Berita", href: "/news" },
-    { name: "Agenda", href: "/agenda" },
-    { name: "Galeri", href: "/gallery" },
-    { name: "Alumni", href: "/alumni" },
-    { name: "Kontak", href: "/contact" },
+    { key: "beranda", name: "Beranda", href: "/" },
+    { key: "profil", name: "Profil", items: [
+      { name: "Tentang Kami", href: "/about" }, { name: "Program Keahlian", href: "/programs" },
+      { name: "Fasilitas", href: "/facilities" }, { name: "Ekstrakurikuler", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
+    ] },
+    { key: "informasi", name: "Informasi", items: [
+      { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Galeri", href: "/gallery" },
+    ] },
+    { key: "layanan", name: "Layanan", items: [
+      { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Daftar Ulang PPDB", href: "/daftar-ulang" },
+      { name: "Tracer Study Alumni", href: "/tracer-study" }, { name: "Aplikasi MyAlwis Mobile", href: "/pasang-aplikasi" },
+    ] },
+    { key: "kontak", name: "Kontak", href: "/contact" },
   ],
   en: [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Programs", href: "/programs" },
-    { name: "News", href: "/news" },
-    { name: "Agenda", href: "/agenda" },
-    { name: "Gallery", href: "/gallery" },
-    { name: "Alumni", href: "/alumni" },
-    { name: "Contact", href: "/contact" },
-  ],
-};
-
-const serviceLinks = {
-  id: [
-    { name: "Fasilitas", href: "/facilities" },
-    { name: "Ekstrakurikuler", href: "/extracurricular" },
-    { name: "Tracer Study Alumni", href: "/tracer-study" },
-    { name: "Cek Kelulusan", href: "/cek-kelulusan" },
-    { name: "Daftar Ulang PPDB", href: "/daftar-ulang" },
-  ],
-  en: [
-    { name: "Facilities", href: "/facilities" },
-    { name: "Extracurricular", href: "/extracurricular" },
-    { name: "Alumni Tracer Study", href: "/tracer-study" },
-    { name: "Graduation Status", href: "/cek-kelulusan" },
-    { name: "Re-registration", href: "/daftar-ulang" },
+    { key: "beranda", name: "Home", href: "/" },
+    { key: "profil", name: "Profile", items: [
+      { name: "About Us", href: "/about" }, { name: "Programs", href: "/programs" },
+      { name: "Facilities", href: "/facilities" }, { name: "Extracurricular", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
+    ] },
+    { key: "informasi", name: "Information", items: [
+      { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Gallery", href: "/gallery" },
+    ] },
+    { key: "layanan", name: "Services", items: [
+      { name: "Graduation Status", href: "/cek-kelulusan" }, { name: "Re-registration", href: "/daftar-ulang" },
+      { name: "Alumni Tracer Study", href: "/tracer-study" }, { name: "MyAlwis Mobile App", href: "/pasang-aplikasi" },
+    ] },
+    { key: "kontak", name: "Contact", href: "/contact" },
   ],
 };
 
@@ -71,13 +68,13 @@ export default function NavbarClient({
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [servicesOpen, setServicesOpen] = useState(false);
-  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [menuBuka, setMenuBuka] = useState<string | null>(null);       // submenu desktop yang terbuka
+  const [menuBukaHp, setMenuBukaHp] = useState<string | null>(null);   // submenu di menu HP
   // Bahasa SELALU dari server (cookie `lang`). Tidak diganti duluan di klien: dulu menu langsung berganti sementara isi
   // halaman baru menyusul 1–2 detik kemudian, sehingga halaman sempat tampil campur dua bahasa (temuan user 15 Sep 2026).
   const lang = langAwal;
   const [gantiBahasa, mulaiGanti] = useTransition();
-  const servicesTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tundaTutup = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoEmblem = initialEmblem;
   const logoFull = initialFull;
   const logoFullWhite = initialFullWhite;
@@ -103,8 +100,9 @@ export default function NavbarClient({
   }
 
   const isDark = transparent && !scrolled;
-  const links = navLinks[lang];
+  const menu = menuSitus[lang];
   const t = ui[lang];
+  const aktifGrup = (m: MenuUtama) => (m.href ? isActive(m.href) : (m.items ?? []).some(x => isActive(x.href)));
 
   return (
     <header
@@ -132,9 +130,9 @@ export default function NavbarClient({
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat" }}
         />
       )}
-      <nav className="container-custom flex items-center justify-between">
+      <nav className="container-custom relative flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 mr-6">
           {isDark ? (
             logoFullWhite ? (
               <Image
@@ -173,65 +171,49 @@ export default function NavbarClient({
           )}
         </Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden lg:flex items-center gap-7">
-          {links.map((link) => {
-            const active = isActive(link.href);
+        {/* Desktop Menu — 5 menu utama, submenu terbuka saat disorot/diklik */}
+        <ul className="hidden lg:flex flex-1 items-center justify-center gap-1 xl:absolute xl:left-1/2 xl:flex-none xl:-translate-x-1/2 xl:gap-2">
+          {menu.map(m => {
+            const aktif = aktifGrup(m);
+            const warna = aktif ? "text-gold" : isDark ? "text-white/90" : "text-navy";
+            if (m.href) return (
+              <li key={m.key}>
+                <Link href={m.href} className={`relative block px-3 py-2 font-medium text-sm whitespace-nowrap transition-colors hover:text-gold ${warna}`}>
+                  {m.name}
+                  {aktif && <span className="absolute left-3 right-3 bottom-0.5 h-0.5 rounded-full bg-gold" />}
+                </Link>
+              </li>
+            );
+            const buka = menuBuka === m.key;
             return (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={`relative font-medium text-sm transition-colors hover:text-gold pb-1 ${
-                  active ? "text-gold" : isDark ? "text-white/90" : "text-navy"
-                }`}
-              >
-                {link.name}
-                {active && (
-                  <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 rounded-full bg-gold" />
+              <li key={m.key} className="relative"
+                onMouseEnter={() => { if (tundaTutup.current) clearTimeout(tundaTutup.current); setMenuBuka(m.key); }}
+                onMouseLeave={() => { tundaTutup.current = setTimeout(() => setMenuBuka(k => (k === m.key ? null : k)), 150); }}>
+                <button type="button" aria-expanded={buka} onClick={() => setMenuBuka(k => (k === m.key ? null : m.key))}
+                  className={`relative flex items-center gap-1 px-3 py-2 font-medium text-sm whitespace-nowrap transition-colors hover:text-gold ${warna}`}>
+                  {m.name}
+                  <ChevronDown size={14} className={`transition-transform ${buka ? "rotate-180" : ""}`} />
+                  {aktif && <span className="absolute left-3 right-3 bottom-0.5 h-0.5 rounded-full bg-gold" />}
+                </button>
+                {buka && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-60 z-50">
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1.5">
+                      {m.items!.map(x => (
+                        <Link key={x.href} href={x.href} onClick={() => setMenuBuka(null)}
+                          className={`block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary-50 hover:text-primary-700 ${isActive(x.href) ? "text-gold" : "text-navy"}`}>
+                          {x.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </Link>
-            </li>
+              </li>
             );
           })}
-
-          {/* Layanan dropdown */}
-          <li
-            className="relative"
-            onMouseEnter={() => {
-              if (servicesTimeout.current) clearTimeout(servicesTimeout.current);
-              setServicesOpen(true);
-            }}
-            onMouseLeave={() => {
-              servicesTimeout.current = setTimeout(() => setServicesOpen(false), 150);
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setServicesOpen(o => !o)}
-              className={`flex items-center gap-1 font-medium text-sm transition-colors hover:text-gold pb-1 ${
-                serviceLinks[lang].some(l => isActive(l.href)) ? "text-gold" : isDark ? "text-white/90" : "text-navy"
-              }`}
-            >
-              {t.services}
-              <ChevronDown size={14} className={`transition-transform ${servicesOpen ? "rotate-180" : ""}`} />
-            </button>
-            {servicesOpen && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 z-50">
-                <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1.5">
-                  {serviceLinks[lang].map(link => (
-                    <Link key={link.href} href={link.href} onClick={() => setServicesOpen(false)}
-                      className={`block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary-50 hover:text-primary-700 ${isActive(link.href) ? "text-gold" : "text-navy"}`}>
-                      {link.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </li>
         </ul>
 
         {/* Desktop CTA */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex shrink-0 items-center gap-2 xl:gap-3">
           <button
             onClick={toggleLang}
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
@@ -257,7 +239,7 @@ export default function NavbarClient({
           >
             {t.login}
           </Link>
-          <Link href="/admissions" className="btn-gold !py-2 !px-5 text-sm">
+          <Link href="/admissions" className="btn-gold !py-2 !px-5 text-sm whitespace-nowrap">
             {t.register}
           </Link>
         </div>
@@ -297,47 +279,37 @@ export default function NavbarClient({
         }`}
       >
         <div className="bg-white border-t border-gray-100 px-6 py-4 max-h-[80vh] overflow-y-auto">
-          {links.map((link) => {
-            const active = isActive(link.href);
+          {menu.map(m => {
+            const aktif = aktifGrup(m);
+            if (m.href) return (
+              <Link key={m.key} href={m.href} onClick={() => setOpen(false)}
+                className={`flex items-center justify-between py-3 font-medium border-b border-gray-100 hover:text-gold transition-colors ${aktif ? "text-gold" : "text-navy"}`}>
+                {m.name}
+                {aktif && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
+              </Link>
+            );
+            const buka = menuBukaHp === m.key || (menuBukaHp === null && aktif);
             return (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setOpen(false)}
-              className={`flex items-center justify-between py-3 font-medium border-b border-gray-100 last:border-0 hover:text-gold transition-colors ${
-                active ? "text-gold" : "text-navy"
-              }`}
-            >
-              {link.name}
-              {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
-            </Link>
+              <div key={m.key} className="border-b border-gray-100">
+                <button type="button" aria-expanded={buka} onClick={() => setMenuBukaHp(k => (k === m.key || (k === null && aktif) ? "" : m.key))}
+                  className={`w-full flex items-center justify-between py-3 font-medium hover:text-gold transition-colors ${aktif ? "text-gold" : "text-navy"}`}>
+                  {m.name}
+                  <ChevronDown size={16} className={`transition-transform ${buka ? "rotate-180" : ""}`} />
+                </button>
+                {buka && (
+                  <div className="pl-3 pb-2">
+                    {m.items!.map(x => (
+                      <Link key={x.href} href={x.href} onClick={() => setOpen(false)}
+                        className={`flex items-center justify-between py-2.5 text-sm font-medium hover:text-gold transition-colors ${isActive(x.href) ? "text-gold" : "text-gray-600"}`}>
+                        {x.name}
+                        {isActive(x.href) && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => setMobileServicesOpen(o => !o)}
-            className={`w-full flex items-center justify-between py-3 font-medium border-b border-gray-100 hover:text-gold transition-colors ${
-              serviceLinks[lang].some(l => isActive(l.href)) ? "text-gold" : "text-navy"
-            }`}
-          >
-            {t.services}
-            <ChevronDown size={16} className={`transition-transform ${mobileServicesOpen ? "rotate-180" : ""}`} />
-          </button>
-          {mobileServicesOpen && (
-            <div className="pl-3 border-b border-gray-100">
-              {serviceLinks[lang].map(link => {
-                const active = isActive(link.href);
-                return (
-                  <Link key={link.href} href={link.href} onClick={() => setOpen(false)}
-                    className={`flex items-center justify-between py-2.5 text-sm font-medium hover:text-gold transition-colors ${active ? "text-gold" : "text-gray-600"}`}>
-                    {link.name}
-                    {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
 
           <div className="flex gap-3 mt-4">
             <Link

@@ -101,7 +101,7 @@ export default function KatalogAnggota() {
               </div>
               <div className="p-4 flex-1 flex flex-col gap-2">
                 <div>
-                  <h2 className="font-heading font-bold text-primary-900 leading-snug line-clamp-2">{b.title}</h2>
+                  <h2 className="font-heading font-semibold text-primary-900 leading-snug line-clamp-2">{b.title}</h2>
                   <p className="text-xs text-gray-500 line-clamp-1">{[b.author, b.publisher].filter(Boolean).join(" · ") || "Penulis tidak dicantumkan"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 text-xs">

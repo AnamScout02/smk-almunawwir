@@ -95,7 +95,7 @@ export default function RiwayatAktivitasManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
       ) : logs.length === 0 ? (
         <EmptyState icon={History} title="Belum ada riwayat aktivitas" description="Aksi tagihan yang tercatat akan muncul di sini." />
       ) : (

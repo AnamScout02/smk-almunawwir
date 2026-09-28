@@ -32,7 +32,7 @@ export default async function ParentPoinPage({ searchParams }: { searchParams: P
 
       <p className="text-xs text-gray-400 mb-4">Semester: {data.semester} — akumulasi maksimal poin pelanggaran per tahun ajaran adalah 100.</p>
 
-      <div className={`kisi-kartu mb-6 ${data.totalRemisi > 0 ? "kisi-kartu-4" : "kisi-kartu-3"}`}>
+      <div className={`kisi-kartu mb-5 ${data.totalRemisi > 0 ? "kisi-kartu-4" : "kisi-kartu-3"}`}>
         <StatTile value={data.totalPelanggaran} label="Poin Pelanggaran" ikon="poin-turun" color="red" />
         <StatTile value={data.totalPrestasi} label="Poin Prestasi" ikon="tren" color="emerald" />
         {data.totalRemisi > 0 && <StatTile value={data.totalRemisi} label="Poin Remisi" ikon="prestasi" color="blue" />}
@@ -45,7 +45,7 @@ export default async function ParentPoinPage({ searchParams }: { searchParams: P
       </div>
 
       <div className="panel overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-50"><h3 className="font-heading font-bold text-primary-900 text-sm">Riwayat</h3></div>
+        <div className="px-5 py-3 border-b border-gray-50"><h3 className="font-heading font-semibold text-primary-900 text-sm">Riwayat</h3></div>
         {data.records.length === 0 ? (
           <EmptyState icon={Award} title="Belum Ada Catatan" description="Belum ada catatan poin semester ini." className="flex flex-col items-center justify-center min-h-36 py-0" />
         ) : (

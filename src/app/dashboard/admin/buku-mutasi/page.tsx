@@ -74,7 +74,7 @@ function GrafikMutasiTahunan({ data, bulanAktif, onPilih, tahunPelajaran }: {
           })}
         </div>
         {totalMasuk + totalKeluar === 0 && (
-          <p className="mt-2 text-center text-xs text-gray-500">Belum ada siswa pindahan masuk maupun keluar pada tahun pelajaran ini.</p>
+          <p className="mt-2 text-center text-sm text-gray-500">Belum ada siswa pindahan masuk maupun keluar pada tahun pelajaran ini.</p>
         )}
       </div>
     </div>
@@ -174,6 +174,17 @@ export default function BukuMutasiPage() {
       />
       {/* Filter & cetak di baris terpisah (bukan di actions PageHeader) — actions berbagi baris
           dengan judul, jadi kalau diisi banyak elemen judulnya kepepet & wrap. */}
+      {/* Summary */}
+      {!loading && (
+        <div className="kisi-kartu kisi-kartu-4 mb-5 print:hidden">
+          <StatTile color="blue" icon={ArrowDownCircle} value={masuk.length} label="Siswa masuk" sublabel={`${bulanLabel} ${tahun}`} />
+          <StatTile color="red" icon={ArrowUpCircle} value={keluar.length} label="Siswa keluar" sublabel={`${bulanLabel} ${tahun}`} />
+          <StatTile color="purple" icon={Repeat} value={`${perBulan.reduce((a, x) => a + x.masuk, 0)} / ${perBulan.reduce((a, x) => a + x.keluar, 0)}`}
+            label="Masuk / keluar setahun" sublabel={`Tahun pelajaran ${tahunPelajaran}`} />
+          <StatTile color="emerald" icon={Users} value={totalAktif} label="Siswa aktif saat ini" sublabel={`L ${totalL} · P ${totalP}`} />
+        </div>
+      )}
+
       <div className="baris-alat mb-5 print:hidden">
         <div className="alat-saring">
           <Select value={bulan} onChange={setBulan}
@@ -190,17 +201,6 @@ export default function BukuMutasiPage() {
           </button>
         </div>
       </div>
-
-      {/* Summary */}
-      {!loading && (
-        <div className="kisi-kartu kisi-kartu-4 mb-6 print:hidden">
-          <StatTile color="blue" icon={ArrowDownCircle} value={masuk.length} label="Siswa masuk" sublabel={`${bulanLabel} ${tahun}`} />
-          <StatTile color="red" icon={ArrowUpCircle} value={keluar.length} label="Siswa keluar" sublabel={`${bulanLabel} ${tahun}`} />
-          <StatTile color="purple" icon={Repeat} value={`${perBulan.reduce((a, x) => a + x.masuk, 0)} / ${perBulan.reduce((a, x) => a + x.keluar, 0)}`}
-            label="Masuk / keluar setahun" sublabel={`Tahun pelajaran ${tahunPelajaran}`} />
-          <StatTile color="emerald" icon={Users} value={totalAktif} label="Siswa aktif saat ini" sublabel={`L ${totalL} · P ${totalP}`} />
-        </div>
-      )}
 
       {!loading && perBulan.length === 12 && (
         <GrafikMutasiTahunan data={perBulan} bulanAktif={parseInt(bulan)} onPilih={b => setBulan(String(b))} tahunPelajaran={tahunPelajaran} />
@@ -225,13 +225,13 @@ export default function BukuMutasiPage() {
       ) : tab === "MASUK" ? (
         <>
           {/* Tabel on-screen */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
+          <div className="panel overflow-hidden print:hidden">
             <div className="overflow-x-auto scrollbar-visible">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
                     {["No", "Tanggal", "NIS", "Nama Siswa", "Kelas", "Asal Sekolah", "No. Induk Asal", "Kelas Asal", "Alamat Asal", "No. Surat"].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -342,13 +342,13 @@ export default function BukuMutasiPage() {
       ) : (
         <>
           {/* Tabel on-screen */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:hidden">
+          <div className="panel overflow-hidden print:hidden">
             <div className="overflow-x-auto scrollbar-visible">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-primary-100" style={{ background: "linear-gradient(135deg, rgba(15,26,69,0.05) 0%, rgba(27,43,107,0.03) 100%)" }}>
                     {["No", "Tanggal", "NIS", "Nama Siswa", "Kelas", "Status", "Pindah Ke", "No. Surat", "Alasan"].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-[0.68rem] font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary-500/70 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>

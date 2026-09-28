@@ -249,7 +249,7 @@ export default function TagihanManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={Wallet} title="Belum Ada Tagihan" description="Buat tagihan baru atau generate massal per kelas untuk mulai." />
       ) : (
@@ -355,7 +355,7 @@ export default function TagihanManager() {
                   )}
                 </div>
                 {addClassFilter && addQuery.trim().length < 2 && addHits.length === 0 && !addSearching && (
-                  <p className="text-xs text-gray-400 mt-1.5">Tidak ada siswa aktif di kelas ini.</p>
+                  <p className="text-sm text-gray-400 mt-1.5">Tidak ada siswa aktif di kelas ini.</p>
                 )}
               </div>
             )}

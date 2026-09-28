@@ -176,7 +176,7 @@ export default function TwoFactorSetup({ initialEnabled }: { initialEnabled: boo
             <div className="flex gap-2">
               <button onClick={() => { setStep("idle"); setDisablePassword(""); setError(""); }} className="btn-modal-cancel flex-1">Batal</button>
               <button onClick={disable2fa} disabled={loading || !disablePassword.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50">
+                className="btn-hapus flex-1 justify-center">
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldOff size={15} />}
                 Ya, Nonaktifkan
               </button>

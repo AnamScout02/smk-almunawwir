@@ -132,7 +132,7 @@ export default function NotifikasiPushManager() {
             </div>
           )}
 
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          <div className="kisi-kartu kisi-kartu-4">
             <StatTile value={data.perangkat.total} label="Perangkat Aktif" icon={Smartphone} color="primary" size="md" />
             <StatTile value={data.perangkat.pengguna} label="Pengguna Berlangganan" icon={Users} color="emerald" size="md" />
             {data.perangkat.perPeran.filter(p => ["Guru", "Siswa"].includes(p.peran)).map(p => (
@@ -202,7 +202,7 @@ export default function NotifikasiPushManager() {
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Libur mendatang</p>
                   {data.libur.mendatang.length === 0 ? (
-                    <p className="text-xs text-gray-400">Tidak ada libur selain hari Minggu dalam 4 bulan ke depan.</p>
+                    <p className="text-sm text-gray-400">Tidak ada libur selain hari Minggu dalam 4 bulan ke depan.</p>
                   ) : (
                     <ul className="divide-y divide-gray-50 rounded-xl border border-gray-100 max-h-64 overflow-y-auto">
                       {data.libur.mendatang.map(l => (
@@ -286,7 +286,7 @@ export default function NotifikasiPushManager() {
                 </button>
               </div>
               {pratinjau && (pratinjau.hasil.length === 0 ? (
-                <p className="text-sm text-gray-500 rounded-xl bg-gray-50 border border-gray-100 p-3">Tidak ada pengingat yang akan terkirim pada waktu itu (semua sudah diisi, di luar jam pengingat, atau hari libur).</p>
+                <p className="text-sm text-gray-400 rounded-xl bg-gray-50 border border-gray-100 p-3">Tidak ada pengingat yang akan terkirim pada waktu itu (semua sudah diisi, di luar jam pengingat, atau hari libur).</p>
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-gray-500">{pratinjau.hasil.length} pengingat · {pratinjau.totalPenerima} penerima</p>

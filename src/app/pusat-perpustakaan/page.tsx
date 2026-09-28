@@ -48,11 +48,6 @@ export default async function BerandaPusatPerpustakaan() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 space-y-6">
       <PageHeader icon={<LibraryBig size={22} />} title="Layanan Hari Ini" description={<>{wib.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })} · masa pinjam {aturan.masaHari} hari · maks {aturan.maksPinjam} buku · denda {rupiah(aturan.dendaPerHari)}/hari</>} />
       <KisiMenuPortal items={MENU_PUSAT_PERPUSTAKAAN} judul="Menu Pusat Perpustakaan" />
-      <div className="alat-aksi justify-end">
-        <TautanIkon href="/pusat-perpustakaan/sirkulasi" ikon="pindai" ukuran={16} className="btn-modal-save">Buka Meja Sirkulasi</TautanIkon>
-        <TautanIkon href="/pusat-perpustakaan/kunjungan" ikon="pintu" ukuran={16} className="btn-modal-cancel">Kiosk Kunjungan</TautanIkon>
-      </div>
-
       <div className="kisi-kartu kisi-kartu-4">
         {/* StatTile = client component: dari server component ikon WAJIB dikirim sebagai elemen, bukan komponen mentah.
             Setiap ikon di halaman ini SENGAJA dipakai sekali saja — ikon kembar bikin SSR produksi 500 (gotcha #35). */}
@@ -65,6 +60,11 @@ export default async function BerandaPusatPerpustakaan() {
         <StatTile value={rupiah(dendaBerjalan)} label="Denda Berjalan (belum kembali)" ikon="dompet" color="gray" size="sm" />
         <StatTile value={rupiah(dendaTertunggak)} label="Denda Belum Dibayar" ikon="denda" color="gray" size="sm" />
       </div>
+
+      <div className="alat-aksi justify-end">
+  <TautanIkon href="/pusat-perpustakaan/sirkulasi" ikon="pindai" ukuran={16} className="btn-modal-save">Buka Meja Sirkulasi</TautanIkon>
+  <TautanIkon href="/pusat-perpustakaan/kunjungan" ikon="pintu" ukuran={16} className="btn-modal-cancel">Kiosk Kunjungan</TautanIkon>
+</div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="page-card overflow-hidden">

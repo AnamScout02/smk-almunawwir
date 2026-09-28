@@ -62,7 +62,7 @@ export default function AdminMessagesPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : items.length === 0 ? (
         <EmptyState icon={Mail} description="Belum ada pesan masuk" />
       ) : (

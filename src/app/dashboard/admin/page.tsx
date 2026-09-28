@@ -217,7 +217,7 @@ export default async function AdminDashboard() {
                   <p className="label-kecil mb-3">Per konsentrasi keahlian</p>
                   {majorStats.length
                     ? <BarDaftar data={majorStats} satuan="siswa" />
-                    : <p className="text-sm text-gray-500">Belum ada siswa aktif per jurusan.</p>}
+                    : <p className="text-sm text-gray-400">Belum ada siswa aktif per jurusan.</p>}
                 </div>
               </div>
             </Panel>

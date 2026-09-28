@@ -127,7 +127,7 @@ export default function PermintaanSuratPortal({ untukOrangTua = false }: { untuk
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : total === 0 ? (
         <EmptyState icon={FileText} title="Belum Ada Permintaan"
           description="Ajukan permintaan pertama lewat tombol di atas." />

@@ -102,17 +102,6 @@ export default function PresensiPegawaiManager() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<UserCheck size={22} />} title="Presensi Pegawai"
         description="Daftar hadir harian guru & tenaga kependidikan — terpisah dari absensi siswa maupun poin kedisiplinan guru" />
-
-      <div className="alat-aksi alat-teks justify-end mb-5">
-        <Link href={`/dashboard/admin/presensi-pegawai/rekap?month=${tanggal.slice(0, 7)}`}
-          className="btn-modal-cancel">
-          <Printer size={16} /> Rekap Bulanan
-        </Link>
-        <button onClick={handleSave} disabled={saving || loading} className="btn-modal-save">
-          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Presensi
-        </button>
-      </div>
-
       {usulan.length > 0 && (
         <div className="panel mb-5 border-amber-200 bg-amber-50/60 p-4">
           <p className="mb-1 text-sm font-semibold text-amber-800">
@@ -152,6 +141,16 @@ export default function PresensiPegawaiManager() {
         <StatTile value={hadir} label="Hadir" icon={UserCheck} color="emerald" />
       </div>
 
+      <div className="alat-aksi alat-teks justify-end mb-5">
+        <Link href={`/dashboard/admin/presensi-pegawai/rekap?month=${tanggal.slice(0, 7)}`}
+          className="btn-modal-cancel">
+          <Printer size={16} /> Rekap Bulanan
+        </Link>
+        <button onClick={handleSave} disabled={saving || loading} className="btn-modal-save">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Presensi
+        </button>
+      </div>
+
       <div className="page-card p-4 mb-5 grid gap-3 md:grid-cols-3">
         <div>
           <label className="label-field">Tanggal</label>
@@ -174,7 +173,7 @@ export default function PresensiPegawaiManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : pegawai.length === 0 ? (
         <EmptyState icon={Users} title="Belum Ada Data Pegawai"
           description="Tambahkan guru & staf lebih dulu di menu Guru / Akun Pengguna." />

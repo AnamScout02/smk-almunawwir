@@ -102,33 +102,6 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<UserCheck size={22} />} title="Kehadiran Guru Terpadu"
         description="Presensi harian TU, catatan guru piket per jam pelajaran, jurnal mengajar, dan kehadiran petugas piket disandingkan dalam satu tabel." />
-
-      <div className="baris-alat mb-5 items-end">
-        <div className="alat-saring">
-          <label className="label-field">Dari tanggal</label>
-          <DatePicker value={dari} onChange={setDari} />
-        </div>
-        <div className="alat-saring">
-          <label className="label-field">Sampai tanggal</label>
-          <DatePicker value={sampai} onChange={setSampai} />
-        </div>
-        <div className="alat-saring">
-          <label className="label-field">Tampilkan</label>
-          <Select value={saring} onChange={setSaring} options={[
-            { value: "temuan", label: "Hanya yang perlu diperiksa" },
-            { value: "semua", label: "Semua baris" },
-            { value: "HADIR_TAPI_ALPHA_DI_KELAS", label: "Hadir tapi jam kosong" },
-            { value: "ALPHA_SEHARIAN_TANPA_CATATAN_TU", label: "Alpha seharian, TU kosong" },
-            { value: "TIDAK_HADIR_TAPI_ADA_JURNAL", label: "Tidak hadir tapi ada jurnal" },
-            { value: "PIKET_ALPHA_TAPI_ADA_JURNAL", label: "Piket & jurnal bertolak belakang" },
-            { value: "BLOK_BELUM_DICATAT_PIKET", label: "Jam belum dicatat piket" },
-          ]} />
-        </div>
-        <div className="alat-aksi">
-          <Link href={bukuPiketHref} className="btn-modal-cancel btn-teks"><ArrowLeft size={16} /> Buku Piket</Link>
-        </div>
-      </div>
-
       {galat && <p className="error-msg mb-5">{galat}</p>}
 
       {muat ? (
@@ -141,6 +114,10 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
             <StatTile value={hitung("TIDAK_HADIR_TAPI_ADA_JURNAL") + hitung("PIKET_ALPHA_TAPI_ADA_JURNAL")} label="Catatan bertolak belakang" ikon="dokumen" color="purple" />
             <StatTile value={hitung("BLOK_BELUM_DICATAT_PIKET")} label="Jam belum dicatat piket" ikon="jam" color="gray" />
           </div>
+
+          <div className="alat-aksi">
+    <Link href={bukuPiketHref} className="btn-modal-cancel btn-teks"><ArrowLeft size={16} /> Buku Piket</Link>
+  </div>
 
           <p className="text-xs text-gray-400 mb-4 flex items-start gap-1.5">
             <ShieldAlert size={14} className="mt-0.5 shrink-0" />
@@ -241,6 +218,29 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
           )}
         </>
       )}
+
+      <div className="baris-alat mb-5 items-end">
+        <div className="alat-saring">
+          <label className="label-field">Dari tanggal</label>
+          <DatePicker value={dari} onChange={setDari} />
+        </div>
+        <div className="alat-saring">
+          <label className="label-field">Sampai tanggal</label>
+          <DatePicker value={sampai} onChange={setSampai} />
+        </div>
+        <div className="alat-saring">
+          <label className="label-field">Tampilkan</label>
+          <Select value={saring} onChange={setSaring} options={[
+            { value: "temuan", label: "Hanya yang perlu diperiksa" },
+            { value: "semua", label: "Semua baris" },
+            { value: "HADIR_TAPI_ALPHA_DI_KELAS", label: "Hadir tapi jam kosong" },
+            { value: "ALPHA_SEHARIAN_TANPA_CATATAN_TU", label: "Alpha seharian, TU kosong" },
+            { value: "TIDAK_HADIR_TAPI_ADA_JURNAL", label: "Tidak hadir tapi ada jurnal" },
+            { value: "PIKET_ALPHA_TAPI_ADA_JURNAL", label: "Piket & jurnal bertolak belakang" },
+            { value: "BLOK_BELUM_DICATAT_PIKET", label: "Jam belum dicatat piket" },
+          ]} />
+        </div>
+      </div>
     </div>
   );
 }

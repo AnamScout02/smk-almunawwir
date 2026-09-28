@@ -4,5 +4,5 @@ import KaprogliDashboard from "@/components/jabatan/KaprogliDashboard";
  * bukan guru/pegawai, jadi ia melihat dashboard ini TANPA dilempar ke shell portal guru. Isinya
  * komponen yang sama persis — bukan duplikat kode. */
 export default function Page() {
-  return <KaprogliDashboard />;
+  return <KaprogliDashboard basePath="/dashboard/admin" />;
 }

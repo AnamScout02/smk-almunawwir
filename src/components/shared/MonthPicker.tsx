@@ -47,10 +47,12 @@ export default function MonthPicker({ value, onChange, placeholder = "Pilih bula
     const popupH = 260;
     const spaceBelow = window.innerHeight - rect.bottom;
     const above = spaceBelow < popupH && rect.top > popupH;
+    const lebar = 260;
     setPopupStyle({
       position: "fixed",
-      left: rect.left,
-      width: 260,
+      // Ditahan di dalam layar seperti DatePicker/TimePicker (24 Sep 2026).
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - lebar - 8)),
+      width: lebar,
       top: above ? rect.top - popupH - 4 : rect.bottom + 4,
       zIndex: 99999,
     });

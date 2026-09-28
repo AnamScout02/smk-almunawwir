@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ClipboardList, Loader2, FileText, Save, Trash2, Calendar, CheckCircle2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Submission {
   id: string; studentId: string; fileUrl: string | null; note: string | null; submittedAt: string;
@@ -79,9 +80,7 @@ export default function TeacherAssignmentDetailPage() {
         <button onClick={handleDeleteAssignment} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition">
           <Trash2 size={18} />
         </button>
-        <Link href="/dashboard/teacher/materials" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/teacher/materials"} />
       </div>
 
       <div className="panel p-5 mb-6">

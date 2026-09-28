@@ -145,7 +145,7 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="shrink-0 flex items-center gap-2 bg-primary-700 hover:bg-primary-900 disabled:opacity-60 text-white font-semibold px-5 py-3.5 rounded-xl text-sm transition-colors"
+          className="btn-primary shrink-0"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
           {loading ? t.searching : t.check}

@@ -77,7 +77,7 @@ export default function KpiIndikatorPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
       ) : jabatanNames.length === 0 ? (
         <EmptyState icon={Sliders} title="Belum Ada Indikator KPI" />
       ) : (
@@ -90,7 +90,7 @@ export default function KpiIndikatorPage() {
               <div key={jabatanName} className="panel overflow-hidden">
                 <button onClick={() => toggleJabatan(jabatanName)}
                   className="w-full px-5 py-4 flex items-center justify-between gap-2 text-left hover:bg-gray-50/50 transition">
-                  <h3 className="font-heading font-bold text-primary-900 text-sm truncate">{jabatanName}</h3>
+                  <h3 className="font-heading font-semibold text-primary-900 text-sm truncate">{jabatanName}</h3>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${total === 100 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
                       {total}%

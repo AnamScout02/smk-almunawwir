@@ -151,12 +151,12 @@ export default function SuratKeluarEditPage() {
           // Editor Word butuh id nyata, sedangkan surat baru belum punya baris database.
           // Jadi disimpan dulu, baru dibuka — bukan disembunyikan seperti sebelumnya.
           <button type="button" onClick={() => handleSave("word")}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+            className="btn-modal-cancel px-3 text-xs">
             <FileType2 size={13} /> Simpan &amp; Buka di Editor Word <span className="text-primary-700">(Beta)</span>
           </button>
         ) : (
           <Link href={`/dashboard/admin/persuratan/${id}/edit-word`}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition">
+            className="btn-modal-cancel px-3 text-xs">
             <FileType2 size={13} /> Buka di Editor Word <span className="text-primary-700">(Beta)</span>
           </Link>
         )}
@@ -168,7 +168,7 @@ export default function SuratKeluarEditPage() {
       {error && <p className="error-msg mb-4">{error}</p>}
 
       {/* Toolbar metadata — tidak tercetak langsung di badan surat, hanya dipakai untuk membentuk nomor otomatis */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5 max-w-[800px] mx-auto flex flex-wrap items-end gap-3">
+      <div className="panel p-4 mb-5 max-w-[800px] mx-auto flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[160px]">
           <label className="label-field">Klasifikasi / Kode Jenis Surat</label>
           <input list="klasifikasi-list" value={klasifikasi} onChange={e => setKlasifikasi(e.target.value)} className="input-field" placeholder="cth: A.2" />

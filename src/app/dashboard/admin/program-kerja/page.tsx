@@ -100,6 +100,14 @@ export default function ProgramKerjaAdminPage() {
         title="Program Kerja"
         description="Program kerja seluruh jabatan struktural — guru & staf"
       />
+      {!loading && (
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
+          <StatTile color="primary" value={total} label="Total Program" icon={ListChecks} />
+          <StatTile color="gray" value={direncanakan} label="Direncanakan" icon={Clock} />
+          <StatTile color="blue" value={berjalan} label="Berjalan" icon={PlayCircle} />
+          <StatTile color="emerald" value={selesai} label="Selesai" icon={CheckCircle2} />
+        </div>
+      )}
 
       <div className="baris-alat mb-5">
         <div className="alat-saring">
@@ -112,15 +120,6 @@ export default function ProgramKerjaAdminPage() {
           </button>
         </div>
       </div>
-
-      {!loading && (
-        <div className="kisi-kartu kisi-kartu-4 mb-6">
-          <StatTile color="primary" value={total} label="Total Program" icon={ListChecks} />
-          <StatTile color="gray" value={direncanakan} label="Direncanakan" icon={Clock} />
-          <StatTile color="blue" value={berjalan} label="Berjalan" icon={PlayCircle} />
-          <StatTile color="emerald" value={selesai} label="Selesai" icon={CheckCircle2} />
-        </div>
-      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">

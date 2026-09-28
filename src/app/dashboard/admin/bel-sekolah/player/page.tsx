@@ -78,7 +78,7 @@ export default function BelSekolahPlayerPage() {
 
   if (!started) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8"
+      <div className="min-h-dvh flex items-center justify-center p-8"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
         <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-3xl bg-gold/20 text-gold flex items-center justify-center mx-auto mb-6">
@@ -100,7 +100,7 @@ export default function BelSekolahPlayerPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 relative"
+    <div className="min-h-dvh flex flex-col items-center justify-center p-8 relative"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }} />

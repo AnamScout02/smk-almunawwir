@@ -218,8 +218,8 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
       />
 
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative flex-1 min-w-48">
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input className="input-field pl-10"
             placeholder="Cari nama, NIP, atau mata pelajaran..."
@@ -268,7 +268,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
 
       {/* Tabel */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={User} title="Tidak ada data guru" />
       ) : (

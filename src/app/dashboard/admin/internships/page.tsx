@@ -159,11 +159,13 @@ export default function AdminInternshipsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-5">
+      <div className="baris-alat mb-5">
+        <div className="alat-cari">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Cari nama, NIS, atau kelas..."
           className="input-field pl-10" />
+      </div>
       </div>
 
       {loading ? (
@@ -294,7 +296,7 @@ function JournalModal({ student, onClose, fmt }: { student: Student; onClose: ()
   return (
     <Modal open onClose={onClose} title="Jurnal Harian PKL" description={`${student.user.name} — ${student.internship?.company ?? ""}`}>
       {loading ? (
-        <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-gray-400" /></div>
       ) : entries.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-8">Siswa belum mengisi jurnal harian.</p>
       ) : (

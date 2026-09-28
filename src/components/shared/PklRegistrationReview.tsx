@@ -105,14 +105,14 @@ export default function PklRegistrationReview() {
 
       {tab === "pendaftaran" ? (
         <>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="baris-alat mb-5">
             {["PENDING", "APPROVED", "REJECTED"].map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${statusFilter === s ? "bg-primary-900 text-white border-primary-900" : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"}`}>
                 {STATUS_META[s].label}
               </button>
             ))}
-            <div className="relative flex-1 min-w-48 ml-auto">
+            <div className="alat-cari">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama atau NIS siswa..." className="input-field pl-10" />
@@ -124,7 +124,7 @@ export default function PklRegistrationReview() {
               return !q || reg.student.user.name.toLowerCase().includes(q) || reg.student.nis.toLowerCase().includes(q);
             });
             return loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
           ) : filtered.length === 0 ? (
             <EmptyState icon={FileCheck2} title="Tidak Ada Pendaftaran" description={search ? "Tidak ada yang cocok dengan pencarian." : `Belum ada pendaftaran PKL berstatus ${STATUS_META[statusFilter].label.toLowerCase()}.`} />
           ) : (
@@ -158,7 +158,7 @@ export default function PklRegistrationReview() {
           {reqLoading ? (
             <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-gray-300" /></div>
           ) : requirements.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Belum ada dokumen syarat.</p>
+            <p className="text-sm text-gray-400 text-center py-10">Belum ada dokumen syarat.</p>
           ) : (
             <div className="divide-y divide-gray-50">
               {requirements.map(r => (

@@ -203,7 +203,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
         )}
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
+          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" size={28} /></div>
         ) : !data || (data.topDisiplin.length === 0 && data.perluPerhatian.length === 0) ? (
           <EmptyState icon={Trophy} title="Belum Ada Data Periode Ini" description="Papan peringkat akan terisi begitu Buku Piket mulai dicatat pada periode ini." />
         ) : (
@@ -221,7 +221,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
                 <div className="absolute inset-0 opacity-40 pointer-events-none"
                   style={{ backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(217,164,65,0.25) 50%, transparent 70%)", backgroundSize: "200% 100%", animation: "shimmer 4s ease-in-out infinite" }} />
                 <Trophy size={18} className="text-gold relative" />
-                <h3 className="font-heading font-bold text-primary-900 relative">Paling Disiplin</h3>
+                <h3 className="font-heading font-semibold text-primary-900 relative">Paling Disiplin</h3>
                 <span className="relative ml-auto text-xs font-bold text-gold/80 uppercase tracking-widest hidden sm:inline-flex items-center gap-1">
                   <Star size={11} className="spin-slow" /> Live Ranking
                 </span>
@@ -273,7 +273,7 @@ export default function DisciplineLeaderboard({ onSwitchTab }: { onSwitchTab?: (
             <div className="panel overflow-hidden card-fade-up" style={{ animationDelay: "80ms" }}>
               <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-50" style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.02) 100%)" }}>
                 <AlertTriangle size={18} className="text-red-500" />
-                <h3 className="font-heading font-bold text-primary-900">Perlu Perhatian</h3>
+                <h3 className="font-heading font-semibold text-primary-900">Perlu Perhatian</h3>
               </div>
               {data.perluPerhatian.length === 0 ? (
                 <p className="text-center py-10 text-gray-400 text-sm">Tidak ada guru yang perlu perhatian khusus minggu ini. 🎉</p>

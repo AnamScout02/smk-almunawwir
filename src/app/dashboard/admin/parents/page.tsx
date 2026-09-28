@@ -60,16 +60,18 @@ export default function AdminParentsPage() {
       <PageHeader icon={<Heart size={22} />} title="Akun Orang Tua" description="Akun Portal Orang Tua dibuat otomatis dari No. HP Orang Tua saat data siswa disimpan" />
 
       <div className="flex flex-wrap items-center gap-2.5 mb-5">
-        <div className="relative w-full sm:w-72">
+        <div className="baris-alat">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama orang tua, email, atau nama/NIS anak..."
             className="input-field pl-10" />
         </div>
       </div>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={Heart} title="Belum Ada Akun Orang Tua" description="Akun akan muncul otomatis begitu No. HP Orang Tua diisi di data siswa (Buku Induk)." />
       ) : (

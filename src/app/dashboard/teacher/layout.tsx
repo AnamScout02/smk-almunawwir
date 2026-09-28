@@ -58,7 +58,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   return (
     <div className="dashboard-shell">
       {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
-      <div className="flex min-h-screen">
+      <div className="flex min-h-dvh">
         <TeacherSidebar
           logoEmblem={s["logo.emblem"]}
           logoFullWhite={s["logo.full_white"]}
@@ -73,7 +73,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         />
         {/* pb-[...]: ruang utk bottom nav bar mobile — calc(4rem + safe-area-inset-bottom), lihat
             komentar sama di dashboard/student/layout.tsx (fix device ber-notch 2026-08-23). */}
-        <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0 min-h-screen">
+        <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0 min-h-dvh">
           <PusatNotifikasiPortal tindakan={tindakan} />
           {children}
         </main>

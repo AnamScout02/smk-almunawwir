@@ -173,7 +173,7 @@ export default function MenuLengkap({ grup, judul = "Semua Menu", ringkas, hrefS
             <section>
               <p className="label-kecil mb-2">Terpilih ({pilihan.length}/{maks})</p>
               {pilihan.length === 0 ? (
-                <p className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">Belum ada yang dipilih — memakai urutan bawaan portal.</p>
+                <p className="rounded-xl bg-gray-50 px-4 py-10 text-center text-sm text-gray-400">Belum ada yang dipilih — memakai urutan bawaan portal.</p>
               ) : (
                 <ul className="kisi-menu grid grid-cols-4 gap-1 sm:grid-cols-6">
                   {pilihan.map((href, n) => {
@@ -239,7 +239,7 @@ export default function MenuLengkap({ grup, judul = "Semua Menu", ringkas, hrefS
         </div>
       )}
       {tersaring.every(g => g.items.length === 0) ? (
-        <p className="panel px-5 py-10 text-center text-sm text-gray-500">Tidak ada menu yang cocok.</p>
+        <p className="panel px-5 py-10 text-center text-sm text-gray-400">Tidak ada menu yang cocok.</p>
       ) : (
         tersaring.map((g, gi) => {
           // Tiap grup menampilkan 2 baris × 4 ikon (8 menu); sisanya di balik tombol "Lainnya"

@@ -57,11 +57,13 @@ export default function VerifikasiDataPage() {
       />
 
       {!loading && requests.length > 0 && (
-        <div className="relative max-w-sm mb-5">
+        <div className="baris-alat mb-5">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama atau NIS siswa..." className="input-field pl-10" />
         </div>
+      </div>
       )}
 
       {(() => {
@@ -70,7 +72,7 @@ export default function VerifikasiDataPage() {
           !q || req.student.user.name.toLowerCase().includes(q) || req.student.nis.toLowerCase().includes(q)
         );
         return loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : requests.length === 0 ? (
         <EmptyState icon={ShieldCheck} title="Tidak Ada Pengajuan Menunggu" description="Semua pengajuan perubahan data siswa sudah diproses." />
       ) : filteredRequests.length === 0 ? (

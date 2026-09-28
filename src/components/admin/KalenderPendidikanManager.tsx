@@ -169,32 +169,6 @@ export default function KalenderPendidikanManager() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<CalendarDays size={22} />} title="Kalender Pendidikan"
         description="Agenda kegiatan sekolah satu tahun ajaran — libur, ujian, rapat, dan kegiatan, siap dicetak" />
-
-      <div className="alat-aksi justify-end mb-5">
-        {/* Dua bentuk cetak, keduanya dipakai sekolah: MATRIKS (baris bulan × kolom tanggal)
-            untuk ditempel di dinding & dilampirkan ke dokumen kurikulum, dan DAFTAR agenda per
-            bulan sebagai rinciannya. */}
-        <Link href={`/dashboard/admin/kalender-pendidikan/matriks${yearFilter ? `?academicYearId=${yearFilter}` : ""}`}
-          className="btn-modal-cancel">
-          <LayoutGrid size={16} /> Cetak Matriks
-        </Link>
-        <Link href={`/dashboard/admin/kalender-pendidikan/cetak${yearFilter ? `?academicYearId=${yearFilter}` : ""}`}
-          className="btn-modal-cancel">
-          <Printer size={16} /> Cetak Daftar Agenda
-        </Link>
-        <a href="/api/admin/kalender-pendidikan/template" className="btn-modal-cancel">
-          <Download size={16} /> Unduh Template
-        </a>
-        <label className="btn-modal-cancel cursor-pointer">
-          {impor ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-          {impor ? "Membaca berkas..." : "Impor dari Excel"}
-          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImpor} disabled={impor} />
-        </label>
-        <button onClick={openAdd} className="btn-modal-save">
-          <Plus size={16} /> Tambah Agenda
-        </button>
-      </div>
-
       {hasilImpor && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 mb-5">
           <p className="text-sm font-semibold text-emerald-800">
@@ -223,6 +197,31 @@ export default function KalenderPendidikanManager() {
         <StatTile value={rows.filter(a => a.jenis === "LIBUR").length} label="Agenda Libur" icon={CalendarDays} color="red" />
       </div>
 
+      <div className="alat-aksi justify-end mb-5">
+        {/* Dua bentuk cetak, keduanya dipakai sekolah: MATRIKS (baris bulan × kolom tanggal)
+            untuk ditempel di dinding & dilampirkan ke dokumen kurikulum, dan DAFTAR agenda per
+            bulan sebagai rinciannya. */}
+        <Link href={`/dashboard/admin/kalender-pendidikan/matriks${yearFilter ? `?academicYearId=${yearFilter}` : ""}`}
+          className="btn-modal-cancel">
+          <LayoutGrid size={16} /> Cetak Matriks
+        </Link>
+        <Link href={`/dashboard/admin/kalender-pendidikan/cetak${yearFilter ? `?academicYearId=${yearFilter}` : ""}`}
+          className="btn-modal-cancel">
+          <Printer size={16} /> Cetak Daftar Agenda
+        </Link>
+        <a href="/api/admin/kalender-pendidikan/template" className="btn-modal-cancel">
+          <Download size={16} /> Unduh Template
+        </a>
+        <label className="btn-modal-cancel cursor-pointer">
+          {impor ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+          {impor ? "Membaca berkas..." : "Impor dari Excel"}
+          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImpor} disabled={impor} />
+        </label>
+        <button onClick={openAdd} className="btn-modal-save">
+          <Plus size={16} /> Tambah Agenda
+        </button>
+      </div>
+
       <div className="page-card p-4 mb-5 grid gap-3 md:grid-cols-3">
         <div className="relative">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -237,7 +236,7 @@ export default function KalenderPendidikanManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={CalendarDays} title="Kalender Masih Kosong"
           description="Tambahkan agenda pertama — libur semester, ujian, rapat, atau kegiatan sekolah." />

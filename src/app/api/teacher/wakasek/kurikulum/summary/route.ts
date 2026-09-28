@@ -20,7 +20,7 @@ export async function GET() {
     const semester = semesterRapor()[w.bulan >= 7 ? 2 : 3];
     const since = new Date(Date.now() - 7 * 86400000);
 
-    const [assignments, recentJournals, grades, classes, guru, kunci, sah] = await Promise.all([
+    const [assignments, recentJournals, grades, classes, guru, kunci, sah, formRaporRows] = await Promise.all([
       prisma.teachingAssignment.findMany({
         select: {
           teacherId: true, classId: true,
@@ -45,6 +45,9 @@ export async function GET() {
       }),
       prisma.raporKunci.findMany({ where: { semester }, select: { classId: true } }),
       prisma.raporApproval.findMany({ where: { semester }, select: { classId: true } }),
+      // Form Nilai Rapor = jalur RESMI nilai rapor sejak 22 Sep 2026 (guru mengisi & MENGIRIM, wali kelas mengunci).
+      // Progres di atas dihitung dari nilai JURNAL, jadi tanpa ini Wakakur tidak bisa melihat form mana yang belum dikirim.
+      prisma.formNilaiRapor.findMany({ where: { semester }, select: { classId: true, subject: true, status: true, catatanWali: true } }),
     ]);
 
     const journalSet = new Set(recentJournals.map(j => `${j.teacherId}::${j.classId}::${j.subject}`));
@@ -85,6 +88,43 @@ export async function GET() {
       belumPerGuru.set(a.teacherId, e);
     }
 
+    /* ---- Progres FORM NILAI RAPOR (satu form per kelas+mapel+semester) ---- */
+    const formPeta = new Map(formRaporRows.map(f => [`${f.classId}|${f.subject}`, f]));
+    const wajibKelas = new Map<string, Set<string>>();
+    for (const a of assignments) {
+      if (!kelasSiswa.get(a.classId)?.size) continue; // kelas tanpa siswa aktif tidak perlu form
+      const set = wajibKelas.get(a.classId) ?? new Set<string>();
+      set.add(a.subject.name);
+      wajibKelas.set(a.classId, set);
+    }
+    const formPerKelas = classes.filter(c => wajibKelas.get(c.id)?.size).map(c => {
+      const mapel = [...wajibKelas.get(c.id)!];
+      const isi = mapel.map(m => formPeta.get(`${c.id}|${m}`));
+      return {
+        id: c.id, kelas: c.name, wali: c.homeroom?.user.name ?? null, wajib: mapel.length,
+        dikirim: isi.filter(f => f?.status === "DIKIRIM").length,
+        draf: isi.filter(f => f?.status === "DRAF").length,
+        dikembalikan: isi.filter(f => f?.status === "DRAF" && f?.catatanWali).length,
+        belum: isi.filter(f => !f).length,
+        status: sahSet.has(c.id) ? "DISAHKAN" : kunciSet.has(c.id) ? "DIKUNCI" : "TERBUKA",
+      };
+    });
+    const formBelumPerGuru = new Map<string, { nama: string; kelas: string[] }>();
+    for (const a of assignments) {
+      if (!kelasSiswa.get(a.classId)?.size) continue;
+      if (formPeta.get(`${a.classId}|${a.subject.name}`)?.status === "DIKIRIM") continue;
+      const e = formBelumPerGuru.get(a.teacherId) ?? { nama: a.teacher.user.name, kelas: [] };
+      e.kelas.push(`${a.class.name} ${a.subject.name}`);
+      formBelumPerGuru.set(a.teacherId, e);
+    }
+    const formRapor = {
+      wajib: formPerKelas.reduce((a, k) => a + k.wajib, 0),
+      dikirim: formPerKelas.reduce((a, k) => a + k.dikirim, 0),
+      draf: formPerKelas.reduce((a, k) => a + k.draf, 0),
+      perKelas: formPerKelas,
+      guruBelum: [...formBelumPerGuru.values()].sort((a, b) => b.kelas.length - a.kelas.length),
+    };
+
     // Ketuntasan KKM per mapel.
     const kelasInfo = new Map(classes.map(c => [c.id, c]));
     const kkmCache = new Map<string, Awaited<ReturnType<typeof petaKkm>>>();
@@ -124,7 +164,7 @@ export async function GET() {
       schoolAvg: semuaNilai.length ? Math.round((semuaNilai.reduce((a, b) => a + b, 0) / semuaNilai.length) * 10) / 10 : null,
       persenTuntas: totalDinilai ? Math.round((ketuntasan.reduce((a, k) => a + k.tuntas, 0) / totalDinilai) * 100) : null,
       progres, guruBelumMenilai: [...belumPerGuru.values()].sort((a, b) => b.kelas.length - a.kelas.length),
-      ketuntasan, bebanJp, syaratJp: SYARAT_JP,
+      ketuntasan, bebanJp, syaratJp: SYARAT_JP, formRapor,
       missingJournal,
       classesWithoutSchedule: classes.filter(c => c._count.schedules === 0).map(c => ({ id: c.id, name: c.name, grade: c.grade })),
       totalAssignments: assignments.length,

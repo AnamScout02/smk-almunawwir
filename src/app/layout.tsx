@@ -94,7 +94,7 @@ export default function RootLayout({
           href={URL_FONT_SIMBOL /* hanya ikon bottom navbar — src/lib/simbol-material.ts */}
         />
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-dvh flex flex-col">
         <Providers>
           {children}
           <WhatsAppButton />

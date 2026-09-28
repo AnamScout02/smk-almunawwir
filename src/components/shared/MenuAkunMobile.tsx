@@ -30,7 +30,7 @@ export default function MenuAkunMobile({ profilHref, tautanTambahan = [] }: { pr
     ...(profilHref ? [{ href: `${profilHref}#notifikasi`, label: "Notifikasi", icon: BellRing }] : []),
     { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
     ...tautanTambahan,
-    { href: "/pasang-aplikasi", label: "Pasang Aplikasi", icon: Download },
+    { href: "/pasang-aplikasi", label: "Aplikasi MyAlwis", icon: Download },
     { href: "/", label: "Lihat Website", icon: Globe },
   ];
 

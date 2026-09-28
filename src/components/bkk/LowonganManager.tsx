@@ -10,6 +10,7 @@ import DatePicker from "@/components/shared/DatePicker";
 import PilihBanyak from "@/components/shared/PilihBanyak";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Lowongan { id: string; judul: string; perusahaan: string; partnerId: string | null; lokasi: string | null; jenis: string; jurusanIds: string[]; kualifikasi: string; deskripsi: string | null; gaji: string | null; batas: string | null; kontak: string | null; tautanLamar: string | null; posterUrl: string | null; aktif: boolean; pembuatNama: string; jumlahMinat: number }
 interface Data { jenis: Record<string, string>; jurusan: { id: string; code: string; name: string }[]; mitra: { id: string; name: string }[]; daftar: Lowongan[] }
@@ -61,7 +62,7 @@ export default function LowonganManager() {
   if (peminat) return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Users size={22} />} title={`Peminat: ${peminat.l.judul}`} description={`${peminat.l.perusahaan} · ${peminat.daftar?.length ?? "…"} siswa`} />
-      <div className="alat-aksi justify-end mb-5"><button type="button" onClick={() => { setPeminat(null); muat(); }} className="btn-modal-cancel"><ArrowLeft /> Kembali</button></div>
+      <div className="alat-aksi justify-end mb-5"><TombolKembali onClick={() => { setPeminat(null); muat(); }} /></div>
       {!peminat.daftar ? <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
         : peminat.daftar.length === 0 ? <EmptyState icon={Users} title="Belum ada peminat" description="Siswa yang menekan Saya Berminat tampil di sini." />
         : (
@@ -102,7 +103,7 @@ export default function LowonganManager() {
                       <td className="min-w-[12rem]"><p className="font-semibold text-primary-900">{l.judul}</p><p className="text-xs text-gray-500">{l.perusahaan}{l.lokasi ? ` · ${l.lokasi}` : ""} · {data.jenis[l.jenis]}</p></td>
                       <td className="hidden md:table-cell text-xs text-gray-600">{l.jurusanIds.length ? l.jurusanIds.map(id => data.jurusan.find(j => j.id === id)?.code ?? "?").join(", ") : "Semua"}</td>
                       <td className="hidden md:table-cell text-xs whitespace-nowrap">{l.batas ? new Date(l.batas).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }) : "—"}</td>
-                      <td className="text-center"><button type="button" onClick={() => bukaPeminat(l)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary-700 hover:bg-primary-50"><Users size={14} /> {l.jumlahMinat}</button></td>
+                      <td className="text-center"><button type="button" onClick={() => bukaPeminat(l)} className="btn-modal-cancel px-3 text-xs"><Users size={14} /> {l.jumlahMinat}</button></td>
                       <td>
                         <button type="button" onClick={async () => { const r = await fetch(`/api/bkk/lowongan/${l.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktif: !l.aktif }) }).catch(() => null); if (r?.ok) muat(); }}
                           className={`status-badge ${lewat ? "bg-gray-50 text-gray-500 border-gray-200" : l.aktif ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>{lewat ? "Lewat batas" : l.aktif ? "Tayang" : "Disembunyikan"}</button>

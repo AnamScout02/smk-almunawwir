@@ -66,7 +66,7 @@ export default function OnlyofficeEditor({ onlyofficeUrl, configUrl }: { onlyoff
     <div className="relative h-[calc(100vh-64px)]">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-          <Loader2 size={28} className="animate-spin text-primary-500" />
+          <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       )}
       <div id={containerId} className="w-full h-full" />

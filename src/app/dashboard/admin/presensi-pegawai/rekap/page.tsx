@@ -63,7 +63,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
   const td = "border border-gray-800 px-1 py-0.5 align-middle text-[8px] text-center";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 8mm; }"}</style>
 
       <PageHeader icon={<UserCheck size={22} />} title="Rekap Presensi Pegawai" description={monthLabel} printHidden />

@@ -146,7 +146,7 @@ export default function NotulenRapatFormPage() {
         description="Isi langsung di lembar kerja di bawah — tampilannya mengikuti dokumen yang akan dicetak"
       />
 
-      <div className="alat-aksi justify-end mb-4">
+      <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/admin/notulen-rapat" className="btn-modal-cancel">
           <ArrowLeft size={18} /> Kembali
         </Link>
@@ -207,7 +207,7 @@ export default function NotulenRapatFormPage() {
           </div>
         </div>
 
-        <div className="alat-aksi justify-end mb-6">
+        <div className="alat-aksi justify-end mb-5">
           <div className="text-sm text-center min-w-[220px]">
             <p className="mb-1 text-primary-900">Singojuruh, {fmtLong(date)}</p>
             <p className="mb-14 text-primary-900">Kepala SMK Al Munawwir IIBS</p>

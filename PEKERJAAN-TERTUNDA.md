@@ -35,7 +35,9 @@ antar guru per mapel, Prota/Promes & pekan efektif otomatis, e-portofolio & CV s
 **29** (presensi pegawai mandiri: pindai QR gerbang lewat HP & pindai kartu pegawai di stasiun — satu logika di
 `src/lib/presensi-pegawai.ts`, tidak menimpa keputusan TU; kartu identitas digital `/kartu-identitas` untuk semua akun;
 header portal tidak lagi dobel — PageHeader otomatis terang di dalam PortalShell; dashboard Kesiswaan diperkaya)
-· **30 (antre)** nama di layar umum: "M. Rizky Maulana" → "Rizky M." (`src/lib/nama-panggilan.ts`).
+· **30 LIVE** nama panggilan di layar umum: "M. Rizky Maulana" → "Rizky M." (`src/lib/nama-panggilan.ts`) — dipakai
+papan peringkat perpustakaan untuk baris SISWA saja (nama guru tetap utuh); dokumen resmi & daftar kerja tetap nama
+lengkap · geseran tenggat pengawas tampil dalam jam, bukan ratusan menit (`src/lib/durasi-teks.ts`).
 
 Permintaan user 18 September 2026: daftar antrean besar di bawah DITUNDA — kerjakan dulu temuan harian (tampilan &
 pertanyaan yang muncul saat mencoba).
@@ -56,7 +58,8 @@ Antrean (urut pengerjaan):
 - [x] B. Absensi — izin/sakit online ortu (lampiran rahasia), persentase kehadiran per semester di rapor, rekap harian ke wali kelas
 - [x] Fondasi: antrean "Perlu tindakan" per jabatan, formulir berlampiran foto, pindai kamera dipakai ulang
 - [ ] Dashboard Kepala Sekolah — SELESAI: eksekutif, antrean persetujuan, tren, PKG & supervisi online (27). SISA: bukti akreditasi per butir
-- [ ] Kurikulum — SELESAI: progres penilaian, ketuntasan KKM + remedial, rekap 24 JP. SISA: supervisi, prota/promes & pekan efektif otomatis,
+- [ ] Kurikulum — SELESAI: progres penilaian, ketuntasan KKM + remedial, rekap 24 JP, progres Form Nilai Rapor per kelas +
+      daftar guru yang belum mengirim (24 Sep 2026 — pemantau lama hanya melihat nilai jurnal, bukan jalur rapor resmi). SISA: supervisi, prota/promes & pekan efektif otomatis,
       pembagian pengawas ujian otomatis, bank soal bersama per mapel, kelengkapan perangkat ajar)
 - [x] CBT (ujian susulan & remedial, simpan soal ke bank soal, tandai soal jelek dari analisis butir)
 - [ ] Kesiswaan & BK — SELESAI: poin & surat panggilan, e-voting OSIS, janji konseling + rujukan, kotak aspirasi, AKPD &
@@ -900,3 +903,67 @@ yang bisa dipakai ulang untuk angkatan berikutnya.
 - **Halaman lain yang menarik semua siswa** (Siswa 3,6 dtk / Buku Induk landing 4,7 dtk / Buku
   Klapper 3,4 dtk) masih wajar. Kalau nanti terasa berat, polanya tinggal disalin dari perbaikan
   Tabel Lengkap Buku Induk (paginasi + indeks pencarian lazy).
+
+## Temuan 24 September 2026 (dicatat untuk dikerjakan menyusul)
+
+- [ ] **Superadmin terlempar ke Portal Guru saat membuka dashboard jabatan.** Langkah: masuk sebagai Super Admin →
+      buka Dashboard BKK → lanjut klik Tracer Study. Hasilnya header berubah jadi "Dashboard Guru" dan sidebarnya
+      tinggal beberapa grup (Kesiswaan & BK, Kinerja & Piket, Sarana & Perpustakaan, Akun Saya). Ini persis yang
+      dilarang CLAUDE.md #55 — cermin admin sudah ada di `/dashboard/admin/dashboard-jabatan/*`, berarti masih ada
+      tautan (kemungkinan di dalam `BkkDashboard`/kartu tracer study) yang menunjuk rute `/dashboard/teacher/*`.
+      **Akar masalah sudah dipastikan (24 Sep 2026):** sidebar Admin sendiri sudah benar menunjuk cermin admin,
+      tetapi TAUTAN DI DALAM komponen dashboard jabatannya dipatok mati ke rute guru. Terhitung **42 tautan
+      `"/dashboard/teacher/..."` di 11 berkas** `src/components/jabatan/`: WakasekKesiswaan (13), Humas (7),
+      BukuPiketHarian (5), Branding (4), KepalaSekolah (4), WakasekKurikulum (3), WakasekSarpras (2), dan
+      Kaprogli/RekapUkk/PengesahanRapor/Bkk (masing-masing 1). Jadi begitu superadmin menekan pintasan apa pun
+      di dalam dashboard jabatan, ia pindah ke portal guru.
+      Perbaikan: beri komponen-komponen itu prop `basePath` (pola `KalenderAbsensiCetak`/`BukuIndukGuruManager`),
+      diisi `/dashboard/admin/dashboard-jabatan` dari pembungkus admin dan `/dashboard/teacher` dari pembungkus
+      guru — bukan menambal satu per satu tautannya.
+
+- [ ] **Dashboard Operator Sekolah: baris kelengkapan data harus bisa dibuka.** Sekarang "NISN kosong 85",
+      "NIK kosong 97", "Alamat kosong 100" hanya angka. Yang diminta: diklik → muncul DAFTAR NAMA siswa/GTK yang
+      datanya kosong → nama diklik → langsung masuk **Buku Induk** orang itu dan bisa langsung dilengkapi.
+      (Anak panah di tiap baris sudah ada, tinggal diberi isi.)
+
+- [ ] **UKS ⇄ Buku Induk: tinggi & berat badan satu sumber, dua arah.** Pemeriksaan TB/BB di UKS dan kolom
+      kesehatan di Buku Induk sekarang terpisah. Yang diminta: nilainya bisa diambil dari Buku Induk, dan bila
+      diperbarui di salah satu (mis. hasil pengukuran baru di UKS), yang lain ikut ter-update — supaya tidak ada
+      dua angka berbeda untuk siswa yang sama.
+
+- [ ] **Seragamkan tata letak SEMUA halaman dengan pola Dashboard Kurikulum** (permintaan user 24 Sep 2026:
+      "tata letaknya bagus … jika diperlukan di semua halaman koreksi semuanya agar seragam" — dikerjakan nanti,
+      bukan sekarang). Pola acuannya, urut dari atas:
+      1. `PageHeader` navy + keterangan singkat berisi konteks (mis. "— Semester Ganjil 2026/2027").
+      2. **Kartu angka** `.kisi-kartu kisi-kartu-N` berisi `StatTile` tampilan lembut — angka yang paling sering
+         ditanyakan pimpinan, bukan semua angka yang bisa dihitung.
+      3. **Baris pintasan** 4 kartu `panel panel-interaktif` ke halaman yang biasanya dibuka setelah melihat
+         dashboard itu.
+      4. **Pita tab** (`alat-tab`, aktif = `bg-primary-900 text-white`) untuk membagi isi, dengan angka di dalam
+         label tabnya.
+      5. **Dua kolom** `xl:grid-cols-12`: tabel `.data-table` di kiri (`xl:col-span-8`) + panel daftar tindak
+         lanjut di kanan (`xl:col-span-4`), `items-start` supaya tidak saling menarik tinggi.
+      Prioritas penerapan: 12 dashboard jabatan lebih dulu (paling sering dilihat pimpinan), baru halaman fitur
+      lain. Sapuannya sekalian dengan perbaikan `basePath` di butir sebelumnya karena menyentuh berkas yang sama.
+
+## Temuan 25 September 2026
+
+- [x] **Papan ruang guru (panel bergilir)** — SELESAI, build 118. `Layar.papanJenis = "GURU"` + `papanGiliran`
+      (bawaan 120 detik). Lima panel dari `src/lib/papan-pegawai.ts` (presensi pegawai, jurnal belum diisi,
+      absensi kelas belum diisi, buku piket, rekap kehadiran siswa) ditambah pengumuman/agenda/bel yang sudah
+      ada di muatan halaman. QR presensi tetap di tempatnya, tidak ikut bergilir.
+- [x] **Satu tempat menambah ruang** — SELESAI. Halaman **Daftar Ruang** (build 117) plus formulir Ruang Ujian
+      yang sekarang MEMILIH nama dari daftar itu (build 118), bukan mengetik lepas.
+- [ ] **Nama ruang TV masih generik.** Tiga layar terdaftar sebagai "Ruang 1" / "Ruang 2" karena nama itu yang
+      ada di daftar ruang ujian lama. Perlu diperbaiki bersama petugas: tambahkan nama sebenarnya di
+      **Daftar Ruang** (Ruang Rapat, Ruang TU, Lab TKJ), lalu ubah ruang tiap TV lewat tombol ubah di Papan & TV.
+- [ ] **Tombol pasang APK papan ke TV dari dashboard.** Sekarang pemasangan `myalwis-papan.apk` masih manual lewat
+      `adb install`. Rencana: tombol di Dinding Layar yang menjalankan `adb install -r` dari berkas di
+      `public/unduh/`, dengan catatan Log Aktivitas seperti perintah tombol lainnya.
+- [ ] **Buka papan otomatis sebaiknya menuju APLIKASI, bukan peramban.** `bukaPapanOtomatis` masih memakai
+      intent VIEW (peramban TV). Setelah APK papan terpasang di semua TV, ganti ke
+      `am start -n sch.almunawwir.papan/.MainActivity -e alamat "<url>"` supaya papan tidak bergantung pada
+      peramban bawaan TV yang berbeda-beda tiap merek.
+- [ ] **Uji suara Indonesia di TV.** Pengumuman suara memakai `speechSynthesis` dengan `lang="id-ID"`. Belum
+      diketahui apakah TCL/Polytron punya mesin suara Indonesia. Kalau tidak ada, sediakan cadangan: unggah
+      berkas audio pengumuman dan putar itu (nada perhatian + tulisan besar sudah jalan tanpa mesin suara).

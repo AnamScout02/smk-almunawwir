@@ -163,7 +163,7 @@ export default async function TeacherDashboard() {
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <Link href={`/dashboard/teacher/attendance/${cls.id}`}
-                          className="sentuh flex items-center justify-center rounded-xl bg-primary-900 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700">
+                          className="btn-modal-save justify-center">
                           Isi Absensi
                         </Link>
                         <Link href={`/dashboard/teacher/dkn/${cls.id}`}

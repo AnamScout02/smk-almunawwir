@@ -92,7 +92,7 @@ export default async function TeacherProfilePage() {
 
       {/* Ganti password */}
       <div className="panel p-6">
-        <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
+        <h3 className="font-heading font-semibold text-primary-900 mb-4">Ganti Password</h3>
         <ChangePasswordForm />
       </div>
 

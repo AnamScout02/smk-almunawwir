@@ -10,7 +10,8 @@ import {
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard, Heart, MoreHorizontal, ScanLine, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, CalendarOff, HandCoins, ScanSearch,
-  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid } from "lucide-react";
+  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
 import { BellRing, DatabaseZap, QrCode, Siren, MessagesSquare, MessageSquareHeart, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, Camera, CircleHelp, Gauge, Wrench, FlaskConical, Megaphone, Home, Phone, Target, Handshake, Palette } from "lucide-react";
@@ -189,13 +190,14 @@ export const menuGroups = [
     label: "Sarana & Perpustakaan",
     items: [
       { href: "/dashboard/admin/inventaris", label: "Inventaris Barang", icon: Boxes, badge: 0 },
+      { href: "/dashboard/admin/daftar-ruang", label: "Daftar Ruang", icon: DoorOpen, badge: 0 },
       { href: "/dashboard/admin/layanan-sarpras", label: "Layanan Sarpras", icon: Hammer, badge: 0 },
+      { href: "/dashboard/admin/jaringan", label: "Jaringan & Layar", icon: Network, badge: 0 },
       { href: "/dashboard/admin/usulan-alat", label: "Usulan Alat & Bahan", icon: Boxes, badge: 0 },
       { href: "/pusat-perpustakaan", label: "Pusat Perpustakaan", icon: Library, badge: 0 },
       { href: "/perpustakaan", label: "Perpustakaan Digital", icon: BookOpen, badge: 0 },
       { href: "/dashboard/admin/buku-saya", label: "Buku Saya", icon: BookOpen, badgeKey: "overdueBooks" as const },
       { href: "/dashboard/admin/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy, badge: 0 },
-      { href: "/dashboard/admin/jaringan", label: "Jaringan Sekolah", icon: Network, badge: 0 },
       { href: "/dashboard/admin/bel-sekolah", label: "Bel Sekolah Otomatis", icon: Bell, badge: 0 },
     ],
   },

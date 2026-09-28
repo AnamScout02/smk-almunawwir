@@ -87,7 +87,7 @@ export default function KeamananSesiManager() {
       <PageHeader icon={<ShieldCheck size={22} />} title="Keamanan & Sesi Login"
         description="Siapa sedang masuk dari perangkat apa, cabut sesi, dan batasi satu akun satu perangkat" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div> : (
+      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           <div className="kisi-kartu kisi-kartu-4">
             <StatTile value={data.sesi.length} label="Sesi Aktif" icon={MonitorSmartphone} color="primary" />
@@ -112,7 +112,7 @@ export default function KeamananSesiManager() {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {PERAN.map(p => (
                   <label key={p.value} className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition ${pilihan.includes(p.value) ? "border-primary-300 bg-primary-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                    <input type="checkbox" checked={pilihan.includes(p.value)} className="mt-0.5 accent-primary-700"
+                    <input type="checkbox" checked={pilihan.includes(p.value)} className="mt-0.5"
                       onChange={e => setPilihan(v => e.target.checked ? [...v, p.value] : v.filter(x => x !== p.value))} />
                     <span>
                       <span className="text-sm font-semibold text-gray-800">{p.label}</span>

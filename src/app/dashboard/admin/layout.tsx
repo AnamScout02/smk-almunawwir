@@ -34,12 +34,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return (
       <div className="dashboard-shell">
         {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
-        <div className="flex min-h-screen">
+        <div className="flex min-h-dvh">
           <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} jabatanNames={jabatanNames} isFullTas={isFullTasJabatan(jabatanNames)} impersonating={!!impersonator} />
           {/* pb-[...]: ruang utk bottom nav bar mobile (fixed, MobileBottomNav di TasSidebar) —
               calc(4rem + safe-area-inset-bottom), BUKAN pb-16 polos, supaya di device ber-notch
               konten paling bawah tidak ketutup strip aman nav (fix responsif 2026-08-23). */}
-          <main className="flex-1 min-w-0 min-h-screen lg:pt-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0">
+          <main className="flex-1 min-w-0 min-h-dvh lg:pt-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0">
             {/* Satu pintu notifikasi (dulu lonceng AdminTopBar terpisah dari tombol notifikasi melayang). */}
             <PusatNotifikasiPortal tindakan={[
               { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
@@ -75,7 +75,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="dashboard-shell">
       {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
-      <div className="flex min-h-screen">
+      <div className="flex min-h-dvh">
         <AdminSidebar
           unreadMessages={unreadMessages}
           pendingAdmissions={pendingAdmissions}
@@ -98,7 +98,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             TETAP ada (ruang bottom nav bar — genuinely baru, tidak ada halaman yg sudah
             kompensasi) — pakai calc(4rem + safe-area-inset-bottom) bukan pb-16 polos, supaya di
             device ber-notch/home-indicator konten tidak ketutup (fix responsif 2026-08-23). */}
-        <main className="flex-1 min-w-0 min-h-screen pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0">
+        <main className="flex-1 min-w-0 min-h-dvh pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0">
           <PusatNotifikasiPortal tindakan={[
             { label: "Pesan masuk belum dibaca", count: unreadMessages, href: "/dashboard/admin/messages" },
             { label: "Pendaftaran PPDB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },

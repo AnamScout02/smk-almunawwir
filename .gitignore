@@ -52,3 +52,6 @@ android-ujian/build/
 
 # APK hasil build (dibangun ulang dengan android-ujian/bangun-apk.sh)
 public/unduh/*.apk
+
+# Arsip cadangan untuk diunduh ke luar server (jangan masuk git)
+unduhan-cadangan/

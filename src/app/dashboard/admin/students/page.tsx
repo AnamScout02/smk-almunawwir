@@ -109,7 +109,7 @@ export default function AdminStudentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : (
         <div id="daftar-siswa" className="space-y-6 scroll-mt-40">
           {/* Per kelas */}

@@ -203,7 +203,7 @@ export default function NominatifManager() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : (
         <>
           <div className="panel p-5 mb-6">
@@ -211,7 +211,7 @@ export default function NominatifManager() {
             <Select value={academicYearId} onChange={setAcademicYearId}
               options={years.map(y => ({ value: y.id, label: y.isActive ? `${y.name} (Aktif)` : y.name }))}
               placeholder="Pilih tahun ajaran..." />
-            {years.length === 0 && <p className="text-xs text-gray-400 mt-2">Belum ada Tahun Ajaran — tambahkan dulu di menu Tahun Ajaran.</p>}
+            {years.length === 0 && <p className="text-sm text-gray-400 mt-2">Belum ada Tahun Ajaran — tambahkan dulu di menu Tahun Ajaran.</p>}
           </div>
 
           <div className="panel p-5 mb-6">
@@ -318,11 +318,11 @@ export default function NominatifManager() {
                               {savingMajor === ov.majorId ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Simpan
                             </button>
                             <Link href={`/dashboard/admin/nominatif/${ov.majorId}/cetak${yearQuery}`} title="Cetak Nominatif"
-                              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">
+                              className="btn-modal-cancel px-3 text-xs">
                               <Printer size={12} /> Nominatif
                             </Link>
                             <Link href={`/dashboard/admin/nominatif/${ov.majorId}/rekap-calon${yearQuery}`} title="Cetak Rekap Calon"
-                              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                              className="btn-modal-cancel px-3 text-xs">
                               <ClipboardList size={12} /> Rekap Calon
                             </Link>
                           </div>
@@ -356,8 +356,8 @@ export default function NominatifManager() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2.5 mb-5">
-            <div className="relative w-full sm:w-56">
+          <div className="baris-alat mb-5">
+            <div className="alat-cari">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={rosterSearch} onChange={e => setRosterSearch(e.target.value)} placeholder="Cari nama atau NIS..." className="input-field pl-10" />
             </div>
@@ -368,7 +368,7 @@ export default function NominatifManager() {
           </div>
 
           {loadingRoster ? (
-            <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+            <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
           ) : filteredRoster.length === 0 ? (
             <EmptyState icon={Users2} title="Tidak Ada Siswa" description="Tidak ada siswa Kelas XII yang cocok dengan filter." />
           ) : (

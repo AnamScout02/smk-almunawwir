@@ -448,7 +448,7 @@ export default function KedisiplinanManager() {
           <div className="flex items-center gap-2">
             <Select value={dayBulkStatus} onChange={setDayBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
             <button onClick={applyDayBulkStatus} disabled={daySlots.length === 0 || !dayBulkStatus}
-              className="text-xs font-semibold px-3 py-2.5 rounded-lg border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40">
+              className="btn-modal-cancel px-3 text-xs whitespace-nowrap">
               Terapkan ke Semua
             </button>
           </div>
@@ -587,7 +587,7 @@ export default function KedisiplinanManager() {
         <PageSkeleton />
       ) : (
         <>
-          <div className="kisi-kartu kisi-kartu-3 mb-6">
+          <div className="kisi-kartu kisi-kartu-3 mb-5">
             <StatTile color="emerald" value={hadir} label="Hadir" icon={CheckCircle2} />
             <StatTile color="amber" value={terlambat} label="Terlambat" icon={Clock} />
             <StatTile color="red" value={alpha} label="Alpha" icon={XCircle} />
@@ -725,7 +725,7 @@ export default function KedisiplinanManager() {
                 <div className="flex items-center gap-2">
                   <Select value={bulkStatus} onChange={setBulkStatus} options={STATUS_OPTIONS} placeholder="Pilih Status" />
                   <button type="button" onClick={applyBulkStatus} disabled={!bulkStatus}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg border border-primary-100 text-primary-700 hover:bg-primary-100 transition whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="btn-modal-cancel px-3 text-xs whitespace-nowrap">
                     Terapkan ke Semua Jam
                   </button>
                 </div>

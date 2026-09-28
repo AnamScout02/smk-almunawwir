@@ -55,7 +55,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 print:hidden">
+      <div className="panel p-5 mb-6 print:hidden">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-primary-900">Pilih kelas yang akan dicetak ({selectedClasses.length}/{classes.length} dipilih)</p>
           <div className="flex gap-2">
@@ -99,7 +99,7 @@ export default function CetakDataKelasClient({ classes, logoUrl }: { classes: Cl
       </div>
 
       {selectedClasses.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center text-gray-400 text-sm print:hidden">
+        <div className="panel p-16 text-center text-gray-400 text-sm print:hidden">
           Belum ada kelas dipilih untuk dicetak.
         </div>
       ) : (

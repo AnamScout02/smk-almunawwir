@@ -40,7 +40,7 @@ export default async function CetakLegalisirPage({ searchParams }: { searchParam
   const td = "border border-gray-800 px-2 py-1 align-middle";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 1.2cm; }"}</style>
 
       <PageHeader icon={<Stamp size={22} />} title="Cetak Rekap Legalisir" description={monthLabel} printHidden />

@@ -193,7 +193,7 @@ export default function SuratTugasManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={ClipboardSignature} title="Belum Ada Surat Tugas"
           description="Buat surat tugas pertama lewat tombol di atas — nomornya terbit otomatis." />
@@ -294,7 +294,7 @@ export default function SuratTugasManager() {
             </div>
 
             {form.pegawai.length === 0 ? (
-              <p className="text-xs text-gray-400">Belum ada pegawai dipilih.</p>
+              <p className="text-sm text-gray-400">Belum ada pegawai dipilih.</p>
             ) : (
               <div className="space-y-2">
                 {form.pegawai.map((p, i) => (
@@ -331,7 +331,7 @@ export default function SuratTugasManager() {
               </button>
             </div>
             {form.pengikut.length === 0 ? (
-              <p className="text-xs text-gray-400">Tidak ada pengikut.</p>
+              <p className="text-sm text-gray-400">Tidak ada pengikut.</p>
             ) : (
               <div className="space-y-2">
                 {form.pengikut.map((p, i) => (

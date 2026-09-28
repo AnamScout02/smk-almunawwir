@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileType2, Printer } from "lucide-react";
 import OnlyofficeEditor from "@/components/shared/OnlyofficeEditor";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export default async function EditWordSuratPage({ params }: { params: Promise<{ id: string }> }) {
   await verifyTasAccess();
@@ -33,9 +34,7 @@ export default async function EditWordSuratPage({ params }: { params: Promise<{ 
     <div className="flex flex-col h-screen">
       <div className="flex items-center justify-between px-4 py-2.5 bg-primary-900 text-white shrink-0">
         <div className="flex items-center gap-3">
-          <Link href={backHref} className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition">
-            <ArrowLeft size={16} /> Kembali
-          </Link>
+          <TombolKembali href={backHref} className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition" />
           <span className="flex items-center gap-2 text-sm font-semibold">
             <FileType2 size={15} className="text-gold" /> Editor Word — {surat.nomor}
           </span>

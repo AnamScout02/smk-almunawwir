@@ -93,7 +93,7 @@ export default function PusatNotifikasiHalaman({ tindakan, notifikasi, pengumuma
   return (
     <div className="space-y-5">
       <div className="baris-alat">
-        <div className="alat-tab flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
+        <div className="alat-tab flex gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1">
           {TAB.map(t => (
             <button key={t.nilai} type="button" onClick={() => setTab(t.nilai)}
               className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab === t.nilai ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>

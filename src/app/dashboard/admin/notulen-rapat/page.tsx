@@ -64,7 +64,7 @@ export default function NotulenRapatPage() {
           (m.place || "").toLowerCase().includes(q)
         );
         return loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : meetings.length === 0 ? (
         <EmptyState icon={NotebookPen} title="Belum Ada Notulen Rapat" description="Tambahkan catatan rapat pertama." />
       ) : filtered.length === 0 ? (

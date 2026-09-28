@@ -104,11 +104,11 @@ export default function SchoolPeriodsPage() {
 
       <div className="flex flex-wrap gap-2 mb-5">
         {periods.length === 0 ? (
-          <button onClick={() => seedDefault(false)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition disabled:opacity-60">
+          <button onClick={() => seedDefault(false)} disabled={seeding} className="btn-modal-cancel">
             {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Buat Default Otomatis
           </button>
         ) : (
-          <button onClick={() => seedDefault(true)} disabled={seeding} className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100 transition disabled:opacity-60">
+          <button onClick={() => seedDefault(true)} disabled={seeding} className="btn-modal-cancel">
             {seeding ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />} Ganti dengan Default
           </button>
         )}
@@ -118,7 +118,7 @@ export default function SchoolPeriodsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : periods.length === 0 ? (
         <Alert variant="warning">
           Belum ada kerangka jam pelajaran. Klik <strong>Buat Default Otomatis</strong> untuk mulai dari template standar (Senin–Sabtu 10 jam, Jumat 6 jam), lalu sesuaikan sesuai kebutuhan.
@@ -135,7 +135,7 @@ export default function SchoolPeriodsPage() {
               </div>
               <div className="bg-white divide-y divide-gray-50">
                 {byDay[day].length === 0 ? (
-                  <p className="px-4 py-4 text-xs text-gray-400 text-center">Belum ada jam</p>
+                  <p className="px-4 py-10 text-sm text-gray-400 text-center">Belum ada jam</p>
                 ) : byDay[day].map(p => (
                   <div key={p.id} className={`px-4 py-3 flex items-start justify-between group hover:bg-gray-50 ${p.isBreak ? "bg-gray-50/60" : ""}`}>
                     <div className="flex-1 min-w-0">

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import type { Perubahan } from "@/lib/buku-induk-diff";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Administrator", TAS: "Tata Usaha", TEACHER: "Guru", STUDENT: "Siswa",
@@ -40,10 +41,7 @@ export default async function RiwayatSiswaPage({ params }: { params: Promise<{ i
         description={`${siswa.user.name} — ${siswa.nis}${siswa.class ? ` · ${siswa.class.name}` : ""}`} />
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Link href="/dashboard/admin/buku-induk/siswa"
-          className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/buku-induk/siswa"} />
         <div className="flex-1" />
         <Link href={`/dashboard/admin/buku-induk/siswa/${siswa.id}/cetak`}
           className="btn-modal-cancel">

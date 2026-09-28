@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Download, X } from "lucide-react";
 import { bisaDipasang, langganPasang, pasangSekarang, sudahTerpasang } from "@/lib/pasang-pwa";
+import { lewatAplikasi } from "@/lib/aplikasi-ujian";
 
 const DISMISS_KEY = "pwa-install-dismissed-at";
 const DISMISS_DAYS = 14; // muncul lagi kalau sudah lama di-dismiss, bukan permanen ilang selamanya
@@ -20,7 +21,7 @@ export default function InstallPwaPrompt() {
   const [ditutup, setDitutup] = useState(true);
 
   useEffect(() => {
-    if (sudahTerpasang()) return;
+    if (sudahTerpasang() || lewatAplikasi(navigator.userAgent)) return; // di Aplikasi SMK Android tidak perlu ajakan pasang PWA
     let dismissedAt = 0;
     try { dismissedAt = Number(localStorage.getItem(DISMISS_KEY) ?? 0); } catch {}
     setDitutup(dismissedAt > 0 && Date.now() - dismissedAt < DISMISS_DAYS * 86400000);
@@ -49,7 +50,7 @@ export default function InstallPwaPrompt() {
         <Download size={18} className="text-primary-700" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-navy">Pasang Aplikasi</p>
+        <p className="text-sm font-semibold text-navy">Pasang MyAlwis</p>
         <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">Akses lebih cepat dari layar utama HP/laptop Anda.</p>
         <div className="flex items-center gap-2 mt-2.5">
           <button type="button" onClick={install}

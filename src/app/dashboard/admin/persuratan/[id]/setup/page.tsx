@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Loader2, Wand2, FileType2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import DatePicker from "@/components/shared/DatePicker";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 const KLASIFIKASI_SUGGESTIONS = [
   { code: "A.1", label: "A.1 — Surat Keputusan Yayasan" },
@@ -104,9 +105,7 @@ export default function SuratKeluarSetupPage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/admin/persuratan" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/persuratan"} />
       </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}
@@ -131,7 +130,7 @@ export default function SuratKeluarSetupPage() {
           <div className="flex gap-2">
             <input value={nomor} onChange={e => setNomor(e.target.value)} className="input-field flex-1 font-mono" placeholder="359/B.2/SMK_AM-IIBS/026/VII/2026" />
             <button type="button" onClick={handleGenerateNomor} disabled={generating}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold transition-colors">
+              className="btn-modal-cancel shrink-0 px-3 text-xs">
               {generating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Otomatis
             </button>
           </div>

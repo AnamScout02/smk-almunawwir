@@ -43,7 +43,7 @@ export default async function TeacherSchedulePage() {
           {label}
         </h2>
         {schedules.length === 0 ? (
-          <div className="panel p-6 text-center text-xs text-gray-400">
+          <div className="panel p-6 text-center text-sm text-gray-400">
             Belum ada jadwal di minggu ini.
           </div>
         ) : (

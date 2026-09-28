@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2, BarChart2 } from "luci
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import MonthPicker from "@/components/shared/MonthPicker";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface StudentSummary {
   id: string;
@@ -61,9 +62,7 @@ export default function AttendanceSummaryPage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/teacher/attendance" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/teacher/attendance"} />
       </div>
 
       <div className="mb-4 flex items-end gap-3 flex-wrap">

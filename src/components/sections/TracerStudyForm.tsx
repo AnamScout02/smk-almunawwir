@@ -96,7 +96,7 @@ export default function TracerStudyForm({ lang = "id" }: { lang?: Lang }) {
 
   if (step === "done") {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+      <div className="panel p-8 text-center">
         <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={28} className="text-emerald-600" />
         </div>
@@ -108,7 +108,7 @@ export default function TracerStudyForm({ lang = "id" }: { lang?: Lang }) {
 
   if (step === "form" && data) {
     return (
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="panel p-6 space-y-4">
         <div className="flex items-start gap-3 bg-primary-50 border border-primary-100 rounded-xl p-3 mb-2">
           <ShieldCheck size={18} className="text-primary-700 shrink-0 mt-0.5" />
           <div>
@@ -144,7 +144,7 @@ export default function TracerStudyForm({ lang = "id" }: { lang?: Lang }) {
           <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} className="input-field resize-none" placeholder={c.catatanPh} />
         </div>
         <button type="submit" disabled={saving}
-          className="w-full inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-60">
+          className="btn-primary w-full disabled:opacity-60">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {c.simpan}
         </button>
       </form>
@@ -152,7 +152,7 @@ export default function TracerStudyForm({ lang = "id" }: { lang?: Lang }) {
   }
 
   return (
-    <form onSubmit={handleVerify} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+    <form onSubmit={handleVerify} className="panel p-6 space-y-4">
       <p className="text-xs text-gray-400">{c.petunjuk}</p>
       {verifyError && <p className="error-msg">{verifyError}</p>}
       <div>
@@ -164,7 +164,7 @@ export default function TracerStudyForm({ lang = "id" }: { lang?: Lang }) {
         <DatePicker value={birthDate} onChange={setBirthDate} />
       </div>
       <button type="submit" disabled={verifying}
-        className="w-full inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-60">
+        className="btn-primary w-full disabled:opacity-60">
         {verifying ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />} {c.verifikasi}
       </button>
     </form>

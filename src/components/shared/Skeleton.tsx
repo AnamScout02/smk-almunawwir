@@ -7,7 +7,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 /** Skeleton baris StatTile (grid kartu ringkasan angka). */
 export function StatTileSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="kisi-kartu kisi-kartu-4">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-2xl p-4 bg-gray-100 animate-pulse h-[86px]" />
       ))}

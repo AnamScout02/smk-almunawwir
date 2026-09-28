@@ -2,5 +2,5 @@
 import NewsManager from "@/components/shared/NewsManager";
 
 export default function TeacherBrandingNewsPage() {
-  return <NewsManager />;
+  return <NewsManager kembaliHref="/dashboard/teacher/branding" />;
 }

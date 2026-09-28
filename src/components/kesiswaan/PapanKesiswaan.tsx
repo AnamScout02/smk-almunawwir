@@ -35,7 +35,7 @@ export default function PapanKesiswaan({ sertifikatBase, tanpaHeader = false }: 
   return (
     <div className={tanpaHeader ? "" : "p-6 lg:p-8 pt-16 lg:pt-8"}>
       {!tanpaHeader && <PageHeader icon={<Activity size={22} />} title="Papan Kesiswaan" description="Kehadiran hari ini, kelas yang perlu perhatian, dan prestasi siswa" />}
-      <div className="alat-tab mb-5 flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="alat-tab mb-5 flex w-fit gap-1 rounded-xl border border-gray-100 bg-white p-1">
         {([["hari", "Kehadiran hari ini"], ["kerawanan", "Peta kerawanan"], ["prestasi", "Prestasi"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
         ))}
@@ -91,7 +91,7 @@ export default function PapanKesiswaan({ sertifikatBase, tanpaHeader = false }: 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
           <div className="panel p-5 xl:col-span-4 min-w-0">
             <p className="label-kecil mb-3">Poin prestasi tertinggi · {pres.semester}</p>
-            {pres.teratas.length === 0 ? <p className="text-sm text-gray-500">Belum ada prestasi semester ini.</p>
+            {pres.teratas.length === 0 ? <p className="text-sm text-gray-400">Belum ada prestasi semester ini.</p>
               : <BarDaftar data={pres.teratas.map((t, i) => ({ kunci: `${i}`, label: t.nama, sublabel: `${t.kelas} · ${t.jumlah} prestasi`, nilai: t.poin }))} satuan="poin" />}
           </div>
           <div className="panel overflow-x-auto xl:col-span-8 min-w-0">

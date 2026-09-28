@@ -18,7 +18,7 @@ export default async function Page() {
     .catch(() => ({} as Record<string, string>));
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col">
+    <main className="min-h-dvh bg-cream flex flex-col">
       {/* Kepala navy — gaya yang sama dengan kop dokumen & header dashboard */}
       <header className="relative overflow-hidden text-center px-5 pt-9 pb-16" style={{ background: NAVY_GRADIENT }}>
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none"

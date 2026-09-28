@@ -6,6 +6,7 @@ import { Save, Loader2, ArrowLeft, Plus, X, ImagePlus, Trash2 } from "lucide-rea
 import PageHeader from "@/components/admin/PageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface GalleryPhoto {
   id: string;
@@ -154,16 +155,13 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <button onClick={() => router.push("/dashboard/admin/majors")}
-          className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-          <ArrowLeft size={16} /> Kembali
-        </button>
+        <TombolKembali href="/dashboard/admin/majors" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
           <div className="panel p-6 space-y-4">
-            <h2 className="font-heading font-bold text-navy">Konten Utama</h2>
+            <h2 className="font-heading font-semibold text-navy">Konten Utama</h2>
             {error && <p className="error-msg">{error}</p>}
             <div>
               <label className="label-field">Tagline</label>
@@ -204,17 +202,17 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="panel p-6 space-y-4">
-            <h2 className="font-heading font-bold text-navy">Kompetensi yang Dipelajari</h2>
+            <h2 className="font-heading font-semibold text-navy">Kompetensi yang Dipelajari</h2>
             <ListEditor label="" items={major.skills} onChange={v => update("skills", v)} placeholder="cth: Instalasi & Konfigurasi Jaringan Komputer" />
           </div>
 
           <div className="panel p-6 space-y-4">
-            <h2 className="font-heading font-bold text-navy">Peluang Karier</h2>
+            <h2 className="font-heading font-semibold text-navy">Peluang Karier</h2>
             <ListEditor label="" items={major.career} onChange={v => update("career", v)} placeholder="cth: Network Administrator" />
           </div>
 
           <div className="panel p-6 space-y-4">
-            <h2 className="font-heading font-bold text-navy">Keunggulan Program</h2>
+            <h2 className="font-heading font-semibold text-navy">Keunggulan Program</h2>
             <ListEditor label="" items={major.features} onChange={v => update("features", v)} placeholder="cth: Lab Jaringan Cisco" />
           </div>
 
@@ -229,7 +227,7 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
 
         <div className="space-y-5">
           <div className="panel p-6 space-y-4">
-            <h2 className="font-heading font-bold text-navy flex items-center gap-2">
+            <h2 className="font-heading font-semibold text-navy flex items-center gap-2">
               <ImagePlus size={18} className="text-primary-700" /> Galeri Kegiatan
             </h2>
             <p className="text-xs text-gray-400">Foto kegiatan jurusan ini yang tampil di halaman detail publik.</p>

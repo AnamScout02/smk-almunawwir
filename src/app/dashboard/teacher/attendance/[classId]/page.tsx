@@ -6,6 +6,7 @@ import Link from "next/link";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import MonthlyAttendanceCalendar, { type CalendarRow } from "@/components/shared/MonthlyAttendanceCalendar";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Student {
   id: string;
@@ -140,9 +141,7 @@ export default function AbsensiPage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/teacher/attendance" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/teacher/attendance"} />
       </div>
 
       {/* Kiri: form input hari ini — Kanan: jurnal kalender bulan berjalan (live, refresh begitu disimpan) */}
@@ -179,7 +178,7 @@ export default function AbsensiPage() {
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat daftar siswa...</div>
             ) : students.length === 0 ? (
-              <div className="py-16 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
+              <div className="py-10 text-center text-gray-400">Tidak ada siswa di kelas ini.</div>
             ) : (
               <div className="divide-y">
                 {students.map((s, i) => (

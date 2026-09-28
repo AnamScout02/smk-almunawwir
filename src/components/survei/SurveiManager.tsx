@@ -11,6 +11,7 @@ import PilihBanyak from "@/components/shared/PilihBanyak";
 import { BarDaftar } from "@/components/shared/GrafikRingkas";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface Opsi { id: string; name: string }
 interface Ringkas { id: string; judul: string; jenis: string; status: string; anonim: boolean; hasilRahasia: boolean; targetRole: string; selesai: string | null; pembuatNama: string; jumlahRespons: number; jumlahPertanyaan: number; createdAt: string }
@@ -117,7 +118,7 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
         <PageHeader icon={<BarChart3 size={22} />} title={h?.survei.judul ?? "Hasil survei"} description={h ? `${h.total} dari ${h.sasaran} sasaran mengisi (${h.sasaran ? Math.round((h.total / h.sasaran) * 100) : 0}%)${h.survei.anonim ? " · tanpa nama" : ""}` : "Memuat…"} />
         <div className="baris-alat mb-5">
           <div className="alat-aksi">
-            <button type="button" onClick={() => setHasil(null)} className="btn-modal-cancel"><ArrowLeft /> Kembali</button>
+            <TombolKembali onClick={() => setHasil(null)} />
             <a href={`/api/survei/kelola/${hasil.id}/hasil?format=xlsx`} className="btn-modal-cancel"><Download /> Unduh Excel</a>
           </div>
         </div>
@@ -157,9 +158,9 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
                     </div>
                     <div className="min-w-0 space-y-4">
                       <div><p className="mb-1 text-sm font-semibold text-red-700">Tidak dipilih siapa pun (perlu perhatian)</p>
-                        {sosio.terisolasi.length ? <p className="text-sm text-gray-700">{sosio.terisolasi.join(", ")}</p> : <p className="text-sm text-gray-500">Tidak ada.</p>}</div>
+                        {sosio.terisolasi.length ? <p className="text-sm text-gray-700">{sosio.terisolasi.join(", ")}</p> : <p className="text-sm text-gray-400">Tidak ada.</p>}</div>
                       <div><p className="mb-1 text-sm font-semibold text-primary-900">Saling memilih ({sosio.timbalBalik.length} pasang)</p>
-                        {sosio.timbalBalik.length ? <ul className="space-y-0.5 text-sm text-gray-700">{sosio.timbalBalik.map(([a, b], i) => <li key={i}>{a} ↔ {b}</li>)}</ul> : <p className="text-sm text-gray-500">Belum ada.</p>}</div>
+                        {sosio.timbalBalik.length ? <ul className="space-y-0.5 text-sm text-gray-700">{sosio.timbalBalik.map(([a, b], i) => <li key={i}>{a} ↔ {b}</li>)}</ul> : <p className="text-sm text-gray-400">Belum ada.</p>}</div>
                       <p className="text-xs text-gray-500">Hasil sosiometri bersifat rahasia — dipakai untuk pengaturan kelompok belajar dan layanan BK, jangan diumumkan ke siswa.</p>
                     </div>
                   </div>
@@ -171,7 +172,7 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
                 <p className="text-sm font-semibold text-primary-900">{i + 1}. {p.teks}</p>
                 <p className="mb-3 text-xs text-gray-500">{p.dijawab} jawaban{p.rata != null ? ` · rata-rata ${p.rata.toLocaleString("id-ID")} dari ${p.maks}` : ""}</p>
                 {p.opsi && <BarDaftar data={p.opsi.map(o => ({ kunci: o.label, label: o.label, nilai: o.jumlah }))} satuan="orang" />}
-                {p.isian && (p.isian.length ? <ul className="max-h-72 space-y-1.5 overflow-y-auto text-sm text-gray-700">{p.isian.map((t, j) => <li key={j} className="rounded-lg bg-gray-50 px-3 py-2 whitespace-pre-line">{t}</li>)}</ul> : <p className="text-sm text-gray-500">Belum ada isian.</p>)}
+                {p.isian && (p.isian.length ? <ul className="max-h-72 space-y-1.5 overflow-y-auto text-sm text-gray-700">{p.isian.map((t, j) => <li key={j} className="rounded-lg bg-gray-50 px-3 py-2 whitespace-pre-line">{t}</li>)}</ul> : <p className="text-sm text-gray-400">Belum ada isian.</p>)}
               </div>
             ))}
           </div>
@@ -190,7 +191,7 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
         <PageHeader icon={<Pencil size={22} />} title={edit.judul || "Survei"} description={`${data?.jenis[edit.jenis] ?? edit.jenis} · ${STATUS[edit.status]?.label}${kunciPertanyaan ? ` · ${edit.jumlahRespons} jawaban (pertanyaan terkunci)` : ""}`} />
         <div className="baris-alat mb-5">
           <div className="alat-aksi">
-            <button type="button" onClick={() => setEdit(null)} className="btn-modal-cancel"><ArrowLeft /> Kembali</button>
+            <TombolKembali onClick={() => setEdit(null)} />
             <button type="button" disabled={sibuk} onClick={simpan} className="btn-modal-cancel"><Save /> Simpan</button>
             {edit.status !== "DIBUKA" && <button type="button" disabled={sibuk} onClick={() => ubahStatus(edit.id, "DIBUKA", true)} className="btn-modal-save"><Send /> Simpan & Buka</button>}
             {edit.status === "DIBUKA" && <button type="button" disabled={sibuk} onClick={() => ubahStatus(edit.id, "DITUTUP", true)} className="btn-modal-save"><Lock /> Simpan & Tutup</button>}

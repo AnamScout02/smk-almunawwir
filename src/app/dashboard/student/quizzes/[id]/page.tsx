@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, HelpCircle, Loader2, Send, Trophy, CheckCircle2, XCircle, Clock, Timer } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface QuestionView { id: string; question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctAnswer?: string }
 interface QuizDetail {
@@ -112,9 +113,7 @@ export default function StudentQuizPage() {
             <Timer size={14} /> {fmtClock(remaining)}
           </div>
         )}
-        <Link href="/dashboard/student/materials" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/student/materials"} />
       </div>
 
       {quiz.description && (

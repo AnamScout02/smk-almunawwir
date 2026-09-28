@@ -55,7 +55,7 @@ export default function PerangkatAktif() {
     <div className="panel p-6">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <h3 className="font-heading font-bold text-primary-900 flex items-center gap-2">
+          <h3 className="font-heading font-semibold text-primary-900 flex items-center gap-2">
             <MonitorSmartphone size={18} className="text-gold-dark" /> Perangkat Aktif
           </h3>
           <p className="text-xs text-gray-400 mt-0.5">Tempat akun ini sedang masuk. Keluarkan yang tidak Anda kenali.</p>

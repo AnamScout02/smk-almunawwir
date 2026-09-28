@@ -46,7 +46,7 @@ export default async function NominatifCetakPage({ params, searchParams }: {
   const tahunPelajaran = year?.name ?? "—";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 1cm; }"}</style>
 
       <PageHeader icon={<FileSpreadsheet size={22} />} title={`Nominatif — ${major.name}`}

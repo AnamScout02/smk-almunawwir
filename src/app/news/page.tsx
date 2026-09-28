@@ -71,7 +71,7 @@ export default async function NewsPage({
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-dvh">
         {/* Header */}
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
@@ -96,7 +96,7 @@ export default async function NewsPage({
                   name="q"
                   defaultValue={q}
                   placeholder={c.searchPh}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-primary-500"
+                  className="input-field pl-10"
                 />
                 {category && <input type="hidden" name="category" value={category} />}
               </form>

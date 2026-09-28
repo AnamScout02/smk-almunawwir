@@ -18,8 +18,10 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const ikon = (berkas: string) => `/ikon-aplikasi/${berkas}?v=${v}`;
   return {
     id: "/",
-    name: "SMK Al Munawwir IIBS",
-    short_name: "Al Munawwir",
+    // Nama aplikasi dipilih user 23 September 2026 ("Alwis" = julukan sekolah); short_name dipakai di
+    // layar utama HP sehingga sengaja pendek (label panjang dipotong sekitar 10–12 huruf oleh Android).
+    name: "MyAlwis Mobile — SMK Al Munawwir IIBS",
+    short_name: "MyAlwis",
     description:
       "Sistem manajemen akademik SMK Al Munawwir International Islamic Boarding School — nilai, absensi, jadwal, ujian, dan rapor.",
     // BUKAN "/dashboard" polos — halaman itu TIDAK PERNAH ADA (cuma ada /dashboard/admin,

@@ -40,7 +40,7 @@ export default function AbsensiJurnalPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : classes.length === 0 ? (
         <EmptyState icon={School} title="Belum Ada Kelas" description="Tambahkan kelas terlebih dahulu di menu Kelas." />
       ) : (

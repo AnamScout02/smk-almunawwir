@@ -7,6 +7,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Banner {
   id: string;
@@ -23,7 +24,7 @@ const empty: Omit<Banner, "id" | "order"> = {
   title: "", subtitle: "", imageUrl: "", linkUrl: "", linkText: "", active: true,
 };
 
-export default function BannerManager() {
+export default function BannerManager({ kembaliHref }: { kembaliHref?: string }) {
   const confirmDialog = useConfirm();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,7 @@ export default function BannerManager() {
         title="Banner / Hero"
         description="Kelola foto dan teks yang tampil di halaman utama website"
       />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
 
       <div className="alat-aksi justify-end mb-5">
         <button onClick={openNew} className="btn-modal-save">
@@ -82,13 +84,13 @@ export default function BannerManager() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
       ) : banners.length === 0 ? (
         <EmptyState icon={ImageIcon} title="Belum ada banner" description={'Klik "Tambah Banner" untuk membuat banner pertama'} />
       ) : (
         <div className="grid gap-4">
           {banners.map((b) => (
-            <div key={b.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:shadow-md hover:-translate-y-0.5 transition-all ${!b.active ? "opacity-60" : ""}`}>
+            <div key={b.id} className={`panel overflow-hidden flex flex-col sm:flex-row hover:shadow-md hover:-translate-y-0.5 transition-all ${!b.active ? "opacity-60" : ""}`}>
               <div className="relative w-full sm:w-48 h-32 sm:h-auto shrink-0 bg-gray-100">
                 {b.imageUrl ? (
                   <Image src={b.imageUrl} alt={b.title} fill sizes="(max-width: 640px) 100vw, 192px" className="object-cover" />
@@ -113,10 +115,10 @@ export default function BannerManager() {
                   <button onClick={() => toggle(b)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${b.active ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"}`}>
                     {b.active ? <><Eye size={12} /> Aktif</> : <><EyeOff size={12} /> Nonaktif</>}
                   </button>
-                  <button onClick={() => openEdit(b)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-100 transition-colors">
+                  <button onClick={() => openEdit(b)} className="btn-modal-cancel px-3 text-xs">
                     <Pencil size={12} /> Edit
                   </button>
-                  <button onClick={() => remove(b.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors">
+                  <button onClick={() => remove(b.id)} className="btn-hapus px-3 text-xs">
                     <Trash2 size={12} /> Hapus
                   </button>
                 </div>

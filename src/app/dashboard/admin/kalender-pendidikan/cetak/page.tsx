@@ -58,7 +58,7 @@ export default async function CetakKalenderPendidikanPage({ searchParams }: { se
   const td = "border border-gray-800 px-2 py-1 align-middle text-[10px]";
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-screen print:min-h-0 bg-white">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       {/* MENDATAR: kalender pendidikan berisi belasan tabel bulanan berdampingan — di A4 potret
           kolom "Kegiatan" jadi sempit sehingga judul agenda terpotong jadi dua-tiga baris dan
           tabelnya terlihat berantakan (permintaan user 13 September 2026). Mendatar memuat TIGA

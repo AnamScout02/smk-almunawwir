@@ -9,6 +9,9 @@ import { tugasHariIni } from "@/lib/tugas-hari-ini";
 import { tandaiPengingatSelesai } from "@/lib/kotak-notifikasi";
 import PageHeader from "@/components/admin/PageHeader";
 import PusatNotifikasiHalaman from "@/components/shared/PusatNotifikasiHalaman";
+import { TautanIkon } from "@/components/shared/IkonNama";
+import { berandaPortal } from "@/lib/rute-portal";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 /** PUSAT NOTIFIKASI (18 September 2026) — isi halaman notifikasi, dipakai bersama oleh keempat
  * portal. Tiga jenis dalam satu daftar, dipisah pita tab: Perlu tindakan · Kabar · Pengumuman.
@@ -37,6 +40,11 @@ export default async function IsiHalamanNotifikasi() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Bell size={22} />} title="Notifikasi"
         description="Kabar, pengingat, dan pengumuman untuk akun Anda" />
+      {/* Halaman ini dibuka dari lonceng di halaman mana pun (tidak ada di menu sidebar), jadi ia
+          wajib punya jalan pulang sendiri — sama seperti halaman lain di luar menu. */}
+      <div className="flex mb-5">
+        <TombolKembali href={berandaPortal(session.role)} />
+      </div>
       <PusatNotifikasiHalaman
         tindakan={tindakan}
         notifikasi={baris.map(b => ({

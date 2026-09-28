@@ -496,7 +496,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+            <div className="flex items-center justify-center h-48"><Loader2 className="animate-spin text-gray-400" size={32} /></div>
           ) : applicableSubjects.length === 0 ? (
             <Alert variant="warning">
               Belum ada mata pelajaran untuk jenjang/jurusan kelas ini. Tambahkan dulu di menu{" "}
@@ -556,7 +556,7 @@ export default function TeachingAssignmentsManager({ basePath = "/dashboard/admi
                             placeholder="-- Belum ditugaskan --"
                           />
                         </div>
-                        {savingId === s.id && <Loader2 size={14} className="animate-spin text-primary-500 shrink-0" />}
+                        {savingId === s.id && <Loader2 size={14} className="animate-spin text-gray-400 shrink-0" />}
                         {current && savingId !== s.id && (
                           <button onClick={() => setTeacherFor(s.id, "")} title="Hapus penugasan"
                             className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition shrink-0">

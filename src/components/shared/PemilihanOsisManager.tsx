@@ -118,7 +118,7 @@ export default function PemilihanOsisManager() {
               <div key={i} className="panel p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-900 font-heading font-bold text-white">{c.nomor}</span>
-                  <h3 className="font-heading font-bold text-primary-900">Calon nomor {c.nomor}</h3>
+                  <h3 className="font-heading font-semibold text-primary-900">Calon nomor {c.nomor}</h3>
                   <button type="button" onClick={() => setCalon(cs => cs.filter((_, j) => j !== i).map((x, j) => ({ ...x, nomor: j + 1 })))} className="ml-auto text-xs font-semibold text-red-600 hover:underline">Hapus calon</button>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-[10rem_minmax(0,1fr)]">
@@ -138,7 +138,7 @@ export default function PemilihanOsisManager() {
         ) : (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
             <div className="panel p-5 xl:col-span-7">
-              <h3 className="font-heading font-bold text-primary-900 text-sm mb-4 flex items-center gap-2"><BarChart3 size={15} className="text-primary-700" /> Perolehan suara ({totalSuara})</h3>
+              <h3 className="font-heading font-semibold text-primary-900 text-sm mb-4 flex items-center gap-2"><BarChart3 size={15} className="text-primary-700" /> Perolehan suara ({totalSuara})</h3>
               <div className="space-y-4">
                 {detail.calon.map(c => {
                   const persen = totalSuara ? Math.round(((c.suara ?? 0) / totalSuara) * 1000) / 10 : 0;
@@ -155,7 +155,7 @@ export default function PemilihanOsisManager() {
               </div>
             </div>
             <div className="panel overflow-hidden xl:col-span-5">
-              <div className="border-b border-gray-100 px-5 py-3.5"><h3 className="font-heading font-bold text-primary-900 text-sm">Partisipasi per kelas</h3></div>
+              <div className="border-b border-gray-100 px-5 py-3.5"><h3 className="font-heading font-semibold text-primary-900 text-sm">Partisipasi per kelas</h3></div>
               <div className="max-h-[28rem] overflow-auto">
                 <table className="data-table">
                   <thead><tr><th>Kelas</th><th className="text-right">Memilih</th><th className="text-right">%</th></tr></thead>

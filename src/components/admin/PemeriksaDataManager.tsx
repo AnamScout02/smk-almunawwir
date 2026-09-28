@@ -54,22 +54,9 @@ export default function PemeriksaDataManager() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<ScanSearch size={22} />} title="Pemeriksa Data"
         description="Menemukan data siswa yang janggal, kosong, atau saling bertentangan — sebelum ketahuan saat dokumen sudah dicetak" />
-
-      <div className="alat-aksi justify-end mb-5">
-        {/* Unduhan lewat endpoint, bukan dirakit di browser: berkas Excel butuh pustaka xlsx yang
-            terlalu berat untuk dibawa ke sisi klien, dan daftar di server tidak dipotong 50. */}
-        <a href="/api/admin/pemeriksa-data/ekspor"
-          className={`btn-modal-cancel flex items-center gap-2 text-sm ${!hasil || hasil.temuan.length === 0 ? "pointer-events-none opacity-40" : ""}`}>
-          <Download size={16} /> Unduh Excel
-        </a>
-        <button onClick={muat} disabled={loading} className="btn-modal-save btn-teks">
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Periksa Ulang
-        </button>
-      </div>
-
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
-          <Loader2 size={28} className="animate-spin text-primary-500" />
+          <Loader2 size={24} className="animate-spin text-gray-400" />
           <p className="text-sm">Memeriksa seluruh data siswa...</p>
         </div>
       ) : !hasil ? (
@@ -169,6 +156,18 @@ export default function PemeriksaDataManager() {
           )}
         </>
       )}
+
+      <div className="alat-aksi justify-end mb-5">
+        {/* Unduhan lewat endpoint, bukan dirakit di browser: berkas Excel butuh pustaka xlsx yang
+            terlalu berat untuk dibawa ke sisi klien, dan daftar di server tidak dipotong 50. */}
+        <a href="/api/admin/pemeriksa-data/ekspor"
+          className={`btn-modal-cancel ${!hasil || hasil.temuan.length === 0 ? "pointer-events-none opacity-40" : ""}`}>
+          <Download size={16} /> Unduh Excel
+        </a>
+        <button onClick={muat} disabled={loading} className="btn-modal-save btn-teks">
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Periksa Ulang
+        </button>
+      </div>
     </div>
   );
 }

@@ -158,7 +158,7 @@ export default function KenaikanKelasManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-primary-500" /></div>
+        <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
       ) : students.length > 0 ? (
         <div className="page-card overflow-hidden mb-6">
           <div className="overflow-auto scrollbar-visible max-h-[55vh]">
@@ -209,17 +209,19 @@ export default function KenaikanKelasManager() {
 
       {saved.length > 0 && (
         <>
-          <div className="kisi-kartu kisi-kartu-3 mb-4">
+          <div className="kisi-kartu kisi-kartu-3 mb-5">
             <StatTile value={rekap.naik} label="Naik Kelas" icon={ArrowUpCircle} color="emerald" />
             <StatTile value={rekap.tinggal} label="Tinggal Kelas" icon={RotateCcw} color="red" />
             <StatTile value={rekap.lulus} label="Lulus" icon={GraduationCap} color="blue" />
           </div>
 
-          <div className="relative max-w-sm mb-4">
+          <div className="baris-alat mb-5">
+        <div className="alat-cari">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Cari keputusan tersimpan..." className="input-field pl-10 w-full" />
           </div>
+      </div>
 
           <div className="page-card overflow-hidden">
             <div className="overflow-auto scrollbar-visible">

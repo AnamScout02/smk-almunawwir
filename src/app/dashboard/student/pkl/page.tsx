@@ -146,7 +146,7 @@ export default function StudentPklPage() {
             {regLoading ? (
               <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-gray-300" /></div>
             ) : requirements.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">Belum ada dokumen syarat yang ditetapkan. Hubungi Wakasek Humas/TU.</p>
+              <p className="text-sm text-gray-400 text-center py-10">Belum ada dokumen syarat yang ditetapkan. Hubungi Wakasek Humas/TU.</p>
             ) : (
               <>
                 {registration?.status === "REJECTED" && registration.reviewNote && (
@@ -230,7 +230,7 @@ export default function StudentPklPage() {
             )}
 
             {internship.journal.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">Belum ada jurnal harian. Mulai catat kegiatan PKL-mu hari ini!</p>
+              <p className="text-sm text-gray-400 text-center py-10">Belum ada jurnal harian. Mulai catat kegiatan PKL-mu hari ini!</p>
             ) : (
               <div className="space-y-3">
                 {internship.journal.map(entry => (

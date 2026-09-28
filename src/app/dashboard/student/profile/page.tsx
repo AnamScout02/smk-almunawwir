@@ -9,6 +9,7 @@ import PerangkatAktif from "@/components/shared/PerangkatAktif";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import PageHeader from "@/components/admin/PageHeader";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 export default async function StudentProfilePage() {
   const session = await verifyRole(["STUDENT"]);
@@ -31,9 +32,7 @@ export default async function StudentProfilePage() {
       />
 
       <div className="alat-aksi justify-end mb-5">
-        <Link href="/dashboard/student" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/student"} />
       </div>
 
       <div className="max-w-2xl space-y-6">
@@ -87,7 +86,7 @@ export default async function StudentProfilePage() {
 
         {/* Ganti password */}
         <div className="panel p-6">
-          <h3 className="font-heading font-bold text-primary-900 mb-4">Ganti Password</h3>
+          <h3 className="font-heading font-semibold text-primary-900 mb-4">Ganti Password</h3>
           <ChangePasswordForm />
         </div>
 

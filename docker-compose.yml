@@ -49,6 +49,8 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:smkalmunawwir@gmail.com}
     volumes:
       - uploads_data:/app/public/uploads
+      # Kunci ADB modul Papan & TV — izin debugging yang sudah disetujui di layar TV bertahan lintas deploy.
+      - adb_keys:/home/nextjs/.android
       # Read-only — supaya /api/admin/system/stats baca RAM asli LXC (lewat lxcfs, sudah
       # dijatah Proxmox) bukan RAM fisik host mesin Proxmox-nya. Lihat komentar di route.ts.
       - /proc:/host/proc:ro
@@ -134,4 +136,7 @@ volumes:
   caddy_config:
     driver: local
   caddy_log:
+    driver: local
+  # Kunci ADB modul Papan & TV (24 Sep 2026) — izin debugging tiap TV bertahan lintas deploy.
+  adb_keys:
     driver: local

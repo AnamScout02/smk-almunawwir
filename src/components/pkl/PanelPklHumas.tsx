@@ -72,7 +72,7 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
             <p className="mt-2 text-sm">Rata-rata: <span className="angka font-bold text-primary-900">{d.penilaian.rata}</span></p>
             {d.penilaian.catatan && <p className="mt-1 text-xs text-gray-600 whitespace-pre-line">Catatan: {d.penilaian.catatan}</p>}
           </div>
-        ) : <p className="text-sm text-gray-500">Belum ada penilaian dari tempat PKL.</p>}
+        ) : <p className="text-sm text-gray-400">Belum ada penilaian dari tempat PKL.</p>}
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={buatTautan} className="btn-modal-save px-3 text-xs"><Link2 /> {d.penilaian.tautanAktif ? "Buat Tautan Baru" : "Buat Tautan Penilaian"}</button>
           {d.penilaian.tautanAktif && <button type="button" onClick={cabut} className="btn-modal-cancel px-3 text-xs"><Trash2 /> Nonaktifkan</button>}
@@ -103,7 +103,7 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
           <ClipboardCheck size={16} className="text-primary-700" /><h3 className="font-heading font-semibold text-navy">Monitoring Pembimbing</h3>
           <button type="button" onClick={() => setForm({ tanggal: new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10), cara: "KUNJUNGAN", catatan: "", fotoUrl: "" })} className="btn-modal-save ml-auto px-3 text-xs"><Plus /> Catat</button>
         </div>
-        {d.monitoring.length === 0 ? <p className="text-sm text-gray-500">Belum ada catatan kunjungan/komunikasi dengan tempat PKL.</p> : (
+        {d.monitoring.length === 0 ? <p className="text-sm text-gray-400">Belum ada catatan kunjungan/komunikasi dengan tempat PKL.</p> : (
           <ul className="divide-y divide-gray-50">
             {d.monitoring.map(m => (
               <li key={m.id} className="py-2.5 text-sm">

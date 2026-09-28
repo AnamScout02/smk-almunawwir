@@ -16,7 +16,7 @@ export default async function ContentPage() {
   const settings = await getSettings([...Object.keys(DEFAULTS), "logo.emblem", "logo.full", "logo.full_white", "letterhead.bukuInduk", "letterhead.kopBawah", "letterhead.ttdKepalaSekolah"]);
 
   return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen">
+    <div className="p-6 lg:p-8 pt-16 lg:pt-8 min-h-dvh">
       <PageHeader
         icon={<FileText size={22} />}
         title="Konten Halaman"

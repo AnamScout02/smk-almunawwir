@@ -2,7 +2,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen,
+} from "lucide-react";
 import { Siren } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -328,6 +329,11 @@ export function grupMenuGuru({
         ...(isWakasekSarpras ? [{ href: "/dashboard/teacher/wakasek/sarpras/peminjaman", label: "Peminjaman & Ruang", icon: CalendarClock }]
           : isKepalaLab ? [{ href: "/dashboard/teacher/lab/peminjaman", label: "Peminjaman Lab", icon: CalendarClock }] : []),
         // Semua guru: lapor kerusakan berfoto & pinjam barang / pesan ruang (17 Sep 2026).
+        // Jaringan & Layar menyatukan Layar/TV, Perangkat, CCTV, Router, dan Mode Ujian (CLAUDE.md #85) —
+        // syaratnya gabungan semua yang berhak SALAH SATU tabnya; tab yang tidak berhak tidak dirender.
+        ...(isWakasekSarpras || isKepalaLab || isPengelolaJaringan || isKepalaSekolah || isWakasekKesiswaan
+          ? [{ href: "/dashboard/teacher/jaringan", label: "Jaringan & Layar", icon: Network }] : []),
+        ...(isWakasekSarpras || isKepalaLab ? [{ href: "/dashboard/teacher/daftar-ruang", label: "Daftar Ruang", icon: DoorOpen }] : []),
         { href: "/dashboard/teacher/layanan-sarpras", label: "Layanan Sarpras", icon: Hammer },
         // Usulan pengadaan alat/bahan praktik: pengusul lihat miliknya, pengelola Sarpras/Lab melihat semua.
         { href: isWakasekSarpras ? "/dashboard/teacher/wakasek/sarpras/usulan-alat" : isKepalaLab ? "/dashboard/teacher/lab/usulan-alat" : "/dashboard/teacher/usulan-alat", label: "Usulan Alat & Bahan", icon: Boxes },
@@ -335,7 +341,6 @@ export function grupMenuGuru({
         ...(isPerpustakaan ? [{ href: "/pusat-perpustakaan", label: "Pusat Perpustakaan", icon: Library }] : []),
         { href: "/dashboard/teacher/buku-saya", label: "Buku Saya", icon: BookOpen, badge: overdueBooks },
         { href: "/dashboard/teacher/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy },
-        ...(isPengelolaJaringan ? [{ href: "/dashboard/teacher/jaringan", label: "Jaringan Sekolah", icon: Network }] : []),
       ],
     },
     ...(isTasStaff ? [{

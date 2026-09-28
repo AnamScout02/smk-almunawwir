@@ -177,7 +177,7 @@ export default function InventarisManager() {
       />
 
       {!loading && tab === "barang" && (
-        <div className="kisi-kartu kisi-kartu-4 mb-6">
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
           <StatTile color="primary" value={total} label="Total Jenis Barang" icon={Boxes} />
           <StatTile color="emerald" value={baik} label="Kondisi Baik" icon={CheckCircle2} />
           <StatTile color="amber" value={ringan} label="Rusak Ringan" icon={AlertTriangle} />
@@ -186,7 +186,7 @@ export default function InventarisManager() {
       )}
 
       <div className="baris-alat mb-5">
-        <div className="alat-tab flex flex-wrap gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="alat-tab flex flex-wrap gap-1 border border-gray-100 bg-white rounded-xl p-1">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${tab === t.key ? "bg-primary-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>

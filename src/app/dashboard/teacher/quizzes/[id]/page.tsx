@@ -6,6 +6,7 @@ import { ArrowLeft, HelpCircle, Loader2, Plus, Save, Trash2, Trophy, Eye, EyeOff
 import PageHeader from "@/components/admin/PageHeader";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 interface QuestionForm { id?: string; question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctAnswer: string }
 interface AttemptRow { id: string; score: number; submittedAt: string; student: { user: { name: string } } }
@@ -133,9 +134,7 @@ export default function TeacherQuizBuilderPage() {
             <Trash2 size={18} />
           </button>
         )}
-        <Link href="/dashboard/teacher/materials" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/teacher/materials"} />
       </div>
 
       {error && <p className="error-msg mb-4">{error}</p>}

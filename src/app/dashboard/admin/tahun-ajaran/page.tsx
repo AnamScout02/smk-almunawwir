@@ -180,16 +180,6 @@ export default function TahunAjaranPage() {
         title="Tahun Ajaran"
         description="Kelola tahun ajaran dan proses kenaikan kelas"
       />
-
-      <div className="alat-aksi justify-end mb-5">
-        <button
-          onClick={() => { setShowModal(true); setFormError(""); }}
-          className="btn-modal-save"
-        >
-          <Plus size={16} /> Buat Tahun Ajaran
-        </button>
-      </div>
-
       {/* Daftar Tahun Ajaran */}
       <div className="space-y-3 mb-8">
         {loading ? (
@@ -266,7 +256,7 @@ export default function TahunAjaranPage() {
         <button
           onClick={openNaikKelasModal}
           disabled={naikLoading}
-          className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl font-semibold text-sm hover:bg-amber-700 transition-colors disabled:opacity-50"
+          className="btn-awas"
         >
           <TrendingUp size={16} />
           {naikLoading ? "Memproses..." : "Proses Naik Kelas"}
@@ -274,7 +264,7 @@ export default function TahunAjaranPage() {
 
         {naikResult && (
           <Alert variant={naikResult.errors.length > 0 ? "warning" : "success"} className="mt-4" title="Hasil Proses Naik Kelas:">
-            <div className="kisi-kartu kisi-kartu-3 mb-3">
+            <div className="kisi-kartu kisi-kartu-3 mb-5">
               <StatTile size="md" color="blue" icon={TrendingUp} value={naikResult.promoted} label="Naik Kelas" />
               <StatTile size="md" color="emerald" icon={GraduationCap} value={naikResult.graduated} label="Lulus" />
               <StatTile size="md" color="gray" icon={MinusCircle} value={naikResult.skipped} label="Dilewati" />
@@ -301,6 +291,15 @@ export default function TahunAjaranPage() {
             )}
           </Alert>
         )}
+      </div>
+
+      <div className="alat-aksi justify-end mb-5">
+        <button
+          onClick={() => { setShowModal(true); setFormError(""); }}
+          className="btn-modal-save"
+        >
+          <Plus size={16} /> Buat Tahun Ajaran
+        </button>
       </div>
 
       {/* Section Statistik */}
@@ -348,7 +347,7 @@ export default function TahunAjaranPage() {
                 </h3>
                 <div className="space-y-2">
                   {statistik.perGrade.length === 0 ? (
-                    <p className="text-xs text-gray-400">Tidak ada data</p>
+                    <p className="text-sm text-gray-400">Tidak ada data</p>
                   ) : statistik.perGrade.map(item => (
                     <div key={item.grade} className="flex items-center gap-3">
                       <span className="text-xs font-medium text-gray-600 w-20">Grade {item.grade}</span>
@@ -370,7 +369,7 @@ export default function TahunAjaranPage() {
                 </h3>
                 <div className="space-y-2">
                   {statistik.perMajor.length === 0 ? (
-                    <p className="text-xs text-gray-400">Tidak ada data</p>
+                    <p className="text-sm text-gray-400">Tidak ada data</p>
                   ) : statistik.perMajor.map(item => (
                     <div key={item.name} className="flex items-center gap-3">
                       <span className="text-xs font-medium text-gray-600 w-28 truncate">{item.name}</span>
@@ -466,7 +465,7 @@ export default function TahunAjaranPage() {
           <>
             <button onClick={() => setConfirmNaik(false)} className="btn-modal-cancel flex-1">Batal</button>
             <button onClick={handleNaikKelas} disabled={naikLoading || previewLoading || !!naikPreview?.error}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-semibold transition-colors disabled:opacity-50">
+              className="btn-awas flex-1">
               <TrendingUp size={15} />
               {naikLoading ? "Memproses..." : "Ya, Proses Sekarang"}
             </button>

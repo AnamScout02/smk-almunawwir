@@ -8,6 +8,7 @@ import { getSettings } from "@/lib/site-settings";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import CetakDataKelasClient from "@/components/admin/CetakDataKelasClient";
+import TombolKembali from "@/components/shared/TombolKembali";
 
 /** Cetak data kelas — admin pilih kelas mana saja yang mau dicetak (checklist per tingkat, lihat
  * CetakDataKelasClient.tsx), SATU KELAS SATU HALAMAN (page-break per kelas): info kelas (jurusan,
@@ -42,14 +43,12 @@ export default async function CetakDataKelasPage() {
       <PageHeader icon={<School size={22} />} title="Cetak Data Kelas" description="Info kelas + daftar akun login siswa, pilih kelas yang mau dicetak" printHidden />
 
       <div className="flex items-center gap-2 mb-5 print:hidden">
-        <Link href="/dashboard/admin/classes" className="btn-modal-cancel">
-          <ArrowLeft size={18} /> Kembali
-        </Link>
+        <TombolKembali href={"/dashboard/admin/classes"} />
         <PrintButton />
       </div>
 
       {classes.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center text-gray-400 text-sm print:hidden">Belum ada kelas.</div>
+        <div className="panel p-16 text-center text-gray-400 text-sm print:hidden">Belum ada kelas.</div>
       ) : (
         <CetakDataKelasClient classes={classes} logoUrl={settings["logo.full_white"]} />
       )}

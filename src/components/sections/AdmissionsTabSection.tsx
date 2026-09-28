@@ -16,7 +16,7 @@ export default function AdmissionsTabSection({ lang = "id" }: { lang?: Lang }) {
 
   return (
     <div>
-      <div className="flex gap-2 mb-5 p-1 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex gap-2 mb-5 p-1 panel">
         <button
           onClick={() => setTab("form")}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${

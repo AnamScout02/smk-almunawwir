@@ -4,5 +4,5 @@ import WakasekKurikulumDashboard from "@/components/jabatan/WakasekKurikulumDash
  * bukan guru/pegawai, jadi ia melihat dashboard ini TANPA dilempar ke shell portal guru. Isinya
  * komponen yang sama persis — bukan duplikat kode. */
 export default function Page() {
-  return <WakasekKurikulumDashboard />;
+  return <WakasekKurikulumDashboard basePath="/dashboard/admin" />;
 }

@@ -7,6 +7,7 @@ import Modal from "@/components/admin/Modal";
 import Select from "@/components/admin/Select";
 import DatePicker from "@/components/shared/DatePicker";
 import { PageSkeleton } from "@/components/shared/Skeleton";
+import { BarisKembali } from "@/components/shared/TombolKembali";
 
 interface Tracer {
   status: string; institutionName: string | null; position: string | null;
@@ -35,7 +36,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const EMPTY_FORM = { status: "BEKERJA", institutionName: "", position: "", contactPhone: "", contactEmail: "", surveyDate: "", notes: "" };
 
-export default function TracerStudyManager() {
+export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: string }) {
   const [items, setItems] = useState<Alumni[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
@@ -91,13 +92,16 @@ export default function TracerStudyManager() {
         title="Tracer Study Alumni"
         description={`Pelacakan lulusan — ${withData}/${items.length} sudah disurvei`}
       />
+      {kembaliHref && <BarisKembali href={kembaliHref} />}
 
       {!loading && items.length > 0 && (
-        <div className="relative max-w-sm mb-5">
+        <div className="baris-alat mb-5">
+        <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama, NIS, jurusan, atau institusi..." className="input-field pl-10" />
         </div>
+      </div>
       )}
 
       {loading ? (
