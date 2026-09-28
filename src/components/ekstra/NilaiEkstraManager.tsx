@@ -58,7 +58,7 @@ export default function NilaiEkstraManager() {
           {d.anggota.length === 0 ? <EmptyState icon={Award} title="Belum ada anggota" description="Tambahkan anggota di menu Ekstrakurikuler." /> : (
             <div className="panel overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>#</th><th>Anggota</th><th>Predikat</th><th>Keterangan</th><th className="text-right">Sertifikat</th></tr></thead>
+                <thead><tr><th className="w-10">#</th><th>Anggota</th><th>Predikat</th><th>Keterangan</th><th className="text-right">Sertifikat</th></tr></thead>
                 <tbody>{d.anggota.map((a, i) => (
                   <tr key={a.memberId}>
                     <td className="angka text-gray-500">{i + 1}</td>

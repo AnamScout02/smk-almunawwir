@@ -151,6 +151,35 @@ for (const p of daftar) {
       catat(p, 0, "grid-kartu-angka", "→ .kisi-kartu");
   // PageHeader dibungkus print:hidden sendirian (gotcha #24)
   if (!/components\/admin\/PageHeader\.tsx$/.test(p) && /<div className="print:hidden">\s*<PageHeader/.test(s)) catat(p, 0, "pageheader-dibungkus", "→ prop printHidden");
+  /* Kolom "No" tabel layar = lebar TETAP w-10 (audit tabel 28 Sep 2026). Tanpa lebar tetap, kolom
+     pertama mulai di titik x berbeda tiap halaman — itu keluhan "tabel tidak sejajar". Rata isi
+     mengikuti selnya (mayoritas rata kiri + .angka); yang DIKECUALIKAN: dokumen cetak, matriks padat
+     (PADAT), dan kolom beku berkepala navy (`sticky left-0`) yang lebarnya diatur bersama matriksnya. */
+  if (!cetak && !PADAT(p)) baris.forEach((b, i) => {
+    for (const m of b.matchAll(/<th([^>]*)>\s*(?:No\.?|#)\s*<\/th>/g)) {
+      const a = m[1] || "";
+      if (/sticky left-0/.test(a)) continue;
+      const w = a.match(/\bw-(\d+|\[[^\]]+\])/);
+      if (!w) catat(p, i + 1, "tabel-kolom-no", "kolom No tanpa lebar tetap → w-10");
+      else if (w[1] !== "10") catat(p, i + 1, "tabel-kolom-no", `kolom No w-${w[1]} → w-10`);
+    }
+  });
+
+  /* Sel ANGKA tabel layar wajib .angka / tabular-nums (audit tabel 28 Sep 2026) — tanpa itu digit
+     berlebar beda dan kolom angka tidak berbaris. Pelajaran dari audit ini: `className` sering
+     berupa TEMPLATE LITERAL (`className={`… ${warna}`}`), jadi menyaring hanya `className="…"`
+     membuat 3 dari 6 temuan jadi salah tangkap — pola di bawah membaca keduanya. Ternary yang
+     mengembalikan JSX (mis. `{x.length ? x.map(…)}`) bukan sel angka. */
+  if (!cetak && !PADAT(p)) baris.forEach((b, i) => {
+    for (const m of b.matchAll(/<td([^>]*)>(\{[^<]*?\})<\/td>/g)) {
+      const isi = m[2].trim();
+      if (/\.map\(|=>/.test(isi)) continue;
+      if (!/^\{(?:[\w.$?[\]]*\.(?:jumlah|count|total|length|nilai|skor|poin|persen|harga|saldo|stok)\b[^}]*|rupiah\([^}]*\)|Math\.(?:round|max|min|abs)\([^}]*\)|[^}]*\.toFixed\(\d\)[^}]*)\}$/.test(isi)) continue;
+      const cls = (m[1].match(/className=(?:"([^"]*)"|\{`([^`]*)`\})/) || [, "", ""]);
+      if (!/angka|tabular-nums/.test(`${cls[1] || ""}${cls[2] || ""}`)) catat(p, i + 1, "sel-angka-tanpa-tabular", isi.slice(0, 40) + " → tambah .angka");
+    }
+  });
+
   // Tabel layar tanpa wadah overflow (§5.7 freeze)
   if (!cetak) for (const m of s.matchAll(/<table/g)) {
     const atas = s.slice(Math.max(0, m.index - 700), m.index);

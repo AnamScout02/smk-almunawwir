@@ -100,7 +100,7 @@ export default function PkbGuruManager({ basePath }: { basePath: string }) {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>No</th>
+                      <th className="w-10">No</th>
                       {data.kelola && !guruId && <th>Guru</th>}
                       <th>Kegiatan</th><th>Jenis</th><th>Penyelenggara</th><th>Peran</th><th>Tanggal</th><th className="text-center">JP</th><th className="text-right">Aksi</th>
                     </tr>

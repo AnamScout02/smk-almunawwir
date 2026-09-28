@@ -499,9 +499,9 @@ export default function UjianManager({ basePath }: { basePath: string }) {
                       <tr key={e.id}>
                         <td className="font-medium">{e.title}<span className="block text-xs text-gray-400">{fmtDateTime(e.startTime)}</span></td>
                         <td className="text-center">{e._count.attempts}</td>
-                        <td className="text-center font-bold text-primary-900">{s.length ? Math.round(s.reduce((a, b) => a + b, 0) / s.length) : "-"}</td>
-                        <td className="text-center text-emerald-700">{s.length ? Math.max(...s) : "-"}</td>
-                        <td className="text-center text-red-600">{s.length ? Math.min(...s) : "-"}</td>
+                        <td className="text-center angka font-bold text-primary-900">{s.length ? Math.round(s.reduce((a, b) => a + b, 0) / s.length) : "-"}</td>
+                        <td className="text-center angka text-emerald-700">{s.length ? Math.max(...s) : "-"}</td>
+                        <td className="text-center angka text-red-600">{s.length ? Math.min(...s) : "-"}</td>
                         <td><div className="flex items-center gap-2">
                           <Link href={`${basePath}/${e.id}?tab=hasil`} className="text-xs font-semibold text-primary-700 hover:underline">Rincian & analisis</Link>
                           <a href={`/api/teacher/exams/${e.id}/hasil?format=xlsx`} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg" title="Unduh Excel"><Download size={14} /></a>

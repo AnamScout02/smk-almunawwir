@@ -96,7 +96,7 @@ export default function KegiatanManager() {
         {!r ? <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div> : (
           <div className="panel overflow-x-auto">
             <table className="data-table">
-              <thead><tr><th>#</th><th>Nama</th><th className="hidden sm:table-cell">Peran / kelas</th>{tab === "hadir" ? <><th>Jam</th><th className="text-right">Aksi</th></> : <th className="text-right">Catat</th>}</tr></thead>
+              <thead><tr><th className="w-10">#</th><th>Nama</th><th className="hidden sm:table-cell">Peran / kelas</th>{tab === "hadir" ? <><th>Jam</th><th className="text-right">Aksi</th></> : <th className="text-right">Catat</th>}</tr></thead>
               <tbody>
                 {tab === "hadir" ? hadir.map((h, i) => (
                   <tr key={h.id}>

@@ -970,7 +970,7 @@ Yang diperiksa: tombol racikan · kelas berlebih pada `.btn-*` · huruf <12px di
 `.panel` · pita tab abu & `hover:bg-white` di pita putih · `min-h-screen` → `min-h-dvh` · token
 `primary-200/400/600/800` · `<select>`/`<input type=date|month|time>` bawaan · `window.confirm` · grid
 kartu angka tanpa `.kisi-kartu` · `PageHeader` dibungkus `print:hidden` · tabel layar tanpa wadah
-`overflow-x-auto` · **jarak bawah blok bukan `mb-5`** · **judul kartu portal masih `font-bold`**.
+`overflow-x-auto` · **kolom No tabel tanpa lebar tetap** · **sel angka tanpa `tabular-nums`** · **jarak bawah blok bukan `mb-5`** · **judul kartu portal masih `font-bold`**.
 
 **Pengecualiannya sudah TERBUKTI, bukan dugaan** — tiap audit, sekitar separuh temuan ternyata sah:
 dokumen cetak & pratinjau kertas (dikenali dari `print-doc`/`a4-page`/`@page`/`PrintKop`), matriks padat
@@ -1071,6 +1071,35 @@ baris cari. Tombol yang berdiri sendiri di atas kartu terlihat melayang tanpa ja
 tepat di bawah `PageHeader`. Dengan `mb-*` per blok, satu blok yang lupa diberi jarak langsung menempel ke
 tetangganya — dan itulah yang terjadi. Enam dashboard jabatan dibungkus ulang 27 Sep 2026; `mb-*` pada anak
 langsungnya dilepas supaya tidak dobel.
+
+### 19.6 Tabel sejajar (28 September 2026)
+
+Keluhan "tabel yang tidak sejajar" dari brief design system ternyata dua hal berbeda, dan hanya
+salah satunya soal rata kepala-vs-isi:
+
+1. **Kolom "No" = `w-10`, selalu.** Lebarnya dulu terpecah empat versi (`w-8`, `w-10`, `w-12`, dan
+   tanpa lebar sama sekali) di 115 tabel layar, sehingga kolom pertama mulai di titik x yang
+   berbeda tiap halaman — itu yang terbaca sebagai "tidak sejajar" saat berpindah menu. 13 kepala
+   kolom diseragamkan. **Rata isinya mengikuti selnya**, tidak dipaksa: mayoritas rata kiri dengan
+   `.angka` (17 tabel) dan itu yang jadi patokan; yang sudah rata tengah beserta selnya (matriks &
+   grid isian) dibiarkan karena kepala dan isinya memang sudah sejajar. Yang **dikecualikan**:
+   dokumen cetak, matriks padat, dan kolom beku berkepala navy (`sticky left-0`) yang lebarnya
+   diatur bersama matriksnya.
+2. **Sel angka wajib `.angka`** (`tabular-nums`). Tanpa itu digit berlebar berbeda dan kolom angka
+   tidak berbaris walau rata kanannya benar. Uang dirata KANAN di kepala DAN sel sekaligus
+   (Nominal di Bantuan Siswa, Perkiraan di Usulan Alat) — merata-kanankan hanya selnya justru
+   menambah ketidaksejajaran baru.
+
+Dua hal yang TERBUKTI bukan pelanggaran, jangan "diperbaiki": kolom aksi yang `<th>`-nya
+`text-right` sementara `<td>`-nya merata lewat `justify-end` di div dalamnya (5 kasus diperiksa
+satu per satu — semuanya benar), dan `.length` yang dipakai sebagai syarat ternary yang
+mengembalikan JSX (`{x.length ? x.map(…) : "—"}`) — itu bukan sel angka.
+
+**Pelajaran alat ukur:** `className` di repo ini sering berupa **template literal**
+(`className={`text-right ${warna(x)}`}`), jadi penyaring yang hanya membaca `className="…"`
+menganggapnya kosong. Audit pertama saya melaporkan 6 sel angka bermasalah — 3 di antaranya
+ternyata sudah benar, termasuk satu di berkas patokan Kurikulum sendiri. Pola pemeriksa membaca
+kedua bentuk.
 
 ## 20. Fondasi token & komponen bersama (27 September 2026)
 

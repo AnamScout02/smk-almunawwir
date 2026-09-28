@@ -55,7 +55,7 @@ export default function UsulanAlatManager() {
             {total > 0 && <p className="mb-3 text-sm text-gray-600">Perkiraan biaya daftar ini: <strong className="angka">{rupiah(total)}</strong></p>}
             <div className="panel overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>Alat / bahan</th><th className="text-center">Jumlah</th><th className="hidden md:table-cell">Perkiraan</th><th>Status</th><th className="text-right">Aksi</th></tr></thead>
+                <thead><tr><th>Alat / bahan</th><th className="text-center">Jumlah</th><th className="hidden md:table-cell text-right">Perkiraan</th><th>Status</th><th className="text-right">Aksi</th></tr></thead>
                 <tbody>{daftar.map(u => (
                   <tr key={u.id}>
                     <td className="min-w-[12rem]">
@@ -65,7 +65,7 @@ export default function UsulanAlatManager() {
                       {u.tanggapan && <p className="text-xs text-emerald-800">Sarpras: {u.tanggapan}</p>}
                     </td>
                     <td className="angka text-center whitespace-nowrap">{u.jumlah} {u.satuan}</td>
-                    <td className="hidden md:table-cell text-xs whitespace-nowrap">{u.perkiraanHarga ? rupiah(u.perkiraanHarga * u.jumlah) : "—"}</td>
+                    <td className="hidden md:table-cell text-xs whitespace-nowrap text-right angka">{u.perkiraanHarga ? rupiah(u.perkiraanHarga * u.jumlah) : "—"}</td>
                     <td><span className={`status-badge ${STATUS[u.status]?.kelas}`}>{STATUS[u.status]?.label}</span></td>
                     <td className="text-right whitespace-nowrap">
                       {d.kelola && <button type="button" onClick={() => setTindak({ u, status: u.status === "DIUSULKAN" ? "DISETUJUI" : u.status, tanggapan: u.tanggapan ?? "" })} className="btn-modal-cancel px-2.5 text-xs">Tindak lanjut</button>}

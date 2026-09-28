@@ -109,7 +109,7 @@ export default function StokOpnameManager({ lingkupLab = false }: { lingkupLab?:
       {!detail ? <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div> : (
         <div className="panel overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>#</th><th>Barang</th><th className="text-center">Sistem</th><th>Jumlah fisik</th><th>Kondisi fisik</th><th className="hidden md:table-cell">Catatan</th></tr></thead>
+            <thead><tr><th className="w-10">#</th><th>Barang</th><th className="text-center">Sistem</th><th>Jumlah fisik</th><th>Kondisi fisik</th><th className="hidden md:table-cell">Catatan</th></tr></thead>
             <tbody>
               {hal.potongan.map((x, i) => {
                 const s = isian[x.id] ?? { jumlahFisik: "", kondisiFisik: "", catatan: "" };

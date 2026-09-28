@@ -116,7 +116,7 @@ export default function KelengkapanPerangkat({ protaHref, rppHref }: { protaHref
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead><tr>
-                    <th>No</th>{semua && <th>Guru</th>}<th>Mata Pelajaran</th><th>Tingkat</th>
+                    <th className="w-10">No</th>{semua && <th>Guru</th>}<th>Mata Pelajaran</th><th>Tingkat</th>
                     <th>Prota &amp; Promes</th><th>RPP</th><th>Jurnal</th><th>Status</th>
                   </tr></thead>
                   <tbody>

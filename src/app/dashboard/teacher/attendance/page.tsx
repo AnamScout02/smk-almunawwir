@@ -169,7 +169,7 @@ export default function AttendancePage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th className="w-8">#</th>
+                    <th className="w-10">#</th>
                     <th>Nama Siswa</th>
                     <th>Kelas</th>
                     <th className="text-center">Status</th>

@@ -156,7 +156,7 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>No</th><th>Nama</th><th>Tanggal</th><th>Presensi TU</th>
+                      <th className="w-10">No</th><th>Nama</th><th>Tanggal</th><th>Presensi TU</th>
                       <th>Jam pelajaran (catatan piket)</th><th>Jurnal</th><th>Temuan</th>
                     </tr>
                   </thead>

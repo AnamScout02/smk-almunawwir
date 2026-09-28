@@ -164,7 +164,7 @@ export default function BantuanSiswaManager() {
             <div className="overflow-auto scrollbar-visible">
               <table className="data-table">
                 <thead>
-                  <tr><th>Siswa</th><th>Jenis</th><th>Tahap</th><th>Nominal</th><th>Cair</th><th>Bank/Rek</th><th>Status</th><th>Aksi</th></tr>
+                  <tr><th>Siswa</th><th>Jenis</th><th>Tahap</th><th className="text-right">Nominal</th><th>Cair</th><th>Bank/Rek</th><th>Status</th><th>Aksi</th></tr>
                 </thead>
                 <tbody>
                   {filtered.map(r => (
@@ -175,7 +175,7 @@ export default function BantuanSiswaManager() {
                       </td>
                       <td className="text-sm">{r.jenis}</td>
                       <td className="text-sm text-center">{r.tahap || "—"}</td>
-                      <td className="text-sm whitespace-nowrap font-semibold">{rupiah(r.nominal)}</td>
+                      <td className="text-sm whitespace-nowrap text-right angka font-semibold">{rupiah(r.nominal)}</td>
                       <td className="text-sm whitespace-nowrap">{fmt(r.tanggalCair)}</td>
                       <td className="text-xs">{r.bank || "—"}{r.noRekening ? <span className="block text-gray-400">{r.noRekening}</span> : null}</td>
                       <td>

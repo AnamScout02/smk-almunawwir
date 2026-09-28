@@ -1246,9 +1246,9 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
               <div className="page-card overflow-hidden">
                 <div className="page-card-header px-4 py-3"><span className="font-heading font-bold text-primary-900 text-sm">Analisis Butir</span><span className="text-xs text-gray-400">kesukaran = proporsi benar · daya beda = atas 27% - bawah 27% · waktu = rata-rata lama di soal · ganti = rata-rata ganti jawaban</span></div>
                 <div className="overflow-auto max-h-[28rem] scrollbar-visible"><table className="data-table">
-                  <thead><tr><th>No</th><th>Jenis</th><th>KD</th><th>Benar</th><th>Kesukaran</th><th>Daya Beda</th><th>Waktu</th><th>Ganti</th><th>Kualitas</th></tr></thead>
+                  <thead><tr><th className="w-10">No</th><th>Jenis</th><th>KD</th><th>Benar</th><th>Kesukaran</th><th>Daya Beda</th><th>Waktu</th><th>Ganti</th><th>Kualitas</th></tr></thead>
                   <tbody>{hasil.analisis.map(a => (
-                    <tr key={a.questionId}><td className="text-center font-bold">{a.nomor}</td><td className="text-xs">{labelTipe(a.tipe)}</td><td className="text-xs">{a.kd ?? "-"}</td>
+                    <tr key={a.questionId}><td className="angka font-bold">{a.nomor}</td><td className="text-xs">{labelTipe(a.tipe)}</td><td className="text-xs">{a.kd ?? "-"}</td>
                       <td className="text-center text-xs">{a.benar}/{a.peserta}</td>
                       <td><span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${a.kategoriKesukaran === "Mudah" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : a.kategoriKesukaran === "Sukar" ? "bg-red-50 text-red-600 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>{a.kategoriKesukaran}{a.kesukaran !== null ? ` ${Math.round(a.kesukaran * 100)}%` : ""}</span></td>
                       <td><span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${a.kategoriDayaBeda === "Baik" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : a.kategoriDayaBeda === "Terbalik" ? "bg-red-50 text-red-600 border-red-200" : "bg-gray-50 text-gray-600 border-gray-200"}`}>{a.kategoriDayaBeda}{a.dayaBeda !== null ? ` ${a.dayaBeda.toFixed(2)}` : ""}</span></td>

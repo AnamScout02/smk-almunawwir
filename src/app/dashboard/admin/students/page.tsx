@@ -168,7 +168,7 @@ function StudentTable({ items, onMove, kunci }: { items: Student[]; onMove: (s: 
     <table className="data-table">
       <thead>
         <tr>
-          <th className="w-8">#</th>
+          <th className="w-10">#</th>
           <th>NIS</th>
           <th>Nama Siswa</th>
           <th className="hidden md:table-cell">NISN</th>

@@ -143,11 +143,11 @@ export default function PesertaDitahanManager({ basePath = "/pusat-ujian" }: { b
               ) : (
                 <div className="overflow-x-auto">
                   <table className="data-table">
-                    <thead><tr><th className="w-10 text-center">No</th><th>Siswa</th><th>Alasan</th><th className="text-right">Aksi</th></tr></thead>
+                    <thead><tr><th className="w-10">No</th><th>Siswa</th><th>Alasan</th><th className="text-right">Aksi</th></tr></thead>
                     <tbody>
                       {daftar.map((x, i) => (
                         <tr key={x.id}>
-                          <td className="text-center angka">{i + 1}</td>
+                          <td className="angka">{i + 1}</td>
                           <td className="min-w-[10rem]">
                             <span className="block font-medium text-gray-800">{x.nama}</span>
                             <span className="block text-xs text-gray-400">{x.kelas} · {x.nis}</span>

@@ -210,7 +210,7 @@ export default function EkspedisiManager() {
                         {e.tujuan}
                         {e.alamatTujuan && <span className="block text-xs text-gray-400">{e.alamatTujuan}</span>}
                       </td>
-                      <td className="text-center">{e.jumlah}</td>
+                      <td className="text-center angka">{e.jumlah}</td>
                       <td className="text-xs">{labelOf(CARA_KIRIM, e.caraKirim)}</td>
                       <td className="text-sm">
                         {e.penerimaNama

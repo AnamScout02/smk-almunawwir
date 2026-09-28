@@ -80,7 +80,7 @@ export default function KontakOrangTua() {
           {daftar.length === 0 ? <EmptyState icon={Contact} title="Tidak ada siswa" description="Ubah pencarian atau saringan." /> : (
             <div className="panel overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>#</th><th>Siswa</th><th>Kontak orang tua / wali</th><th className="hidden md:table-cell">Portal Orang Tua</th></tr></thead>
+                <thead><tr><th className="w-10">#</th><th>Siswa</th><th>Kontak orang tua / wali</th><th className="hidden md:table-cell">Portal Orang Tua</th></tr></thead>
                 <tbody>
                   {daftar.map((s, i) => (
                     <tr key={s.id}>

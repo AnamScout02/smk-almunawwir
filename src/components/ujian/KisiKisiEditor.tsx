@@ -91,7 +91,7 @@ export default function KisiKisiEditor({ examId, judul, mapel, kelas, bolehUbah,
               <table className="data-table min-w-[1000px]">
                 <thead>
                   <tr>
-                    <th className="w-12 text-center">No</th><th className="w-[22%]">Soal</th><th className="w-24">KD</th>
+                    <th className="w-10 text-center">No</th><th className="w-[22%]">Soal</th><th className="w-24">KD</th>
                     <th className="w-[16%]">Materi</th><th>Indikator Soal</th><th className="w-52">Level Kognitif</th>
                     {bolehUbah && <th className="w-28 text-center">Isian</th>}
                   </tr>

@@ -107,7 +107,7 @@ export default function AttendanceSummaryPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th className="w-10">#</th>
                   <th>Nama Siswa</th>
                   <th className="text-center">H</th>
                   <th className="text-center">I</th>
