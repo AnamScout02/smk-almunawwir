@@ -83,7 +83,7 @@ export default function BendaharaSidebar({ logoEmblem = "/images/logo-emblem.png
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         <div className="px-5 py-4 border-b border-white/10 flex items-center gap-3">
-          <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
+          <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
           <div>
             <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
             <p className="text-white/50 text-xs">Portal Bendahara</p>

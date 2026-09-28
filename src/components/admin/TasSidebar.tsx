@@ -211,12 +211,12 @@ function SidebarContent({
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-2">
         {logoFullWhite ? (
           <div className="flex flex-col gap-1.5 min-w-0">
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" />
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
             <p className="text-white/40 text-xs font-semibold tracking-wider uppercase">Tata Usaha</p>
           </div>
         ) : (
           <div className="flex items-center gap-3 min-w-0">
-            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
+            <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
             <div>
               <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
               <p className="text-white/50 text-xs">Tenaga Administrasi</p>
@@ -334,9 +334,15 @@ interface TasSidebarProps {
   /** Admin sedang "Masuk Sebagai" akun ini — topbar mobile digeser turun supaya tidak ketutup
    * pita ImpersonationBanner. Lihat catatan sama di TeacherSidebar.tsx. */
   impersonating?: boolean;
+  /* Sidebar ini dipakai DUA peran: staf TAS dan guru yang merangkap jabatan Tata Usaha. Tautan
+     "Profil" & "Portal Guru" berbeda per peran — dulu dipilih dari `isFullTas`, yang justru
+     terbalik: guru-TU (isFullTas true) tidak diberi tautan Portal Guru, sedangkan staf TAS non-TU
+     diberi tautan portal guru yang tidak bisa mereka buka (verifyRole TEACHER/ADMIN → memantul ke
+     /login). Sejak 28 September 2026 dipilih dari PERAN yang sebenarnya. */
+  isGuru?: boolean;
 }
 
-export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true, impersonating = false }: TasSidebarProps) {
+export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, pendingProfileEdits = 0, overdueBooks = 0, jabatanNames = [], isFullTas = true, impersonating = false, isGuru = false }: TasSidebarProps) {
   const pathname = usePathname();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -399,13 +405,31 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
   function resolveBadge(item: RenderItem): number {
     return item.badgeKey === "pendingProfileEdits" ? pendingProfileEdits : item.badgeKey === "overdueBooks" ? overdueBooks : 0;
   }
-  // Bottom nav HP (18 Sep 2026): 4 tautan harian + tombol tengah Dashboard, TANPA sheet.
-  const navBawah: ItemNavBawah[] = [
+  /* Bottom nav HP (18 Sep 2026): 4 tautan harian + tombol tengah Dashboard, TANPA sheet.
+     Empat tautan Tata Usaha di bawah hanya untuk staf TU penuh. Staf TAS NON-TU (Kepala UKS, Tim
+     Perpustakaan, Security, Kebersihan, …) TIDAK boleh diberi keempatnya: semuanya dijaga
+     `verifyTasAccess()`, jadi setiap ketukan melempar mereka ke /login — dan karena di HP tidak
+     ada sidebar sama sekali, portalnya jadi benar-benar buntu (laporan user 28 September 2026:
+     empat dari lima akun TAS hanya melihat kartu sambutan). Untuk mereka slotnya diambil dari
+     `visibleGroups` yang SUDAH disaring jabatan, persis seperti yang dijanjikan pola §3.6. */
+  const navTataUsaha: ItemNavBawah[] = [
     { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk", icon: BookUser, simbol: "menu_book" },
     { href: "/dashboard/admin/persuratan", label: "Surat", icon: Archive, simbol: "mail" },
     { href: "/dashboard/admin/presensi-pegawai", label: "Presensi", icon: UserCheck, simbol: "badge" },
     { href: "/dashboard/admin/permintaan-surat", label: "Layanan", icon: ClipboardList, simbol: "assignment" },
   ];
+  const navJabatan: ItemNavBawah[] = visibleGroups
+    .flatMap(g => g.items)
+    .filter(i => i.href !== "/dashboard/admin")
+    .slice(0, 4)
+    .map(i => ({ href: i.href, label: i.label, icon: i.icon, exact: i.exact }));
+  /* Akun tanpa jabatan sama sekali: jangan jatuh ke menu TU (buntu lagi) — beri yang pasti bisa
+     dibuka siapa pun. */
+  const navUmum: ItemNavBawah[] = [
+    { href: "/kartu-identitas", label: "Kartu", icon: QrCode, simbol: "badge" },
+    { href: isGuru ? "/dashboard/teacher/profile" : "/dashboard/admin/profile", label: "Profil", icon: UserCog, simbol: "account_circle" },
+  ];
+  const navBawah: ItemNavBawah[] = isFullTas ? navTataUsaha : (navJabatan.length > 0 ? navJabatan : navUmum);
 
   return (
     <>
@@ -425,10 +449,10 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
         style={impersonating ? { top: "var(--impersonation-banner-h, 2.5rem)" } : { top: 0 }}>
         <div className="flex items-center gap-2">
           {logoFullWhite ? (
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" />
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
           ) : (
             <>
-              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" />
+              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
               <span className="font-heading font-bold text-white text-sm">TAS Panel</span>
             </>
           )}
@@ -437,8 +461,8 @@ export default function TasSidebar({ logoEmblem = "/images/logo-emblem.png", log
           {/* Satu pintu notifikasi (dulu kotak + lonceng terpisah). */}
           <KotakNotifikasiTombol variant="topbar" tindakan={notifications} />
           <MenuAkunMobile
-            profilHref={isFullTas ? "/dashboard/admin/profile" : "/dashboard/teacher/profile"}
-            tautanTambahan={isFullTas ? [] : [{ href: "/dashboard/teacher", label: "Portal Guru", icon: ArrowLeft }]}
+            profilHref={isGuru ? "/dashboard/teacher/profile" : "/dashboard/admin/profile"}
+            tautanTambahan={isGuru ? [{ href: "/dashboard/teacher", label: "Portal Guru", icon: ArrowLeft }] : []}
           />
         </div>
       </div>

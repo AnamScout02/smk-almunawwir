@@ -1078,6 +1078,30 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     menaruhnya SETELAH kartu; dan meninggalkan panel "Pintasan Kesiswaan" lama sehingga tautannya dobel.
     Periksa dengan `node scripts/cek-keseragaman.mjs` (aturan `urutan-kartu-dulu`).
 
+90. **Portal yang menyuruh "gunakan menu di sidebar" = jalan buntu di HP (28 September 2026).**
+    Laporan user: akun Kepala UKS & Tim Perpustakaan masuk lalu hanya melihat kartu sambutan, dan
+    "dipencet apapun navbar bawah" tidak terjadi apa-apa. Empat dari LIMA akun role TAS kena
+    (hanya pemegang jabatan TU penuh yang lolos). Tiga sebabnya, semuanya varian dari satu
+    kesalahan — **tautan yang ditulis mati ke halaman Tata Usaha, diberikan ke akun yang tidak
+    berhak membukanya**:
+    - `/dashboard/admin/page.tsx` cabang TAS non-TU hanya merender kartu "Gunakan menu di sidebar".
+      Kalimat itu ditulis 10 Agustus 2026, SEBELUM keputusan 18 September yang memindahkan seluruh
+      menu ke kisi di dashboard dan MENGHAPUS laci menu HP (#54). Di HP tidak ada sidebar sama
+      sekali. Sekarang cabang itu merender `<MenuTas jabatanNames={…}>` — kisi yang sama dengan
+      sidebar, sudah disaring jabatan.
+    - `TasSidebar` `navBawah` menulis mati 4 tautan TU (Buku Induk, Surat, Presensi, Layanan)
+      padahal komentarnya sendiri menjanjikan "dibangun dari `visibleGroups` yang SAMA". Keempatnya
+      dijaga `verifyTasAccess()` → `redirect("/login")` → proxy melihat sesi masih sah → dilempar
+      balik ke dashboard. **Memantul pulang terbaca pengguna sebagai "tombolnya tidak berfungsi",
+      bukan sebagai penolakan akses** — itu sebabnya tidak ada yang melaporkannya sebagai error.
+    - `MenuTas` pintasannya juga tertulis mati ke E-Arsip/Layanan Surat/Data Siswa.
+    Aturan: **setiap daftar tautan tetap (bottom nav, pintasan, menu akun) di portal yang dipakai
+    lebih dari satu peran WAJIB diturunkan dari daftar menu yang sudah disaring, bukan ditulis
+    ulang.** Dan tautan "Profil"/"Portal Guru" di `TasSidebar` dipilih dari PERAN (`isGuru`), bukan
+    dari `isFullTas` — dulu terbalik: guru-TU tidak diberi tautan Portal Guru sedangkan staf TAS
+    malah diberi tautan portal guru yang menolak mereka. Memeriksanya: `role='TAS'` di DB, lalu
+    pastikan tiap akun punya menu (13 menu `show: () => true` adalah lantai minimumnya).
+
 89. **Ubin pintasan = `<BarisPintasan>` (src/components/shared/BarisPintasan.tsx), JANGAN salin markup**
     (27 September 2026 — DESIGN_SYSTEM §20). Markup yang sama sempat tersebar di 13 berkas dan bentuknya
     pelan-pelan berbeda. Token spasi & bentuk ada di blok "TOKEN PELENGKAP" globals.css; tinggi kartu

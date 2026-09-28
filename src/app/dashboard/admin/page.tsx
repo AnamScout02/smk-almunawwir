@@ -34,23 +34,33 @@ export default async function AdminDashboard() {
   // PERBAIKAN KRITIS 2026-08-10 (temuan user): halaman ini adalah landing page OTOMATIS semua
   // akun role TAS setelah login (lihat proxy.ts roleRedirect) — dulu menampilkan statistik PENUH
   // (jumlah siswa, isi pesan masuk, data pendaftar) ke SIAPAPUN role TAS tanpa cek jabatan sama
-  // sekali, termasuk Security/Kebersihan. Sekarang staf TAS non-TU cukup lihat halaman ringkas —
-  // menu jabatan-scoped mereka tetap ada di sidebar (TasSidebar sudah discoped dgn benar).
+  // sekali, termasuk Security/Kebersihan. Sekarang staf TAS non-TU melihat halaman ringkas berisi
+  // KISI MENU yang sudah discoped jabatan (bukan statistik sekolah) — lihat perbaikan 28 Sep 2026 di bawah.
   if (session.role === "TAS") {
     const jabatanNames = await getJabatanNames(session.email);
     if (!isFullTasJabatan(jabatanNames)) {
+      /* PERBAIKAN 28 September 2026 (laporan user: "ketika masuk akun tampilannya seperti itu dan
+         tidak ada fitur2 lainnya" — Kepala UKS & Tim Perpustakaan). Halaman ini dulu hanya kartu
+         sambutan berbunyi "gunakan menu di sidebar": kalimat itu lahir 10 Agustus 2026, SEBELUM
+         keputusan 18 September yang memindahkan seluruh menu ke kisi di dashboard dan menghapus
+         laci menu HP (CLAUDE.md #54). Di HP tidak ada sidebar sama sekali, jadi empat dari lima
+         akun TAS tidak punya satu pun jalan ke fiturnya. Sekarang kisi menu yang SAMA dengan
+         sidebar (sudah disaring jabatan) ikut dirender. */
       return (
-        <div className="flex min-h-[80dvh] items-center justify-center p-8 pt-16 lg:pt-8">
-          <div className="panel masuk-halus max-w-sm p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
-              <Building2 size={26} />
-            </div>
-            <h1 className="mb-1 font-heading text-lg font-bold text-primary-900">Selamat Datang, {session.name}</h1>
-            <p className="text-sm text-gray-500">
-              {jabatanNames.length > 0
-                ? `Gunakan menu di sidebar sesuai tugas Anda (${jabatanNames.join(", ")}).`
-                : "Belum ada jabatan yang ditetapkan untuk akun Anda — hubungi Admin."}
-            </p>
+        <div className="p-6 lg:p-8 pt-16 lg:pt-8">
+          <PageHeader icon={<Building2 size={22} />} title="Dashboard"
+            description={<>Selamat datang, <span className="font-medium">{session.name}</span>
+              {jabatanNames.length > 0 ? ` — ${jabatanNames.join(", ")}` : ""}</>} />
+          <div className="space-y-6">
+            {/* Tanpa jabatan pun akun ini masih berhak atas menu umum staf (Presensi Mandiri,
+                Perpustakaan Digital, Pengumuman, Profil, …) — kisinya tetap dirender, catatannya
+                cuma pemberitahuan. */}
+            {jabatanNames.length === 0 && (
+              <div className="panel border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm text-amber-800">Belum ada jabatan yang ditetapkan untuk akun Anda — hubungi Admin agar menu tugasnya muncul.</p>
+              </div>
+            )}
+            <MenuTas favoritAwal={favoritAwal} jabatanNames={jabatanNames} />
           </div>
         </div>
       );

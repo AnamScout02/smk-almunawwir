@@ -30,12 +30,12 @@ function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups,
       <div className="px-5 py-4 border-b border-white/10">
         {logoFullWhite ? (
           <div className="flex flex-col gap-1.5">
-            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" />
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
             <p className="text-white/40 text-xs font-semibold tracking-wider uppercase">Portal Orang Tua</p>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
+            <Image src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
             <div>
               <p className="font-heading font-bold text-white text-sm">Al Munawwir</p>
               <p className="text-white/50 text-xs">Portal Orang Tua</p>
@@ -205,10 +205,10 @@ export default function ParentSidebar({ logoEmblem = "/images/logo-emblem.png", 
         style={impersonating ? { top: "var(--impersonation-banner-h, 2.5rem)" } : { top: 0 }}>
         <div className="flex items-center gap-2">
           {logoFullWhite ? (
-            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" />
+            <Image src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
           ) : (
             <>
-              <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" />
+              <Image src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
               <span className="font-heading font-bold text-white text-sm">Portal Orang Tua</span>
             </>
           )}

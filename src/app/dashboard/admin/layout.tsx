@@ -35,7 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="dashboard-shell">
         {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
         <div className="flex min-h-dvh">
-          <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} jabatanNames={jabatanNames} isFullTas={isFullTasJabatan(jabatanNames)} impersonating={!!impersonator} />
+          <TasSidebar logoEmblem={logoEmblem} logoFullWhite={logoFullWhite} pendingProfileEdits={pendingProfileEdits} overdueBooks={overdueBooks} jabatanNames={jabatanNames} isFullTas={isFullTasJabatan(jabatanNames)} impersonating={!!impersonator} isGuru={session.role === "TEACHER"} />
           {/* pb-[...]: ruang utk bottom nav bar mobile (fixed, MobileBottomNav di TasSidebar) —
               calc(4rem + safe-area-inset-bottom), BUKAN pb-16 polos, supaya di device ber-notch
               konten paling bawah tidak ketutup strip aman nav (fix responsif 2026-08-23). */}

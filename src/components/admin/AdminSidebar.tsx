@@ -304,16 +304,16 @@ function SidebarContent({
         >
           {c ? (
             <div className="flex justify-center">
-              <NextImage src={logoEmblem} alt="Logo" width={32} height={32} className="rounded-full object-contain shrink-0" />
+              <NextImage src={logoEmblem} alt="Logo" width={32} height={32} className="rounded-full object-contain shrink-0" unoptimized />
             </div>
           ) : logoFullWhite ? (
             <div className="flex flex-col gap-1.5">
-              <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" />
+              <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={48} className="object-contain h-10 w-auto" unoptimized />
               <p className="text-white/40 text-xs font-semibold tracking-wider uppercase">Panel Admin</p>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" />
+              <NextImage src={logoEmblem} alt="Logo" width={36} height={36} className="rounded-full object-contain shrink-0" unoptimized />
               <div>
                 <p className="font-heading font-bold text-white text-sm leading-tight">Al Munawwir</p>
                 <p className="text-white/50 text-xs">Panel Admin</p>
@@ -527,10 +527,10 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
         style={impersonating ? { top: "var(--impersonation-banner-h, 2.5rem)" } : { top: 0 }}>
         <div className="flex items-center gap-2">
           {logoFullWhite ? (
-            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" />
+            <NextImage src={logoFullWhite} alt="SMK Al Munawwir IIBS" width={140} height={40} className="h-7 w-auto object-contain" unoptimized />
           ) : (
             <>
-              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" />
+              <NextImage src={logoEmblem} alt="Logo" width={30} height={30} className="rounded-full object-contain" unoptimized />
               <span className="font-heading font-bold text-white text-sm">Admin Panel</span>
             </>
           )}

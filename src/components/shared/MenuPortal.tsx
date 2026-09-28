@@ -85,13 +85,21 @@ export function MenuTas({ jabatanNames = [], ...p }: PropsMenuPortal & { jabatan
     (GRUP_TAS as unknown as { label: string | null; items: (Grup["items"][number] & { show: (j: string[], f: boolean) => boolean })[] }[])
       .map(g => ({ label: g.label, items: g.items.filter(i => i.show(jabatanNames, penuh)) })) as Grup[],
   );
-  const pintasan: ItemMenuKisi[] = [
+  /* Pintasan Tata Usaha hanya untuk staf TU penuh — keempat tautannya dijaga `verifyTasAccess()`,
+     jadi bagi staf TAS non-TU (Kepala UKS, Tim Perpustakaan, Security) tiga di antaranya memantul
+     ke /login lalu kembali ke dashboard, terbaca sebagai "dipencet tidak terjadi apa-apa"
+     (laporan user 28 September 2026). Mereka mendapat pintasan dari menunya sendiri. */
+  const pintasanTu: ItemMenuKisi[] = [
     { href: "/dashboard/admin/arsip", label: "E-Arsip", icon: Archive },
     { href: "/dashboard/admin/layanan-surat", label: "Layanan Surat", icon: ClipboardList },
     { href: "/dashboard/admin/students", label: "Data Siswa", icon: GraduationCap },
     { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
   ];
-  return <MenuLengkap grup={grup} pintasan={pintasan} {...p} />;
+  const pintasanJabatan: ItemMenuKisi[] = [
+    ...grup.flatMap(g => g.items).filter(i => i.href !== "/dashboard/admin").slice(0, 3),
+    { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
+  ];
+  return <MenuLengkap grup={grup} pintasan={penuh ? pintasanTu : pintasanJabatan} {...p} />;
 }
 
 export function MenuBendahara(p: PropsMenuPortal) {

@@ -6,10 +6,13 @@
 //     nama file sudah content-hashed oleh Next.js untuk _next/static).
 // TIDAK melakukan precaching daftar URL di install (app ini terlalu dinamis/personalized per role
 // utk itu bermanfaat) — cache diisi lazy saat resource benar2 diakses (runtime caching).
+// v3 (28 Sep 2026): logo sidebar/topbar dikembalikan ke `unoptimized` sehingga dilayani lagi dari
+// /images/... (masuk cache-first di sini) — bukan lewat /_next/image yang TIDAK disinggah SW sama
+// sekali. Naik versi supaya entri lama yang mungkin rusak ikut dibuang.
 // v2 (14 Sep 2026): ikon aplikasi diganti logo bundar — versi baru membuang cache ikon lama yang
 // tersimpan cache-first. Naikkan lagi setiap gambar di /icons atau /images diganti di tempat.
 // Ikon dari Logo Lambang (/ikon-aplikasi/…) SENGAJA tidak di-cache di sini (selalu dari jaringan).
-const CACHE_NAME = "almunawwir-static-v2";
+const CACHE_NAME = "almunawwir-static-v3";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
