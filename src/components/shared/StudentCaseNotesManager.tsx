@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { HeartHandshake, Plus, ClipboardList, Save, Loader2, Search, Trash2, CheckCircle2, Clock } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import StatTile from "@/components/admin/StatTile";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -24,29 +25,52 @@ export default function StudentCaseNotesManager() {
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [tab, setTab] = useState<"catat" | "riwayat">("catat");
+  /* Kartu angka ringkasan — blok pertama halaman (DESIGN_SYSTEM §19.5). Diambil sekali dari
+     seluruh catatan (tanpa saringan status) supaya angkanya tidak ikut berubah saat tab Riwayat
+     disaring; `muatRingkas` dipanggil ulang tiap ada catatan dibuat/diubah/dihapus. */
+  const [ringkas, setRingkas] = useState<CaseNote[] | null>(null);
+  const muatRingkas = useCallback(() => {
+    fetch("/api/admin/case-notes")
+      .then(r => r.json()).then(d => setRingkas(Array.isArray(d) ? d : []))
+      .catch(() => setRingkas([]));
+  }, []);
+  useEffect(() => { muatRingkas(); }, [muatRingkas]);
+
+  const berjalan = ringkas?.filter(n => n.status === "BERJALAN").length ?? 0;
+  const selesai = ringkas?.filter(n => n.status === "SELESAI").length ?? 0;
+  const siswa = new Set(ringkas?.map(n => n.student.id) ?? []).size;
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<HeartHandshake size={22} />} title="Rekam BK — Penanganan Siswa"
         description="Catatan penanganan (konseling, panggilan orang tua, dll) — terpisah dari Poin Siswa" />
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {([["catat", "Catat Penanganan", Plus], ["riwayat", "Riwayat", ClipboardList]] as const).map(([v, label, Icon]) => (
-          <button key={v} onClick={() => setTab(v)}
-            className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition ${tab === v ? "bg-primary-900 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
-            <Icon size={14} /> {label}
-          </button>
-        ))}
+      <div className="kisi-kartu kisi-kartu-4 mb-5">
+        <StatTile ikon="dokumen" color="primary" value={ringkas?.length ?? 0} label="Total Penanganan" />
+        <StatTile ikon="menunggu" color={berjalan ? "amber" : "emerald"} value={berjalan} label="Masih Berjalan" sorot={berjalan > 0} />
+        <StatTile ikon="centang" color="emerald" value={selesai} label="Selesai" />
+        <StatTile ikon="siswa" color="blue" value={siswa} label="Siswa Ditangani" />
       </div>
 
-      {tab === "catat" && <CatatTab toast={toast} />}
-      {tab === "riwayat" && <RiwayatTab toast={toast} confirmDialog={confirmDialog} />}
+      <div className="baris-alat mb-5">
+        <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
+          {([["catat", "Catat Penanganan", Plus], ["riwayat", "Riwayat", ClipboardList]] as const).map(([v, label, Icon]) => (
+            <button key={v} onClick={() => setTab(v)}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${tab === v ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+              <Icon size={14} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "catat" && <CatatTab toast={toast} onBerubah={muatRingkas} />}
+      {tab === "riwayat" && <RiwayatTab toast={toast} confirmDialog={confirmDialog} onBerubah={muatRingkas} />}
     </div>
   );
 }
 
 // ── Tab: Catat Penanganan ────────────────────────────────────────────────────
-function CatatTab({ toast }: { toast: ReturnType<typeof useToast> }) {
+function CatatTab({ toast, onBerubah }: { toast: ReturnType<typeof useToast>; onBerubah: () => void }) {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<StudentHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -77,6 +101,7 @@ function CatatTab({ toast }: { toast: ReturnType<typeof useToast> }) {
     setSaving(false);
     if (!res.ok) { const d = await res.json(); toast.error(d.error || "Gagal menyimpan"); return; }
     toast.success(`Catatan penanganan tersimpan untuk ${student.name}.`);
+    onBerubah();
     setStudent(null); setQuery(""); setNote(""); setHandlingType(HANDLING_TYPES[0]);
   }
 
@@ -127,7 +152,7 @@ function CatatTab({ toast }: { toast: ReturnType<typeof useToast> }) {
 }
 
 // ── Tab: Riwayat ─────────────────────────────────────────────────────────────
-function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToast>; confirmDialog: ReturnType<typeof useConfirm> }) {
+function RiwayatTab({ toast, confirmDialog, onBerubah }: { toast: ReturnType<typeof useToast>; confirmDialog: ReturnType<typeof useConfirm>; onBerubah: () => void }) {
   const [status, setStatus] = useState<"" | "BERJALAN" | "SELESAI">("");
   const [notes, setNotes] = useState<CaseNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,14 +173,14 @@ function RiwayatTab({ toast, confirmDialog }: { toast: ReturnType<typeof useToas
       method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }),
     });
     if (!res.ok) { toast.error("Gagal mengubah status"); return; }
-    load();
+    load(); onBerubah();
   }
 
   async function handleDelete(id: string) {
     if (!await confirmDialog("Hapus catatan penanganan ini? Tindakan ini tidak bisa dibatalkan.")) return;
     const res = await fetch(`/api/admin/case-notes/${id}`, { method: "DELETE" });
     if (!res.ok) { toast.error("Gagal menghapus"); return; }
-    load();
+    load(); onBerubah();
   }
 
   return (

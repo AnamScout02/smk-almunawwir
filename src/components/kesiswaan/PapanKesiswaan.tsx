@@ -35,6 +35,35 @@ export default function PapanKesiswaan({ sertifikatBase, tanpaHeader = false }: 
   return (
     <div className={tanpaHeader ? "" : "p-6 lg:p-8 pt-16 lg:pt-8"}>
       {!tanpaHeader && <PageHeader icon={<Activity size={22} />} title="Papan Kesiswaan" description="Kehadiran hari ini, kelas yang perlu perhatian, dan prestasi siswa" />}
+
+      {/* Kartu angka WAJIB blok pertama (DESIGN_SYSTEM §19.5) — termasuk di halaman bertab:
+          kartunya ikut berganti mengikuti tab, tetapi letaknya tetap di atas pita tab. */}
+      {tab === "hari" && hari?.libur && (
+        <p className="mb-5 rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">Hari ini libur: {hari.libur}</p>
+      )}
+      {!galat && tab === "hari" && hari && (
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
+          <StatTile ikon="hadir" color="emerald" value={hari.total.HADIR ?? 0} label="Hadir" />
+          <StatTile ikon="alpha" color={(hari.total.ALPHA ?? 0) ? "red" : "emerald"} value={hari.total.ALPHA ?? 0} label={`Alpha · izin ${hari.total.IZIN ?? 0} · sakit ${hari.total.SAKIT ?? 0}`} />
+          <StatTile ikon="jam" color={hari.terlambat ? "amber" : "blue"} value={hari.terlambat} label="Terlambat (poin piket)" />
+          <StatTile ikon="menunggu" color={belumAbsen.length ? "amber" : "emerald"} value={belumAbsen.length} label={`Kelas belum diabsen · ${hari.diLuar} siswa di luar`} sorot={belumAbsen.length > 0} />
+        </div>
+      )}
+      {!galat && tab === "kerawanan" && rawan && (
+        <div className="kisi-kartu kisi-kartu-3 mb-5">
+          <StatTile ikon="peringatan" color="red" value={rawan.ringkas.tinggi} label="Siswa risiko tinggi" />
+          <StatTile ikon="waspada" color="amber" value={rawan.ringkas.sedang} label="Risiko sedang" />
+          <StatTile ikon="perisai" color="blue" value={rawan.ringkas.pantau} label="Perlu dipantau" />
+        </div>
+      )}
+      {!galat && tab === "prestasi" && pres && (
+        <div className="kisi-kartu kisi-kartu-3 mb-5">
+          <StatTile ikon="prestasi" color="amber" value={pres.daftar.length} label={`Prestasi tercatat · ${pres.semester}`} />
+          <StatTile ikon="siswa" color="primary" value={new Set(pres.daftar.map(d => d.nama)).size} label="Siswa berprestasi" />
+          <StatTile ikon="cetak" color="emerald" value={pres.daftar.filter(d => d.bersertifikat).length} label="Sudah terbit piagam" />
+        </div>
+      )}
+
       <div className="alat-tab mb-5 flex w-fit gap-1 rounded-xl border border-gray-100 bg-white p-1">
         {([["hari", "Kehadiran hari ini"], ["kerawanan", "Peta kerawanan"], ["prestasi", "Prestasi"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
@@ -42,13 +71,6 @@ export default function PapanKesiswaan({ sertifikatBase, tanpaHeader = false }: 
       </div>
       {galat ? <EmptyState icon={Activity} title="Tidak tersedia" description={galat} /> : tab === "hari" ? (!hari ? memuat : (
         <div className="space-y-5">
-          {hari.libur && <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">Hari ini libur: {hari.libur}</p>}
-          <div className="kisi-kartu kisi-kartu-4">
-            <StatTile ikon="hadir" color="emerald" value={hari.total.HADIR ?? 0} label="Hadir" />
-            <StatTile ikon="alpha" color={(hari.total.ALPHA ?? 0) ? "red" : "emerald"} value={hari.total.ALPHA ?? 0} label={`Alpha · izin ${hari.total.IZIN ?? 0} · sakit ${hari.total.SAKIT ?? 0}`} />
-            <StatTile ikon="jam" color={hari.terlambat ? "amber" : "blue"} value={hari.terlambat} label="Terlambat (poin piket)" />
-            <StatTile ikon="menunggu" color={belumAbsen.length ? "amber" : "emerald"} value={belumAbsen.length} label={`Kelas belum diabsen · ${hari.diLuar} siswa di luar`} sorot={belumAbsen.length > 0} />
-          </div>
           <div className="panel overflow-x-auto">
             <table className="data-table">
               <thead><tr><th>Kelas</th><th className="text-center">Siswa</th><th className="text-center">Hadir</th><th className="text-center">Izin</th><th className="text-center">Sakit</th><th className="text-center">Alpha</th><th className="text-center">% Hadir</th></tr></thead>
@@ -66,11 +88,6 @@ export default function PapanKesiswaan({ sertifikatBase, tanpaHeader = false }: 
         </div>
       )) : tab === "kerawanan" ? (!rawan ? memuat : (
         <div className="space-y-5">
-          <div className="kisi-kartu kisi-kartu-3">
-            <StatTile ikon="peringatan" color="red" value={rawan.ringkas.tinggi} label="Siswa risiko tinggi" />
-            <StatTile ikon="waspada" color="amber" value={rawan.ringkas.sedang} label="Risiko sedang" />
-            <StatTile ikon="perisai" color="blue" value={rawan.ringkas.pantau} label="Perlu dipantau" />
-          </div>
           <div className="panel overflow-x-auto">
             <table className="data-table">
               <thead><tr><th>Kelas</th><th className="text-center">Skor</th><th className="text-center">Risiko tinggi/sedang</th><th className="text-center">Alpha 30 hr</th><th className="text-center">Pelanggaran 30 hr</th><th className="text-center">Poin semester</th><th className="text-center">Kasus BK aktif</th><th className="text-center">Konseling 30 hr</th></tr></thead>

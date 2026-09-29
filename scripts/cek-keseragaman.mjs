@@ -135,7 +135,9 @@ for (const p of daftar) {
     const mh = s.match(/<PageHeader[\s\S]*?\/>\s*\n/);
     if (mh) {
       const sisa = s.slice(mh.index + mh[0].length);
-      const iAlat = sisa.search(/<div className="(?:alat-aksi|baris-alat)[^"]*"|<div className="grid grid-cols-2 gap-3 lg:grid-cols-4/);
+      /* Pita tab yang berdiri sendiri (tanpa pembungkus baris-alat) juga "baris alat" — kasus nyata
+         Papan Kesiswaan 29 Sep 2026: tab tampil di atas kartu dan lolos dari aturan ini. */
+      const iAlat = sisa.search(/<div className="(?:alat-aksi|baris-alat|alat-tab)[^"]*"|<div className="grid grid-cols-2 gap-3 lg:grid-cols-4/);
       const iKartu = sisa.search(/<div className="kisi-kartu/);
       /* Jarak dibatasi: kartu angka yang letaknya JAUH di bawah bukan ringkasan halaman melainkan
          statistik satu seksi (mis. rekap riwayat di Kedisiplinan Guru), dan baris alat di atas memang
