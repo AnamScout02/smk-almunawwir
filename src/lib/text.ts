@@ -73,10 +73,14 @@ export const FREE_TEXT_BUKU_INDUK_KEYS = [
   "kabupaten", "fatherKabupaten", "motherKabupaten", "guardianKabupaten",
   "province", "fatherProvince", "motherProvince", "guardianProvince",
   "prevSchoolAddress", "fatherName", "motherName", "guardianName",
-  "pklPlace", "pklSupervisor", "transferTo", "pindahanDari",
+  "pklPlace", "pklSupervisor", "transferTo", "pindahanDari", "continueStudy",
 ] as const;
 
 const NAME_KEYS = ["fatherName", "motherName", "guardianName"];
+/** Nama sekolah/lembaga — wajib `toProperCaseSchoolName` supaya singkatan jenjang tidak rusak.
+ * Sebelumnya ikut `toProperCase` polos, jadi "SMA Miftahul Ulum Kabat" tersimpan sebagai
+ * "Sma Miftahul Ulum Kabat" (laporan user 29 September 2026, kolom Pindah Ke). */
+const SCHOOL_KEYS = ["transferTo", "pindahanDari", "continueStudy"];
 // Nomor ijazah SMP (D. Pendidikan Sebelumnya) & ijazah kelulusan (K. Kelulusan) — sama-sama kode
 // resmi, sama-sama pakai toUppercaseKeepMts, BUKAN toProperCase (lihat komentar fungsi itu).
 const IJAZAH_NO_KEYS = ["ijazahNo", "graduationIjazahNo"];
@@ -90,7 +94,9 @@ export function normalizeBukuIndukText<T extends Record<string, unknown>>(data: 
   for (const key of FREE_TEXT_BUKU_INDUK_KEYS) {
     const v = out[key];
     if (typeof v === "string" && v.trim()) {
-      out[key] = NAME_KEYS.includes(key) ? toProperCaseName(v) : toProperCase(v);
+      out[key] = NAME_KEYS.includes(key)
+        ? toProperCaseName(v)
+        : SCHOOL_KEYS.includes(key) ? toProperCaseSchoolName(v) : toProperCase(v);
     }
   }
   for (const key of IJAZAH_NO_KEYS) {

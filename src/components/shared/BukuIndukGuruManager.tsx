@@ -332,7 +332,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               <Section title="B. Data Kepegawaian" icon={Briefcase} open={!!sections.kerja} onToggle={() => toggleSection("kerja")}>
                 <Field label="Pendidikan Terakhir" value={String(form.education ?? "")} options={md("pendidikan_guru")}
                   onChange={v => setForm(p => ({...p, education: v}))} />
-                <Field label="No. Sertifikat Pendidik" value={e("certNo")} onChange={setE("certNo")} />
+                <Field label="No. Sertifikat Pendidik" value={e("certNo")} onChange={setE("certNo")} kapital="asli" />
                 <Field label="Status Sertifikasi" value={e("certStatus")}
                   options={["Belum Sertifikasi","Sudah Sertifikasi","Sedang Proses"]}
                   onChange={setE("certStatus")} />

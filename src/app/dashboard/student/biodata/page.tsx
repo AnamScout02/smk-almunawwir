@@ -199,7 +199,7 @@ export default function StudentBiodataPage() {
               <Field label="Asal Sekolah (SMP/MTs)" value={top.previousSchool} wide onChange={v => setTop(p => ({ ...p, previousSchool: v }))} />
               <Field label="Alamat Asal Sekolah" value={f("prevSchoolAddress")} wide onChange={setF("prevSchoolAddress")} />
               <Field label="Tanggal Ijazah" value={f("ijazahDate")} type="date" onChange={setF("ijazahDate")} />
-              <Field label="Nomor Ijazah" value={f("ijazahNo")} onChange={setF("ijazahNo")} />
+              <Field label="Nomor Ijazah" value={f("ijazahNo")} onChange={setF("ijazahNo")} kapital="asli" />
               <Field label="Tanggal SKHUN" value={f("skhunDate")} type="date" onChange={setF("skhunDate")} />
               <Field label="Lama Belajar" value={f("lamaBelajar")} options={md("lama_belajar")} onChange={setF("lamaBelajar")} />
               <Field label="Pindahan Dari" value={f("pindahanDari")} onChange={setF("pindahanDari")} />

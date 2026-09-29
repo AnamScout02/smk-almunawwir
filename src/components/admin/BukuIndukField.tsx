@@ -1,7 +1,7 @@
 "use client";
 import DatePicker from "@/components/shared/DatePicker";
 import Select from "@/components/admin/Select";
-import { toProperCase } from "@/lib/text";
+import { toProperCase, toProperCaseSchoolName } from "@/lib/text";
 
 interface FieldProps {
   label: string;
@@ -21,12 +21,24 @@ interface FieldProps {
   list?: string;
   /** Keterangan kecil di bawah isian. */
   hint?: string;
+  /**
+   * Perlakuan huruf saat isian kehilangan fokus:
+   * - `"proper"` (bawaan) — Proper Case, untuk nama orang, alamat, dan teks bebas.
+   * - `"sekolah"` — Proper Case yang mempertahankan singkatan jenjang (SMA, SMK, MTs, SMKN…).
+   * - `"asli"` — **dibiarkan persis seperti diketik**. WAJIB untuk isian berupa KODE: nomor surat,
+   *   nomor ijazah, NIS/NISN sekolah lama, SKHUN, koordinat. Dulu SEMUA isian teks dipaksa Proper
+   *   Case tanpa terkecuali, sehingga "450/B.6/SMK_AM-IIBS/026/IX/2026" berubah jadi
+   *   "450/B.6/Smk_am-Iibs/026/Ix/2026" begitu kursor pindah (laporan user 29 September 2026).
+   */
+  kapital?: "proper" | "sekolah" | "asli";
 }
 
 export default function Field({
   label, value, onChange, type = "text", wide = false,
-  options, min, max, maxLen, readOnly, placeholder, list, hint,
+  options, min, max, maxLen, readOnly, placeholder, list, hint, kapital = "proper",
 }: FieldProps) {
+  const rapikan = (v: string) =>
+    kapital === "asli" ? v : kapital === "sekolah" ? toProperCaseSchoolName(v) : toProperCase(v);
   const cls = `input-field ${readOnly ? "bg-gray-50 text-gray-500 cursor-default" : ""}`;
   return (
     <div className={wide ? "col-span-2" : ""}>
@@ -64,7 +76,7 @@ export default function Field({
       ) : (
         <input className={cls} type={type} maxLength={maxLen} placeholder={placeholder} list={list}
           value={value} onChange={e => onChange(e.target.value)} readOnly={readOnly}
-          onBlur={e => { if (!readOnly && e.target.value) onChange(toProperCase(e.target.value)); }} />
+          onBlur={e => { if (!readOnly && kapital !== "asli" && e.target.value) onChange(rapikan(e.target.value)); }} />
       )}
       {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>

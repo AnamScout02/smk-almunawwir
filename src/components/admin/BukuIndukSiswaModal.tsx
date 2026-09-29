@@ -592,13 +592,13 @@ export default function BukuIndukSiswaModal({
           </datalist>
         </div>
         <Field label="Alamat Asal Sekolah" value={f("prevSchoolAddress")} wide onChange={setF("prevSchoolAddress")} />
-        <Field label="Nomor Induk Asal (NIS Sekolah Lama)" value={f("asalNis")} onChange={setF("asalNis")} />
-        <Field label="Nomor Surat Pindah Masuk" value={f("masukSuratNo")} onChange={setF("masukSuratNo")} />
+        <Field label="Nomor Induk Asal (NIS Sekolah Lama)" value={f("asalNis")} onChange={setF("asalNis")} kapital="asli" />
+        <Field label="Nomor Surat Pindah Masuk" value={f("masukSuratNo")} onChange={setF("masukSuratNo")} kapital="asli" />
         <Field label="Tanggal Ijazah" value={f("ijazahDate")} type="date" onChange={setF("ijazahDate")} />
-        <Field label="Nomor Ijazah" value={f("ijazahNo")} onChange={setF("ijazahNo")} />
+        <Field label="Nomor Ijazah" value={f("ijazahNo")} onChange={setF("ijazahNo")} kapital="asli" />
         <Field label="Tanggal SKHUN" value={f("skhunDate")} type="date" onChange={setF("skhunDate")} />
         <Field label="Lama Belajar" value={f("lamaBelajar")} options={md("lama_belajar")} onChange={setF("lamaBelajar")} />
-        <Field label="Pindahan Dari" value={f("pindahanDari")} onChange={setF("pindahanDari")} />
+        <Field label="Pindahan Dari" value={f("pindahanDari")} onChange={setF("pindahanDari")} kapital="sekolah" />
         <Field label="Kelas Asal (Sekolah Lama)" value={f("kelasAsal")} onChange={setF("kelasAsal")} />
         <Field label="Alasan Pindah ke SMK Ini" value={f("alasanPindahKe")} options={md("alasan_pindah")} onChange={setF("alasanPindahKe")} />
         <Field label="Diterima di Tingkat" value={f("tingkatMasuk")} options={md("tingkat_masuk")} onChange={setF("tingkatMasuk")} />
@@ -731,8 +731,8 @@ export default function BukuIndukSiswaModal({
         <Field label="Tanggal Berakhir PKL" value={f("pklEndDate")} type="date" onChange={setF("pklEndDate")} />
         <Field label="Nama Tempat PKL" value={f("pklPlace")} wide onChange={setF("pklPlace")} />
         <Field label="Alamat Tempat PKL" value={f("pklAddress")} type="textarea" wide onChange={setF("pklAddress")} />
-        <Field label="Lintang Selatan / LS" value={f("pklLatitude")} placeholder="-7.123456" onChange={setF("pklLatitude")} />
-        <Field label="Bujur Timur / BT" value={f("pklLongitude")} placeholder="110.123456" onChange={setF("pklLongitude")} />
+        <Field label="Lintang Selatan / LS" value={f("pklLatitude")} placeholder="-7.123456" onChange={setF("pklLatitude")} kapital="asli" />
+        <Field label="Bujur Timur / BT" value={f("pklLongitude")} placeholder="110.123456" onChange={setF("pklLongitude")} kapital="asli" />
         {bukuForm.pklLatitude && bukuForm.pklLongitude && (
           <div className="col-span-2">
             <a href={`https://maps.google.com/?q=${bukuForm.pklLatitude},${bukuForm.pklLongitude}`}
@@ -753,11 +753,11 @@ export default function BukuIndukSiswaModal({
             accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
         </div>
         <Field label="Tanggal Lulus" value={f("graduationDate")} type="date" onChange={setF("graduationDate")} />
-        <Field label="Nomor Ijazah Kelulusan" value={f("graduationIjazahNo")} onChange={setF("graduationIjazahNo")} />
-        <Field label="Nomor SKHUN" value={f("skhunNo")} onChange={setF("skhunNo")} />
+        <Field label="Nomor Ijazah Kelulusan" value={f("graduationIjazahNo")} onChange={setF("graduationIjazahNo")} kapital="asli" />
+        <Field label="Nomor SKHUN" value={f("skhunNo")} onChange={setF("skhunNo")} kapital="asli" />
         <Field label="Nilai Rata-rata Rapor" value={f("avgReport")} type="number" min={0} max={100} onChange={setF("avgReport")} />
         <Field label="Nilai Rata-rata Ujian" value={f("avgExam")} type="number" min={0} max={100} onChange={setF("avgExam")} />
-        <Field label="Akan Melanjutkan Ke" value={f("continueStudy")} wide onChange={setF("continueStudy")} />
+        <Field label="Akan Melanjutkan Ke" value={f("continueStudy")} wide onChange={setF("continueStudy")} kapital="sekolah" />
         <Field label="Rencana Kerja" value={f("workPlan")} wide onChange={setF("workPlan")} />
       </Section>
 
@@ -777,8 +777,8 @@ export default function BukuIndukSiswaModal({
           />
         </div>
         <Field label="Tanggal Pindah/Keluar" value={f("pindahDate")} type="date" onChange={setF("pindahDate")} />
-        <Field label="Nomor Surat" value={f("suratNo")} onChange={setF("suratNo")} placeholder="Nomor surat pindah/keluar" />
-        <Field label="Pindah Ke" value={f("transferTo")} wide onChange={setF("transferTo")} />
+        <Field label="Nomor Surat" value={f("suratNo")} onChange={setF("suratNo")} placeholder="Nomor surat pindah/keluar" kapital="asli" />
+        <Field label="Pindah Ke" value={f("transferTo")} wide onChange={setF("transferTo")} kapital="sekolah" />
         <Field label="Alasan Pindah/Keluar" value={f("alasanPindah")} options={md("alasan_pindah")} onChange={setF("alasanPindah")} />
         <Field label="Keterangan Lain" value={String(form.studentNotes ?? "")} type="textarea" wide
           onChange={v => setForm(p => ({ ...p, studentNotes: v }))} />
