@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ClipboardPen, History, Loader2, Printer, Save, Send, Settings2, Sparkles, Undo2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardPen, Download, History, Loader2, Printer, Save, Send, Settings2, Sparkles, Undo2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Modal from "@/components/admin/Modal";
 import Alert from "@/components/admin/Alert";
@@ -221,6 +221,10 @@ export default function FormNilaiRaporEditor({ classId, subject, semester, kemba
           {bolehUbah && <button type="button" onClick={() => setBukaAtur(true)} className="btn-modal-cancel"><Settings2 /> TP, LM & Bobot</button>}
           {bolehUbah && <button type="button" onClick={isiOtomatis} disabled={!!sibuk} className="btn-modal-cancel">{sibuk === "usulan" ? <Loader2 className="animate-spin" /> : <Sparkles />} Isi dari Jurnal & CBT</button>}
           {bolehUbah && <button type="button" onClick={() => simpanSekarang()} disabled={simpan === "menyimpan"} className="btn-modal-cancel"><Save /> Simpan</button>}
+          {/* Unduhan dirakit di SERVER lewat <a href> biasa — pustaka xlsx terlalu berat untuk bundel
+              browser (CLAUDE.md "Export data → Excel"). */}
+          <a href={`/api/rapor/form/ekspor?classId=${encodeURIComponent(classId)}&subject=${encodeURIComponent(subject)}&semester=${encodeURIComponent(semester)}`}
+            className="btn-modal-cancel"><Download /> Unduh Excel</a>
           {bolehUbah && data.status !== "DIKIRIM" && <button type="button" onClick={() => aksi("kirim")} disabled={!!sibuk} className="btn-modal-save">{sibuk === "kirim" ? <Loader2 className="animate-spin" /> : <Send />} Kirim ke Wali Kelas</button>}
           {data.status === "DIKIRIM" && data.akses.bolehUbah && data.akses.peran === "GURU" && <button type="button" onClick={() => aksi("tarik")} disabled={!!sibuk} className="btn-modal-cancel"><Undo2 /> Tarik untuk Diubah</button>}
           {data.status === "DIKIRIM" && data.akses.bolehKembalikan && <button type="button" onClick={() => setKembalikan("")} className="btn-hapus"><Undo2 /> Kembalikan ke Guru</button>}
