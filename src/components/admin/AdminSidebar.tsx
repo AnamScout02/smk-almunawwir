@@ -10,7 +10,7 @@ import {
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard, Heart, MoreHorizontal, ScanLine, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, CalendarOff, HandCoins, ScanSearch,
-  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen,
+  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -125,6 +125,8 @@ export const menuGroups = [
       { href: "/dashboard/admin/presensi-pegawai", label: "Presensi Pegawai", icon: UserCheck, badge: 0 },
       { href: "/dashboard/admin/kegiatan", label: "Presensi Kegiatan (QR)", icon: CalendarCheck, badge: 0 },
       { href: "/dashboard/admin/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck, badge: 0 },
+      { href: "/dashboard/admin/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart, badge: 0 },
+      { href: "/dashboard/admin/masukan-rekan-pantau", label: "Pantau Masukan Rekan", icon: ShieldCheck, badge: 0 },
       { href: "/dashboard/admin/arsip-sk", label: "Arsip SK & Dokumen", icon: Archive, badge: 0 },
       { href: "/dashboard/admin/cuti", label: "Cuti Pegawai", icon: CalendarOff, badge: 0 },
       { href: "/dashboard/admin/jadwal-piket", label: "Jadwal Piket", icon: CalendarClock, badge: 0 },
