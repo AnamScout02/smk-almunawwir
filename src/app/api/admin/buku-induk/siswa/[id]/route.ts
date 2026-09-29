@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity-log";
 import { diffBukuIndukRaw, DIFF_SELECT } from "@/lib/buku-induk-diff";
 import bcrypt from "bcryptjs";
 import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { keUks } from "@/lib/tinggi-berat";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 
 /** Tentukan nilai kolom exitDate saat menyimpan: pakai isian eksplisit kalau ada, kalau tidak
@@ -140,6 +141,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         major: { select: { name: true, code: true } },
       },
     });
+    // Tinggi & berat badan = SATU angka dengan pemeriksaan UKS (src/lib/tinggi-berat.ts, keputusan
+    // user 29 September 2026). Sengaja dibungkus try/catch: gagal menyinkronkan tidak boleh
+    // menggagalkan penyimpanan Buku Induk itu sendiri.
+    if (bukuIndukData) {
+      try { await keUks(id, bukuIndukData as Record<string, unknown>, session.name); }
+      catch (e) { console.error("[buku-induk sinkron TB/BB]", e); }
+    }
     // Riwayat perubahan data: catat KOLOM MANA saja yang berubah beserta nilai lama & barunya.
     // Tanpa ini, kalau suatu saat ada data yang "tiba-tiba salah", tidak ada cara tahu siapa yang
     // mengubah dan apa isinya sebelum diubah — padahal Buku Induk adalah dokumen resmi sekolah.

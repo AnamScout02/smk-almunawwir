@@ -10,7 +10,11 @@ import { BarDaftar } from "@/components/shared/GrafikRingkas";
 import { useToast } from "@/components/shared/ToastProvider";
 
 interface Terakhir { tanggal: string; tinggiCm: number | null; beratKg: number | null; imt: number | null; statusGizi: string | null }
-interface Siswa { id: string; nama: string; nis: string; jk: string | null; terakhir: Terakhir | null }
+interface Siswa {
+  id: string; nama: string; nis: string; jk: string | null; terakhir: Terakhir | null;
+  /** Tinggi/berat dari Buku Induk — dipakai sebagai isian awal bila siswa belum pernah diperiksa. */
+  bukuInduk?: { tinggiCm: number | null; beratKg: number | null };
+}
 type Isian = { tinggiCm: string; beratKg: string; tensi: string; penglihatan: string; catatan: string };
 const kosong: Isian = { tinggiCm: "", beratKg: "", tensi: "", penglihatan: "", catatan: "" };
 
@@ -38,7 +42,20 @@ export default function PemeriksaanManager({ kembaliHref }: { kembaliHref: strin
       const d = await r.json().catch(() => null);
       if (!r.ok) { setGalat(d?.error ?? "Gagal memuat."); return; }
       setKelas(d.kelas); setRekap(d.rekap ?? []);
-      if (kid) { setSiswa(d.siswa ?? []); setIsian({}); }
+      if (kid) {
+        const daftar: Siswa[] = d.siswa ?? [];
+        setSiswa(daftar);
+        /* Isian awal diambil dari pemeriksaan terakhir, kalau belum ada dari Buku Induk — tinggi &
+           berat adalah satu angka di kedua tempat, jadi layar ini tidak boleh kosong padahal
+           datanya sudah ada di TU (temuan user 29 September 2026). */
+        const awal: Record<string, Isian> = {};
+        for (const sw of daftar) {
+          const t = sw.terakhir?.tinggiCm ?? sw.bukuInduk?.tinggiCm ?? null;
+          const b = sw.terakhir?.beratKg ?? sw.bukuInduk?.beratKg ?? null;
+          if (t != null || b != null) awal[sw.id] = { ...kosong, tinggiCm: t == null ? "" : String(t), beratKg: b == null ? "" : String(b) };
+        }
+        setIsian(awal);
+      }
     }).catch(() => setGalat("Gagal memuat."));
   }, []);
   useEffect(() => { muat(""); }, [muat]);
