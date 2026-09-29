@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Download, Table2, Search } from "lucide-react";
+import { ArrowLeft, Loader2, Download, Pencil, Table2, Search } from "lucide-react";
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import { GURU_COLUMNS as ALL_COLUMNS, type TeacherRow } from "@/lib/buku-induk-guru-columns";
@@ -128,8 +128,18 @@ export default function TabelBukuIndukGuru({ basePath = "/dashboard/admin/buku-i
                 {filtered.map((t, i) => (
                   <tr key={t.id} className="border-b border-gray-200 hover:bg-primary-50/40 transition-colors">
                     <td className="sticky left-0 z-10 w-10 bg-white px-3 py-2 text-center text-gray-400 border-r border-gray-200">{i + 1}</td>
-                    <td className="sticky left-10 z-10 w-48 bg-white px-3 py-2 text-left text-gray-900 font-semibold border-r border-gray-200 whitespace-nowrap shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
-                      {NAMA_COL.get(t)}
+                    {/* Tombol pensil sama seperti Tabel Lengkap Buku Induk SISWA — sebelumnya tabel guru
+                        hanya bisa dibaca, jadi memperbaiki satu sel berarti mencari orangnya lagi di
+                        halaman lain (keluhan user 29 September 2026). Menuju formulir lengkap yang sama
+                        lewat deep link `?edit=`, lalu kembali ke tabel ini setelah Simpan. */}
+                    <td className="sticky left-10 z-10 w-48 bg-white px-2 py-2 text-left text-gray-900 font-semibold border-r border-gray-200 whitespace-nowrap shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="truncate">{NAMA_COL.get(t)}</span>
+                        <Link href={`${basePath}?edit=${t.id}&kembali=tabel`} title="Edit data guru ini"
+                          className="shrink-0 rounded p-1 text-gray-300 transition-colors hover:bg-primary-50 hover:text-primary-700">
+                          <Pencil size={12} />
+                        </Link>
+                      </div>
                     </td>
                     {COLUMNS.map(col => (
                       <td key={col.key} className="px-3 py-2 text-center text-gray-700 border-r border-gray-200 whitespace-nowrap">

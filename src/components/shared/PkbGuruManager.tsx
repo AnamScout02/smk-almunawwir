@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Award, GraduationCap, Loader2, Plus, Printer, Save, Trash2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Alert from "@/components/admin/Alert";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import EmptyState from "@/components/admin/EmptyState";
@@ -32,10 +33,23 @@ export default function PkbGuruManager({ basePath }: { basePath: string }) {
   const [buka, setBuka] = useState(false);
   const [form, setForm] = useState(KOSONG);
   const [sibuk, setSibuk] = useState(false);
+  /* Status muat DIPISAH dari `data`. Dulu "sedang memuat" disimpulkan dari `data === null`, jadi
+     ketika API menolak (mis. staf TAS tanpa data kepegawaian → 403) galatnya memang tertangkap
+     tetapi layar berputar SELAMANYA tanpa keterangan apa pun — varian gotcha #12, ditemukan lewat
+     penelusuran seluruh menu 29 September 2026. */
+  const [galat, setGalat] = useState("");
+  const [memuat, setMemuat] = useState(true);
 
   const muat = useCallback(() => {
+    setMemuat(true); setGalat("");
     fetch(`/api/kepegawaian/pkb${guruId ? `?teacherId=${guruId}` : ""}`, { cache: "no-store" })
-      .then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
+      .then(async r => {
+        const d = await r.json().catch(() => null);
+        if (r.ok && d) { setData(d); return; }
+        setGalat(d?.error ?? "Gagal memuat data PKB.");
+      })
+      .catch(() => setGalat("Gagal memuat data PKB."))
+      .finally(() => setMemuat(false));
   }, [guruId]);
   useEffect(() => { muat(); }, [muat]);
 
@@ -68,8 +82,13 @@ export default function PkbGuruManager({ basePath }: { basePath: string }) {
       <PageHeader icon={<Award size={22} />} title="Portofolio PKB"
         description="Pengembangan Keprofesian Berkelanjutan — pelatihan, seminar, diklat, dan MGMP yang diikuti" />
 
-      {!data ? (
+      {memuat ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
+      ) : !data ? (
+        <Alert variant="info" title="Portofolio PKB belum tersedia">
+          {galat || "Data PKB tidak bisa dimuat."} Portofolio PKB hanya untuk pegawai yang terdata sebagai guru/tenaga
+          kependidikan — hubungi bagian Kepegawaian bila menurut Anda ini keliru.
+        </Alert>
       ) : (
         <>
           <div className="kisi-kartu kisi-kartu-3 mb-5">

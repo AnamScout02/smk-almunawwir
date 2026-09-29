@@ -153,12 +153,16 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
     setSaveError("");
   }
 
-  // Deep link dari halaman /teachers: buka modal edit guru tertentu otomatis lewat ?edit=<id>
+  /* Deep link dari halaman /teachers & Tabel Lengkap: buka modal edit guru tertentu lewat `?edit=<id>`.
+     `?kembali=tabel` (dari Tabel Lengkap) membuat Simpan memulangkan ke tabel itu, supaya memperbaiki
+     beberapa sel tidak berarti menekan "Tabel Lengkap" lagi setiap kali. */
+  const [pulangKeTabel, setPulangKeTabel] = useState(false);
   useEffect(() => {
     const editId = searchParams.get("edit");
     if (!editId || teachers.length === 0) return;
     const target = teachers.find(t => t.id === editId);
     if (target) openEdit(target);
+    setPulangKeTabel(searchParams.get("kembali") === "tabel");
     router.replace(basePath);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teachers, searchParams]);
@@ -222,6 +226,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
         return;
       }
       setSelected(null); fetchTeachers();
+      if (pulangKeTabel) { setPulangKeTabel(false); router.push(`${basePath}/tabel`); }
     }
   }
 
