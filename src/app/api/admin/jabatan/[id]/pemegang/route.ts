@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { logActivity } from "@/lib/activity-log";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { getSettings } from "@/lib/site-settings";
+import { strukturPerluDiperbarui } from "@/lib/struktur-jabatan";
 
 export const dynamic = "force-dynamic";
 
@@ -104,7 +106,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       metadata: { before: sebelum, after: sesudah },
     });
 
-    return NextResponse.json({ ok: true, pemegang: sesudah });
+    /* Struktur Organisasi di situs publik adalah daftar nama TERPISAH yang diketik manual
+       (SiteSetting `school.structure`) — mengganti pemegang di sini tidak memperbaruinya, dan
+       situs bisa tetap menampilkan pejabat lama. Petugas DIINGATKAN, bukan ditimpa otomatis:
+       nama di sana ditulis lengkap dengan gelar dan urutannya diatur sendiri. */
+    let struktur: { role: string; name: string }[] = [];
+    try {
+      const st = await getSettings(["school.structure"]);
+      struktur = strukturPerluDiperbarui(jabatan.name, sesudah, JSON.parse(st["school.structure"] || "[]"));
+    } catch { struktur = []; }
+
+    return NextResponse.json({ ok: true, pemegang: sesudah, struktur });
   } catch (e) {
     lemparBilaPengalihan(e);
     console.error("[jabatan pemegang PUT]", e);

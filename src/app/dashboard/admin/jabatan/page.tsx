@@ -34,9 +34,10 @@ export default function AdminJabatanPage() {
   const [pilihStaf, setPilihStaf] = useState<string[]>([]);
   const [cariOrang, setCariOrang] = useState("");
   const [simpanPemegang, setSimpanPemegang] = useState(false);
+  const [ingatStruktur, setIngatStruktur] = useState<{ role: string; name: string }[]>([]);
 
   async function bukaPemegang(item: JabatanItem) {
-    setPemegangModal(item); setKandidat(null); setCariOrang(""); setError("");
+    setPemegangModal(item); setKandidat(null); setCariOrang(""); setError(""); setIngatStruktur([]);
     const d = await fetch(`/api/admin/jabatan/${item.id}/pemegang`).then(r => r.json()).catch(() => null);
     if (!d || d.error) { setError(d?.error ?? "Gagal memuat daftar orang."); return; }
     setKandidat({ guru: d.guru, staf: d.staf });
@@ -56,6 +57,8 @@ export default function AdminJabatanPage() {
       setError(d?.error ?? "Gagal menyimpan pemegang jabatan.");
       return; // modal dibiarkan terbuka supaya centangnya tidak hilang
     }
+    const d = await res.json().catch(() => null);
+    setIngatStruktur(Array.isArray(d?.struktur) ? d.struktur : []);
     setPemegangModal(null);
     load();
   }
@@ -165,7 +168,18 @@ export default function AdminJabatanPage() {
         <EmptyState icon={Award} title="Belum Ada Jabatan" description="Tambahkan jabatan seperti Kepala Sekolah, Wakil Kepala, Guru BK, dsb." />
       ) : (
         <>
-          {kosong > 0 && !q && (
+          {ingatStruktur.length > 0 && (
+        <div className="panel mb-5 border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm text-amber-800">
+            Pemegang jabatan sudah diperbarui, tetapi <b>Struktur Organisasi di situs publik</b> masih
+            menulis {ingatStruktur.map(b => `${b.role}: ${b.name}`).join("; ")}. Daftar itu terpisah dan
+            diketik manual — perbarui di{" "}
+            <Link href="/dashboard/admin/content" className="font-semibold underline">Konten Halaman → Struktur Organisasi</Link>.
+          </p>
+        </div>
+      )}
+
+      {kosong > 0 && !q && (
             <p className="mb-2 text-sm text-gray-400">{kosong} jabatan belum ada pemegangnya.</p>
           )}
           <div className="panel overflow-hidden">
