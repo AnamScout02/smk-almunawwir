@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Heart, Loader2, KeyRound, Unlink, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -22,6 +23,10 @@ export default function AdminParentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  /* Saringan kelas anak & keterhubungan — daftar ini memuat orang tua SELURUH kelas sekaligus
+     (permintaan user 29 September 2026). */
+  const [fKelas, setFKelas] = useState("");
+  const [fTerhubung, setFTerhubung] = useState("");
 
   const load = useCallback(() => {
     fetch("/api/admin/parents").then(r => r.json()).then(setParents).catch(() => {}).finally(() => setLoading(false));
@@ -47,13 +52,15 @@ export default function AdminParentsPage() {
     else toast.error("Gagal memutuskan hubungan.");
   }
 
+  const kelasList = [...new Set(parents.flatMap(p => p.children.map(c => c.student.class?.name).filter((n): n is string => !!n)))].sort();
   const filtered = parents.filter(p => {
-    if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     const haystack = [p.user.name, p.user.email, ...p.children.map(c => c.student.user.name), ...p.children.map(c => c.student.nis)].join(" ").toLowerCase();
-    return haystack.includes(q);
+    return (!q || haystack.includes(q))
+      && (!fKelas || p.children.some(c => c.student.class?.name === fKelas))
+      && (!fTerhubung || (fTerhubung === "ADA" ? p.children.length > 0 : p.children.length === 0));
   });
-  const hal = usePaginasi(filtered, 50, search);
+  const hal = usePaginasi(filtered, 50, `${search}|${fKelas}|${fTerhubung}`);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -66,6 +73,18 @@ export default function AdminParentsPage() {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama orang tua, email, atau nama/NIS anak..."
             className="input-field pl-10" />
+        </div>
+        <div className="alat-saring">
+          <Select value={fKelas} onChange={setFKelas} placeholder="Semua kelas anak" options={[
+            { value: "", label: "Semua kelas anak" }, ...kelasList.map(k => ({ value: k, label: k })),
+          ]} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fTerhubung} onChange={setFTerhubung} placeholder="Semua akun" options={[
+            { value: "", label: "Semua akun" },
+            { value: "ADA", label: "Punya anak terhubung" },
+            { value: "TIDAK", label: "Belum terhubung anak" },
+          ]} />
         </div>
       </div>
       </div>

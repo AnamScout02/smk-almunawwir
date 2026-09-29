@@ -5,6 +5,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
 import Select from "@/components/admin/Select";
+import Paginasi from "@/components/shared/Paginasi";
+import { usePaginasi } from "@/lib/use-paginasi";
 import DatePicker from "@/components/shared/DatePicker";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 import { BarisKembali } from "@/components/shared/TombolKembali";
@@ -45,6 +47,12 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  // Alumni menumpuk tiap tahun, jadi daftar ini mencakup SELURUH angkatan sekaligus. Tanpa
+  // saringan, mengisi tracer satu angkatan berarti menyisir ratusan baris angkatan lain
+  // (permintaan user 29 September 2026).
+  const [fAngkatan, setFAngkatan] = useState("");
+  const [fJurusan, setFJurusan] = useState("");
+  const [fStatus, setFStatus] = useState("");
 
   function load() {
     setLoading(true);
@@ -80,10 +88,18 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
 
   const withData = items.filter(i => i.alumniTracer).length;
   const q = search.toLowerCase();
+  const angkatanList = [...new Set(items.map(i => i.enrollYear).filter((y): y is number => typeof y === "number"))]
+    .sort((a, b) => b - a);
+  const jurusanList = [...new Map(items.map(i => [i.major.code, i.major])).values()]
+    .sort((a, b) => a.code.localeCompare(b.code));
   const filteredItems = items.filter(i =>
-    !q || i.user.name.toLowerCase().includes(q) || i.nis.toLowerCase().includes(q) ||
-    i.major.name.toLowerCase().includes(q) || (i.alumniTracer?.institutionName ?? "").toLowerCase().includes(q)
+    (!q || i.user.name.toLowerCase().includes(q) || i.nis.toLowerCase().includes(q) ||
+      i.major.name.toLowerCase().includes(q) || (i.alumniTracer?.institutionName ?? "").toLowerCase().includes(q)) &&
+    (!fAngkatan || String(i.enrollYear ?? "") === fAngkatan) &&
+    (!fJurusan || i.major.code === fJurusan) &&
+    (!fStatus || (fStatus === "BELUM" ? !i.alumniTracer : i.alumniTracer?.status === fStatus))
   );
+  const hal = usePaginasi(filteredItems, 50, `${q}|${fAngkatan}|${fJurusan}|${fStatus}`);
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -100,6 +116,21 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama, NIS, jurusan, atau institusi..." className="input-field pl-10" />
+        </div>
+        <div className="alat-saring">
+          <Select value={fAngkatan} onChange={setFAngkatan} placeholder="Semua angkatan"
+            options={[{ value: "", label: "Semua angkatan" },
+              ...angkatanList.map(y => ({ value: String(y), label: `Angkatan ${y}` }))]} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fJurusan} onChange={setFJurusan} placeholder="Semua jurusan"
+            options={[{ value: "", label: "Semua jurusan" },
+              ...jurusanList.map(m => ({ value: m.code, label: m.name }))]} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fStatus} onChange={setFStatus} placeholder="Semua status"
+            options={[{ value: "", label: "Semua status" },
+              { value: "BELUM", label: "Belum Disurvei" }, ...STATUS_OPTIONS]} />
         </div>
       </div>
       )}
@@ -122,7 +153,7 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map(item => (
+                {hal.potongan.map(item => (
                   <tr key={item.id}>
                     <td>
                       <p className="font-semibold text-primary-900">{item.user.name}</p>
@@ -150,6 +181,7 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
               </tbody>
             </table>
           </div>
+          <Paginasi hal={hal} satuan="alumni" className="border-t border-gray-100" />
         </div>
       )}
 

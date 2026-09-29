@@ -4,6 +4,7 @@ import { Search, Loader2, BookOpen, Eye, UserCog, GraduationCap, Users, Award, S
 import Link from "next/link";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
+import Select from "@/components/admin/Select";
 import GroupedSection from "@/components/admin/GroupedSection";
 import Modal from "@/components/admin/Modal";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -29,6 +30,10 @@ export default function AdminTeachersPage() {
   const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([]);
   const [jabatanModal, setJabatanModal] = useState<Teacher | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  /* Daftar ini memuat seluruh guru & pegawai lintas jabatan — saringan jabatan & mapel wajib ada
+     (permintaan user 29 September 2026: "apapun data tabel ... perlu filter kasih juga"). */
+  const [fJabatan, setFJabatan] = useState("");
+  const [fMapel, setFMapel] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function load() {
@@ -75,7 +80,11 @@ export default function AdminTeachersPage() {
 
   const filtered = teachers.filter(t => {
     const q = search.toLowerCase();
-    return !q || t.user.name.toLowerCase().includes(q) || t.nip.includes(q) || t.subject.toLowerCase().includes(q);
+    return (!q || t.user.name.toLowerCase().includes(q) || t.nip.includes(q) || t.subject.toLowerCase().includes(q))
+      && (!fJabatan || (fJabatan === "TANPA" ? t.jabatan.length === 0
+        : fJabatan === "WALI" ? t.homeroomOf.length > 0
+        : t.jabatan.some(j => j.jabatan.id === fJabatan)))
+      && (!fMapel || t.subject === fMapel);
   });
   const waliKelas = filtered.filter(t => t.homeroomOf.length > 0);
   const bukanWali = filtered.filter(t => t.homeroomOf.length === 0);
@@ -94,7 +103,22 @@ export default function AdminTeachersPage() {
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Cari nama, NIP, atau mata pelajaran..."
           className="input-field pl-10" />
-      </div>
+        </div>
+        <div className="alat-saring">
+          <Select value={fJabatan} onChange={setFJabatan} placeholder="Semua jabatan" options={[
+            { value: "", label: "Semua jabatan" },
+            { value: "WALI", label: "Wali kelas" },
+            { value: "TANPA", label: "Tanpa jabatan" },
+            ...jabatanOptions.map(j => ({ value: j.id, label: j.name })),
+          ]} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fMapel} onChange={setFMapel} placeholder="Semua mapel" options={[
+            { value: "", label: "Semua mapel" },
+            ...[...new Set(teachers.map(t => t.subject).filter(Boolean))].sort()
+              .map(m => ({ value: m, label: m })),
+          ]} />
+        </div>
       </div>
 
       {loading ? (

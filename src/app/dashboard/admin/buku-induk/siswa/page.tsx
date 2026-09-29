@@ -46,6 +46,10 @@ export default function BukuIndukSiswaPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState("ALL");
+  /* Buku Induk memuat SELURUH angkatan sekaligus (siswa lulus & keluar tidak dihapus), jadi
+     saringan angkatan & jurusan wajib ada — permintaan user 29 September 2026. */
+  const [angkatanFilter, setAngkatanFilter] = useState("ALL");
+  const [jurusanFilter, setJurusanFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Student | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -71,6 +75,8 @@ export default function BukuIndukSiswaPage() {
     if (statusFilter !== "ALL") list = list.filter(s => s.studentStatus === statusFilter);
     if (classFilter === "UNCLASSED") list = list.filter(s => !s.class);
     else if (classFilter !== "ALL") list = list.filter(s => s.class?.id === classFilter);
+    if (angkatanFilter !== "ALL") list = list.filter(s => String(s.enrollYear ?? "") === angkatanFilter);
+    if (jurusanFilter !== "ALL") list = list.filter(s => s.major?.id === jurusanFilter);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(s =>
@@ -79,7 +85,7 @@ export default function BukuIndukSiswaPage() {
       );
     }
     setFiltered(list);
-  }, [students, search, statusFilter, classFilter]);
+  }, [students, search, statusFilter, classFilter, angkatanFilter, jurusanFilter]);
 
   function openCreate() {
     setIsNew(true);
@@ -166,6 +172,26 @@ export default function BukuIndukSiswaPage() {
             ...classes.slice().sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name))
               .map(c => ({ value: c.id, label: c.name })),
             { value: "UNCLASSED", label: "Belum Ada Kelas" },
+          ]}
+        />
+        <Select
+          className="sm:w-44"
+          value={angkatanFilter}
+          onChange={v => setAngkatanFilter(v)}
+          options={[
+            { value: "ALL", label: "Semua Angkatan" },
+            ...[...new Set(students.map(s => s.enrollYear).filter((y): y is number => typeof y === "number"))]
+              .sort((a, b) => b - a).map(y => ({ value: String(y), label: `Angkatan ${y}` })),
+          ]}
+        />
+        <Select
+          className="sm:w-44"
+          value={jurusanFilter}
+          onChange={v => setJurusanFilter(v)}
+          options={[
+            { value: "ALL", label: "Semua Jurusan" },
+            ...[...new Map(students.filter(s => s.major).map(s => [s.major.id, s.major])).values()]
+              .sort((a, b) => a.code.localeCompare(b.code)).map(m => ({ value: m.id, label: m.name })),
           ]}
         />
         <button onClick={openCreate} className="btn-modal-save">
