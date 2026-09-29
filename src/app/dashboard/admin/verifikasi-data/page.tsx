@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, Loader2, Check, X, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
+import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -26,6 +27,7 @@ export default function VerifikasiDataPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [fKelas, setFKelas] = useState("");
 
   function load() {
     setLoading(true);
@@ -63,13 +65,21 @@ export default function VerifikasiDataPage() {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama atau NIS siswa..." className="input-field pl-10" />
         </div>
+        <div className="alat-saring">
+          <Select value={fKelas} onChange={setFKelas} placeholder="Semua kelas" options={[
+            { value: "", label: "Semua kelas" },
+            ...[...new Set(requests.map(r => r.student.class?.name).filter((n): n is string => !!n))].sort()
+              .map(k => ({ value: k, label: k })),
+          ]} />
+        </div>
       </div>
       )}
 
       {(() => {
         const q = search.toLowerCase();
         const filteredRequests = requests.filter(req =>
-          !q || req.student.user.name.toLowerCase().includes(q) || req.student.nis.toLowerCase().includes(q)
+          (!q || req.student.user.name.toLowerCase().includes(q) || req.student.nis.toLowerCase().includes(q))
+          && (!fKelas || req.student.class?.name === fKelas)
         );
         return loading ? (
         <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div>

@@ -49,6 +49,7 @@ export default function UsersPage() {
   const [majors, setMajors] = useState<Major[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [search, setSearch] = useState("");
+  const [fPeran, setFPeran] = useState("");
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [showPass, setShowPass] = useState(false);
@@ -127,8 +128,11 @@ export default function UsersPage() {
     fetchUsers();
   }
 
+  /* Daftar akun memuat SELURUH peran sekaligus (siswa jauh terbanyak) — saringan peran membuat
+     satu kelompok bisa dilihat sendiri (permintaan user 29 September 2026). */
   const filtered = users.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+    (u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
+    && (!fPeran || u.role === fPeran)
   );
 
   function openCreate() { setForm({ ...emptyForm, majorId: majors[0]?.id ?? "" }); setError(""); setModal(true); }
@@ -228,6 +232,15 @@ export default function UsersPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..."
             className="input-field pl-10" />
+        </div>
+        <div className="alat-saring">
+          <Select value={fPeran} onChange={setFPeran} placeholder="Semua peran" options={[
+            { value: "", label: "Semua peran" },
+            { value: "ADMIN", label: "Admin" },
+            { value: "TEACHER", label: "Guru" },
+            { value: "TAS", label: "TAS" },
+            { value: "STUDENT", label: "Siswa" },
+          ]} />
         </div>
         <div className="alat-aksi">
           <Link href="/dashboard/admin/users/cetak-akun"

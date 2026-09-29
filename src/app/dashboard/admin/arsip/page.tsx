@@ -28,6 +28,8 @@ export default function ArsipPage() {
   const confirmDialog = useConfirm();
   const [data, setData] = useState<Arsip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fTahun, setFTahun] = useState("");
+  const [fKategori, setFKategori] = useState("");
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<Partial<Arsip> | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -44,13 +46,16 @@ export default function ArsipPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = search
-    ? data.filter(a =>
-        a.judul.toLowerCase().includes(search.toLowerCase()) ||
-        (a.nomor ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        (a.keterangan ?? "").toLowerCase().includes(search.toLowerCase())
-      )
-    : data;
+  /* Arsip menumpuk tiap tahun dan tidak pernah dihapus — saringan tahun & kategori wajib ada
+     (permintaan user 29 September 2026). */
+  const tahunList = [...new Set(data.map(a => a.tanggal?.slice(0, 4)).filter(Boolean))].sort().reverse();
+  const q = search.toLowerCase();
+  const filtered = data.filter(a =>
+    (!q || a.judul.toLowerCase().includes(q) || (a.nomor ?? "").toLowerCase().includes(q) ||
+      (a.keterangan ?? "").toLowerCase().includes(q)) &&
+    (!fTahun || a.tanggal?.slice(0, 4) === fTahun) &&
+    (!fKategori || a.kategori === fKategori)
+  );
 
   const grouped = KATEGORI
     .map(k => ({ kategori: k, items: filtered.filter(a => a.kategori === k) }))
@@ -100,6 +105,16 @@ export default function ArsipPage() {
           <input className="input-field pl-10"
             placeholder="Cari judul, nomor, atau keterangan..." value={search}
             onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fTahun} onChange={setFTahun} placeholder="Semua tahun" options={[
+            { value: "", label: "Semua tahun" }, ...tahunList.map(t => ({ value: t, label: t })),
+          ]} />
+        </div>
+        <div className="alat-saring">
+          <Select value={fKategori} onChange={setFKategori} placeholder="Semua kategori" options={[
+            { value: "", label: "Semua kategori" }, ...KATEGORI.map(k => ({ value: k, label: k })),
+          ]} />
         </div>
         <div className="alat-aksi">
           <button onClick={openNew} className="btn-modal-save">
