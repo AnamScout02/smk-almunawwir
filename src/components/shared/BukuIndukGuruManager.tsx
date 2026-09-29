@@ -38,7 +38,12 @@ interface Teacher {
   bukuIndukData?: TeacherExtended;
   user: { name: string; email: string };
   homeroomOf: { name: string }[];
+  /** Jabatan STRUKTURAL (Wakasek, Kepala UKS, …) — beda dari `position` yang berisi STATUS
+   *  KEPEGAWAIAN. Keduanya pernah sama-sama berlabel "Jabatan" dan membingungkan petugas. */
+  jabatan?: { jabatan: { id: string; name: string } }[];
 }
+
+interface JabatanOption { id: string; name: string }
 
 interface MasterEntry { category: string; items: string[] }
 
@@ -63,6 +68,11 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filtered, setFiltered] = useState<Teacher[]>([]);
   const [search, setSearch] = useState("");
+  /* Identitas (nama/NIP/mapel) & jabatan struktural kini diedit DI SINI juga — sebelumnya hanya
+     bisa lewat Akun Pengguna / Kelola Guru, sehingga Buku Induk Guru tidak bisa memperbaiki nama
+     gurunya sendiri (keluhan user 29 September 2026). */
+  const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([]);
+  const [jabatanIds, setJabatanIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Teacher | null>(null);
@@ -89,6 +99,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
   useEffect(() => {
     fetchTeachers();
     fetch("/api/admin/master-data").then(r => r.json()).then(d => setMasterData(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/admin/jabatan").then(r => r.json()).then(d => setJabatanOptions(Array.isArray(d) ? d : [])).catch(() => {});
   }, [fetchTeachers]);
 
   useEffect(() => {
@@ -111,6 +122,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
     setForm({ ...EMPTY_FORM });
     setExt({});
     setAccountForm({ ...EMPTY_ACCOUNT });
+    setJabatanIds([]);
     setSections({});
     setSaveError("");
   }
@@ -132,7 +144,11 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
       teacherNotes: teacher.teacherNotes ?? "",
     });
     setExt((teacher.bukuIndukData as TeacherExtended) ?? {});
-    setAccountForm({ ...EMPTY_ACCOUNT, email: teacher.user.email });
+    setAccountForm({
+      ...EMPTY_ACCOUNT, email: teacher.user.email,
+      name: teacher.user.name, nip: teacher.nip, subject: teacher.subject,
+    });
+    setJabatanIds((teacher.jabatan ?? []).map(j => j.jabatan.id));
     setSections({});
     setSaveError("");
   }
@@ -176,17 +192,33 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
     } else {
       if (!selected) return;
       setSaving(true);
-      const body: Record<string, unknown> = { ...form, bukuIndukData: ext };
+      const body: Record<string, unknown> = {
+        ...form, bukuIndukData: ext,
+        name: accountForm.name, nip: accountForm.nip, subject: accountForm.subject,
+      };
       if (accountForm.password) body.password = accountForm.password;
       const res = await fetch(`/api/admin/buku-induk/guru/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      setSaving(false);
       if (!res.ok) {
+        setSaving(false);
         const data = await res.json().catch(() => ({}));
         setSaveError(data.error ?? "Gagal menyimpan perubahan. Silakan coba lagi.");
+        return;
+      }
+      /* Jabatan struktural disimpan lewat endpointnya sendiri (tabel TeacherJabatan). Kegagalannya
+         DILAPORKAN, bukan didiamkan — ini perubahan hak akses: gagal diam-diam berarti gurunya
+         kehilangan menu tanpa ada yang tahu sebabnya (CLAUDE.md, kejadian 28 Sep 2026). */
+      const resJab = await fetch(`/api/admin/teachers/${selected.id}/jabatan`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jabatanIds }),
+      }).catch(() => null);
+      setSaving(false);
+      if (!resJab?.ok) {
+        const d = await resJab?.json().catch(() => null);
+        setSaveError(d?.error ?? "Data tersimpan, tetapi jabatan gagal disimpan — coba simpan ulang.");
         return;
       }
       setSelected(null); fetchTeachers();
@@ -336,7 +368,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
                 <Field label="Status Sertifikasi" value={e("certStatus")}
                   options={["Belum Sertifikasi","Sudah Sertifikasi","Sedang Proses"]}
                   onChange={setE("certStatus")} />
-                <Field label="Jabatan/Status Kepegawaian" value={String(form.position ?? "")}
+                <Field label="Status Kepegawaian" value={String(form.position ?? "")}
                   options={md("status_kepegawaian")}
                   onChange={v => setForm(p => ({...p, position: v}))} />
                 <Field label="Unit Kerja" value={e("workUnit")} onChange={setE("workUnit")} />
@@ -434,6 +466,41 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
                   </>
                 ) : (
                   <>
+                    <div>
+                      <label className="label-field">Nama Lengkap</label>
+                      <input className={CLS} type="text" value={accountForm.name}
+                        onChange={ev => setAccountForm(p => ({ ...p, name: ev.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label-field">NIP</label>
+                      <input className={CLS} type="text" value={accountForm.nip}
+                        onChange={ev => setAccountForm(p => ({ ...p, nip: ev.target.value }))} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="label-field">Mata Pelajaran</label>
+                      <input className={CLS} type="text" value={accountForm.subject}
+                        onChange={ev => setAccountForm(p => ({ ...p, subject: ev.target.value }))} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="label-field">Jabatan Struktural</label>
+                      <p className="mb-2 text-xs text-gray-500">
+                        Wakasek, Kepala UKS, Koordinator, dan sejenisnya — menentukan menu yang terbuka
+                        untuk guru ini. Berbeda dari <b>Status Kepegawaian</b> di bagian Kepegawaian.
+                      </p>
+                      {jabatanOptions.length === 0 ? (
+                        <p className="text-sm text-gray-400">Belum ada katalog jabatan.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-56 overflow-y-auto rounded-xl border border-gray-100 p-3">
+                          {jabatanOptions.map(j => (
+                            <label key={j.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                              <input type="checkbox" checked={jabatanIds.includes(j.id)}
+                                onChange={() => setJabatanIds(p => p.includes(j.id) ? p.filter(x => x !== j.id) : [...p, j.id])} />
+                              {j.name}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="col-span-2">
                       <label className="label-field">Email Login</label>
                       <input className={`${CLS} bg-gray-50 text-gray-500`} type="email"
@@ -464,7 +531,7 @@ function TeacherTable({ items, onEdit }: { items: Teacher[]; onEdit: (t: Teacher
             <th>NIP</th>
             <th>Nama Guru</th>
             <th>Mata Pelajaran</th>
-            <th>Jabatan</th>
+            <th>Status Kepegawaian</th>
             <th>Status</th>
             <th className="text-right">Aksi</th>
           </tr>

@@ -14,6 +14,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     birthPlace, birthDate, gender, religion, address,
     education, position, startDate, teacherStatus, teacherNotes, phone,
     bukuIndukData, password,
+    // Nama, NIP & mata pelajaran DIEDIT DI SINI juga. Sebelumnya ketiganya hanya bisa diubah dari
+    // Akun Pengguna / Kelola Guru sehingga Buku Induk Guru — dokumen resmi kepegawaian — justru
+    // tidak bisa memperbaiki nama gurunya sendiri (keluhan user 29 September 2026: "edit nama buku
+    // induk guru gimana", "kenapa dobel-dobel tempatnya").
+    name, nip, subject,
   } = body;
 
   try {
@@ -31,6 +36,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
+    // Nama disimpan di `User`, NIP & mapel di `Teacher` — diperbarui hanya bila benar-benar dikirim
+    // dan benar-benar berubah, supaya halaman lain yang tidak mengirimnya tidak ikut mengosongkan.
+    const lama = await prisma.teacher.findUnique({
+      where: { id },
+      select: { nip: true, subject: true, userId: true, user: { select: { name: true } } },
+    });
+    if (!lama) return NextResponse.json({ error: "Guru tidak ditemukan" }, { status: 404 });
+
+    const namaBaru = typeof name === "string" ? name.trim() : "";
+    const nipBaru = typeof nip === "string" ? nip.trim() : "";
+    const mapelBaru = typeof subject === "string" ? subject.trim() : "";
+    const berubah: string[] = [];
+
+    if (nipBaru && nipBaru !== lama.nip) {
+      const bentrok = await prisma.teacher.findFirst({ where: { nip: nipBaru, id: { not: id } }, select: { user: { select: { name: true } } } });
+      if (bentrok) {
+        return NextResponse.json({ error: `NIP ${nipBaru} sudah dipakai ${bentrok.user.name}.` }, { status: 409 });
+      }
+      berubah.push(`NIP ${lama.nip} → ${nipBaru}`);
+    }
+    if (namaBaru && namaBaru !== lama.user.name) {
+      await prisma.user.update({ where: { id: lama.userId }, data: { name: namaBaru } });
+      berubah.push(`Nama "${lama.user.name}" → "${namaBaru}"`);
+    }
+    if (mapelBaru && mapelBaru !== lama.subject) berubah.push(`Mapel "${lama.subject}" → "${mapelBaru}"`);
+
     const teacher = await prisma.teacher.update({
       where: { id },
       data: {
@@ -45,6 +76,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         startDate:     startDate ? new Date(startDate) : null,
         teacherStatus: teacherStatus || "AKTIF",
         teacherNotes:  teacherNotes || null,
+        ...(nipBaru ? { nip: nipBaru } : {}),
+        ...(mapelBaru ? { subject: mapelBaru } : {}),
         ...(bukuIndukData !== undefined ? { bukuIndukData: normalizeBukuIndukText(bukuIndukData) } : {}),
       },
       include: {
@@ -52,6 +85,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         homeroomOf: { select: { name: true } },
       },
     });
+    if (berubah.length > 0) {
+      await logActivity(session, {
+        action: "UPDATE", entity: "Teacher", entityId: id,
+        description: `${session.name} mengubah identitas guru "${teacher.user.name}": ${berubah.join("; ")}`,
+        metadata: { berubah },
+      });
+    }
     return NextResponse.json(teacher);
   } catch (err) {
     console.error("[buku-induk guru PUT]", err);

@@ -13,6 +13,10 @@ export async function GET(req: Request) {
     include: {
       user: { select: { name: true, email: true } },
       homeroomOf: { select: { name: true } },
+      // Jabatan STRUKTURAL (Wakasek, Kepala UKS, dst) — beda dari kolom `position` yang berisi
+      // STATUS KEPEGAWAIAN. Keduanya sempat sama-sama berlabel "Jabatan" dan membingungkan petugas
+      // (keluhan user 29 September 2026).
+      jabatan: { select: { jabatan: { select: { id: true, name: true } } } },
     },
     orderBy: { user: { name: "asc" } },
   });
