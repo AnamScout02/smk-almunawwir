@@ -38,6 +38,9 @@ export default function TugasInternalManager({ basePath }: { basePath: string })
   const toast = useToast();
   const confirm = useConfirm();
   const [data, setData] = useState<Data | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [cakupan, setCakupan] = useState<"semua" | "saya">("semua");
   const [saringStatus, setSaringStatus] = useState("");
   const [buka, setBuka] = useState(false);
@@ -47,7 +50,7 @@ export default function TugasInternalManager({ basePath }: { basePath: string })
 
   const muat = useCallback(() => {
     fetch(`/api/tugas-internal${cakupan === "saya" ? "?cakupan=saya" : ""}`, { cache: "no-store" })
-      .then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
+      .then(r => (r.ok ? r.json() : null)).then(d => (d ? (setData(d), setGalat("")) : setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."))).catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
   }, [cakupan]);
   useEffect(() => { muat(); }, [muat]);
 
@@ -90,7 +93,9 @@ export default function TugasInternalManager({ basePath }: { basePath: string })
       <PageHeader icon={<ClipboardList size={22} />} title="Papan Tugas"
         description={`Penugasan antar jabatan${belum ? ` — ${belum} belum selesai` : ""}`} />
 
-      {!data ? (
+      {galat ? (
+        <p className="py-16 text-center text-sm text-gray-400">{galat}</p>
+      ) : !data ? (
         <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : (
         <>

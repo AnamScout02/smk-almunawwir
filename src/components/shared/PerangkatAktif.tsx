@@ -25,12 +25,15 @@ export default function PerangkatAktif() {
   const toast = useToast();
   const [data, setData] = useState<Perangkat[] | null>(null);
   const [sibuk, setSibuk] = useState<string | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri. Dulu `.catch(() => {})` kosong membuat `data` tetap
+     null selamanya, dan layar hanya menampilkan spinner tanpa keterangan apa pun (audit 29 Sep 2026). */
+  const [galat, setGalat] = useState("");
 
   const muat = useCallback(() => {
     fetch("/api/profile/sesi")
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setData(d); })
-      .catch(() => {});
+      .then(d => { if (Array.isArray(d)) { setData(d); setGalat(""); } else setGalat("Daftar perangkat tidak bisa dimuat."); })
+      .catch(() => setGalat("Daftar perangkat tidak bisa dimuat."));
   }, []);
   useEffect(() => { muat(); }, [muat]);
 
@@ -69,7 +72,9 @@ export default function PerangkatAktif() {
         )}
       </div>
 
-      {!data ? (
+      {galat ? (
+        <p className="py-6 text-center text-sm text-gray-400">{galat}</p>
+      ) : !data ? (
         <div className="flex justify-center py-6"><Loader2 size={22} className="animate-spin text-gray-400" /></div>
       ) : (
         <div className="divide-y divide-gray-50">

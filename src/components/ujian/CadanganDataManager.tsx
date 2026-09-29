@@ -43,6 +43,9 @@ export default function CadanganDataManager({ basePath, isAdmin }: { basePath: s
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [data, setData] = useState<Data | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [sibuk, setSibuk] = useState(false);
   const [sudahCadang, setSudahCadang] = useState(false);
   const [hari, setHari] = useState("365");
@@ -53,8 +56,8 @@ export default function CadanganDataManager({ basePath, isAdmin }: { basePath: s
   const muat = useCallback(() => {
     fetch("/api/teacher/exams/hapus-data")
       .then(r => r.json())
-      .then(d => { if (!d.error) setData(d); })
-      .catch(() => {});
+      .then(d => { if (!d.error) { setData(d); setGalat(""); } else setGalat(d.error); })
+      .catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
   }, []);
 
   useEffect(() => {
@@ -94,7 +97,7 @@ export default function CadanganDataManager({ basePath, isAdmin }: { basePath: s
       <PageHeader icon={<DatabaseBackup size={22} />} title="Cadangan & Hapus Data Ujian"
         description="Simpan seluruh data ujian sebelum dihapus — soal, kunci, jawaban, dan nilai." />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
+      {galat ? <p className="py-16 text-center text-sm text-gray-400">{galat}</p> : !data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <>
           {/* ——— NAMA UJIAN YANG SEDANG DILAKUKAN ——— */}
           {berlangsung.length > 0 ? (

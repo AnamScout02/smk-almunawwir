@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Ruler, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Ruler, Save, Download
+} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
@@ -81,6 +82,7 @@ export default function PemeriksaanManager({ kembaliHref }: { kembaliHref: strin
             <div className="alat-saring"><DatePicker value={tanggal} onChange={setTanggal} /></div>
             <div className="alat-aksi">
               <Link href={kembaliHref} className="btn-modal-cancel btn-teks"><ArrowLeft /> UKS</Link>
+              <a href="/api/admin/ekspor/kesehatan-siswa" className="btn-modal-cancel"><Download /> Unduh Excel</a>
               {siswa && <button type="button" disabled={sibuk || !Object.keys(isian).length} onClick={simpan} className="btn-modal-save">{sibuk ? <Loader2 className="animate-spin" /> : <Save />} Simpan {Object.keys(isian).length || ""}</button>}
             </div>
           </div>

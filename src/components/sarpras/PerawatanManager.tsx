@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CalendarCheck, Check, Loader2, Pencil, Plus, Trash2, Wrench } from "lucide-react";
+import { CalendarCheck, Check, Loader2, Pencil, Plus, Trash2, Wrench, Download
+} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
@@ -78,6 +79,7 @@ export default function PerawatanManager({ lingkupLab = false, kembaliHref }: { 
       ) : (
         <>
           <div className="alat-aksi justify-end mb-5">
+            <a href="/api/admin/ekspor/sarpras-perawatan" className="btn-modal-cancel"><Download /> Unduh Excel</a>
             <button type="button" className="btn-modal-save" onClick={() => setForm({ judul: "", assetId: "", lokasi: "", intervalHari: "30", berikutnya: hariIni, penanggungJawab: "", catatan: "" })}><Plus /> Tambah Jadwal</button>
           </div>
           {data.daftar.length === 0 ? <EmptyState icon={Wrench} title="Belum ada jadwal perawatan" description="Contoh: servis AC tiap 3 bulan, bersihkan komputer lab tiap bulan, cek APAR tiap 6 bulan." /> : (

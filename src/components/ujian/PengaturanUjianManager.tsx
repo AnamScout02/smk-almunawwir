@@ -42,6 +42,9 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [data, setData] = useState<MuatanKegiatan | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [atur, setAtur] = useState<Record<string, string>>({});
   const [bukaForm, setBukaForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -52,7 +55,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
   const [errForm, setErrForm] = useState("");
 
   const muat = useCallback(() => {
-    fetch("/api/teacher/kegiatan-ujian").then(r => r.json()).then(d => { if (!d.error) setData(d); }).catch(() => {});
+    fetch("/api/teacher/kegiatan-ujian").then(r => r.json()).then(d => { if (!d.error) { setData(d); setGalat(""); } else setGalat(d.error); }).catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
     fetch("/api/teacher/pengaturan-ujian").then(r => r.json()).then(d => { if (!d.error) setAtur(d); }).catch(() => {});
   }, []);
   useEffect(() => { muat(); }, [muat]);
@@ -181,7 +184,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
       <PageHeader icon={<Settings2 size={22} />} title="Pengaturan Ujian"
         description="Nama kegiatan ujian yang tampil di layar peserta, bawaan ujian baru, dan petunjuk sekolah" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
+      {galat ? <p className="py-16 text-center text-sm text-gray-400">{galat}</p> : !data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           {!bolehAtur && (
             <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-2.5">

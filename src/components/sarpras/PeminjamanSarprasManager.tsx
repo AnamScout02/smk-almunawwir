@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CalendarClock, Check, DoorOpen, Loader2, PackageCheck, Plus, Search, Settings2, Undo2, X } from "lucide-react";
+import { CalendarClock, Check, DoorOpen, Loader2, PackageCheck, Plus, Search, Settings2, Undo2, X, Download
+} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
@@ -88,6 +89,7 @@ export default function PeminjamanSarprasManager({ lingkupLab = false }: { lingk
             ]} /></div>
             <div className="alat-aksi">
               {data.akses.penuh && !lingkupLab && <button type="button" onClick={bukaPengaturanRuang} className="btn-modal-cancel btn-teks"><Settings2 /> Daftar Ruang</button>}
+              {data.akses.penuh && <a href="/api/admin/ekspor/sarpras-peminjaman" className="btn-modal-cancel"><Download /> Unduh Excel</a>}
               <button type="button" onClick={() => setBukaAju(true)} className="btn-modal-save btn-teks"><Plus /> Pinjam / Pesan Ruang</button>
             </div>
           </div>

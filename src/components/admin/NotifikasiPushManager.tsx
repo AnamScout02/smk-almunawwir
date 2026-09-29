@@ -59,6 +59,9 @@ const fmtTanggal = (t: string) => new Date(`${t}T00:00:00Z`).toLocaleDateString(
 export default function NotifikasiPushManager() {
   const toast = useToast();
   const [data, setData] = useState<Data | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [form, setForm] = useState<Data["pengaturan"] | null>(null);
   const [tanggalBaru, setTanggalBaru] = useState("");
   const [simpan, setSimpan] = useState(false);
@@ -75,8 +78,8 @@ export default function NotifikasiPushManager() {
 
   const muat = useCallback(() => {
     fetch("/api/admin/notifikasi").then(r => (r.ok ? r.json() : null))
-      .then((d: Data | null) => { if (d) { setData(d); setForm(f => f ?? d.pengaturan); } })
-      .catch(() => {});
+      .then((d: Data | null) => { if (d) { setData(d); setForm(f => f ?? d.pengaturan); setGalat(""); } else setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."); })
+      .catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
   }, []);
   useEffect(() => { muat(); }, [muat]);
 
@@ -121,7 +124,9 @@ export default function NotifikasiPushManager() {
       <PageHeader icon={<BellRing size={22} />} title="Notifikasi Push"
         description="Pengingat & kabar penting yang muncul di HP/laptop warga sekolah walau aplikasi sedang ditutup" />
 
-      {!data || !form ? (
+      {galat ? (
+        <p className="py-16 text-center text-sm text-gray-400">{galat}</p>
+      ) : !data || !form ? (
         <div className="flex items-center justify-center min-h-[40vh] text-gray-400"><Loader2 size={24} className="animate-spin" /></div>
       ) : (
         <div className="space-y-5">

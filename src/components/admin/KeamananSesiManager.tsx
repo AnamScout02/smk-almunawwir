@@ -32,6 +32,9 @@ export default function KeamananSesiManager() {
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [data, setData] = useState<Data | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [pilihan, setPilihan] = useState<string[]>([]);
   const [simpan, setSimpan] = useState(false);
   const [sibuk, setSibuk] = useState<string | null>(null);
@@ -41,8 +44,8 @@ export default function KeamananSesiManager() {
   const muat = useCallback(() => {
     fetch("/api/admin/keamanan-sesi")
       .then(r => r.json())
-      .then((d: Data) => { if (Array.isArray(d.sesi)) { setData(d); setPilihan(d.sesiTunggal); } })
-      .catch(() => {});
+      .then((d: Data) => { if (Array.isArray(d.sesi)) { setData(d); setPilihan(d.sesiTunggal); setGalat(""); } else setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."); })
+      .catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
   }, []);
   useEffect(() => { muat(); }, [muat]);
 
@@ -87,7 +90,7 @@ export default function KeamananSesiManager() {
       <PageHeader icon={<ShieldCheck size={22} />} title="Keamanan & Sesi Login"
         description="Siapa sedang masuk dari perangkat apa, cabut sesi, dan batasi satu akun satu perangkat" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
+      {galat ? <p className="py-16 text-center text-sm text-gray-400">{galat}</p> : !data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <div className="space-y-5">
           <div className="kisi-kartu kisi-kartu-4">
             <StatTile value={data.sesi.length} label="Sesi Aktif" icon={MonitorSmartphone} color="primary" />

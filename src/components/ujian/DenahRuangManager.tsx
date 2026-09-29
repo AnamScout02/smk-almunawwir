@@ -52,6 +52,7 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
   const [denah, setDenah] = useState<Denah | null>(null);
   const [muat, setMuat] = useState(true);
   const [muatDenah, setMuatDenah] = useState(false);
+  const [galatDenah, setGalatDenah] = useState("");
   const [dipilih, setDipilih] = useState<Set<string>>(new Set());
   const [pola, setPola] = useState("SELANG_SELING");
   const [peruntukan, setPeruntukan] = useState<PetaPeruntukan>({ jurusan: {}, kelas: {} });
@@ -73,6 +74,9 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
     if (!id) { setDenah(null); return; }
     setMuatDenah(true);
     const d: Denah | null = await fetch(`/api/teacher/denah-ruang?kegiatan=${id}`).then(r => (r.ok ? r.json() : null)).catch(() => null);
+    /* Gagal muat harus DIBEDAKAN dari "sedang memuat": kondisi render `muatDenah || !denah`
+       membuat kegagalan apa pun tampil sebagai spinner abadi (audit sistem 29 September 2026). */
+    setGalatDenah(d ? "" : "Denah ruang tidak bisa dimuat. Muat ulang halaman atau pilih kegiatan lain.");
     setDenah(d);
     // Pola & ruang khusus terakhir kegiatan ini — dipasang sekali saat kegiatan dibuka, supaya memuat ulang denah
     // (mis. setelah memindah peserta) tidak menimpa pilihan yang sedang diubah.
@@ -303,6 +307,8 @@ export default function DenahRuangManager({ basePath, bolehAtur }: { basePath: s
             )}
             {kegiatan.length === 0 ? (
               <EmptyState icon={LayoutGrid} title="Belum ada kegiatan ujian" description="Buat kegiatan (mis. STS) di Pengaturan Pusat Ujian lebih dulu." />
+            ) : galatDenah && !muatDenah ? (
+              <p className="py-10 text-center text-sm text-gray-400">{galatDenah}</p>
             ) : muatDenah || !denah ? (
               <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
             ) : (

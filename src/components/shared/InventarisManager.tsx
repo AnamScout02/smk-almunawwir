@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Boxes, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, AlertTriangle, XOctagon, Wrench, Search } from "lucide-react";
+import { Boxes, Loader2, Plus, Edit2, Trash2, Save, CheckCircle2, AlertTriangle, XOctagon, Wrench, Search, Download
+} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
@@ -204,6 +205,7 @@ export default function InventarisManager() {
             className="input-field pl-10" />
         </div>
         <div className="alat-aksi">
+          <a href="/api/admin/ekspor/inventaris" className="btn-modal-cancel"><Download /> Unduh Excel</a>
           {tab === "barang" ? (
             <button onClick={openAdd} className="btn-modal-save">
               <Plus size={15} /> Tambah Barang

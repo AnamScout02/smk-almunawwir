@@ -60,6 +60,9 @@ export default function RuangKendaliManager({ basePath }: { basePath: string }) 
   const confirmDialog = useConfirm();
   const toast = useToast();
   const [data, setData] = useState<Kendali | null>(null);
+  /* Gagal muat WAJIB punya jalurnya sendiri: `.catch(() => {})` kosong membuat state tetap null
+     selamanya sehingga layar hanya berputar tanpa keterangan (audit sistem 29 September 2026). */
+  const [galat, setGalat] = useState("");
   const [lingkup, setLingkup] = useState("aktif");
   const [buka, setBuka] = useState<string | null>(null);
   const [cari, setCari] = useState("");
@@ -70,7 +73,7 @@ export default function RuangKendaliManager({ basePath }: { basePath: string }) 
   const [kirimMassal, setKirimMassal] = useState(false);
 
   const muat = useCallback(() => {
-    fetch(`/api/teacher/exams/kendali?lingkup=${lingkup}`).then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
+    fetch(`/api/teacher/exams/kendali?lingkup=${lingkup}`).then(r => (r.ok ? r.json() : null)).then(d => (d ? (setData(d), setGalat("")) : setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."))).catch(() => setGalat("Data tidak bisa dimuat. Muat ulang halaman, atau hubungi Administrator bila terus berulang."));
   }, [lingkup]);
   useEffect(() => { muat(); const t = setInterval(muat, 5000); return () => clearInterval(t); }, [muat]);
 
@@ -133,7 +136,7 @@ export default function RuangKendaliManager({ basePath }: { basePath: string }) 
       <PageHeader icon={<Radio size={22} />} title="Ruang Kendali Ujian"
         description="Semua ujian dalam satu layar - pantau peserta, ganti token, tambah waktu, buka yang terputus, kumpulkan paksa" />
 
-      {!data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
+      {galat ? <p className="py-16 text-center text-sm text-gray-400">{galat}</p> : !data ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
         <>
           <div className="kisi-kartu kisi-kartu-7 mb-5">
             <StatTile value={data.ringkas.ujianBerlangsung} label="Ujian Berlangsung" icon={Radio} color="primary" size="md" />
