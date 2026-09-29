@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { FileCheck2, Loader2, CheckCircle2, XCircle, Clock, FileText, Settings, Plus, Trash2, Eye, Search } from "lucide-react";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
+import Select from "@/components/admin/Select";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 
@@ -11,6 +12,7 @@ interface Registration {
   id: string; status: string; submittedAt: string; reviewNote: string | null;
   student: { nis: string; user: { name: string }; class: { name: string } | null; major: { name: string } };
   documents: Doc[];
+  pilihanTempat: string | null; catatanSiswa: string | null;
 }
 interface Requirement { id: string; name: string; order: number; active: boolean }
 
@@ -38,6 +40,13 @@ export default function PklRegistrationReview() {
   const [newReqName, setNewReqName] = useState("");
   const [reqLoading, setReqLoading] = useState(true);
 
+  // Jendela pendaftaran (SiteSetting pkl.tingkatPendaftar / pkl.pendaftaranDibuka) — aturannya
+  // kelas XI semester genap, tapi jendelanya tetap bisa dibuka/ditutup sekolah.
+  const [tingkat, setTingkat] = useState<number[]>([11]);
+  const [dibuka, setDibuka] = useState("auto");
+  const [semester, setSemester] = useState("");
+  const [savingJendela, setSavingJendela] = useState(false);
+
   function loadList() {
     setLoading(true);
     fetch(`/api/teacher/humas/pkl-registrations?status=${statusFilter}`)
@@ -49,8 +58,27 @@ export default function PklRegistrationReview() {
     fetch("/api/admin/pkl-requirements").then(r => r.json()).then(d => setRequirements(Array.isArray(d) ? d : []))
       .catch(() => setRequirements([])).finally(() => setReqLoading(false));
   }
+  function loadJendela() {
+    fetch("/api/admin/pkl-pengaturan").then(r => r.json()).then(d => {
+      const t = String(d["pkl.tingkatPendaftar"] ?? "11").split(",").map(Number).filter(n => n >= 10 && n <= 12);
+      setTingkat(t.length > 0 ? t : [11]);
+      setDibuka(String(d["pkl.pendaftaranDibuka"] ?? "auto"));
+      setSemester(String(d.semester ?? ""));
+    }).catch(() => {});
+  }
+  async function simpanJendela() {
+    setSavingJendela(true);
+    const res = await fetch("/api/admin/pkl-pengaturan", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "pkl.tingkatPendaftar": tingkat.join(","), "pkl.pendaftaranDibuka": dibuka }),
+    });
+    setSavingJendela(false);
+    if (res.ok) { toast.success("Jendela pendaftaran disimpan."); loadJendela(); }
+    else { const d = await res.json().catch(() => ({})); toast.error(d.error || "Gagal menyimpan"); }
+  }
+
   useEffect(() => { loadList(); }, [statusFilter]);
-  useEffect(() => { loadRequirements(); }, []);
+  useEffect(() => { loadRequirements(); loadJendela(); }, []);
 
   async function decide(id: string, decision: "APPROVED" | "REJECTED") {
     setDeciding(true);
@@ -148,8 +176,41 @@ export default function PklRegistrationReview() {
           })()}
         </>
       ) : (
-        <div className="panel p-5 max-w-xl">
-          <p className="text-xs text-gray-400 mb-4">Daftar dokumen yang wajib diunggah siswa kelas XI saat mendaftar PKL. Nonaktifkan (bukan hapus) kalau dokumen tidak lagi dipakai tapi datanya masih ingin disimpan.</p>
+        <div className="space-y-6 max-w-xl">
+        <div className="panel p-5">
+          <h3 className="font-heading font-semibold text-navy text-sm mb-1">Jendela Pendaftaran</h3>
+          <p className="text-xs text-gray-400 mb-4">
+            Aturan sekolah: siswa <b>kelas XI semester genap</b>, sebelum naik ke kelas XII. Semester
+            berjalan sekarang: <b>{semester || "—"}</b>. Kelas XII tidak mendaftar lagi — penempatannya
+            dicatat di menu PKL.
+          </p>
+          <label className="label-field">Tingkat yang boleh mendaftar</label>
+          <div className="flex flex-wrap gap-3 mb-4">
+            {[10, 11, 12].map(g => (
+              <label key={g} className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                <input type="checkbox" checked={tingkat.includes(g)}
+                  onChange={e => setTingkat(p => e.target.checked ? [...p, g].sort() : p.filter(x => x !== g))} />
+                Kelas {({ 10: "X", 11: "XI", 12: "XII" } as Record<number, string>)[g]}
+              </label>
+            ))}
+          </div>
+          <label className="label-field">Status jendela</label>
+          <div className="mb-4">
+            <Select value={dibuka} onChange={setDibuka} options={[
+              { value: "auto", label: "Otomatis — buka pada semester genap" },
+              { value: "buka", label: "Paksa buka (gelombang tambahan)" },
+              { value: "tutup", label: "Paksa tutup" },
+            ]} />
+          </div>
+          <div className="flex justify-end">
+            <button onClick={simpanJendela} disabled={savingJendela} className="btn-modal-save">
+              {savingJendela ? <Loader2 size={14} className="animate-spin" /> : <Settings size={14} />} Simpan
+            </button>
+          </div>
+        </div>
+        <div className="panel p-5">
+          <h3 className="font-heading font-semibold text-navy text-sm mb-1">Dokumen Syarat</h3>
+          <p className="text-xs text-gray-400 mb-4">Daftar dokumen yang wajib diunggah siswa saat mendaftar PKL. Selama daftar ini kosong, siswa tetap dapat mendaftar dengan mengajukan tempat PKL saja. Nonaktifkan (bukan hapus) kalau dokumen tidak lagi dipakai tapi datanya masih ingin disimpan.</p>
           <div className="flex gap-2 mb-4">
             <input value={newReqName} onChange={e => setNewReqName(e.target.value)} placeholder="Nama dokumen baru (mis. Surat Izin Orang Tua)"
               className="input-field flex-1" onKeyDown={e => e.key === "Enter" && addRequirement()} />
@@ -174,6 +235,7 @@ export default function PklRegistrationReview() {
             </div>
           )}
         </div>
+        </div>
       )}
 
       <Modal open={!!detail} onClose={() => setDetail(null)} title={detail ? `Pendaftaran PKL — ${detail.student.user.name}` : ""}
@@ -192,8 +254,14 @@ export default function PklRegistrationReview() {
             <div className="text-sm text-gray-500">
               {detail.student.nis} · {detail.student.class?.name ?? "-"} · {detail.student.major.name}
             </div>
+            <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+              <p className="label-field mb-0.5">Tempat PKL yang diajukan</p>
+              <p className="text-sm font-semibold text-primary-900">{detail.pilihanTempat || "—"}</p>
+              {detail.catatanSiswa && <p className="mt-1 text-sm text-gray-500">{detail.catatanSiswa}</p>}
+            </div>
             <div className="space-y-2">
               <p className="label-field">Dokumen Diunggah</p>
+              {detail.documents.length === 0 && <p className="text-sm text-gray-400">Belum ada dokumen syarat yang ditetapkan sekolah.</p>}
               {detail.documents.map(doc => (
                 <a key={doc.requirementId} href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50 text-sm text-primary-700">

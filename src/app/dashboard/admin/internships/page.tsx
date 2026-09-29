@@ -1,6 +1,6 @@
 ﻿"use client";
 import React, { useEffect, useState, useTransition } from "react";
-import { Search, Edit2, X, Save, Loader2, Briefcase, Users, CheckCircle, Clock, AlertCircle, BookOpen, Calendar, MessageSquare } from "lucide-react";
+import { Search, Edit2, X, Save, Loader2, Briefcase, Users, CheckCircle, Clock, AlertCircle, BookOpen, Calendar, MessageSquare, UsersRound } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -9,6 +9,7 @@ import Modal from "@/components/admin/Modal";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface Internship {
   id: string;
@@ -58,6 +59,12 @@ const PKL_STATUS: Record<string, { label: string; badge: string; icon: React.Ele
 
 export default function AdminInternshipsPage() {
   const confirmDialog = useConfirm();
+  const toast = useToast();
+  // Memasukkan seluruh peserta satu tingkat sekaligus — penempatan boleh menyusul (lihat
+  // /api/admin/internships/massal). Bawaannya kelas XII: tingkat yang menjalani PKL.
+  const [massalModal, setMassalModal] = useState(false);
+  const [massalError, setMassalError] = useState("");
+  const [massal, setMassal] = useState({ grade: "12", startDate: "", endDate: "", company: "", position: "" });
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -116,6 +123,23 @@ export default function AdminInternshipsPage() {
     });
   }
 
+  async function handleMassal(e: React.FormEvent) {
+    e.preventDefault();
+    setMassalError("");
+    if (!massal.startDate || !massal.endDate) { setMassalError("Tanggal mulai dan selesai wajib diisi."); return; }
+    startTransition(async () => {
+      const res = await fetch("/api/admin/internships/massal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...massal, grade: Number(massal.grade) }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setMassalError(d.error || "Gagal memasukkan peserta"); return; }
+      setMassalModal(false);
+      toast.success(d.dibuat > 0 ? `${d.dibuat} siswa dimasukkan sebagai peserta PKL.` : (d.pesan || "Tidak ada yang perlu ditambahkan."));
+      load();
+    });
+  }
+
   async function handleDelete(studentId: string) {
     if (!await confirmDialog("Hapus data PKL siswa ini?")) return;
     startTransition(async () => {
@@ -161,11 +185,16 @@ export default function AdminInternshipsPage() {
       {/* Search */}
       <div className="baris-alat mb-5">
         <div className="alat-cari">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Cari nama, NIS, atau kelas..."
-          className="input-field pl-10" />
-      </div>
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama, NIS, atau kelas..."
+            className="input-field pl-10" />
+        </div>
+        <div className="alat-aksi">
+          <button onClick={() => setMassalModal(true)} className="btn-modal-cancel btn-teks">
+            <UsersRound size={14} /> Masukkan Peserta Massal
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -258,6 +287,59 @@ export default function AdminInternshipsPage() {
               ]}
             />
           </div>
+        </form>
+      </Modal>
+
+      <Modal open={massalModal} onClose={() => setMassalModal(false)} title="Masukkan Peserta PKL Massal"
+        description="Siswa yang sudah punya data PKL tidak akan ditimpa"
+        footer={
+          <>
+            <button type="button" onClick={() => setMassalModal(false)} className="btn-modal-cancel flex-1">
+              <X size={14} /> Batal
+            </button>
+            <button type="submit" form="form-pkl-massal" disabled={isPending} className="btn-modal-save flex-1">
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <UsersRound size={14} />} Masukkan
+            </button>
+          </>
+        }>
+        <form id="form-pkl-massal" onSubmit={handleMassal} className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Seluruh siswa <b>aktif</b> pada tingkat yang dipilih dimasukkan sebagai peserta PKL. Biarkan
+            kolom perusahaan kosong bila tempatnya belum pasti — nanti disunting per siswa, dan selama
+            masih &ldquo;Belum ditentukan&rdquo; siswa tetap bisa mengajukan pilihan tempatnya sendiri.
+          </p>
+          <div>
+            <label className="label-field">Tingkat kelas</label>
+            <Select value={massal.grade} onChange={v => setMassal(m => ({ ...m, grade: v }))} options={[
+              { value: "12", label: "Kelas XII" },
+              { value: "11", label: "Kelas XI" },
+              { value: "10", label: "Kelas X" },
+            ]} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="label-field">Mulai PKL</label>
+              <DatePicker value={massal.startDate} onChange={v => setMassal(m => ({ ...m, startDate: v }))} />
+            </div>
+            <div className="min-w-0">
+              <label className="label-field">Selesai PKL</label>
+              <DatePicker value={massal.endDate} onChange={v => setMassal(m => ({ ...m, endDate: v }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="label-field">Perusahaan (opsional)</label>
+              <input className="input-field" value={massal.company}
+                onChange={e => setMassal(m => ({ ...m, company: e.target.value }))}
+                placeholder="Belum ditentukan" />
+            </div>
+            <div className="min-w-0">
+              <label className="label-field">Posisi (opsional)</label>
+              <input className="input-field" value={massal.position}
+                onChange={e => setMassal(m => ({ ...m, position: e.target.value }))} placeholder="—" />
+            </div>
+          </div>
+          {massalError && <p className="error-msg">{massalError}</p>}
         </form>
       </Modal>
 

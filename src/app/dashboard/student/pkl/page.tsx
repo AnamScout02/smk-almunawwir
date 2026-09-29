@@ -7,6 +7,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
 import DatePicker from "@/components/shared/DatePicker";
+import Select from "@/components/admin/Select";
+import { penempatanBelumPasti } from "@/lib/pkl-tempat";
 
 interface JournalEntry {
   id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null;
@@ -17,7 +19,11 @@ interface Internship {
 }
 interface Requirement { id: string; name: string; active: boolean }
 interface RegDoc { requirementId: string; fileUrl: string }
-interface Registration { id: string; status: string; reviewNote: string | null; submittedAt: string; documents: RegDoc[] }
+interface Registration {
+  id: string; status: string; reviewNote: string | null; submittedAt: string; documents: RegDoc[];
+  pilihanTempat: string | null; pilihanMitraId: string | null; catatanSiswa: string | null;
+}
+interface Mitra { id: string; name: string; industryField: string | null; quota: number | null }
 
 const STATUS_LABEL: Record<string, { label: string; badge: string }> = {
   ONGOING: { label: "Sedang PKL", badge: "bg-blue-50 text-blue-700 border border-blue-200" },
@@ -48,10 +54,15 @@ export default function StudentPklPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ── Pendaftaran PKL (siswa kelas XI) ──
-  const [isGradeXi, setIsGradeXi] = useState(false);
+  // ── Pendaftaran PKL (tingkat kelasnya diatur sekolah, lihat SiteSetting pkl.tingkatPendaftar) ──
+  const [bolehDaftar, setBolehDaftar] = useState(false);
+  const [alasanTutup, setAlasanTutup] = useState<string | null>(null);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [registration, setRegistration] = useState<Registration | null>(null);
+  const [mitra, setMitra] = useState<Mitra[]>([]);
+  const [pilihanMitraId, setPilihanMitraId] = useState("");
+  const [pilihanTempat, setPilihanTempat] = useState("");
+  const [catatanSiswa, setCatatanSiswa] = useState("");
   const [docUploads, setDocUploads] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(true);
   const [submittingReg, setSubmittingReg] = useState(false);
@@ -62,9 +73,16 @@ export default function StudentPklPage() {
   function loadRegistration() {
     setRegLoading(true);
     fetch("/api/student/pkl/registration").then(r => r.json()).then(d => {
-      setIsGradeXi(!!d.isGradeXi);
+      setBolehDaftar(!!d.bolehDaftar);
+      setAlasanTutup(d.alasanTutup ?? null);
       setRequirements(Array.isArray(d.requirements) ? d.requirements : []);
+      setMitra(Array.isArray(d.mitra) ? d.mitra : []);
       setRegistration(d.registration ?? null);
+      if (d.registration) {
+        setPilihanMitraId(d.registration.pilihanMitraId ?? "");
+        setPilihanTempat(d.registration.pilihanMitraId ? "" : (d.registration.pilihanTempat ?? ""));
+        setCatatanSiswa(d.registration.catatanSiswa ?? "");
+      }
       if (d.registration?.documents) {
         const map: Record<string, string> = {};
         for (const doc of d.registration.documents) map[doc.requirementId] = doc.fileUrl;
@@ -80,10 +98,14 @@ export default function StudentPklPage() {
       toast.error("Lengkapi semua dokumen syarat terlebih dahulu.");
       return;
     }
+    if (!pilihanMitraId && !pilihanTempat.trim()) {
+      toast.error("Pilih mitra atau tuliskan tempat PKL yang kamu ajukan.");
+      return;
+    }
     setSubmittingReg(true);
     const res = await fetch("/api/student/pkl/registration", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ documents }),
+      body: JSON.stringify({ documents, pilihanMitraId, pilihanTempat, catatanSiswa }),
     });
     setSubmittingReg(false);
     if (res.ok) { toast.success("Pendaftaran PKL diajukan, menunggu persetujuan."); loadRegistration(); }
@@ -123,37 +145,64 @@ export default function StudentPklPage() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Briefcase size={22} />} title="PKL Saya" description="Praktik Kerja Lapangan & jurnal harian" />
 
-      {!internship ? (
-        isGradeXi ? (
-          <div className="panel p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <FileCheck2 size={16} className="text-purple-600" />
-              <h3 className="font-heading font-semibold text-navy">Pendaftaran PKL</h3>
-              {registration && (() => {
-                const s = REG_STATUS[registration.status];
-                const Icon = s.icon;
-                return (
-                  <span className={`ml-auto inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${s.badge}`}>
-                    <Icon size={12} /> {s.label}
-                  </span>
-                );
-              })()}
-            </div>
-            <p className="text-xs text-gray-400 mb-4">
-              Siswa kelas XI wajib mendaftar PKL sebelum naik ke kelas XII. Lengkapi dokumen syarat berikut.
-            </p>
+      {/* Pendaftaran PKL — tampil selama sekolah membuka tingkat kelas ini DAN tempat PKL-nya
+          belum pasti. Dulu panel ini hanya muncul saat siswa belum punya baris PKL sama sekali,
+          jadi begitu admin memasukkan seluruh peserta lebih dulu, formulirnya ikut hilang. */}
+      {bolehDaftar && penempatanBelumPasti(internship?.company) && (
+        <div className="panel p-5 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <FileCheck2 size={16} className="text-purple-600" />
+            <h3 className="font-heading font-semibold text-navy">Pendaftaran PKL</h3>
+            {registration && (() => {
+              const s = REG_STATUS[registration.status];
+              const Icon = s.icon;
+              return (
+                <span className={`ml-auto inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${s.badge}`}>
+                  <Icon size={12} /> {s.label}
+                </span>
+              );
+            })()}
+          </div>
+          <p className="text-xs text-gray-400 mb-4">
+            Ajukan tempat PKL yang kamu tuju{requirements.length > 0 ? ", lalu lampirkan dokumen syarat berikut" : ""}. Penempatan
+            akhir ditetapkan sekolah.
+          </p>
 
-            {regLoading ? (
-              <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-gray-300" /></div>
-            ) : requirements.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-10">Belum ada dokumen syarat yang ditetapkan. Hubungi Wakasek Humas/TU.</p>
-            ) : (
-              <>
-                {registration?.status === "REJECTED" && registration.reviewNote && (
-                  <div className="mb-4 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-                    <span className="font-semibold">Alasan ditolak:</span> {registration.reviewNote} — silakan perbaiki dokumen lalu ajukan ulang.
-                  </div>
-                )}
+          {regLoading ? (
+            <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
+          ) : (
+            <>
+              {registration?.status === "REJECTED" && registration.reviewNote && (
+                <div className="mb-4 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+                  <span className="font-semibold">Alasan ditolak:</span> {registration.reviewNote} — silakan perbaiki lalu ajukan ulang.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="min-w-0">
+                  <label className="label-field">Pilih mitra sekolah</label>
+                  <Select value={pilihanMitraId} onChange={v => { setPilihanMitraId(v); if (v) setPilihanTempat(""); }}
+                    placeholder={mitra.length > 0 ? "Pilih mitra..." : "Belum ada mitra terdata"}
+                    options={mitra.map(m => ({
+                      value: m.id,
+                      label: m.quota ? `${m.name} (kuota ${m.quota})` : m.name,
+                    }))} />
+                </div>
+                <div className="min-w-0">
+                  <label className="label-field">Atau tulis tempat lain</label>
+                  <input className="input-field" value={pilihanTempat} disabled={!!pilihanMitraId}
+                    onChange={e => setPilihanTempat(e.target.value)}
+                    placeholder="Nama perusahaan/instansi yang kamu tuju" />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="label-field">Catatan (opsional)</label>
+                <textarea className="input-field" rows={2} value={catatanSiswa}
+                  onChange={e => setCatatanSiswa(e.target.value)}
+                  placeholder="Alasan memilih, kontak yang sudah dihubungi, dsb." />
+              </div>
+
+              {requirements.length > 0 && (
                 <div className="space-y-3">
                   {requirements.map(r => (
                     <FileUpload key={r.id} value={docUploads[r.id] || ""} folder="pkl-registration"
@@ -161,19 +210,25 @@ export default function StudentPklPage() {
                       onChange={url => setDocUploads(prev => ({ ...prev, [r.id]: url }))} />
                   ))}
                 </div>
-                {registration?.status !== "APPROVED" && (
-                  <div className="flex justify-end mt-4">
-                    <button onClick={handleSubmitRegistration} disabled={submittingReg} className="btn-modal-save">
-                      {submittingReg ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                      {registration ? "Ajukan Ulang" : "Ajukan Pendaftaran"}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ) : (
-          <EmptyState icon={Briefcase} title="Belum Ada Data PKL" description="Informasi PKL akan muncul setelah diinput oleh admin/wali kelas." />
+              )}
+
+              {registration?.status !== "APPROVED" && (
+                <div className="flex justify-end mt-4">
+                  <button onClick={handleSubmitRegistration} disabled={submittingReg} className="btn-modal-save">
+                    {submittingReg ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                    {registration ? "Ajukan Ulang" : "Ajukan Pendaftaran"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {!internship ? (
+        !bolehDaftar && (
+          <EmptyState icon={Briefcase} title="Belum Ada Data PKL"
+            description={alasanTutup ?? "Informasi PKL akan muncul setelah diinput oleh admin/wali kelas."} />
         )
       ) : (
         <>

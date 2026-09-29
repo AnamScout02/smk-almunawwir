@@ -6,6 +6,12 @@ export const DEFAULTS: Record<string, string> = {
   // Tingkat kelas yang jam mengajarnya dipantau guru piket (Buku Piket, skor kedisiplinan).
   // Kelas XII dikecualikan selama sedang PKL — lihat src/lib/kehadiran-guru.ts.
   "kedisiplinan.tingkat": "10,11",
+  // Pendaftaran PKL: siswa kelas XI pada SEMESTER GENAP, sebelum naik ke kelas XII (aturan
+  // sekolah). Tingkatnya & jendela waktunya diatur di sini, bukan tertulis mati di route seperti
+  // dulu — lihat src/lib/pkl-pendaftar.ts. `pendaftaranDibuka`: auto (ikut semester genap) |
+  // buka (paksa buka, mis. gelombang tambahan) | tutup.
+  "pkl.tingkatPendaftar": "11",
+  "pkl.pendaftaranDibuka": "auto",
   // Ayat & Hadis
   "islamic.cta_arabic": "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا",
   "islamic.cta_trans": "Dan barangsiapa bertakwa kepada Allah, niscaya Dia akan membukakan jalan keluar baginya.",

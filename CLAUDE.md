@@ -1108,3 +1108,30 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     seragam diurus `.kisi-kartu { align-items: stretch }`, bukan per halaman. **Fondasi token TIDAK
     dibuat ulang** — `@theme` yang ada sudah dipakai 272 halaman; membuat berkas variabel kedua akan
     menjadi sistem paralel yang bertabrakan.
+
+91. **PKL punya DUA tabel dan jendela pendaftarannya kelas XI SEMESTER GENAP (29 September 2026).**
+    `PklRegistration` = pendaftaran/usulan siswa; `Internship` = PENEMPATAN yang dicatat sekolah
+    (satu baris per siswa, `@unique`). Keduanya jangan dicampur.
+    - **Siapa boleh mendaftar diatur, bukan ditulis mati.** Route pendaftaran dulu menolak
+      `grade !== 11` langsung di kode, dan tabel `PklDocumentRequirement` kosong sehingga formulirnya
+      menampilkan "Belum ada dokumen syarat" — gabungan keduanya membuat **tidak ada satu pun siswa
+      yang bisa mendaftar** (laporan user: "saya tidak melihat tempat untuk siswa dapat mendaftar").
+      Sekarang lewat `izinDaftarPkl` (src/lib/pkl-pendaftar.ts) dengan SiteSetting
+      `pkl.tingkatPendaftar` (bawaan "11") + `pkl.pendaftaranDibuka` (auto = ikut semester genap |
+      buka | tutup), diatur di /dashboard/admin/pkl-pendaftaran → tab Dokumen Syarat → Jendela
+      Pendaftaran. Aturan sekolahnya: **kelas XI pada semester genap**, sebelum naik ke kelas XII.
+      Kelas XII TIDAK mendaftar lagi — mereka sudah peserta.
+    - **Pendaftaran TIDAK boleh diblokir oleh daftar syarat yang kosong.** Bila tidak ada
+      `PklDocumentRequirement` aktif, siswa cukup mengajukan tempat PKL. Yang ditolak dulu adalah
+      `documents.length === 0`, jadi tabel kosong = pendaftaran mati total.
+    - **Tempat yang diajukan siswa disimpan di `PklRegistration.pilihanTempat`/`pilihanMitraId`/
+      `catatanSiswa` TANPA foreign key** ke `IndustryPartner` — mengikuti keputusan yang sama pada
+      `Internship.company` (katalog mitra berdiri sendiri). Nama mitra ikut disalin ke
+      `pilihanTempat` supaya usulan tetap terbaca bila mitra dihapus.
+    - **Penempatan boleh belum pasti.** `Internship.company = "Belum ditentukan"`
+      (`TEMPAT_BELUM_DITENTUKAN`/`penempatanBelumPasti` di src/lib/pkl-tempat.ts — netral, bukan
+      `server-only`, supaya halaman klien bisa memakainya). Tombol **Masukkan Peserta PKL Massal**
+      (/api/admin/internships/massal) memasukkan seluruh siswa aktif satu tingkat sekaligus dan
+      **melewati** yang sudah punya baris PKL, jadi aman ditekan berulang tiap angkatan. Panel
+      pendaftaran di portal siswa tampil selama `penempatanBelumPasti` — dulu syaratnya "belum punya
+      baris PKL sama sekali", sehingga begitu peserta dimasukkan lebih dulu, formulirnya ikut hilang.
