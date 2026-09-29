@@ -1134,3 +1134,21 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
       **melewati** yang sudah punya baris PKL, jadi aman ditekan berulang tiap angkatan. Panel
       pendaftaran di portal siswa tampil selama `penempatanBelumPasti` — dulu syaratnya "belum punya
       baris PKL sama sekali", sehingga begitu peserta dimasukkan lebih dulu, formulirnya ikut hilang.
+
+92. **Masukan Rekan = anonim TERHADAP PENERIMA, bukan anonim mutlak (29 September 2026).**
+    Model `MasukanRekan` (kritik/saran/apresiasi antar pegawai). Kontraknya ada di
+    `src/lib/masukan-rekan.ts` dan WAJIB dijaga oleh setiap route baru yang menyentuhnya:
+    - **Route yang melayani PENERIMA tidak boleh menyertakan `pengirimId` atau relasi `pengirim`
+      dalam `select`/`include`.** Menyembunyikannya di layar TIDAK CUKUP — datanya tidak boleh
+      sampai ke browser penerima sama sekali. Cara memeriksanya: panggil `/api/masukan-rekan`
+      sebagai penerima dan pastikan kunci yang kembali hanya `id, jenis, isi, dibacaAt, createdAt`.
+    - **`/api/admin/masukan-rekan` satu-satunya jalur yang menampilkan pasangan pengirim–penerima**,
+      dijaga `verifyRole(["ADMIN"])`. TAS dan guru berjabatan apa pun TIDAK diberi akses — seluruh
+      nilai fitur ini bergantung pada pengirim tidak terlihat oleh rekan kerjanya.
+    - Notifikasi ke penerima tidak menyebut pengirim.
+    - **Layar pengirim menyatakan tegas bahwa Superadmin dapat melihat pengirimnya.** Jangan
+      dihapus: menjanjikan anonim penuh padahal tidak, akibatnya lebih buruk saat ketahuan.
+    - Batas 10 masukan/pengirim/hari, isi maks 2000 karakter.
+    **Menguji anonimitas jangan lewat status HTTP saja** — `fetch` mengikuti pengalihan, jadi guru
+    yang ditolak `verifyRole` tetap menerima **200** berisi HTML halaman portalnya. Periksa
+    `redirect: "manual"` (harus `opaqueredirect`) atau isi badannya, bukan angka statusnya.
