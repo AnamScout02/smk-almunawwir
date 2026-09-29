@@ -44,6 +44,8 @@ model User {
   pushSubscriptions PushSubscription[]
   notifikasiMasuk   NotifikasiPengguna[]
   menuFavorit       MenuFavorit?
+  masukanDikirim   MasukanRekan[] @relation("MasukanDikirim")
+  masukanDiterima  MasukanRekan[] @relation("MasukanDiterima")
 }
 
 model Teacher {
@@ -1992,13 +1994,8 @@ model PklRegistration {
   reviewedAt     DateTime?
   submittedAt    DateTime                  @default(now())
   documents      PklRegistrationDocument[]
-  // Tempat PKL yang DIAJUKAN siswa (usulan, bukan penempatan). Disimpan sebagai teks/id lepas
-  // TANPA foreign key — mengikuti keputusan yang sama pada IndustryPartner & Internship.company,
-  // supaya katalog mitra tetap berdiri sendiri dan usulan siswa tidak hilang bila mitra dihapus.
-  // Penempatan yang sah tetap dicatat admin di `Internship`.
-  pilihanTempat  String?
-  pilihanMitraId String?
-  catatanSiswa   String?
+  // Siswa HANYA mendaftar & melengkapi berkas. Tempat PKL dan guru pembimbing ditetapkan Humas /
+  // bagian PKL di `Internship` — bukan diusulkan siswa (keputusan user 29 September 2026).
 }
 
 model PklRegistrationDocument {
@@ -3287,4 +3284,23 @@ model PerangkatJaringan {
   diubahAt         DateTime  @updatedAt
 
   @@index([aktif])
+}
+
+/// Kritik, saran, dan apresiasi ANTAR PEGAWAI tanpa nama pengirim (permintaan user 29 September
+/// 2026). Penerima TIDAK PERNAH melihat siapa pengirimnya — route yang melayani penerima dilarang
+/// menyertakan `pengirimId`/`pengirim`. Hanya Superadmin (role ADMIN) yang boleh melihat keduanya,
+/// dan itu DIBERITAHUKAN di layar pengirim supaya tidak ada yang merasa dijanjikan anonim penuh.
+model MasukanRekan {
+  id         String    @id @default(cuid())
+  pengirimId String
+  pengirim   User      @relation("MasukanDikirim", fields: [pengirimId], references: [id], onDelete: Cascade)
+  penerimaId String
+  penerima   User      @relation("MasukanDiterima", fields: [penerimaId], references: [id], onDelete: Cascade)
+  jenis      String // KRITIK | SARAN | APRESIASI
+  isi        String
+  dibacaAt   DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([penerimaId, createdAt])
+  @@index([pengirimId, createdAt])
 }

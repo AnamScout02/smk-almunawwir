@@ -19,23 +19,18 @@ export async function GET() {
     const student = await getStudent(session.email);
     if (!student) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [requirements, registration, mitra, izin] = await Promise.all([
+    const [requirements, registration, izin] = await Promise.all([
       prisma.pklDocumentRequirement.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
       prisma.pklRegistration.findUnique({
         where: { studentId: student.id },
         include: { documents: true },
       }),
-      // Katalog mitra dipakai sebagai pilihan tempat; siswa tetap boleh mengisi tempat lain.
-      prisma.industryPartner.findMany({
-        select: { id: true, name: true, industryField: true, quota: true },
-        orderBy: { name: "asc" },
-      }).catch(() => []),
       izinDaftarPkl(student.class?.grade),
     ]);
 
     return NextResponse.json({
       bolehDaftar: izin.boleh, alasanTutup: izin.alasan ?? null,
-      requirements, registration, mitra,
+      requirements, registration,
     });
   } catch (e) {
     lemparBilaPengalihan(e);
@@ -55,18 +50,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: izin.alasan ?? "Pendaftaran PKL sedang ditutup." }, { status: 403 });
     }
 
-    const body = await req.json() as {
-      documents?: { requirementId: string; fileUrl: string }[];
-      pilihanMitraId?: string | null;
-      pilihanTempat?: string | null;
-      catatanSiswa?: string | null;
-    };
+    const body = await req.json() as { documents?: { requirementId: string; fileUrl: string }[] };
     const documents = Array.isArray(body.documents) ? body.documents : [];
 
     const requirements = await prisma.pklDocumentRequirement.findMany({ where: { active: true }, select: { id: true } });
-    // Sekolah belum menetapkan dokumen syarat apa pun → pendaftaran TIDAK diblokir; cukup pilihan
-    // tempat. Dulu `documents.length === 0` ditolak, jadi selama tabel syarat kosong tidak ada
-    // yang bisa mendaftar sama sekali.
+    // Sekolah belum menetapkan dokumen syarat apa pun → pendaftaran TIDAK diblokir, siswa cukup
+    // menyatakan diri mendaftar. Dulu `documents.length === 0` ditolak, jadi selama tabel syarat
+    // kosong tidak ada yang bisa mendaftar sama sekali.
     if (requirements.length > 0) {
       const missing = requirements.filter(r => !documents.some(d => d.requirementId === r.id && d.fileUrl));
       if (missing.length > 0) {
@@ -74,29 +64,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const mitraId = body.pilihanMitraId?.trim() || null;
-    let tempat = body.pilihanTempat?.trim() || null;
-    if (mitraId) {
-      const m = await prisma.industryPartner.findUnique({ where: { id: mitraId }, select: { name: true } });
-      if (!m) return NextResponse.json({ error: "Mitra yang dipilih tidak ditemukan." }, { status: 400 });
-      tempat = m.name; // nama disimpan ikut supaya usulan tetap terbaca bila mitra dihapus
-    }
-    if (!tempat) {
-      return NextResponse.json({ error: "Pilih mitra atau tuliskan tempat PKL yang kamu ajukan." }, { status: 400 });
-    }
-
     const registration = await prisma.$transaction(async (tx) => {
       const reg = await tx.pklRegistration.upsert({
         where: { studentId: student.id },
-        create: {
-          studentId: student.id, status: "PENDING",
-          pilihanMitraId: mitraId, pilihanTempat: tempat, catatanSiswa: body.catatanSiswa?.trim() || null,
-        },
+        create: { studentId: student.id, status: "PENDING" },
         // Ajukan ulang setelah ditolak → balik ke PENDING, bersihkan catatan review lama.
-        update: {
-          status: "PENDING", reviewNote: null, reviewedByName: null, reviewedAt: null, submittedAt: new Date(),
-          pilihanMitraId: mitraId, pilihanTempat: tempat, catatanSiswa: body.catatanSiswa?.trim() || null,
-        },
+        update: { status: "PENDING", reviewNote: null, reviewedByName: null, reviewedAt: null, submittedAt: new Date() },
       });
       for (const d of documents) {
         if (!d.fileUrl) continue;

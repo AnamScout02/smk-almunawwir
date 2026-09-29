@@ -7,7 +7,6 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
 import DatePicker from "@/components/shared/DatePicker";
-import Select from "@/components/admin/Select";
 import { penempatanBelumPasti } from "@/lib/pkl-tempat";
 
 interface JournalEntry {
@@ -19,11 +18,7 @@ interface Internship {
 }
 interface Requirement { id: string; name: string; active: boolean }
 interface RegDoc { requirementId: string; fileUrl: string }
-interface Registration {
-  id: string; status: string; reviewNote: string | null; submittedAt: string; documents: RegDoc[];
-  pilihanTempat: string | null; pilihanMitraId: string | null; catatanSiswa: string | null;
-}
-interface Mitra { id: string; name: string; industryField: string | null; quota: number | null }
+interface Registration { id: string; status: string; reviewNote: string | null; submittedAt: string; documents: RegDoc[] }
 
 const STATUS_LABEL: Record<string, { label: string; badge: string }> = {
   ONGOING: { label: "Sedang PKL", badge: "bg-blue-50 text-blue-700 border border-blue-200" },
@@ -59,10 +54,6 @@ export default function StudentPklPage() {
   const [alasanTutup, setAlasanTutup] = useState<string | null>(null);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [registration, setRegistration] = useState<Registration | null>(null);
-  const [mitra, setMitra] = useState<Mitra[]>([]);
-  const [pilihanMitraId, setPilihanMitraId] = useState("");
-  const [pilihanTempat, setPilihanTempat] = useState("");
-  const [catatanSiswa, setCatatanSiswa] = useState("");
   const [docUploads, setDocUploads] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(true);
   const [submittingReg, setSubmittingReg] = useState(false);
@@ -76,13 +67,7 @@ export default function StudentPklPage() {
       setBolehDaftar(!!d.bolehDaftar);
       setAlasanTutup(d.alasanTutup ?? null);
       setRequirements(Array.isArray(d.requirements) ? d.requirements : []);
-      setMitra(Array.isArray(d.mitra) ? d.mitra : []);
       setRegistration(d.registration ?? null);
-      if (d.registration) {
-        setPilihanMitraId(d.registration.pilihanMitraId ?? "");
-        setPilihanTempat(d.registration.pilihanMitraId ? "" : (d.registration.pilihanTempat ?? ""));
-        setCatatanSiswa(d.registration.catatanSiswa ?? "");
-      }
       if (d.registration?.documents) {
         const map: Record<string, string> = {};
         for (const doc of d.registration.documents) map[doc.requirementId] = doc.fileUrl;
@@ -98,14 +83,10 @@ export default function StudentPklPage() {
       toast.error("Lengkapi semua dokumen syarat terlebih dahulu.");
       return;
     }
-    if (!pilihanMitraId && !pilihanTempat.trim()) {
-      toast.error("Pilih mitra atau tuliskan tempat PKL yang kamu ajukan.");
-      return;
-    }
     setSubmittingReg(true);
     const res = await fetch("/api/student/pkl/registration", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ documents, pilihanMitraId, pilihanTempat, catatanSiswa }),
+      body: JSON.stringify({ documents }),
     });
     setSubmittingReg(false);
     if (res.ok) { toast.success("Pendaftaran PKL diajukan, menunggu persetujuan."); loadRegistration(); }
@@ -164,8 +145,8 @@ export default function StudentPklPage() {
             })()}
           </div>
           <p className="text-xs text-gray-400 mb-4">
-            Ajukan tempat PKL yang kamu tuju{requirements.length > 0 ? ", lalu lampirkan dokumen syarat berikut" : ""}. Penempatan
-            akhir ditetapkan sekolah.
+            Daftar dan lengkapi berkas syaratnya. <b>Tempat PKL dan guru pembimbing ditetapkan sekolah</b>
+            (Humas / bagian PKL), bukan dipilih sendiri.
           </p>
 
           {regLoading ? (
@@ -178,31 +159,7 @@ export default function StudentPklPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="min-w-0">
-                  <label className="label-field">Pilih mitra sekolah</label>
-                  <Select value={pilihanMitraId} onChange={v => { setPilihanMitraId(v); if (v) setPilihanTempat(""); }}
-                    placeholder={mitra.length > 0 ? "Pilih mitra..." : "Belum ada mitra terdata"}
-                    options={mitra.map(m => ({
-                      value: m.id,
-                      label: m.quota ? `${m.name} (kuota ${m.quota})` : m.name,
-                    }))} />
-                </div>
-                <div className="min-w-0">
-                  <label className="label-field">Atau tulis tempat lain</label>
-                  <input className="input-field" value={pilihanTempat} disabled={!!pilihanMitraId}
-                    onChange={e => setPilihanTempat(e.target.value)}
-                    placeholder="Nama perusahaan/instansi yang kamu tuju" />
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="label-field">Catatan (opsional)</label>
-                <textarea className="input-field" rows={2} value={catatanSiswa}
-                  onChange={e => setCatatanSiswa(e.target.value)}
-                  placeholder="Alasan memilih, kontak yang sudah dihubungi, dsb." />
-              </div>
-
-              {requirements.length > 0 && (
+              {requirements.length > 0 ? (
                 <div className="space-y-3">
                   {requirements.map(r => (
                     <FileUpload key={r.id} value={docUploads[r.id] || ""} folder="pkl-registration"
@@ -210,6 +167,8 @@ export default function StudentPklPage() {
                       onChange={url => setDocUploads(prev => ({ ...prev, [r.id]: url }))} />
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-gray-400">Sekolah belum menetapkan dokumen syarat — kamu tetap bisa mendaftar sekarang.</p>
               )}
 
               {registration?.status !== "APPROVED" && (

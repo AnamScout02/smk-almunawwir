@@ -12,7 +12,6 @@ interface Registration {
   id: string; status: string; submittedAt: string; reviewNote: string | null;
   student: { nis: string; user: { name: string }; class: { name: string } | null; major: { name: string } };
   documents: Doc[];
-  pilihanTempat: string | null; catatanSiswa: string | null;
 }
 interface Requirement { id: string; name: string; order: number; active: boolean }
 
@@ -181,8 +180,8 @@ export default function PklRegistrationReview() {
           <h3 className="font-heading font-semibold text-navy text-sm mb-1">Jendela Pendaftaran</h3>
           <p className="text-xs text-gray-400 mb-4">
             Aturan sekolah: siswa <b>kelas XI semester genap</b>, sebelum naik ke kelas XII. Semester
-            berjalan sekarang: <b>{semester || "—"}</b>. Kelas XII tidak mendaftar lagi — penempatannya
-            dicatat di menu PKL.
+            berjalan sekarang: <b>{semester || "—"}</b>. Siswa hanya mendaftar &amp; melengkapi berkas —
+            tempat PKL dan guru pembimbing ditetapkan di menu <b>PKL</b>, bukan dipilih siswa.
           </p>
           <label className="label-field">Tingkat yang boleh mendaftar</label>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -253,11 +252,6 @@ export default function PklRegistrationReview() {
           <div className="space-y-4">
             <div className="text-sm text-gray-500">
               {detail.student.nis} · {detail.student.class?.name ?? "-"} · {detail.student.major.name}
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-              <p className="label-field mb-0.5">Tempat PKL yang diajukan</p>
-              <p className="text-sm font-semibold text-primary-900">{detail.pilihanTempat || "—"}</p>
-              {detail.catatanSiswa && <p className="mt-1 text-sm text-gray-500">{detail.catatanSiswa}</p>}
             </div>
             <div className="space-y-2">
               <p className="label-field">Dokumen Diunggah</p>

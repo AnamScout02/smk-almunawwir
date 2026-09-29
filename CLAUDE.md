@@ -1124,10 +1124,9 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     - **Pendaftaran TIDAK boleh diblokir oleh daftar syarat yang kosong.** Bila tidak ada
       `PklDocumentRequirement` aktif, siswa cukup mengajukan tempat PKL. Yang ditolak dulu adalah
       `documents.length === 0`, jadi tabel kosong = pendaftaran mati total.
-    - **Tempat yang diajukan siswa disimpan di `PklRegistration.pilihanTempat`/`pilihanMitraId`/
-      `catatanSiswa` TANPA foreign key** ke `IndustryPartner` — mengikuti keputusan yang sama pada
-      `Internship.company` (katalog mitra berdiri sendiri). Nama mitra ikut disalin ke
-      `pilihanTempat` supaya usulan tetap terbaca bila mitra dihapus.
+    - **Siswa HANYA mendaftar & melengkapi berkas.** Tempat PKL dan guru pembimbing ditetapkan
+      Humas / bagian PKL lewat `Internship` — bukan diusulkan siswa (keputusan user 29 September
+      2026). Kolom usulan tempat sempat dibuat lalu DICABUT; jangan dihidupkan lagi.
     - **Penempatan boleh belum pasti.** `Internship.company = "Belum ditentukan"`
       (`TEMPAT_BELUM_DITENTUKAN`/`penempatanBelumPasti` di src/lib/pkl-tempat.ts — netral, bukan
       `server-only`, supaya halaman klien bisa memakainya). Tombol **Masukkan Peserta PKL Massal**
