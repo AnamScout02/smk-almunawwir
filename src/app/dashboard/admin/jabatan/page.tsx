@@ -8,6 +8,7 @@ import Modal from "@/components/admin/Modal";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 
 interface Pemegang { id: string; nama: string; jenis: "guru" | "staf"; nonaktif: boolean }
+interface Orang { id: string; nama: string; nonaktif?: boolean; role?: string }
 interface JabatanItem {
   id: string;
   name: string;
@@ -24,6 +25,40 @@ export default function AdminJabatanPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<JabatanItem | null>(null);
+  /* Kelola pemegang LANGSUNG dari katalog — arah kebalikan dari halaman orang ("jabatan apa saja
+     milik orang ini"). Tanpa ini halaman Jabatan hanya bisa dilihat dan petugas harus mencari
+     orangnya lagi di Akun Pengguna / Buku Induk Guru (keluhan user 29 September 2026). */
+  const [pemegangModal, setPemegangModal] = useState<JabatanItem | null>(null);
+  const [kandidat, setKandidat] = useState<{ guru: Orang[]; staf: Orang[] } | null>(null);
+  const [pilihGuru, setPilihGuru] = useState<string[]>([]);
+  const [pilihStaf, setPilihStaf] = useState<string[]>([]);
+  const [cariOrang, setCariOrang] = useState("");
+  const [simpanPemegang, setSimpanPemegang] = useState(false);
+
+  async function bukaPemegang(item: JabatanItem) {
+    setPemegangModal(item); setKandidat(null); setCariOrang(""); setError("");
+    const d = await fetch(`/api/admin/jabatan/${item.id}/pemegang`).then(r => r.json()).catch(() => null);
+    if (!d || d.error) { setError(d?.error ?? "Gagal memuat daftar orang."); return; }
+    setKandidat({ guru: d.guru, staf: d.staf });
+    setPilihGuru(d.guruIds); setPilihStaf(d.stafIds);
+  }
+
+  async function simpanPemegangJabatan() {
+    if (!pemegangModal) return;
+    setSimpanPemegang(true);
+    const res = await fetch(`/api/admin/jabatan/${pemegangModal.id}/pemegang`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guruIds: pilihGuru, stafIds: pilihStaf }),
+    }).catch(() => null);
+    setSimpanPemegang(false);
+    if (!res?.ok) {
+      const d = await res?.json().catch(() => null);
+      setError(d?.error ?? "Gagal menyimpan pemegang jabatan.");
+      return; // modal dibiarkan terbuka supaya centangnya tidak hilang
+    }
+    setPemegangModal(null);
+    load();
+  }
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -76,7 +111,7 @@ export default function AdminJabatanPage() {
       <PageHeader
         icon={<Award size={22} />}
         title="Jabatan"
-        description="Katalog jabatan struktural beserta pemegangnya — fitur di portal guru & staf dinyalakan oleh jabatan ini, bukan oleh role"
+        description="Katalog jabatan struktural: buat/ubah nama jabatan dan atur siapa pemegangnya. Menu di portal guru & staf menyala mengikuti jabatan ini, bukan mengikuti peran akun."
       />
 
       {/* Staf tanpa jabatan = tidak punya menu tugas apa pun. Ditaruh paling atas karena ini
@@ -143,7 +178,10 @@ export default function AdminJabatanPage() {
                     <span className="angka text-xs text-gray-400">
                       {item.pemegang.length === 0 ? "belum ada pemegang" : `${item.pemegang.length} orang`}
                     </span>
-                    <button onClick={() => openEdit(item)} className="rounded-lg p-1.5 text-primary-700 transition hover:bg-primary-50" title="Ubah">
+                    <button onClick={() => bukaPemegang(item)} className="rounded-lg p-1.5 text-primary-700 transition hover:bg-primary-50" title="Kelola pemegang">
+                      <UserCog size={14} />
+                    </button>
+                    <button onClick={() => openEdit(item)} className="rounded-lg p-1.5 text-primary-700 transition hover:bg-primary-50" title="Ubah nama jabatan">
                       <Edit2 size={14} />
                     </button>
                     <button onClick={() => handleDelete(item)} className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50" title="Hapus">
@@ -192,6 +230,61 @@ export default function AdminJabatanPage() {
         {error && <p className="error-msg mb-3">{error}</p>}
         <label className="label-field">Nama Jabatan</label>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="cth: Kepala Laboratorium" className="input-field" autoFocus />
+      </Modal>
+
+      <Modal scrollBody
+        open={!!pemegangModal}
+        onClose={() => setPemegangModal(null)}
+        title="Kelola Pemegang Jabatan"
+        description={pemegangModal?.name}
+        size="lg"
+        footer={
+          <>
+            <button type="button" onClick={() => setPemegangModal(null)} className="btn-modal-cancel flex-1">Batal</button>
+            <button type="button" onClick={simpanPemegangJabatan} disabled={simpanPemegang || !kandidat} className="btn-modal-save flex-1">
+              {simpanPemegang ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan
+            </button>
+          </>
+        }
+      >
+        {error && <p className="error-msg mb-3">{error}</p>}
+        <p className="mb-3 text-sm text-gray-500">
+          Centang siapa yang memegang jabatan ini. Menu di portal orang itu menyala/padam mengikuti
+          centang ini, bukan mengikuti perannya.
+        </p>
+        {!kandidat ? (
+          <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
+        ) : (
+          <>
+            <div className="alat-cari mb-3">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={cariOrang} onChange={e => setCariOrang(e.target.value)}
+                placeholder="Cari nama..." className="input-field pl-10" />
+            </div>
+            {([["Guru", kandidat.guru, pilihGuru, setPilihGuru] as const,
+               ["Staf & Admin", kandidat.staf, pilihStaf, setPilihStaf] as const]).map(([judul, daftar, dipilih, setPilih]) => {
+              const tersaringOrang = daftar.filter(o => !cariOrang || o.nama.toLowerCase().includes(cariOrang.toLowerCase()));
+              return (
+                <div key={judul} className="mb-4">
+                  <p className="label-kecil mb-2">{judul} <span className="text-gray-400">({dipilih.length} dipilih)</span></p>
+                  {tersaringOrang.length === 0 ? (
+                    <p className="text-sm text-gray-400">Tidak ada yang cocok.</p>
+                  ) : (
+                    <div className="grid max-h-56 grid-cols-1 gap-1.5 overflow-y-auto rounded-xl border border-gray-100 p-3 sm:grid-cols-2">
+                      {tersaringOrang.map(o => (
+                        <label key={o.id} className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+                          <input type="checkbox" checked={dipilih.includes(o.id)}
+                            onChange={() => setPilih(p => p.includes(o.id) ? p.filter(x => x !== o.id) : [...p, o.id])} />
+                          <span className={o.nonaktif ? "opacity-50" : ""}>{o.nama}{o.nonaktif ? " (nonaktif)" : ""}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
       </Modal>
     </div>
   );
