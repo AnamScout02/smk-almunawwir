@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
     });
 
     return Response.json(materials);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,8 @@ export async function GET() {
     });
 
     return NextResponse.json(result);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

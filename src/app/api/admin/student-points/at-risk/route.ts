@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertStudentPointsFull } from "@/lib/kesiswaan-guard";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function currentSemester(): string {
   const now = new Date();
@@ -55,6 +56,7 @@ export async function GET() {
 
     return Response.json({ semester, students });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

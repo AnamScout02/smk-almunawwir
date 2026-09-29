@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { generateQrWithLogoDataUrl } from "@/lib/qrcode";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export async function GET() {
 
     return NextResponse.json(withExtras);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(book, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

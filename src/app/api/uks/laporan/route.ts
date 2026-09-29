@@ -2,13 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertUks } from "@/lib/uks-guard";
 import { balasanExcelBanyakSheet } from "@/lib/ekspor-excel";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
 /** LAPORAN BULANAN UKS (.xlsx) — ?bulan=YYYY-MM: kunjungan, keluhan terbanyak, obat terpakai, rujukan, status gizi. */
 export async function GET(req: Request) {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  try { await assertUks(session); } catch { return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
+  try { await assertUks(session); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
   const bulan = new URL(req.url).searchParams.get("bulan") ?? "";
   if (!/^\d{4}-\d{2}$/.test(bulan)) return Response.json({ error: "Format bulan YYYY-MM." }, { status: 400 });
   const awal = new Date(`${bulan}-01T00:00:00+07:00`);

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -20,7 +21,8 @@ export async function GET() {
       subject: t.teachingLoad.length ? t.teachingLoad.map(a => a.subject.name).join(", ") : t.subject,
     }));
     return Response.json(shaped);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat" }, { status: 500 });
   }
 }

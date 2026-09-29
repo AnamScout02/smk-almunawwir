@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan, getJabatanNames } from "@/lib/jabatan-guard";
 import { isLabAsset } from "@/lib/inventaris-scope";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function resolveLabOnly(session: { role: string; email: string }): Promise<boolean> {
   if (session.role !== "TEACHER") return false;
@@ -53,6 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     return NextResponse.json(asset);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Sarana Prasarana." }, { status: 403 });
     }
@@ -77,6 +79,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.asset.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Sarana Prasarana." }, { status: 403 });
     }

@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { teacherIdDariSesi } from "@/lib/ujian-server";
 import { siapkanButir } from "@/lib/soal-butir-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     });
     return Response.json(item);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memperbarui soal." }, { status: 500 });
   }
 }
@@ -45,7 +47,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const b = await req.json().catch(() => ({}));
     await prisma.questionBankItem.update({ where: { id }, data: { dibagikan: !!b.dibagikan } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan." }, { status: 500 });
   }
 }
@@ -57,7 +60,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     if (!(await milik(session, id))) return Response.json({ error: "Soal tidak ditemukan" }, { status: 404 });
     await prisma.questionBankItem.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus soal." }, { status: 500 });
   }
 }

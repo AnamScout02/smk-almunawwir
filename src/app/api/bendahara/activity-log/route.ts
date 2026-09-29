@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
 
     return Response.json({ logs, total, page, pageSize: PAGE_SIZE, actions: actions.map(a => a.action) });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

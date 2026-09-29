@@ -3,6 +3,7 @@ import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { getKelasXIIEnrollYears, computeAutoPagu } from "@/lib/nominatif-pagu";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 // Keduanya diedit bareng di NominatifManager.tsx.
 
 function parsePagu(json: string): Record<string, Record<string, number>> {
-  try { return JSON.parse(json || "{}"); } catch { return {}; }
+  try { return JSON.parse(json || "{}"); } catch (e) { lemparBilaPengalihan(e); return {}; }
 }
 
 export async function GET(req: NextRequest) {
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
       return { majorId: m.id, code: m.code, akreditasi: m.akreditasi, pagu: paguForYear[m.code] ?? null, paguOtomatis };
     }));
     return NextResponse.json(result);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -74,7 +76,8 @@ export async function PUT(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal menyimpan." }, { status: 500 });
   }
 }

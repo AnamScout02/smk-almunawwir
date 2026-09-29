@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
 import { logActivity } from "@/lib/activity-log";
 import { generateInvoicesForScope } from "@/lib/billing-schedule";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Generate tagihan massal — satu FeeType + satu periode, utk satu kelas ATAU semua siswa aktif.
  * Logika inti (per-siswa try/catch, skip yg sudah ada) diekstrak ke `generateInvoicesForScope`
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
 
     return Response.json({ created, skipped });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal generate tagihan" }, { status: 500 });
   }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertExtracurricularAccess } from "@/lib/ekstrakurikuler-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Rekap kehadiran per anggota (H/I/S/A + persentase) untuk satu ekstrakurikuler — GENERIK,
  * dipakai Pramuka sekarang, otomatis berlaku utk ekskul lain juga begitu Pembina-nya mulai
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
 
     return Response.json({ extracurricularName: ekskul.name, students: summary });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Anda bukan Pembina ekstrakurikuler ini." }, { status: 403 });
     return Response.json({ error: "Gagal memuat rekap" }, { status: 500 });
   }

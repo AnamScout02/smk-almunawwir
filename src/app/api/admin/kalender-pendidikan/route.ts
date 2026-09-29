@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
       orderBy: [{ tanggalMulai: "asc" }],
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat kalender pendidikan" }, { status: 500 });
   }
 }
@@ -47,7 +49,8 @@ export async function POST(req: Request) {
       include: { academicYear: { select: { id: true, name: true } } },
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan agenda." }, { status: 500 });
   }
 }

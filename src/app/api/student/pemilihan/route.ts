@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { statusEfektif } from "@/lib/osis-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
       prisma.pemilihOsis.create({ data: { pemilihanId: p.id, studentId: s.id, classId: s.classId } }),
       prisma.suaraOsis.create({ data: { pemilihanId: p.id, calonId: b.calonId! } }),
     ]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Kamu sudah memilih pada pemilihan ini." }, { status: 409 });
   }
   return Response.json({ ok: true });

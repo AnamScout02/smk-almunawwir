@@ -2,6 +2,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { susunKelengkapan } from "@/lib/kelengkapan-perangkat";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
   let semua = true;
-  try { await assertKurikulum(session); } catch { semua = false; }
+  try { await assertKurikulum(session); } catch (e) { lemparBilaPengalihan(e); semua = false; }
   let teacherId: string | undefined;
   if (!semua) {
     const t = await prisma.teacher.findFirst({ where: { userId: session.userId }, select: { id: true } });

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBranding } from "@/lib/branding-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function forbiddenOr(e: unknown, fallback: string) {
   if (e instanceof Error && e.message === "FORBIDDEN") {
@@ -20,7 +21,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data: { title: body.title, subtitle: body.subtitle, imageUrl: body.imageUrl || null, linkUrl: body.linkUrl || null, linkText: body.linkText || null, active: body.active ?? true },
     });
     return Response.json(banner);
-  } catch (e) { return forbiddenOr(e, "Gagal mengupdate"); }
+  } catch (e) { lemparBilaPengalihan(e); return forbiddenOr(e, "Gagal mengupdate"); }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -30,5 +31,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     await prisma.heroBanner.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch (e) { return forbiddenOr(e, "Gagal menghapus"); }
+  } catch (e) { lemparBilaPengalihan(e); return forbiddenOr(e, "Gagal menghapus"); }
 }

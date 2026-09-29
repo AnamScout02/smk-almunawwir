@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { toProperCaseName } from "@/lib/text";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -16,7 +17,8 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
     return jsonBesar(users, req);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -47,7 +49,8 @@ export async function POST(req: Request) {
     });
 
     return Response.json(user, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal membuat pengguna" }, { status: 500 });
   }
 }

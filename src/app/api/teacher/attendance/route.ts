@@ -4,6 +4,7 @@ import { kirimLatar } from "@/lib/push-server";
 import { beritahuAlphaBeruntun, beritahuOrangTuaAlpha } from "@/lib/notifikasi-kejadian";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 // Absensi resmi KHUSUS wali kelas utk INPUT (per keputusan terbaru, membalik kebijakan lama) —
 // guru mapel biasa yang cuma punya TeachingAssignment (bukan wali kelas) TIDAK lagi boleh input
@@ -55,7 +56,8 @@ export async function GET(req: Request) {
       orderBy: { date: "desc" },
     });
     return Response.json(records);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -96,7 +98,8 @@ export async function POST(req: Request) {
     kirimLatar(async () => { await beritahuOrangTuaAlpha(list); await beritahuAlphaBeruntun(list); });
 
     return Response.json({ success: true }, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan absensi" }, { status: 500 });
   }
 }

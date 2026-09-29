@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -24,6 +25,7 @@ export async function GET(req: Request) {
     });
     return Response.json(invoices);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal memuat tagihan" }, { status: 500 });
   }
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
     });
     return Response.json(invoice, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal membuat tagihan" }, { status: 500 });
   }

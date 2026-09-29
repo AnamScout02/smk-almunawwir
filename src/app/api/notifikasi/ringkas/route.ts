@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { tugasHariIni } from "@/lib/tugas-hari-ini";
 import { tandaiPengingatSelesai } from "@/lib/kotak-notifikasi";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET() {
   let session: Awaited<ReturnType<typeof verifySession>>;
   try {
     session = await verifySession();
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const tugas = await tugasHariIni(session.userId).catch(() => null);

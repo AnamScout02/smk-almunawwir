@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Daftar jabatan.
  *
@@ -49,7 +50,8 @@ export async function GET(req: NextRequest) {
       };
     });
     return Response.json(hasil);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -63,7 +65,8 @@ export async function POST(req: NextRequest) {
     }
     const jabatan = await prisma.jabatan.create({ data: { name: name.trim() } });
     return Response.json(jabatan);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan. Nama jabatan mungkin sudah ada." }, { status: 500 });
   }
 }

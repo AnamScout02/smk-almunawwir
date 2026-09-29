@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { getSettings } from "@/lib/site-settings";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function calcFine(dueDate: Date, endDate: Date, dendaPerHari: number) {
   const daysLate = Math.max(0, Math.ceil((endDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       return { ...l, borrower: shapeBorrower(l.borrower), isOverdue, daysLate, fineAmount };
     }));
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ...loan, borrower: shapeBorrower(loan.borrower) }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

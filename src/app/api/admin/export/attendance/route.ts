@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { balasanExcel } from "@/lib/ekspor-excel";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest) {
       namaSheet: "Absensi Siswa",
       headers, rows,
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,8 @@ export async function GET(req: Request) {
       .map(([userId, a]) => ({ userId, status: "ALPHA", jam: a.total, alasan: `Guru piket mencatat ALPHA di seluruh ${a.total} jam mengajarnya` }));
 
     return Response.json({ mode: "harian", tanggal: date, pegawai, rows, usulan });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat presensi pegawai" }, { status: 500 });
   }
 }
@@ -133,7 +135,8 @@ export async function POST(req: Request) {
 
     const rows = await prisma.staffAttendance.findMany({ where: { tanggal } });
     return Response.json({ ok: true, tersimpan: isi.length, dihapus: kosong.length, rows });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan presensi pegawai." }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: `Mata pelajaran "${nama}" tidak ditemukan.` }, { status: 404 });
     }
     return NextResponse.json({ subject: nama, maksimal: batas, barisDiperbarui: hasil.count });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal menandai mata pelajaran." }, { status: 500 });
   }
 }

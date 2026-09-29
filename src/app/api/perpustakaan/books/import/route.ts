@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
           created++;
         }
       } catch (err) {
+        lemparBilaPengalihan(err);
         console.error(`[perpustakaan books import] baris ${rowNum}`, err);
         errors.push(`Baris ${rowNum}: Gagal menyimpan (${err instanceof Error ? err.message : "error tidak diketahui"})`);
       }
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ created, updated, errors });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

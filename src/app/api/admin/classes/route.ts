@@ -5,6 +5,7 @@ import { verifyTasAccess, TAS_JABATAN } from "@/lib/tas-access-guard";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 // GET dipakai luas (Buku Induk Siswa, Reports, Absensi, Users, dst) selain oleh halaman Kurikulum
 // (Jadwal/Penugasan) — jadi selain Wakasek Kurikulum, guru/staf berjabatan TU (TAS via jabatan)
@@ -42,7 +43,8 @@ export async function GET(req: Request) {
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     });
     return jsonBesar(classes, req);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat kelas" }, { status: 500 });
   }
 }
@@ -65,7 +67,8 @@ export async function POST(req: Request) {
       },
     });
     return Response.json(cls, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal membuat kelas" }, { status: 500 });
   }
 }

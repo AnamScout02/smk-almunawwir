@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { signOnlyofficeConfig, appInternalUrl } from "@/lib/onlyoffice";
 import { createSuratLetterDocx, randomDocxKey, saveDocxToUploads } from "@/lib/onlyoffice-docx";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ function getPrincipalName(structureJson: string): string {
   try {
     const parsed = JSON.parse(structureJson || "[]") as StructureRow[];
     return parsed.find(r => r.highlight)?.name ?? parsed[0]?.name ?? "";
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return "";
   }
 }
@@ -76,6 +78,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ ...config, token });
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error("[onlyoffice surat config]", e);
     return NextResponse.json({ error: "Gagal menyiapkan editor" }, { status: 500 });
   }

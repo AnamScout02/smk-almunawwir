@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -28,6 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json(book);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }
@@ -48,6 +50,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.book.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

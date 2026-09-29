@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,8 @@ export async function GET(req: Request) {
       ...(month ? {} : { take: 300 }),
     });
     return Response.json(entries);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat buku tamu" }, { status: 500 });
   }
 }
@@ -54,7 +56,8 @@ export async function POST(req: Request) {
       include: { student: { select: { id: true, nis: true, user: { select: { name: true } }, class: { select: { name: true } } } } },
     });
     return Response.json(entry, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan kunjungan." }, { status: 500 });
   }
 }

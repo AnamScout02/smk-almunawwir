@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { aksesSarpras, daftarRuang } from "@/lib/sarpras-akses";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export async function GET() {
   const session = await verifyRole(["ADMIN", "TEACHER", "TAS"]);
   const [ruang, set] = await Promise.all([daftarRuang(), prisma.siteSetting.findUnique({ where: { key: "sarpras.ruangTambahan" } })]);
   let tambahan: string[] = [];
-  try { tambahan = JSON.parse(set?.value ?? "[]"); } catch { tambahan = []; }
+  try { tambahan = JSON.parse(set?.value ?? "[]"); } catch (e) { lemparBilaPengalihan(e); tambahan = []; }
   const a = await aksesSarpras(session);
   return Response.json({ ruang, tambahan: a.penuh ? tambahan : undefined });
 }
@@ -53,7 +54,7 @@ export async function PATCH(req: Request) {
 
   const set = await prisma.siteSetting.findUnique({ where: { key: "sarpras.ruangTambahan" } });
   let tambahan: string[] = [];
-  try { tambahan = JSON.parse(set?.value ?? "[]"); } catch { tambahan = []; }
+  try { tambahan = JSON.parse(set?.value ?? "[]"); } catch (e) { lemparBilaPengalihan(e); tambahan = []; }
 
   const hasil = await prisma.$transaction(async (tx) => {
     const jadwal = await tx.schedule.updateMany({ where: { room: lama }, data: { room: baru } });

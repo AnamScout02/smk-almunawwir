@@ -9,6 +9,7 @@ import { weekTypesOverlap } from "@/lib/schedule-week";
 import { hitungRisikoSiswa } from "@/lib/peringatan-dini";
 import { petaKkm } from "@/lib/kkm";
 import { semesterRapor } from "@/lib/rapor-verifikasi";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -147,7 +148,8 @@ export async function GET() {
       },
       topCompanies: [...companyCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([company, count]) => ({ company, count })),
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Data dashboard gagal dimuat." }, { status: 500 });
   }
 }

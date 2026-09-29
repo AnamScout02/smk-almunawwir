@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,8 @@ export async function GET(req: Request) {
       take: suratId ? undefined : 200,
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat disposisi" }, { status: 500 });
   }
 }
@@ -68,7 +70,8 @@ export async function POST(req: Request) {
       });
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan disposisi." }, { status: 500 });
   }
 }

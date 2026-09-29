@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export async function GET(req: Request) {
       ...(year ? {} : { take: 300 }),
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat buku penyerahan ijazah" }, { status: 500 });
   }
 }
@@ -63,7 +65,8 @@ export async function POST(req: Request) {
       include: INCLUDE,
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan penyerahan ijazah." }, { status: 500 });
   }
 }

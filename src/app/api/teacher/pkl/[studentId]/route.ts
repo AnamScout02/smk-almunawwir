@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
@@ -33,7 +34,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
     });
 
     return Response.json({ ...internship, pklGrade: grade?.score ?? null });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

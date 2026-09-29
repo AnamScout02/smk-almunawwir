@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ export async function GET() {
       bobotRapor: Number(settings["spmb.bobotRapor"] || "60"),
       bobotTes: Number(settings["spmb.bobotTes"] || "40"),
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -37,7 +39,8 @@ export async function PUT(req: NextRequest) {
     ]);
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal menyimpan pengaturan" }, { status: 500 });
   }
 }

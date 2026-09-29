@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function getTeacher(email: string) {
   return prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
@@ -24,7 +25,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     if (!quiz) return Response.json({ error: "Kuis tidak ditemukan" }, { status: 404 });
 
     return Response.json(quiz);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -67,7 +69,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const quiz = await prisma.quiz.findUnique({ where: { id }, include: { questions: { orderBy: { order: "asc" } } } });
     return Response.json(quiz);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengupdate kuis." }, { status: 500 });
   }
 }
@@ -84,7 +87,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     await prisma.quiz.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus kuis." }, { status: 500 });
   }
 }

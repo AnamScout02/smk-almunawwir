@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,8 @@ export async function GET() {
         startDate: tgl(t.startDate),
       };
     }));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat data pegawai" }, { status: 500 });
   }
 }

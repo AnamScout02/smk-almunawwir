@@ -5,6 +5,7 @@ import { getSettings } from "@/lib/site-settings";
 import { isOnDutyToday } from "@/lib/kedisiplinan-guard";
 import { hariIniWib, tokenStasiun } from "@/lib/absensi-qr";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
   let session: Sesi;
   try {
     session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const akses = await aksesStasiun(session);
@@ -77,7 +79,8 @@ export async function PUT(req: NextRequest) {
   let session: Sesi;
   try {
     session = await verifyRole(["ADMIN", "TAS"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { jamBuka, jamTutup } = (await req.json().catch(() => ({}))) as { jamBuka?: string; jamTutup?: string };

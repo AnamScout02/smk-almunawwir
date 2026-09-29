@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertExtracurricularAccess } from "@/lib/ekstrakurikuler-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Riwayat pertemuan Absen Ekstra — daftar sesi yang sudah pernah dicatat utk satu
  * ekstrakurikuler, dipakai buat tabel "Riwayat Pertemuan" + lompat-edit (klik = isi ulang
@@ -36,6 +37,7 @@ export async function GET(req: Request) {
 
     return Response.json(result);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Anda bukan Pembina ekstrakurikuler ini." }, { status: 403 });
     return Response.json({ error: "Gagal memuat riwayat" }, { status: 500 });
   }

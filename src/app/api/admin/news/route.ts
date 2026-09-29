@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBranding } from "@/lib/branding-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
     const news = await prisma.news.findMany({ orderBy: { createdAt: "desc" } });
     return Response.json(news);
-  } catch { return Response.json({ error: "Gagal memuat data" }, { status: 500 }); }
+  } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Gagal memuat data" }, { status: 500 }); }
 }
 
 export async function POST(req: Request) {

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -23,6 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
     return Response.json(updated);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus staf Tata Usaha." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan perubahan" }, { status: 500 });
   }
@@ -35,6 +37,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await prisma.bellSchedule.delete({ where: { id } });
     return Response.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus staf Tata Usaha." }, { status: 403 });
     return Response.json({ error: "Gagal menghapus" }, { status: 500 });
   }

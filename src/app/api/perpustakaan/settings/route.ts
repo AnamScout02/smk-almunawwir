@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function GET() {
       masaPeminjamanHari: Number(settings["perpustakaan.masaPeminjamanHari"] ?? 7),
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }
@@ -55,6 +57,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

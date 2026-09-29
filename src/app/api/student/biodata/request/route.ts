@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { EDITABLE_TOP_FIELDS, EDITABLE_BUKU_FIELDS, FIELD_LABELS, ChangeMap } from "@/lib/profile-edit-fields";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function normalize(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -63,7 +64,8 @@ export async function POST(req: Request) {
     });
 
     return Response.json({ success: true, id: request.id }, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengajukan perubahan" }, { status: 500 });
   }
 }

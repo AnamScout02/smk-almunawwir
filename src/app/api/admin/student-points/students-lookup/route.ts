@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertPiketOrKesiswaanBk } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Cari siswa (nama/NIS) SELURUH sekolah — dipakai form input poin Guru Piket & BK/Kesiswaan,
  * yg keduanya butuh cari siswa lintas kelas (piket jaga gerbang sekolah, bukan cuma kelas
@@ -24,6 +25,7 @@ export async function GET(req: Request) {
     });
     return Response.json(students.map(s => ({ id: s.id, nis: s.nis, name: s.user.name, className: s.class?.name ?? "—" })));
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Bukan piket hari ini/BK/Wakasek Kesiswaan." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

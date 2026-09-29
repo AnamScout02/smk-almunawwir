@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { generateQrWithLogoDataUrl } from "@/lib/qrcode";
 import { anggotaDariUserId, ringkasanAnggota } from "@/lib/perpustakaan-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET() {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole(["ADMIN", "TAS", "TEACHER", "STUDENT"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const anggota = await anggotaDariUserId(session.userId);

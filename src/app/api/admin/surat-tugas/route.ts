@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { nomorSuratBerikutnya } from "@/lib/nomor-surat-berikutnya";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,8 @@ export async function GET(req: Request) {
       ...(year ? {} : { take: 200 }),
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat surat tugas" }, { status: 500 });
   }
 }
@@ -106,6 +108,7 @@ export async function POST(req: Request) {
     });
     return Response.json(row, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     const msg = e instanceof Error && e.message.includes("Unique") ? "Nomor surat sudah dipakai." : "Gagal menyimpan surat tugas.";
     return Response.json({ error: msg }, { status: 500 });
   }

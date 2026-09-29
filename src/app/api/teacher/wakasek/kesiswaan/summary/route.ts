@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { hitungRisikoSiswa } from "@/lib/peringatan-dini";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +103,7 @@ export async function GET() {
       kegiatan: kegiatan.map(k => ({ ...k, mulai: k.mulai.toISOString() })),
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Wakil Kepala Kesiswaan." }, { status: 403 });
     }

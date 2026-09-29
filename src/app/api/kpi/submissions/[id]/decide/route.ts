@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getKpiReviewScope } from "@/lib/kpi-review-scope";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 // Approve/reject SATU LEVEL — pola atomik sama seperti profile-edit-requests/[id]/decide: kalau
 // APPROVED, penerapan skor (upsert KpiPeriodScore) & penutupan status submission terjadi dalam
@@ -49,6 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(updated);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus pimpinan/wakasek." }, { status: 403 });
     }

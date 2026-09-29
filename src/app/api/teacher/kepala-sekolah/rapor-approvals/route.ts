@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { semesterRapor as generateSemesters } from "@/lib/rapor-verifikasi";
 import { logActivity } from "@/lib/activity-log";
 import { segarkanAntrean } from "@/lib/antrean-kerja";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function assertKepsekOrAdmin(session: { role: string; email: string }) {
   if (session.role === "ADMIN") return;
@@ -46,6 +47,7 @@ export async function GET() {
 
     return Response.json(rows);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Kepala Sekolah." }, { status: 403 });
     }
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
     segarkanAntrean();
     return Response.json(siap.length === 1 && body.classId ? approvals[0] : { disahkan: siap.length, dilewati: daftar.length - siap.length });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Kepala Sekolah." }, { status: 403 });
     }

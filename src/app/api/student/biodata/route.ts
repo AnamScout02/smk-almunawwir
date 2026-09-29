@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -30,7 +31,8 @@ export async function GET() {
     });
 
     return Response.json({ ...student, history });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat biodata" }, { status: 500 });
   }
 }

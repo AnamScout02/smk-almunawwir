@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { weekTypesOverlap } from "@/lib/schedule-week";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
@@ -96,7 +97,8 @@ export async function GET(req: Request) {
       subjectId: a.subjectId,
       subjectName: a.subject.name,
     })));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

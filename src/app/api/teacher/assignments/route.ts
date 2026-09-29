@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { kirimLatar } from "@/lib/push-server";
 import { beritahuTugasBaru } from "@/lib/notifikasi-kejadian";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function getTeacher(email: string) {
   return prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
@@ -29,7 +30,8 @@ export async function GET(req: NextRequest) {
     });
 
     return Response.json(assignments);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -62,7 +64,8 @@ export async function POST(req: NextRequest) {
 
     kirimLatar(() => beritahuTugasBaru(assignment.id)); // notifikasi siswa kelas tujuan
     return Response.json(assignment);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan tugas." }, { status: 500 });
   }
 }

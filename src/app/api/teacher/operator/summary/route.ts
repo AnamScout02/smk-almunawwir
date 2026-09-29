@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,7 @@ export async function GET(req: Request) {
       tautan: { siswa: siswaHref, guru: guruHref, dapodik: dapodikHref },
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Operator Sekolah." }, { status: 403 });
     }

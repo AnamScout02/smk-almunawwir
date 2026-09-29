@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { petaSingkatanMapel } from "@/lib/singkatan-mapel-server";
 import { adalahNamaGrup, namaGabungan } from "@/lib/mapel-gabungan";
 import { susunRaporKelas } from "@/lib/rapor-cetak";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
       gabungan, otomatis,
       scores,
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -179,7 +181,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ clas
     }, { timeout: 30000 });
 
     return NextResponse.json({ success: true, count: updates.length });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -200,7 +203,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ c
     if (!roster.some(s => s.id === b.studentId)) return NextResponse.json({ error: "Siswa tidak ditemukan di kelas ini." }, { status: 404 });
     await prisma.grade.deleteMany({ where: { studentId: b.studentId, subject: b.subject, type: "DKN", semester: b.semester } });
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

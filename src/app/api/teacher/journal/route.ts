@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { pesanNilaiTerkunci } from "@/lib/rapor-verifikasi";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function getTeacherId(email: string) {
   const teacher = await prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
@@ -65,7 +66,8 @@ export async function GET(req: Request) {
     });
 
     return Response.json({ journalId: journal?.id ?? null, materi: journal?.materi ?? "", rows });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat jurnal" }, { status: 500 });
   }
 }
@@ -124,7 +126,8 @@ export async function POST(req: Request) {
     });
 
     return Response.json({ success: true }, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan jurnal" }, { status: 500 });
   }
 }

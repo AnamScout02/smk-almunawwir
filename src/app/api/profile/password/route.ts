@@ -3,6 +3,7 @@ import { cabutSemuaSesiPengguna } from "@/lib/sesi-server";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
     });
 
     return Response.json({ ok: true, perangkatDikeluarkan });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengubah password." }, { status: 500 });
   }
 }

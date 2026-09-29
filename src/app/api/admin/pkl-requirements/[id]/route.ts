@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { assertHumas } from "@/lib/humas-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,6 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json(item);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
     }
@@ -35,6 +37,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.pklDocumentRequirement.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
     }

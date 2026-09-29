@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json(subject);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     }
@@ -59,6 +61,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.subject.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     }

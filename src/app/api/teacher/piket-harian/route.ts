@@ -5,6 +5,7 @@ import { bagianWib } from "@/lib/waktu-wib";
 import { logActivity } from "@/lib/activity-log";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { isOnDutyToday } from "@/lib/kedisiplinan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export async function GET() {
       tamu, laporan: laporan?.catatan ?? "",
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus petugas piket hari ini, Kesiswaan/BK, dan Admin." }, { status: 403 });
     return Response.json({ error: "Gagal memuat." }, { status: 500 });
   }
@@ -101,6 +103,7 @@ export async function POST(req: Request) {
     }
     return Response.json({ error: "Aksi tidak dikenal." }, { status: 400 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus petugas piket hari ini, Kesiswaan/BK, dan Admin." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan." }, { status: 500 });
   }

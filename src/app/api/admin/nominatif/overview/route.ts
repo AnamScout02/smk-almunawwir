@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(majors.map(m => ({ majorId: m.id, name: m.name, code: m.code, jumlahCalon: counts[m.id] ?? 0 })));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

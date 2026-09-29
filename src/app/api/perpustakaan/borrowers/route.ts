@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export async function GET() {
       staff: staff.map(u => ({ id: u.id, identifier: "-", name: u.name })),
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

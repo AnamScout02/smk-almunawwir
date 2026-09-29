@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -9,7 +10,8 @@ export async function GET() {
       orderBy: { date: "desc" },
     });
     return Response.json(meetings);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -37,7 +39,8 @@ export async function POST(req: Request) {
       include: { attendees: { orderBy: { order: "asc" } } },
     });
     return Response.json(meeting, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan notulen rapat." }, { status: 500 });
   }
 }

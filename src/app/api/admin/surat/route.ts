@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(surat);
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error(e);
     return NextResponse.json({ error: "Gagal mengambil data surat" }, { status: 500 });
   }
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(surat, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error(e);
     return NextResponse.json({ error: "Gagal menyimpan surat" }, { status: 500 });
   }

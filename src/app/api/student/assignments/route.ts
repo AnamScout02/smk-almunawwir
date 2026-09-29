@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -21,7 +22,8 @@ export async function GET() {
       submissions: undefined,
       mySubmission: a.submissions[0] ?? null,
     })));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

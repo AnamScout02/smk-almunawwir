@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { toProperCaseName } from "@/lib/text";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,7 +31,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     return Response.json(user);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memperbarui pengguna" }, { status: 500 });
   }
 }
@@ -45,7 +47,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
       description: `${session.name} menghapus akun "${user.name}" (${user.email}, role ${user.role})`,
     });
     return Response.json({ success: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus pengguna" }, { status: 500 });
   }
 }

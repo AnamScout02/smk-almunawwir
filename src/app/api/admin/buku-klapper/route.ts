@@ -1,5 +1,6 @@
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { getKlapperRows } from "@/lib/buku-klapper";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ export async function GET() {
   try {
     await verifyTasAccess();
     return Response.json(await getKlapperRows());
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat data" }, { status: 500 });
   }
 }

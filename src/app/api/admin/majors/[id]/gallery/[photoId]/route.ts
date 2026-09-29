@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string; photoId: string }> }) {
   try {
@@ -8,7 +9,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { photoId } = await params;
     await prisma.majorGallery.delete({ where: { id: photoId } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus foto." }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: "Aksi tidak dikenali." }, { status: 400 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal menyamakan jadwal & penugasan." }, { status: 500 });
   }
 }

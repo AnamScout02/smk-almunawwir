@@ -4,6 +4,7 @@ import { getJabatanNames } from "@/lib/jabatan-guard";
 import { BUKU_INDUK_FULL_JABATAN } from "@/lib/buku-induk-access";
 import { cocokJurusan, dataSiswaDariPendaftar, emailDariNis, hashSandiBawaan, penghitungNis } from "@/lib/spmb-konversi";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
         hasil.push({ nama: d.nama, nis: nomor, email });
         berhasil = true;
       } catch (e) {
+        lemparBilaPengalihan(e);
         if ((e as { code?: string }).code !== "P2002") { hasil.push({ nama: a.fullName, galat: "Gagal menyimpan" }); break; }
         // NIS/email bentrok → coba nomor berikutnya.
       }

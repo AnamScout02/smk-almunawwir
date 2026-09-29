@@ -4,6 +4,7 @@ import { resolveTeacherId } from "@/lib/teacher-context";
 import { teacherIdDariSesi } from "@/lib/ujian-server";
 import { siapkanButir } from "@/lib/soal-butir-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,8 @@ export async function GET(req: NextRequest) {
       take: 500,
     });
     return Response.json(items.map(i => ({ ...i, milikSaya: !teacherId || i.teacherId === teacherId })));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -70,7 +72,8 @@ export async function POST(req: NextRequest) {
       },
     });
     return Response.json(item, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan soal." }, { status: 500 });
   }
 }

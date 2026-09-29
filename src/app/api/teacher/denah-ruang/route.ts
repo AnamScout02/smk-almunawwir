@@ -4,6 +4,7 @@ import { verifyRole } from "@/lib/dal";
 import { bolehAturUjian } from "@/lib/kegiatan-ujian-server";
 import { logActivity } from "@/lib/activity-log";
 import { bacaAturRuang, bagiPeserta, muatDenah, pesertaKegiatan, MAKS_SESI } from "@/lib/denah-ruang";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,8 @@ export async function GET(req: NextRequest) {
     const [data, bolehAtur] = await Promise.all([muatDenah(kegiatanId), bolehAturUjian(session)]);
     if (!data) return Response.json({ error: "Kegiatan tidak ditemukan." }, { status: 404 });
     return Response.json({ ...data, bolehAtur });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -58,7 +60,8 @@ export async function POST(req: NextRequest) {
       description: `Membagi ${hasil.length} peserta ${kegiatan.singkatan} ke ${ruang.length} ruang (${sesi} sesi, ${pola === "PER_KELAS" ? "per kelas" : pola === "SELANG_SELING_JURUSAN" ? "selang-seling, satu ruang satu jurusan" : "selang-seling tingkat"})`,
     }).catch(() => {});
     return Response.json({ ditempatkan: hasil.length, sesi, ruang: ruang.length });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal membagi ruang." }, { status: 500 });
   }
 }
@@ -96,7 +99,8 @@ export async function PATCH(req: NextRequest) {
       return penghuni ? "Peserta dipindahkan; penghuni kursi sebelumnya kini belum ditempatkan." : "Peserta dipindahkan.";
     });
     return Response.json({ ok: true, pesan });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memindahkan peserta." }, { status: 500 });
   }
 }
@@ -110,7 +114,8 @@ export async function DELETE(req: NextRequest) {
     if (!kegiatanId) return Response.json({ error: "Kegiatan wajib dipilih." }, { status: 400 });
     const r = await prisma.penempatanRuangUjian.deleteMany({ where: { kegiatanId } });
     return Response.json({ ok: true, dihapus: r.count });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengosongkan pembagian ruang." }, { status: 500 });
   }
 }

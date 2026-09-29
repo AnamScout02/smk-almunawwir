@@ -4,6 +4,7 @@ import { ChangeMap } from "@/lib/profile-edit-fields";
 import { normalizeBukuIndukText, toProperCaseName, toProperCaseSchoolName } from "@/lib/text";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 import type { Prisma } from "@prisma/client";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -66,7 +67,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     return Response.json({ success: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memproses pengajuan" }, { status: 500 });
   }
 }

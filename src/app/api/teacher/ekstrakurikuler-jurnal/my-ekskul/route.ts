@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { getOwnedExtracurricularNames } from "@/lib/ekstrakurikuler-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Daftar ekstrakurikuler yang boleh diabsen pembina ybs — dari jabatan "Pembina <Nama>" (lihat
  * ekstrakurikuler-guard.ts), role GURU maupun staf TAS (banyak Pembina ekskul ternyata role TAS,
@@ -16,7 +17,8 @@ export async function GET() {
     if (names.length === 0) return Response.json([]);
     const list = await prisma.extracurricular.findMany({ where: { name: { in: names } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
     return Response.json(list);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

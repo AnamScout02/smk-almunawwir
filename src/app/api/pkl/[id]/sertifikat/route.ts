@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { aksesPkl, nomorSertifikatBerikutnya } from "@/lib/pkl-humas";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       await prisma.internship.update({ where: { id }, data: { sertifikatNomor: nomor, sertifikatToken: randomBytes(18).toString("base64url"), sertifikatPada: new Date() } });
       return Response.json({ nomor });
     } catch (e) {
+      lemparBilaPengalihan(e);
       if ((e as { code?: string }).code !== "P2002") throw e;
     }
   }

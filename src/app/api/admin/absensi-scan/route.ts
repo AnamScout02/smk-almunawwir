@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { catatPresensiPegawai, pegawaiDariKartu } from "@/lib/presensi-pegawai";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,8 @@ export async function POST(req: Request) {
     await catatPindai("DIBUAT");
 
     return Response.json({ result: "created", status: "HADIR", student: studentInfo }, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memproses scan" }, { status: 500 });
   }
 }

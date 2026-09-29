@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
       jabatan: teacher?.jabatan.map(j => j.jabatan.name) ?? [],
       jabatanDetailed: teacher?.jabatan.map(j => j.jabatan) ?? [],
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

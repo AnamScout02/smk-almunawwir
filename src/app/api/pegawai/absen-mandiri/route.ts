@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/site-settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hariIniWib, menitDariJam, periksaToken } from "@/lib/absensi-qr";
 import { catatPresensiPegawai } from "@/lib/presensi-pegawai";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole(["TEACHER", "TAS", "ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Silakan masuk dengan akun pegawai." }, { status: 401 });
   }
   if (!checkRateLimit(`absen-pegawai:${session.userId}`, 12, 60_000)) {

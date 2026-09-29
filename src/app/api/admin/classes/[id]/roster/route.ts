@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,7 +21,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     });
     if (!cls) return Response.json({ error: "Kelas tidak ditemukan" }, { status: 404 });
     return Response.json(cls);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat data kelas" }, { status: 500 });
   }
 }

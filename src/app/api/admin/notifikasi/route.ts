@@ -5,6 +5,7 @@ import { PENGATURAN_NOTIFIKASI } from "@/lib/pengingat-terjadwal";
 import { pushTersedia } from "@/lib/push-server";
 import { logActivity } from "@/lib/activity-log";
 import { bersihkanCacheLibur, daftarLibur, infoLiburNasional, perbaruiLiburNasional } from "@/lib/hari-libur";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ const LABEL_PERAN: Record<string, string> = { ADMIN: "Admin", TAS: "TAS", TEACHE
 export async function GET() {
   try {
     await verifyRole(["ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const [s, langganan, riwayat] = await Promise.all([
@@ -76,7 +78,8 @@ export async function PUT(req: Request) {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole(["ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const b = (await req.json().catch(() => ({}))) as {

@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function currentSemester(): string {
   const now = new Date();
@@ -57,6 +58,7 @@ export async function GET() {
       dataGaps, semester,
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Wakil Kepala Bidang Penjamin Mutu." }, { status: 403 });
     }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { mulaiMasukSebagai } from "@/lib/sesi-server";
 import { logActivity } from "@/lib/activity-log";
 import type { Role } from "@/types";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const ROLE_DASHBOARD: Record<Role, string> = {
   ADMIN: "/dashboard/admin",
@@ -47,7 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     return NextResponse.json({ success: true, redirectTo: ROLE_DASHBOARD[target.role as Role] ?? "/dashboard/student" });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

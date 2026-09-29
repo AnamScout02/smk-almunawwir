@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,8 @@ export async function GET(req: Request) {
         birthDate: s.birthDate ? new Date(s.birthDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : null,
       };
     }));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mencari siswa" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function fmtLong(d: Date) {
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
@@ -13,7 +14,8 @@ function getPrincipalName(structureJson: string): string {
   try {
     const parsed = JSON.parse(structureJson || "[]") as StructureRow[];
     return parsed.find((r) => r.highlight)?.name ?? parsed[0]?.name ?? "";
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return "";
   }
 }
@@ -101,7 +103,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         "Content-Disposition": `attachment; filename="Surat-${surat.nomor.replace(/\//g, "-")}.doc"`,
       },
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal membuat file Word" }, { status: 500 });
   }
 }

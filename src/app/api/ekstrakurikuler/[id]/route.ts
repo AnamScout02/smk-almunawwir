@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { TAS_JABATAN } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.extracurricular.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Admin/TAS atau Koordinator Ekstrakurikuler." }, { status: 403 });
     }

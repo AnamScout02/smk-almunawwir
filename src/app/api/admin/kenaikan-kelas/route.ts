@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export async function GET(req: Request) {
       include, orderBy: [{ decidedAt: "desc" }, { createdAt: "desc" }],
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat keputusan kenaikan kelas" }, { status: 500 });
   }
 }
@@ -55,7 +57,8 @@ export async function POST(req: Request) {
         })
     );
     return Response.json(saved, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan keputusan kenaikan kelas." }, { status: 500 });
   }
 }

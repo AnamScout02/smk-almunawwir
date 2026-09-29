@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Cari siswa (nama/NIS) SELURUH sekolah — dipakai form "Tagihan Baru" di modul Bendahara.
  * Pola sama persis /api/admin/student-points/students-lookup, TAPI guard-nya assertBendahara
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
     });
     return Response.json(students.map(s => ({ id: s.id, nis: s.nis, name: s.user.name, className: s.class?.name ?? "—" })));
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

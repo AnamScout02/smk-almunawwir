@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/activity-log";
 import { bolehAturUjian, ringkasKegiatan, SELECT_KEGIATAN } from "@/lib/kegiatan-ujian-server";
 import { buatTokenUnik } from "@/lib/ujian-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       description: `${ada.token ? "Memutar" : "Membuat"} token bersama kegiatan "${k.nama}"`,
     }).catch(() => {});
     return Response.json(ringkasKegiatan(k));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengatur token kegiatan." }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getKpiReviewScope } from "@/lib/kpi-review-scope";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(submissions);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus pimpinan/wakasek." }, { status: 403 });
     }
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(submission, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error("[kpi submissions POST]", e);
     return NextResponse.json({ error: "Gagal mengajukan bukti" }, { status: 500 });
   }

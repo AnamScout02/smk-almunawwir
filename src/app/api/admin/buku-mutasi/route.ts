@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveExitDate } from "@/lib/student-exit";
 import { getSettings } from "@/lib/site-settings";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ async function getPrincipalName(): Promise<string> {
   try {
     const parsed = JSON.parse(s["school.structure"] ?? "[]") as StructureRow[];
     return parsed.find(r => r.highlight)?.name ?? parsed[0]?.name ?? "";
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return "";
   }
 }
@@ -176,6 +178,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error(e);
     return NextResponse.json({ masuk: [], keluar: [], principalName: "", rekap: [], totalAktif: 0, tahun: new Date().getFullYear(), tahunPelajaran: "", error: "Gagal mengambil data mutasi" }, { status: 500 });
   }

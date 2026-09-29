@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
       },
     });
     return Response.json(entry, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan jurnal PKL" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const BORROWER_INCLUDE = {
   select: {
@@ -48,6 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json({ ...loan, borrower: shapeBorrower(loan.borrower) });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     }

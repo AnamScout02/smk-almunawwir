@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { getJournalGradeAggregates } from "@/lib/journal-grades";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function currentSemester(): string {
   const now = new Date();
@@ -74,7 +75,8 @@ export async function GET() {
     }));
 
     return Response.json({ majors: result, semester });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { bolehAturUjian } from "@/lib/kegiatan-ujian-server";
 import { bacaRuang } from "@/lib/denah-ruang";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,8 @@ export async function GET() {
       bolehAturUjian(session),
     ]);
     return Response.json({ ruang: ruang.map(({ _count, ...r }) => ({ ...r, dipakai: _count.penempatan })), bolehAtur });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -32,7 +34,8 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: `Ruang "${d.nama}" sudah ada.` }, { status: 409 });
     }
     return Response.json(await prisma.ruangUjian.create({ data: d }), { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan ruang." }, { status: 500 });
   }
 }

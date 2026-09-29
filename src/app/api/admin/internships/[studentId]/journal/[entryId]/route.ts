@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertHumas } from "@/lib/humas-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ studentId: string; entryId: string }> }) {
   try {
@@ -14,6 +15,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ studentI
     });
     return Response.json(entry);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
     }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -48,7 +49,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     return Response.json(student);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengupdate siswa" }, { status: 500 });
   }
 }
@@ -63,7 +65,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
       description: `${session.name} menghapus data siswa "${student.user.name}" (NIS ${student.nis})`,
     });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus" }, { status: 500 });
   }
 }

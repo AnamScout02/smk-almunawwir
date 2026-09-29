@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Bel Sekolah Otomatis — jadwal dikelola staf TU (Tenaga Administrasi Sekolah), sama pola akses
  * dgn modul TU lain (Buku Mutasi, Persuratan, dst). GET dibuka lebih luas (ADMIN/TAS/TEACHER) krn
@@ -9,7 +10,8 @@ export async function GET() {
   try {
     const schedules = await prisma.bellSchedule.findMany({ orderBy: [{ time: "asc" }, { order: "asc" }] });
     return Response.json(schedules);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat jadwal bel" }, { status: 500 });
   }
 }
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
     });
     return Response.json(created, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus staf Tata Usaha." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan jadwal bel" }, { status: 500 });
   }

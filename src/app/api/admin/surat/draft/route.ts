@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 // Dipakai saat admin klik "Tulis Surat Baru" — langsung buat baris Surat Keluar kosong supaya
 // halaman edit (dan Editor Word ONLYOFFICE) punya id nyata sejak awal, tanpa perlu isi+simpan
@@ -14,6 +15,7 @@ export async function POST() {
     });
     return NextResponse.json(surat, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error(e);
     return NextResponse.json({ error: "Gagal membuat draft surat" }, { status: 500 });
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const surat = await prisma.surat.findUnique({ where: { id } });
     if (!surat) return NextResponse.json({ error: "Surat tidak ditemukan" }, { status: 404 });
     return NextResponse.json(surat);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import { assertPengelolaOsis, statusEfektif } from "@/lib/osis-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         memilih: sudah.find(s => s.classId === k.id)?._count ?? 0,
       })),
     });
-  } catch (e) { return tolak(e); }
+  } catch (e) { lemparBilaPengalihan(e); return tolak(e); }
 }
 
 /** Ubah pengaturan/calon (hanya DRAF), atau buka/tutup. */
@@ -76,7 +77,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     });
     return Response.json({ ok: true });
-  } catch (e) { return tolak(e); }
+  } catch (e) { lemparBilaPengalihan(e); return tolak(e); }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -89,5 +90,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (p._count.pemilih > 0) return Response.json({ error: "Pemilihan yang sudah memiliki suara tidak bisa dihapus." }, { status: 409 });
     await prisma.pemilihanOsis.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch (e) { return tolak(e); }
+  } catch (e) { lemparBilaPengalihan(e); return tolak(e); }
 }

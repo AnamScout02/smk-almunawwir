@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,8 @@ export async function GET(req: Request) {
       : [];
 
     return Response.json({ surat, legalisir, pemohon });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat permintaan surat" }, { status: 500 });
   }
 }

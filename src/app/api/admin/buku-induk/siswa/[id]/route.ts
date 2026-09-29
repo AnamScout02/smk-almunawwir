@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
 import { keUks } from "@/lib/tinggi-berat";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Tentukan nilai kolom exitDate saat menyimpan: pakai isian eksplisit kalau ada, kalau tidak
  * ambil dari bukuIndukData (pindahDate utk mutasi, graduationDate utk lulus). */
@@ -146,7 +147,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     // menggagalkan penyimpanan Buku Induk itu sendiri.
     if (bukuIndukData) {
       try { await keUks(id, bukuIndukData as Record<string, unknown>, session.name); }
-      catch (e) { console.error("[buku-induk sinkron TB/BB]", e); }
+      catch (e) { lemparBilaPengalihan(e); console.error("[buku-induk sinkron TB/BB]", e); }
     }
     // Riwayat perubahan data: catat KOLOM MANA saja yang berubah beserta nilai lama & barunya.
     // Tanpa ini, kalau suatu saat ada data yang "tiba-tiba salah", tidak ada cara tahu siapa yang
@@ -162,12 +163,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           metadata: { nis: student.nis, nama: student.user.name, perubahan },
         });
       }
-    } catch (e) { console.error("[buku-induk siswa PUT] gagal catat riwayat", e); }
+    } catch (e) { lemparBilaPengalihan(e); console.error("[buku-induk siswa PUT] gagal catat riwayat", e); }
 
     // Akun Orang Tua dibuat/dihubungkan otomatis dari No. HP — gagal-sync tidak boleh menggagalkan simpan siswa.
     await syncParentAccountForStudent(student.id, student.parentPhone, student.parentName).catch(() => {});
     return NextResponse.json(student);
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[buku-induk siswa PUT]", err);
     return NextResponse.json({ error: "Gagal menyimpan perubahan siswa" }, { status: 500 });
   }

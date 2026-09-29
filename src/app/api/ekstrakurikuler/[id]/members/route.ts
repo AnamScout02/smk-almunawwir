@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertExtracurricularAccess, getExtracurricularById } from "@/lib/ekstrakurikuler-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,6 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     });
     return NextResponse.json(members);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Anda bukan pembina ekstrakurikuler ini." }, { status: 403 });
     }
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     return NextResponse.json(member, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Anda bukan pembina ekstrakurikuler ini." }, { status: 403 });
     }

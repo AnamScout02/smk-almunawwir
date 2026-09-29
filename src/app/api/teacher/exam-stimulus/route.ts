@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { resolveTeacherId } from "@/lib/teacher-context";
 import { teacherIdDariSesi } from "@/lib/ujian-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,8 @@ export async function GET(req: NextRequest) {
       include: { _count: { select: { bank: true, soal: true } } },
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -33,7 +35,8 @@ export async function POST(req: NextRequest) {
     if (!teacherId) return Response.json({ error: "Tidak ditemukan guru pengampu." }, { status: 400 });
     const row = await prisma.examStimulus.create({ data: { teacherId, judul: judul.trim(), konten } });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan wacana." }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getOwnedJabatanIds, getJabatanNames } from "@/lib/jabatan-guard";
 import { TAS_JABATAN } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(program, { status: 201 });
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[program-kerja POST]", err);
     return NextResponse.json({ error: "Gagal menyimpan program kerja" }, { status: 500 });
   }

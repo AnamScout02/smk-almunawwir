@@ -3,11 +3,12 @@ import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
 async function petugas(s: { role: string; email: string }) {
-  try { await assertPerpustakaan(s); return true; } catch { return false; }
+  try { await assertPerpustakaan(s); return true; } catch (e) { lemparBilaPengalihan(e); return false; }
 }
 
 /** USULAN BUKU — anggota mengusulkan & mendukung; petugas melihat semua. Urut: dukungan terbanyak. */

@@ -5,6 +5,7 @@ import { bagianWib } from "@/lib/waktu-wib";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ export async function GET(req: Request) {
   const session = await verifyRole(["ADMIN", "TEACHER", "TAS"]);
   try {
     await assertKedisiplinan(session);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Tidak punya akses" }, { status: 403 });
   }
 
@@ -41,7 +43,8 @@ export async function PUT(req: Request) {
   if (session.role !== "ADMIN") {
     try {
       await assertJabatan(session, ["Wakil Kepala Bidang Penjamin Mutu", "Wakil Kepala Kurikulum"]);
-    } catch {
+    } catch (e) {
+      lemparBilaPengalihan(e);
       return Response.json({ error: "Hanya Admin & Wakil Kepala yang boleh mengubah cakupan" }, { status: 403 });
     }
   }

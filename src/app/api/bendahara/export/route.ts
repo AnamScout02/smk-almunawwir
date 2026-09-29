@@ -3,6 +3,7 @@ import { balasanExcel } from "@/lib/ekspor-excel";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
       headers, rows,
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });
   }

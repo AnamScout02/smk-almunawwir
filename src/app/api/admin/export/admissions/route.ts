@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { balasanExcel } from "@/lib/ekspor-excel";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -40,7 +41,8 @@ export async function GET() {
       namaSheet: "Pendaftaran",
       headers, rows,
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });
   }
 }

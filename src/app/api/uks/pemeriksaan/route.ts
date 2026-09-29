@@ -3,13 +3,14 @@ import { verifyRole } from "@/lib/dal";
 import { assertUks } from "@/lib/uks-guard";
 import { hitungGizi } from "@/lib/uks-akses";
 import { keBukuInduk } from "@/lib/tinggi-berat";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
 /** PEMERIKSAAN KESEHATAN BERKALA (Kepala UKS & Admin). GET ?classId= : siswa kelas + pemeriksaan terakhir. */
 export async function GET(req: Request) {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  try { await assertUks(session); } catch { return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
+  try { await assertUks(session); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
   const classId = new URL(req.url).searchParams.get("classId");
   const [kelas, rekap] = await Promise.all([
     prisma.class.findMany({ select: { id: true, name: true }, orderBy: [{ grade: "asc" }, { name: "asc" }] }),
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
 /** Simpan banyak pemeriksaan sekaligus: {tanggal, baris: [{studentId, tinggiCm, beratKg, tensi, penglihatan, catatan}]}. */
 export async function POST(req: Request) {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  try { await assertUks(session); } catch { return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
+  try { await assertUks(session); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus Kepala UKS." }, { status: 403 }); }
   const b = await req.json().catch(() => ({}));
   const tanggal = new Date(b.tanggal);
   if (isNaN(tanggal.getTime())) return Response.json({ error: "Tanggal tidak valid." }, { status: 400 });

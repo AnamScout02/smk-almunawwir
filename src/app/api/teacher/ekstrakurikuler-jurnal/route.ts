@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertExtracurricularAccess } from "@/lib/ekstrakurikuler-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Absen Ekstra (Pramuka, dst) — per sesi ekstrakurikuler, TERPISAH dari Attendance resmi
  * (absensi harian sekolah), sama seperti Jurnal Mengajar terpisah dari Attendance. Roster dari
@@ -47,6 +48,7 @@ export async function GET(req: Request) {
 
     return Response.json({ extracurricularName: ekskul.name, journalId: journal?.id ?? null, materi: journal?.materi ?? "", rows });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Anda bukan Pembina ekstrakurikuler ini." }, { status: 403 });
     return Response.json({ error: "Gagal memuat data" }, { status: 500 });
   }
@@ -91,6 +93,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Anda bukan Pembina ekstrakurikuler ini." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan absen" }, { status: 500 });
   }

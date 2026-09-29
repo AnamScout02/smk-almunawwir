@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const STATUS_LETTER: Record<string, string> = { HADIR: "H", IZIN: "I", SAKIT: "S", ALPHA: "A" };
 
@@ -72,7 +73,8 @@ export async function GET(req: NextRequest) {
     });
 
     return Response.json({ classId: targetClassId, month, daysInMonth, sundays, students: result });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

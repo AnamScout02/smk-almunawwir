@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -64,7 +65,8 @@ export async function GET(req: Request) {
     });
 
     return Response.json(result);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat riwayat jurnal" }, { status: 500 });
   }
 }

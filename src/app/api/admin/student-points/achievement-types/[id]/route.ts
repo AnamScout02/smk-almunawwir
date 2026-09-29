@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertStudentPointsFull } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,6 +21,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
     return Response.json(type);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Gagal mengubah jenis prestasi" }, { status: 500 });
   }
@@ -38,6 +40,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await prisma.studentAchievementType.delete({ where: { id } });
     return Response.json({ deleted: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Gagal menghapus jenis prestasi" }, { status: 500 });
   }

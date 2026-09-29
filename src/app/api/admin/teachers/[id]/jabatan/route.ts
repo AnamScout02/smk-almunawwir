@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { logActivity } from "@/lib/activity-log";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -35,7 +36,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan jabatan." }, { status: 500 });
   }
 }

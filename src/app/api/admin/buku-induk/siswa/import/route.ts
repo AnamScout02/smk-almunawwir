@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { ambilFotoSheet } from "@/lib/xlsx-foto";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function parseDate(val: unknown): Date | null {
   if (!val) return null;
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       if (!["jpg", "jpeg", "png"].includes(f.ext)) continue;   // lewati emf/wmf (logo, bukan pas foto)
       if (!fotoPerBaris.has(f.row)) fotoPerBaris.set(f.row, { ext: f.ext === "jpeg" ? "jpg" : f.ext, data: f.data });
     }
-  } catch (e) { console.error("[import siswa] gagal baca foto tertanam", e); }
+  } catch (e) { lemparBilaPengalihan(e); console.error("[import siswa] gagal baca foto tertanam", e); }
   const fotoDir = join(process.cwd(), "public", "uploads", "buku-induk", "masuk");
   if (fotoPerBaris.size > 0) await mkdir(fotoDir, { recursive: true }).catch(() => {});
 
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
       // tidak ikut terbaca static-serving Next.js sampai container di-restart.
       return `/api/uploads/buku-induk/masuk/${nama}`;
     } catch (e) {
+      lemparBilaPengalihan(e);
       console.error("[import siswa] gagal simpan foto", e);
       return null;
     }

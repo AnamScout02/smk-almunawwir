@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { aturanPerpustakaan, tersediaPerBuku } from "@/lib/perpustakaan-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ export async function GET() {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole([...ANGGOTA]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const [buku, dipinjam, pinjamanSaya, pesananSaya, aturan] = await Promise.all([
@@ -46,7 +48,8 @@ export async function POST(req: NextRequest) {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole([...ANGGOTA]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { bookId } = (await req.json().catch(() => ({}))) as { bookId?: string };
@@ -73,7 +76,8 @@ export async function DELETE(req: NextRequest) {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole([...ANGGOTA]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = (await req.json().catch(() => ({}))) as { id?: string };

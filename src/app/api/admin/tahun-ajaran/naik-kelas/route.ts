@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +129,7 @@ export async function POST() {
       await prisma.student.update({ where: { id: p.studentId }, data: { studentStatus: "LULUS", exitDate: new Date() } });
       graduatedCount++;
     } catch (err) {
+      lemparBilaPengalihan(err);
       errors.push(`Gagal meluluskan ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
@@ -136,6 +138,7 @@ export async function POST() {
       await prisma.student.update({ where: { id: p.studentId }, data: { classId: p.toClassId } });
       promotedCount++;
     } catch (err) {
+      lemparBilaPengalihan(err);
       errors.push(`Gagal menaikkan ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }

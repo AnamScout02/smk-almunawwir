@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJaringan } from "@/lib/jaringan-guard";
 import { withMikrotik, MikrotikRow } from "@/lib/mikrotik";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,7 @@ export async function POST() {
               updated++;
             }
           } catch (e) {
+            lemparBilaPengalihan(e);
             conflicts.push(`${t.username} (${t.name}) — ${e instanceof Error ? e.message : "gagal diproses"}`);
           }
         }
@@ -109,7 +111,7 @@ export async function POST() {
             try {
               await conn.write("/ip/hotspot/user/set", [`=.id=${u[".id"]}`, "=disabled=yes"]);
               disabled++;
-            } catch { /* biarkan, tidak fatal */ }
+            } catch (e) { lemparBilaPengalihan(e); /* biarkan, tidak fatal */ }
           }
         }
 
@@ -122,10 +124,12 @@ export async function POST() {
 
       return NextResponse.json(summary);
     } catch (e) {
+      lemparBilaPengalihan(e);
       console.error("[jaringan hotspot-users sync]", e);
       return NextResponse.json({ error: "Gagal sinkronisasi ke Mikrotik" }, { status: 502 });
     }
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Pengelola Jaringan Sekolah." }, { status: 403 });
     }

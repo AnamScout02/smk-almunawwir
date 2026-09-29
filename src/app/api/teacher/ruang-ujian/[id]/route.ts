@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { bolehAturUjian } from "@/lib/kegiatan-ujian-server";
 import { bacaRuang } from "@/lib/denah-ruang";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return Response.json({ error: `Kursi nomor ${terjauh._max.kursi} di ruang ini sudah terisi — kapasitas tidak bisa di bawah itu. Bagikan ulang atau pindahkan pesertanya dulu.` }, { status: 409 });
     }
     return Response.json(await prisma.ruangUjian.update({ where: { id }, data: d }));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memperbarui ruang." }, { status: 500 });
   }
 }
@@ -39,7 +41,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
     await prisma.ruangUjian.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus ruang." }, { status: 500 });
   }
 }

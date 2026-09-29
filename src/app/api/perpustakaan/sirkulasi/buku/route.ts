@@ -5,6 +5,7 @@ import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { anggotaDariUserId, aturanPerpustakaan, hitungDenda, jatuhTempoBawaan, ringkasanAnggota } from "@/lib/perpustakaan-server";
 import { kirimLatar } from "@/lib/push-server";
 import { beritahuReservasiSiap } from "@/lib/notifikasi-perpustakaan";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
     if (reservasiSaya) await prisma.bookReservation.update({ where: { id: reservasiSaya.id }, data: { status: "SELESAI" } });
     return NextResponse.json({ hasil: "PINJAM", buku, jatuhTempo: pinjaman.dueDate, reservasiSelesai: !!reservasiSaya, ...(await ringkasanAnggota(anggota.id)) }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     console.error("[perpustakaan sirkulasi buku]", e);
     return NextResponse.json({ error: "Gagal memproses buku." }, { status: 500 });

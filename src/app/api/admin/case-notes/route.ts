@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertStudentPointsFull } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Rekam BK / Penanganan Siswa — catatan naratif per kejadian (konseling, panggilan orang tua,
  * dll), TERPISAH dari poin pelanggaran/prestasi. Akses khusus BK & Wakasek Kesiswaan (ADMIN
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
     });
     return Response.json(notes);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
     });
     return Response.json(created, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan catatan" }, { status: 500 });
   }

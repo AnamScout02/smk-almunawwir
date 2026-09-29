@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { assertJaringan } from "@/lib/jaringan-guard";
 import { withMikrotik } from "@/lib/mikrotik";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +27,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ name
       });
       return NextResponse.json({ success: true });
     } catch (e) {
+      lemparBilaPengalihan(e);
       console.error("[jaringan hotspot-profiles PUT]", e);
       return NextResponse.json({ error: "Gagal mengubah profil" }, { status: 502 });
     }
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Pengelola Jaringan Sekolah." }, { status: 403 });
     }
@@ -51,10 +54,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ n
       });
       return NextResponse.json({ success: true });
     } catch (e) {
+      lemparBilaPengalihan(e);
       console.error("[jaringan hotspot-profiles DELETE]", e);
       return NextResponse.json({ error: "Gagal menghapus profil (mungkin masih dipakai user)" }, { status: 502 });
     }
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Pengelola Jaringan Sekolah." }, { status: 403 });
     }

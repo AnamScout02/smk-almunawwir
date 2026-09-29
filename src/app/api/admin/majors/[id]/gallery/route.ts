@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,7 +12,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       orderBy: { order: "asc" },
     });
     return Response.json(photos);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -34,7 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     });
     return Response.json(photo, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menambah foto." }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { getOwnedJabatanIds, getJabatanNames } from "@/lib/jabatan-guard";
 import { TAS_JABATAN } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json(program);
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[program-kerja PUT]", err);
     return NextResponse.json({ error: "Gagal menyimpan perubahan" }, { status: 500 });
   }
@@ -66,6 +68,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.programKerja.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[program-kerja DELETE]", err);
     return NextResponse.json({ error: "Gagal menghapus program" }, { status: 500 });
   }

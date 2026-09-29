@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { balasanExcel } from "@/lib/ekspor-excel";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ async function jaga() {
 
 /** GET detail (?format=xlsx) · PATCH {pindai: barcode} = tambah 1 eksemplar terhitung, atau {itemId, stokFisik, catatan} · POST {terapkan} = selesai. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try { await jaga(); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { await jaga(); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   const { id } = await params;
   const o = await prisma.stokOpnameBuku.findUnique({ where: { id } });
   if (!o) return Response.json({ error: "Tidak ditemukan." }, { status: 404 });
@@ -35,7 +36,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try { await jaga(); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { await jaga(); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   const { id } = await params;
   const o = await prisma.stokOpnameBuku.findUnique({ where: { id }, select: { status: true } });
   if (!o || o.status !== "BERJALAN") return Response.json({ error: "Stok opname tidak berjalan." }, { status: 409 });
@@ -58,7 +59,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try { await jaga(); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { await jaga(); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   const { id } = await params;
   const b = await req.json().catch(() => ({}));
   const item = await prisma.stokOpnameBukuItem.findMany({ where: { opnameId: id, stokFisik: { not: null } } });

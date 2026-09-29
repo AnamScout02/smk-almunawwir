@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { assertJaringan } from "@/lib/jaringan-guard";
 import { withMikrotik } from "@/lib/mikrotik";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,12 @@ export async function GET() {
       const logs = await withMikrotik((conn) => conn.write("/log/print"));
       return NextResponse.json(logs.slice(-50).reverse());
     } catch (e) {
+      lemparBilaPengalihan(e);
       console.error("[jaringan log]", e);
       return NextResponse.json({ error: "Gagal terhubung ke Mikrotik" }, { status: 502 });
     }
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Pengelola Jaringan Sekolah." }, { status: 403 });
     }

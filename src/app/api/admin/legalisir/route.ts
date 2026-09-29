@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,8 @@ export async function GET(req: Request) {
       ...(month ? {} : { take: 300 }),
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat data legalisir" }, { status: 500 });
   }
 }
@@ -66,7 +68,8 @@ export async function POST(req: Request) {
       },
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan permintaan legalisir." }, { status: 500 });
   }
 }

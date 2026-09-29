@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
       where, include, orderBy: [{ tanggalAmbil: "desc" }, { createdAt: "desc" }],
     });
     return Response.json(rows);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat data penerimaan rapor" }, { status: 500 });
   }
 }
@@ -50,7 +52,8 @@ export async function POST(req: Request) {
       include,
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan penerimaan rapor." }, { status: 500 });
   }
 }

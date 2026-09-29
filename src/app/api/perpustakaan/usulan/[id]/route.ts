@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await prisma.usulanBuku.update({ where: { id }, data: { pendukung: [...set] } });
     return Response.json({ ok: true });
   }
-  try { await assertPerpustakaan(session); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { await assertPerpustakaan(session); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   const status = STATUS[b.status] ? b.status : null;
   if (!status) return Response.json({ error: "Status tidak dikenal." }, { status: 400 });
   await prisma.usulanBuku.update({ where: { id }, data: { status, tanggapan: String(b.tanggapan ?? "").trim().slice(0, 500) || null } });
@@ -40,7 +41,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const u = await prisma.usulanBuku.findUnique({ where: { id } });
   if (!u) return Response.json({ ok: true });
   let petugas = false;
-  try { await assertPerpustakaan(session); petugas = true; } catch { /* bukan petugas */ }
+  try { await assertPerpustakaan(session); petugas = true; } catch (e) { lemparBilaPengalihan(e); /* bukan petugas */ }
   if (!petugas && !(u.pengusulId === session.userId && u.status === "DIUSULKAN")) return Response.json({ error: "Tidak berhak." }, { status: 403 });
   await prisma.usulanBuku.delete({ where: { id } });
   return Response.json({ ok: true });

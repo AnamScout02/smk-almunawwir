@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Staf (role TAS) yang BELUM punya satu pun jabatan.
  *
@@ -22,7 +23,8 @@ export async function GET() {
       orderBy: { name: "asc" },
     });
     return Response.json({ staf });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

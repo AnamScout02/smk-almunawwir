@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -32,6 +33,7 @@ export async function GET() {
 
     return Response.json(rows);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Kepala Sekolah atau Wakil Kepala Humas." }, { status: 403 });
     }

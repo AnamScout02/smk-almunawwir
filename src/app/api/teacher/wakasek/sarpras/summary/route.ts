@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { weekTypesOverlap } from "@/lib/schedule-week";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function timeOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
   return s1 < e2 && s2 < e1;
@@ -63,6 +64,7 @@ export async function GET() {
       roomUtilization, conflicts,
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Wakil Kepala Sarana Prasarana." }, { status: 403 });
     }

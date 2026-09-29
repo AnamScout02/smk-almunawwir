@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest) {
   try {
@@ -66,7 +67,8 @@ export async function GET(req: NextRequest) {
     });
 
     return Response.json({ classId: targetClassId, students: summary });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

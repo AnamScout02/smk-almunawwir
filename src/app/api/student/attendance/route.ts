@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { kirimLatar } from "@/lib/push-server";
 import { beritahuAlphaBeruntun, beritahuOrangTuaAlpha } from "@/lib/notifikasi-kejadian";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ className: ctx.cls.name, students, existing });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error("[student attendance POST]", e);
     return NextResponse.json({ error: "Gagal menyimpan absensi" }, { status: 500 });
   }

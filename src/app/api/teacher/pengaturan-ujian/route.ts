@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/site-settings";
 import { logActivity } from "@/lib/activity-log";
 import { bolehAturUjian } from "@/lib/kegiatan-ujian-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,8 @@ export async function GET() {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
     const [s, bolehAtur] = await Promise.all([getSettings([...KUNCI]), bolehAturUjian(session)]);
     return Response.json({ ...s, bolehAtur });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat pengaturan." }, { status: 500 });
   }
 }
@@ -52,7 +54,8 @@ export async function PUT(req: NextRequest) {
       prisma.siteSetting.upsert({ where: { key }, update: { value }, create: { key, value } })));
     await logActivity(session, { action: "UBAH_PENGATURAN_UJIAN", entity: "SiteSetting", description: "Mengubah pengaturan bawaan ujian", metadata: { ...bersih, ...(bersih["ujian.pinAplikasi"] !== undefined ? { "ujian.pinAplikasi": bersih["ujian.pinAplikasi"] ? "(diubah)" : "(dikosongkan)" } : {}) } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan pengaturan." }, { status: 500 });
   }
 }

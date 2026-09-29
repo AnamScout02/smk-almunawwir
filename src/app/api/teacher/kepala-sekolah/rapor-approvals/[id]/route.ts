@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function assertKepsekOrAdmin(session: { role: string; email: string }) {
   if (session.role === "ADMIN") return;
@@ -20,6 +21,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await prisma.raporApproval.delete({ where: { id } });
     return Response.json({ ok: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Kepala Sekolah." }, { status: 403 });
     }

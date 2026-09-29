@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { normalizeBukuIndukText } from "@/lib/text";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await verifyBukuIndukFullAccess();
@@ -94,6 +95,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     return NextResponse.json(teacher);
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[buku-induk guru PUT]", err);
     return NextResponse.json({ error: "Gagal menyimpan perubahan guru" }, { status: 500 });
   }

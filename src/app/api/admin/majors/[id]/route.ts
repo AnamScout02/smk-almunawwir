@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,7 +13,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     if (!major) return Response.json({ error: "Jurusan tidak ditemukan." }, { status: 404 });
     return Response.json(major);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -72,7 +74,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     await prisma.major.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus jurusan." }, { status: 500 });
   }
 }

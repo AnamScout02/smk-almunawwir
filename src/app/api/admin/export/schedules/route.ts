@@ -3,6 +3,7 @@ import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { balasanExcel } from "@/lib/ekspor-excel";
 import { NextRequest } from "next/server";
 import { weekLabel } from "@/lib/schedule-week";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const DAY_ORDER: Record<string, number> = { SENIN: 1, SELASA: 2, RABU: 3, KAMIS: 4, JUMAT: 5, SABTU: 6 };
 
@@ -49,7 +50,8 @@ export async function GET(req: NextRequest) {
       namaSheet: "Jadwal Pelajaran",
       headers, rows,
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengekspor data" }, { status: 500 });
   }
 }

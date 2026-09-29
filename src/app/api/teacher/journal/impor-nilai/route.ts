@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { logActivity } from "@/lib/activity-log";
 import { pesanNilaiTerkunci } from "@/lib/rapor-verifikasi";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,8 @@ export async function POST(req: Request) {
     const wb = XLSX.read(Buffer.from(await file.arrayBuffer()), { type: "buffer" });
     const sheet = wb.Sheets["Nilai"] ?? wb.Sheets[wb.SheetNames[0]];
     rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: null, blankrows: false });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Berkas bukan Excel yang valid. Pakai templat dari tombol Unduh Templat." }, { status: 400 });
   }
   const kepala = (rows[0] ?? []).map(v => String(v ?? "").trim().toLowerCase());

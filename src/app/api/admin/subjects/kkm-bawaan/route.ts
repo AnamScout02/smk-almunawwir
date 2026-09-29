@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { logActivity } from "@/lib/activity-log";
 import { KUNCI_KKM_BAWAAN, kkmBawaan } from "@/lib/kkm";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET() {
     await assertKurikulum(session);
     return NextResponse.json({ kkm: await kkmBawaan() });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -35,6 +37,7 @@ export async function PUT(req: NextRequest) {
     }
     return NextResponse.json({ kkm: n });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     return NextResponse.json({ error: "Gagal menyimpan KKM bawaan." }, { status: 500 });
   }

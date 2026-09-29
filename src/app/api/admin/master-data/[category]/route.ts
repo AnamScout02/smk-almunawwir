@@ -2,6 +2,7 @@ import { verifyRole } from "@/lib/dal";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET(
 ) {
   try {
     await verifyTasAccess();
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { category } = await params;
@@ -26,7 +28,8 @@ export async function PUT(
 ) {
   try {
     await verifyRole(["ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
@@ -38,6 +41,7 @@ export async function PUT(
     });
     return NextResponse.json(data);
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("[master-data PUT]", err);
     return NextResponse.json({ error: "Gagal menyimpan master data" }, { status: 500 });
   }

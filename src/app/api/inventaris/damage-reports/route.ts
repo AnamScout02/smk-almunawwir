@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { aksesSarpras, FILTER_KERUSAKAN_LAB } from "@/lib/sarpras-akses";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export async function GET() {
     });
     return NextResponse.json(reports);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Sarana Prasarana." }, { status: 403 });
     }
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(report, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Sarana Prasarana." }, { status: 403 });
     }

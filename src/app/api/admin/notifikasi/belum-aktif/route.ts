@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { userKesiswaanBk } from "@/lib/peringatan-dini";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ type Orang = { nama: string; keterangan: string };
 export async function GET() {
   try {
     await verifyRole(["ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const aktif = new Set((await prisma.pushSubscription.findMany({ select: { userId: true }, distinct: ["userId"] })).map(x => x.userId));

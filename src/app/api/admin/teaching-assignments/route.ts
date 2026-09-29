@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
     await assertKurikulum(session);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     }
@@ -46,7 +48,8 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json(item, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Mata pelajaran ini sudah punya guru pengampu di kelas tersebut" }, { status: 400 });
   }
 }

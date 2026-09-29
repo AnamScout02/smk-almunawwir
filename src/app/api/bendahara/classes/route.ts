@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Daftar kelas ringan (id/nama/tingkat) khusus dropdown filter & "Generate Massal" modul
  * Bendahara. SENGAJA endpoint sendiri (bukan reuse /api/admin/classes) — endpoint itu punya
@@ -17,6 +18,7 @@ export async function GET() {
     });
     return Response.json(classes);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal memuat kelas" }, { status: 500 });
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { nomorSuratBerikutnya } from "@/lib/nomor-surat-berikutnya";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,7 +18,8 @@ export async function GET(req: NextRequest) {
     // tabel Surat sendiri, nomor yang sudah terpakai oleh dua modul itu bisa terbit dua kali.
     const nomor = await nomorSuratBerikutnya(klasifikasi);
     return NextResponse.json({ nomor });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal membuat nomor otomatis." }, { status: 500 });
   }
 }

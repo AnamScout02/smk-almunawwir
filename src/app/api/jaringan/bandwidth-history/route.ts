@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { assertJaringan } from "@/lib/jaringan-guard";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ interface: iface, range, points });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Pengelola Jaringan Sekolah." }, { status: 403 });
     }

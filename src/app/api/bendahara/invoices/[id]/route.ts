@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
 import { logActivity } from "@/lib/activity-log";
 import { formatRupiah } from "@/lib/currency";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -46,6 +47,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
     return Response.json(invoice);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal mengubah tagihan" }, { status: 500 });
   }
@@ -66,6 +68,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     });
     return Response.json({ deleted: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal menghapus tagihan" }, { status: 500 });
   }

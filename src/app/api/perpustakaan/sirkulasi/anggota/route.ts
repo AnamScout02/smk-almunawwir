@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
 import { anggotaDariUserId, cariAnggota, ringkasanAnggota } from "@/lib/perpustakaan-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
     if (!anggota) return NextResponse.json({ error: `Kartu "${(kode ?? "").trim()}" tidak dikenali sebagai anggota perpustakaan.` }, { status: 404 });
     return NextResponse.json({ anggota, ...(await ringkasanAnggota(anggota.id)) });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Koordinator/Tim Perpustakaan." }, { status: 403 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

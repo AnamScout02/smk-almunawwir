@@ -4,6 +4,7 @@ import { bacaExcelUjian } from "@/lib/soal-excel";
 import { terapkanKunci } from "@/lib/soal-kunci";
 import { cocokMapel } from "@/lib/cocok-mapel";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,8 @@ export async function POST(req: NextRequest) {
       }
     }
     return Response.json({ ...hasil, catatan: [...peringatanMapel, ...catatan], pengaturan });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal membaca berkas." }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBendahara } from "@/lib/bendahara-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
@@ -9,6 +10,7 @@ export async function GET() {
     const types = await prisma.feeType.findMany({ orderBy: [{ order: "asc" }] });
     return Response.json(types);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal memuat jenis biaya" }, { status: 500 });
   }
@@ -28,6 +30,7 @@ export async function POST(req: Request) {
     });
     return Response.json(type, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Bendahara." }, { status: 403 });
     return Response.json({ error: "Gagal menambah jenis biaya" }, { status: 500 });
   }

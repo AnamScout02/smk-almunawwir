@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,7 +31,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     return Response.json(item);
-  } catch { return Response.json({ error: "Gagal mengupdate" }, { status: 500 }); }
+  } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Gagal mengupdate" }, { status: 500 }); }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,5 +44,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
       description: `${session.name} menghapus data pendaftar "${admission.fullName}"`,
     });
     return Response.json({ ok: true });
-  } catch { return Response.json({ error: "Gagal menghapus" }, { status: 500 }); }
+  } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Gagal menghapus" }, { status: 500 }); }
 }

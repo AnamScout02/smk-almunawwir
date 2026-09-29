@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertBranding } from "@/lib/branding-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function forbiddenOr(e: unknown, fallback: string) {
   if (e instanceof Error && e.message === "FORBIDDEN") {
@@ -13,7 +14,7 @@ export async function GET() {
   try {
     const banners = await prisma.heroBanner.findMany({ orderBy: { order: "asc" } });
     return Response.json(banners);
-  } catch { return Response.json({ error: "Gagal memuat data" }, { status: 500 }); }
+  } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Gagal memuat data" }, { status: 500 }); }
 }
 
 export async function POST(req: Request) {
@@ -26,5 +27,5 @@ export async function POST(req: Request) {
       data: { title: body.title, subtitle: body.subtitle, imageUrl: body.imageUrl || null, linkUrl: body.linkUrl || null, linkText: body.linkText || null, active: body.active ?? true, order: count },
     });
     return Response.json(banner);
-  } catch (e) { return forbiddenOr(e, "Gagal menyimpan"); }
+  } catch (e) { lemparBilaPengalihan(e); return forbiddenOr(e, "Gagal menyimpan"); }
 }

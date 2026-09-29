@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       include: { surat: { select: { id: true, nomor: true, perihal: true } } },
     });
     return Response.json(row);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memperbarui catatan ekspedisi." }, { status: 500 });
   }
 }
@@ -45,7 +47,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     await prisma.ekspedisi.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus catatan ekspedisi." }, { status: 500 });
   }
 }

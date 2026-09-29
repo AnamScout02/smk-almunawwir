@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { kunciPublikVapid, pushTersedia } from "@/lib/push-server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET() {
     const session = await verifySession();
     const perangkat = await prisma.pushSubscription.count({ where: { userId: session.userId } });
     return Response.json({ publicKey: kunciPublikVapid(), tersedia: pushTersedia(), perangkat });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -22,7 +24,8 @@ export async function POST(req: NextRequest) {
   let session: Awaited<ReturnType<typeof verifySession>>;
   try {
     session = await verifySession();
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { subscription } = (await req.json().catch(() => ({}))) as BodyLangganan;

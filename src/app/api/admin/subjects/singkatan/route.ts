@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function GET() {
     }
     return NextResponse.json({ mapel: [...peta.values()] });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     return NextResponse.json({ error: "Gagal memuat mapel." }, { status: 500 });
   }
@@ -44,6 +46,7 @@ export async function PUT(req: NextRequest) {
     await logActivity(session, { action: "SINGKATAN_MAPEL", entity: "Subject", entityId: "-", description: `Menyimpan singkatan ${daftar.length} mapel (${n} baris)` }).catch(() => {});
     return NextResponse.json({ ok: true, mapel: daftar.length, baris: n });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     return NextResponse.json({ error: "Gagal menyimpan singkatan." }, { status: 500 });
   }

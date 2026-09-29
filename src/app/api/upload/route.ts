@@ -3,6 +3,7 @@ import { join } from "path";
 import { NextRequest } from "next/server";
 import { verifySession } from "@/lib/dal";
 import { kompresGambar } from "@/lib/kompres-gambar";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
     const url = `/api/uploads/${folder}/${filename}`;
     return Response.json({ url });
   } catch (err) {
+    lemparBilaPengalihan(err);
     console.error("Upload error:", err);
     return Response.json({ error: "Gagal mengupload file" }, { status: 500 });
   }

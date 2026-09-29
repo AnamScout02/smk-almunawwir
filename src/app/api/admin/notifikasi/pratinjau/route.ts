@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { jalankanPengingat } from "@/lib/pengingat-terjadwal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     await verifyRole(["ADMIN"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const waktu = new URL(req.url).searchParams.get("waktu") ?? "";
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: `Pratinjau gagal: ${(e as Error).message}` }, { status: 500 });
   }
   return Response.json({ waktu, hasil, totalPenerima: hasil.reduce((t, h) => t + h.penerima, 0) });

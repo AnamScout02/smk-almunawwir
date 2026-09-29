@@ -4,6 +4,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { readFile, readdir } from "fs/promises";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 const execFileAsync = promisify(execFile);
 
@@ -52,7 +53,8 @@ async function getDisk(): Promise<DiskInfo | null> {
       sizeGb: bulat1(sizeKb / 1024 / 1024), usedGb: bulat1(usedKb / 1024 / 1024),
       availGb: bulat1(availKb / 1024 / 1024), pct: Number(parts[4].replace("%", "")),
     };
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return null;
   }
 }
@@ -62,12 +64,12 @@ async function jatahCpu(): Promise<number> {
   try {
     const [kuota, periode] = (await bacaTeks(`${CG}/cpu.max`)).trim().split(/\s+/);
     if (kuota !== "max") return Math.max(0.01, Number(kuota) / Number(periode));
-  } catch { /* lanjut */ }
+  } catch (e) { lemparBilaPengalihan(e); /* lanjut */ }
   try {
     const n = (await bacaTeks(`${CG}/cpuset.cpus.effective`)).trim().split(",").filter(Boolean)
       .reduce((jml, bagian) => { const [a, b] = bagian.split("-").map(Number); return jml + (Number.isFinite(b) ? b - a + 1 : 1); }, 0);
     if (n > 0) return n;
-  } catch { /* lanjut */ }
+  } catch (e) { lemparBilaPengalihan(e); /* lanjut */ }
   return os.cpus().length;
 }
 
@@ -91,7 +93,7 @@ async function petaScope(): Promise<Record<string, string>> {
       if (!m) return;
       const comm = (await bacaTeks(`${PROC}/${pid}/comm`)).trim();
       (proses[m[1]] ??= []).push(comm);
-    } catch { /* proses sudah selesai */ }
+    } catch (e) { lemparBilaPengalihan(e); /* proses sudah selesai */ }
   }));
   const peta: Record<string, string> = {};
   for (const [scope, nama] of Object.entries(proses)) peta[scope] = namaLayanan(nama.join(" "));
@@ -106,7 +108,8 @@ async function petaScope(): Promise<Record<string, string>> {
 async function scopeDocker(): Promise<string[]> {
   try {
     return (await readdir(`${CG}/system.slice`)).filter(d => d.startsWith("docker-") && d.endsWith(".scope"));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return [];
   }
 }
@@ -132,12 +135,12 @@ async function batasMemori(): Promise<number> {
   try {
     const max = (await bacaTeks(`${CG}/memory.max`)).trim();
     if (max !== "max") return Number(max);
-  } catch { /* lanjut */ }
+  } catch (e) { lemparBilaPengalihan(e); /* lanjut */ }
   // Batas LXC dipasang di cgroup induk (di host) — lxcfs menampilkannya sebagai MemTotal.
   try {
     const m = (await bacaTeks(`${PROC}/meminfo`)).match(/^MemTotal:\s+(\d+)/m);
     if (m) return Number(m[1]) * 1024;
-  } catch { /* lanjut */ }
+  } catch (e) { lemparBilaPengalihan(e); /* lanjut */ }
   return os.totalmem();
 }
 
@@ -201,7 +204,8 @@ export async function GET() {
       uptimeHours: bulat1(os.uptime() / 3600),
       timestamp: new Date().toISOString(),
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Gagal membaca pemakaian kontainer. Pastikan /sys/fs/cgroup ter-mount ke /host/cgroup." }, { status: 500 });
   }
 }

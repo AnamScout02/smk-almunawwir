@@ -6,6 +6,7 @@ import { bagianWib } from "@/lib/waktu-wib";
 import { semesterRapor } from "@/lib/rapor-verifikasi";
 import { petaKkm } from "@/lib/kkm";
 import { SYARAT_JP, ekuivalensiJabatan } from "@/lib/beban-jp";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -170,6 +171,7 @@ export async function GET() {
       totalAssignments: assignments.length,
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Wakil Kepala Kurikulum." }, { status: 403 });
     }

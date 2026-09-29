@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { bacaKalender } from "@/lib/kalender-import";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,8 @@ export async function POST(req: NextRequest) {
     });
 
     return Response.json({ masuk: agenda.length, dihapus, dilewati, lembar });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal membaca berkas kalender." }, { status: 500 });
   }
 }

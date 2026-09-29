@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { buatSuratDariPermohonan } from "@/lib/surat-dari-permohonan";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const row = await prisma.suratKeterangan.update({ where: { id }, data: jejak });
     return Response.json({ ...row, suratId: suratId ?? row.suratId });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memproses permintaan." }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { computeFinalScore, resolveJabatanName } from "@/lib/kpi-engine";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
 
     const result = await computeFinalScore(userId, jabatanName, period);
     return NextResponse.json({ ...result, period, jabatanName });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

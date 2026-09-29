@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getOwnedExtracurricularNames } from "@/lib/ekstrakurikuler-guard";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { TAS_JABATAN } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,8 @@ export async function GET() {
       include: { _count: { select: { members: true } } },
     });
     return NextResponse.json(list);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
     const created = await prisma.extracurricular.create({ data: { name: name.trim() } });
     return NextResponse.json({ ...created, _count: { members: 0 } }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Admin/TAS atau Koordinator Ekstrakurikuler." }, { status: 403 });
     }

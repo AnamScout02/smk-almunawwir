@@ -5,6 +5,7 @@ import { kirimLatar } from "@/lib/push-server";
 import { beritahuPoin } from "@/lib/notifikasi-kejadian";
 import { assertStudentPointsFull, assertPiketOrKesiswaanBk } from "@/lib/kesiswaan-guard";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function currentSemester(): string {
   const now = new Date();
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
     });
     return Response.json(records);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
 
     // Cek apakah pencatat ini "full access" (BK/Kesiswaan/Admin) atau cuma guru piket biasa.
     let hasFullAccess = true;
-    try { await assertStudentPointsFull(session); } catch { hasFullAccess = false; }
+    try { await assertStudentPointsFull(session); } catch (e) { lemparBilaPengalihan(e); hasFullAccess = false; }
 
     if (kind === "PELANGGARAN") {
       if (!violationTypeId) return Response.json({ error: "Jenis pelanggaran wajib dipilih" }, { status: 400 });
@@ -115,6 +117,7 @@ export async function POST(req: Request) {
     if (kind === "PELANGGARAN") kirimLatar(() => periksaPanggilanOtomatis(studentId));
     return Response.json(record, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Anda tidak berhak mencatat poin (bukan piket hari ini/BK/Wakasek Kesiswaan)." }, { status: 403 });
     }

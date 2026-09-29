@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 interface AttendeeInput { name: string }
 
@@ -10,7 +11,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const meeting = await prisma.meetingMinutes.findUnique({ where: { id }, include: { attendees: { orderBy: { order: "asc" } } } });
     if (!meeting) return Response.json({ error: "Notulen tidak ditemukan" }, { status: 404 });
     return Response.json(meeting);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -42,7 +44,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const meeting = await prisma.meetingMinutes.findUnique({ where: { id }, include: { attendees: { orderBy: { order: "asc" } } } });
     return Response.json(meeting);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengupdate notulen rapat." }, { status: 500 });
   }
 }
@@ -53,7 +56,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     await prisma.meetingMinutes.delete({ where: { id } });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus notulen rapat." }, { status: 500 });
   }
 }

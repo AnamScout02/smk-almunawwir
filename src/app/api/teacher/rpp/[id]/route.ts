@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function assertOwner(id: string, email: string, isAdmin: boolean) {
   if (isAdmin) return;
@@ -31,6 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     return NextResponse.json(plan);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Hanya bisa ubah RPP milik sendiri" }, { status: 403 });
     }
@@ -48,6 +50,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.lessonPlan.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Hanya bisa hapus RPP milik sendiri" }, { status: 403 });
     }

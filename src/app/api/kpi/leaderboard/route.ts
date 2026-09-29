@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { computeFinalScore, getRawJabatanNamesFor, resolveJabatanName } from "@/lib/kpi-engine";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 type Row = { userId: string; name: string; nip: string; finalScore: number; breakdown: Awaited<ReturnType<typeof computeFinalScore>>["breakdown"] };
 
@@ -102,6 +103,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ period, jabatanName, sortBy, list });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus pimpinan/wakasek." }, { status: 403 });
     }

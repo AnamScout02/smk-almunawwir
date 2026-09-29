@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { resolveTeacherId } from "@/lib/teacher-context";
 import { siapkanButir, type ButirMasuk } from "@/lib/soal-butir-server";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
       });
     }
     return Response.json({ masuk: siap.length, dilewati });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan soal." }, { status: 500 });
   }
 }

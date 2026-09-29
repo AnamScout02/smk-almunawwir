@@ -6,6 +6,7 @@ import { cakupanTingkat } from "@/lib/kehadiran-guru";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { getDisciplinePointConfig, pointsForStatus, getCalendarWeekWindow, getMonthWindow } from "@/lib/discipline-points";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -150,7 +151,8 @@ export async function GET(req: NextRequest) {
       : `${periodStart.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} – ${periodEndFull.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`;
 
     return NextResponse.json({ topDisiplin, perluPerhatian, periodLabel, period, refDate: refDate.toISOString().slice(0, 10), config });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

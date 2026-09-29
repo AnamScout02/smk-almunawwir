@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { getSettings, getPrincipalName } from "@/lib/site-settings";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export async function GET() {
       kepalaSekolah: getPrincipalName(settings["school.structure"]) || "",
       tahunPelajaran: tahun?.name ?? "",
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ kepalaSekolah: "", tahunPelajaran: "" });
   }
 }

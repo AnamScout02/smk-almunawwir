@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertStudentPointsFull } from "@/lib/kesiswaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Hapus catatan poin (koreksi kalau salah input) — khusus Admin/Wakasek Kesiswaan/Guru BK,
  * TERMASUK utk catatan yg tadinya diinput guru piket. Guru piket sendiri TIDAK bisa hapus
@@ -13,6 +14,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await prisma.studentPointRecord.delete({ where: { id } });
     return Response.json({ success: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Wakasek Kesiswaan/Guru BK." }, { status: 403 });
     return Response.json({ error: "Gagal menghapus catatan" }, { status: 500 });
   }

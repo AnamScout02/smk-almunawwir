@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { siswaYangBolehDiajukan } from "@/lib/permintaan-surat";
 import { JENIS_SURAT } from "@/lib/tu-konstanta";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,8 @@ export async function GET() {
       }),
     ]);
     return Response.json({ siswa, surat, legalisir });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat permintaan surat" }, { status: 500 });
   }
 }
@@ -93,7 +95,8 @@ export async function POST(req: Request) {
       },
     });
     return Response.json(row, { status: 201 });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal mengirim permintaan." }, { status: 500 });
   }
 }

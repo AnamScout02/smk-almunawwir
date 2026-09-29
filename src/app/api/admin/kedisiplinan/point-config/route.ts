@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { prisma } from "@/lib/prisma";
 import { getDisciplinePointConfig } from "@/lib/discipline-points";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export async function GET() {
     const config = await getDisciplinePointConfig();
     return NextResponse.json(config);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Penjamin Mutu / Kurikulum." }, { status: 403 });
     }
@@ -51,6 +53,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(config);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Penjamin Mutu / Kurikulum." }, { status: 403 });
     }

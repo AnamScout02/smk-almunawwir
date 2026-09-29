@@ -3,6 +3,7 @@ import { join } from "path";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { FOLDER_LAMPIRAN, bolehLihatIzin } from "@/lib/izin-siswa";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   try {
     const isi = await readFile(join(FOLDER_LAMPIRAN, nama));
     return new Response(new Uint8Array(isi), { headers: { "Content-Type": MIME[ext], "Cache-Control": "private, no-store" } });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return new Response("Not found", { status: 404 });
   }
 }

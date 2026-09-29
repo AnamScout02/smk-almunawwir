@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -35,7 +36,8 @@ export async function GET(req: Request) {
       orderBy: { user: { name: "asc" } },
     });
     return Response.json(students);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertHumas } from "@/lib/humas-guard";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
@@ -39,6 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
 
     return Response.json(internship);
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
     }
@@ -54,6 +56,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     await prisma.internship.delete({ where: { studentId } });
     return Response.json({ ok: true });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return Response.json({ error: "Khusus Admin/TAS atau Wakil Kepala Humas." }, { status: 403 });
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET() {
     await verifyRole(["ADMIN"]);
     const indicators = await prisma.kpiIndicator.findMany({ orderBy: [{ jabatanName: "asc" }, { order: "asc" }] });
     return NextResponse.json(indicators);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(indicator, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e && typeof e === "object" && "code" in e && e.code === "P2002") {
       return NextResponse.json({ error: "Indikator dengan nama itu sudah ada untuk jabatan ini" }, { status: 409 });
     }
@@ -52,6 +55,7 @@ export async function PUT(req: NextRequest) {
     const indicator = await prisma.kpiIndicator.update({ where: { id }, data });
     return NextResponse.json(indicator);
   } catch (e) {
+    lemparBilaPengalihan(e);
     console.error("[kpi indicators PUT]", e);
     return NextResponse.json({ error: "Gagal menyimpan perubahan" }, { status: 500 });
   }

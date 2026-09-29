@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 async function getTeacher(email: string) {
   return prisma.teacher.findFirst({ where: { user: { email } }, select: { id: true } });
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
     });
 
     return Response.json(materials);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -58,7 +60,8 @@ export async function POST(req: NextRequest) {
     });
 
     return Response.json(material);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan materi." }, { status: 500 });
   }
 }

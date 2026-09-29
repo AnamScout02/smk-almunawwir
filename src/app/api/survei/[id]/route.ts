@@ -3,6 +3,7 @@ import { verifySession } from "@/lib/dal";
 import { konteksPenerima, syaratSasaran } from "@/lib/pengumuman";
 import { kelasSiswa, penandaRespons } from "@/lib/survei";
 import { segarkanAntrean } from "@/lib/antrean-kerja";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
     });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if ((e as { code?: string }).code === "P2002") return Response.json({ error: "Anda sudah mengisi survei ini." }, { status: 409 });
     throw e;
   }

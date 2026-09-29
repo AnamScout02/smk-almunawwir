@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -26,7 +27,8 @@ export async function GET(req: Request) {
       subjectId: a.subjectId,
       subjectName: a.subject.name,
     })));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat kelas" }, { status: 500 });
   }
 }

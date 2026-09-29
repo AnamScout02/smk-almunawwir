@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { parseNomorUrut } from "@/lib/nomor-surat";
 import { suratMeta } from "@/lib/tu-konstanta";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +97,8 @@ export async function GET() {
     const nomorKembar = [...hitung.entries()].filter(([, n]) => n > 1).map(([n]) => n);
 
     return Response.json({ baris, nomorKembar });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat agenda surat" }, { status: 500 });
   }
 }

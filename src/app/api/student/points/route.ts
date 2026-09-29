@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { computeStudentPointsSummary } from "@/lib/student-points";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 /** Poin pelanggaran/prestasi MILIK SENDIRI — read-only, sesuai Pasal 7 Tata Tertib (akumulasi
  * poin pelanggaran per tahun ajaran, dikurangi poin prestasi). Siswa cuma lihat punya sendiri,
@@ -13,7 +14,8 @@ export async function GET() {
 
     const summary = await computeStudentPointsSummary(student.id);
     return Response.json(summary);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

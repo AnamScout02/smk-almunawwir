@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 // Kelas yang boleh diakses guru: kelas wali (bebas mapel apapun) DIGABUNG kelas yang diampu lewat
 // Penugasan Mengajar. Dulu dipakai jg oleh halaman Input Nilai (dihapus per keputusan user
@@ -42,7 +43,8 @@ export async function GET(req: NextRequest) {
 
     const classes = [...byId.values()].sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name));
     return Response.json(classes);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

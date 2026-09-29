@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertPengelolaOsis, statusEfektif } from "@/lib/osis-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export async function GET() {
     });
     return Response.json(daftar.map(p => ({ ...p, statusEfektif: statusEfektif(p) })));
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Pembina OSIS, Kesiswaan, dan Admin." }, { status: 403 });
     return Response.json({ error: "Gagal memuat." }, { status: 500 });
   }
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
     const p = await prisma.pemilihanOsis.create({ data: { judul, mulai, selesai, dibuatOleh: session.name } });
     return Response.json({ id: p.id }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") return Response.json({ error: "Khusus Pembina OSIS, Kesiswaan, dan Admin." }, { status: 403 });
     return Response.json({ error: "Gagal menyimpan." }, { status: 500 });
   }

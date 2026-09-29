@@ -3,6 +3,7 @@ import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import { toProperCaseName } from "@/lib/text";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function parseDate(val: unknown): Date | null {
   if (!val) return null;
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
         results.created++;
       }
     } catch (e: unknown) {
+      lemparBilaPengalihan(e);
       const msg = e instanceof Error ? e.message : String(e);
       results.errors.push(`Baris ${rowNum} (${nip}): ${msg}`);
     }

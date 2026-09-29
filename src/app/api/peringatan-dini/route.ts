@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
 import { hitungRisikoSiswa } from "@/lib/peringatan-dini";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ export async function GET() {
   let session: Awaited<ReturnType<typeof verifyRole>>;
   try {
     session = await verifyRole(["ADMIN", "TEACHER"]);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

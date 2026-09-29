@@ -6,6 +6,7 @@ import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { cakupanTingkat } from "@/lib/kehadiran-guru";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +119,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(groupConsecutive(flat, periodMap));
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Penjamin Mutu / Guru Piket." }, { status: 403 });
     }
@@ -160,6 +162,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (e) {
+    lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Khusus Wakil Kepala Penjamin Mutu / Guru Piket." }, { status: 403 });
     }

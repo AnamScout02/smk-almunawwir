@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/activity-log";
 import { bolehAturUjian, ringkasKegiatan, SELECT_KEGIATAN } from "@/lib/kegiatan-ujian-server";
 import { bacaIsianKegiatan } from "@/lib/kegiatan-ujian-input";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const k = await prisma.kegiatanUjian.update({ where: { id }, data: data as never, select: SELECT_KEGIATAN });
     await logActivity(session, { action: "UBAH_KEGIATAN_UJIAN", entity: "KegiatanUjian", entityId: id, description: `Mengubah kegiatan ujian "${k.nama}"` });
     return Response.json(ringkasKegiatan(k));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan kegiatan ujian." }, { status: 500 });
   }
 }
@@ -41,7 +43,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.kegiatanUjian.delete({ where: { id } });
     await logActivity(session, { action: "HAPUS_KEGIATAN_UJIAN", entity: "KegiatanUjian", entityId: id, description: `Menghapus kegiatan ujian "${k.nama}"` });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menghapus kegiatan ujian." }, { status: 500 });
   }
 }

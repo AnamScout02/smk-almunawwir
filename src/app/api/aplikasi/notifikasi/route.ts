@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ export async function GET() {
   let session: Awaited<ReturnType<typeof verifySession>>;
   try {
     session = await verifySession();
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const [belumDibaca, baris] = await Promise.all([

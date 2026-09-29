@@ -2,13 +2,15 @@ import { verifyRole } from "@/lib/dal";
 import { assertKurikulum } from "@/lib/kurikulum-guard";
 import { susunKelengkapan } from "@/lib/kelengkapan-perangkat";
 import { balasanExcel } from "@/lib/ekspor-excel";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
 /** Unduhan .xlsx rekap kelengkapan — khusus pengelola kurikulum (isinya data semua guru). */
 export async function GET() {
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
-  try { await assertKurikulum(session); } catch {
+  try { await assertKurikulum(session); } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Rekap semua guru khusus Administrator dan Wakil Kepala Kurikulum." }, { status: 403 });
   }
   const { semester, baris } = await susunKelengkapan();

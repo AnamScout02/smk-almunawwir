@@ -6,6 +6,7 @@ import { bacaIsianKegiatan } from "@/lib/kegiatan-ujian-input";
 import { pastikanTokenKegiatan, putarTokenKegiatanBilaPerlu } from "@/lib/ujian-server";
 import { POLA_KALENDER } from "@/lib/kegiatan-ujian";
 import { NextRequest } from "next/server";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,8 @@ export async function GET() {
       daftar: daftar.map(k => ({ ...ringkasKegiatan(k), jumlahUjian: k._count.exams })),
       tahunAjaran: tahun, bolehAtur, usulanKalender,
     });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat kegiatan ujian." }, { status: 500 });
   }
 }
@@ -74,7 +76,8 @@ export async function POST(req: NextRequest) {
     const k = await prisma.kegiatanUjian.create({ data: data as never, select: SELECT_KEGIATAN });
     await logActivity(session, { action: "TAMBAH_KEGIATAN_UJIAN", entity: "KegiatanUjian", entityId: k.id, description: `Menambah kegiatan ujian "${k.nama}"` });
     return Response.json(ringkasKegiatan(k));
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan kegiatan ujian." }, { status: 500 });
   }
 }

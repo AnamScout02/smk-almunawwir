@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertPerpustakaan } from "@/lib/perpustakaan-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +13,14 @@ async function jaga() {
 
 /** STOK OPNAME BUKU — daftar sesi & buat sesi baru (memotret stok & jumlah dipinjam). */
 export async function GET() {
-  try { await jaga(); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { await jaga(); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   const daftar = await prisma.stokOpnameBuku.findMany({ orderBy: { mulai: "desc" }, take: 30, include: { _count: { select: { item: true } }, item: { where: { stokFisik: { not: null } }, select: { id: true } } } });
   return Response.json({ daftar: daftar.map(({ _count, item, ...o }) => ({ ...o, jumlahItem: _count.item, diperiksa: item.length })) });
 }
 
 export async function POST(req: Request) {
   let session;
-  try { session = await jaga(); } catch { return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
+  try { session = await jaga(); } catch (e) { lemparBilaPengalihan(e); return Response.json({ error: "Khusus petugas perpustakaan." }, { status: 403 }); }
   if (await prisma.stokOpnameBuku.count({ where: { status: "BERJALAN" } })) return Response.json({ error: "Masih ada stok opname yang berjalan." }, { status: 409 });
   const b = await req.json().catch(() => ({}));
   const [buku, pinjam] = await Promise.all([

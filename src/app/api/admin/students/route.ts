@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { jsonBesar } from "@/lib/json-besar";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(req: Request) {
   try {
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
       orderBy: { user: { name: "asc" } },
     });
     return jsonBesar(students, req);
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat" }, { status: 500 });
   }
 }

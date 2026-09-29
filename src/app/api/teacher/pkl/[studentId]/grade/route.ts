@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { NextRequest } from "next/server";
 import { bagianWib } from "@/lib/waktu-wib";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function currentSemester(): string {
   const now = new Date();
@@ -37,7 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ stu
     });
 
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal menyimpan nilai." }, { status: 500 });
   }
 }

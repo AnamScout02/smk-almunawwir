@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,6 +18,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
     return Response.json(teacher);
   } catch (e) {
+    lemparBilaPengalihan(e);
     const isDup = typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
     return Response.json({ error: isDup ? "Kode guru sudah dipakai guru lain" : "Gagal mengupdate profil guru" }, { status: isDup ? 400 : 500 });
   }
