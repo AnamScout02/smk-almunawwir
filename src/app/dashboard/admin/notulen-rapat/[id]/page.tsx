@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, NotebookPen, Loader2, Plus, Save, Trash2, ImagePlus } from "lucide-react";
+import { ArrowLeft, NotebookPen, Loader2, Plus, Save, Trash2, ImagePlus, FileType2
+} from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import DatePicker from "@/components/shared/DatePicker";
 import FileUpload from "@/components/shared/FileUpload";
@@ -149,6 +150,11 @@ export default function NotulenRapatFormPage() {
       <div className="alat-aksi justify-end mb-5">
         <Link href="/dashboard/admin/notulen-rapat" className="btn-modal-cancel">
           <ArrowLeft size={18} /> Kembali
+        </Link>
+        {/* Editor Word — alur sama dengan Surat: dokumen awal dibangkitkan dari isian di bawah,
+            jadi notulis bisa melanjutkan bebas (tabel, lampiran) tanpa mengetik ulang. */}
+        <Link href={`/dashboard/admin/notulen-rapat/${id}/edit-word`} className="btn-modal-cancel btn-teks">
+          <FileType2 size={18} /> Editor Word
         </Link>
       </div>
 

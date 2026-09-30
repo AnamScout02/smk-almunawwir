@@ -314,3 +314,132 @@ export async function saveDocxToUploads(subfolder: string, filename: string, buf
   await writeFile(join(dir, filename), buffer);
   return `/api/uploads/${subfolder}/${filename}`;
 }
+
+export interface NotulenDocxData {
+  tanggal: Date;
+  waktu?: string | null;
+  tempat?: string | null;
+  pemimpin?: string | null;
+  materi?: string | null;
+  dibukaOleh?: string | null;
+  sambutan: string[];
+  peserta: string[];
+  keputusan?: string | null;
+  notulis?: string | null;
+  principalName: string;
+  kopAtasUrl?: string | null;
+  kopBawahUrl?: string | null;
+}
+
+/**
+ * Berkas .docx notulen rapat LENGKAP — kop atas/bawah, tabel keterangan rapat, daftar hadir,
+ * hasil keputusan, dan blok tanda tangan notulis & Kepala Sekolah.
+ *
+ * Alurnya sama persis dengan Surat (permintaan user 30 September 2026: "notulen bisa edit kayak
+ * surat juga"): isian terstruktur yang sudah ada dipakai untuk MENGISI dokumen awal, lalu notulis
+ * melanjutkan di ONLYOFFICE. Jadi membuka Editor Word tidak pernah menampilkan halaman kosong —
+ * data yang sudah diketik di formulir langsung terbawa.
+ */
+export async function createNotulenDocx(data: NotulenDocxData): Promise<Buffer> {
+  const [kopAtas, kopBawah, patternBuffer] = await Promise.all([
+    loadLetterheadImage(data.kopAtasUrl, PAGE_WIDTH_PX, true),
+    loadLetterheadImage(data.kopBawahUrl, PAGE_WIDTH_PX, true),
+    createTiledPatternImage(),
+  ]);
+
+  const edgeToEdge = { left: -SIDE_MARGIN_TWIPS, right: -SIDE_MARGIN_TWIPS };
+  const kopAtasHeader = kopAtas
+    ? new Header({ children: [new Paragraph({ indent: edgeToEdge, children: [kopAtas] })] })
+    : undefined;
+
+  const footerChildren: Paragraph[] = [];
+  if (patternBuffer) {
+    footerChildren.push(new Paragraph({ children: [new ImageRun({
+      type: "png", data: patternBuffer,
+      transformation: { width: PAGE_WIDTH_PX, height: PAGE_HEIGHT_PX },
+      floating: {
+        horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+        verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+        behindDocument: true,
+        wrap: { type: TextWrappingType.NONE },
+      },
+    })] }));
+  }
+  if (kopBawah) footerChildren.push(new Paragraph({ indent: edgeToEdge, children: [kopBawah] }));
+  const kopBawahFooter = footerChildren.length ? new Footer({ children: footerChildren }) : undefined;
+
+  const tgl = data.tanggal.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  const kosong = new Paragraph({ children: [new TextRun("")] });
+  const baris = (label: string, isi: string) => new TableRow({
+    children: [
+      new TableCell({ width: { size: 28, type: WidthType.PERCENTAGE }, borders: noBorders, children: [new Paragraph({ children: [new TextRun({ text: label })] })] }),
+      new TableCell({ width: { size: 4, type: WidthType.PERCENTAGE }, borders: noBorders, children: [new Paragraph({ children: [new TextRun({ text: ":" })] })] }),
+      new TableCell({ width: { size: 68, type: WidthType.PERCENTAGE }, borders: noBorders, children: [new Paragraph({ children: [new TextRun({ text: isi || "—" })] })] }),
+    ],
+  });
+
+  const children: (Paragraph | Table)[] = [
+    new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: "NOTULEN RAPAT", bold: true })] }),
+    kosong,
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      layout: TableLayoutType.FIXED,
+      rows: [
+        baris("Hari / Tanggal", tgl),
+        baris("Waktu", data.waktu ?? ""),
+        baris("Tempat", data.tempat ?? ""),
+        baris("Pemimpin Rapat", data.pemimpin ?? ""),
+        baris("Materi Rapat", data.materi ?? ""),
+        baris("Dibuka oleh", data.dibukaOleh ?? ""),
+        baris("Sambutan dari", data.sambutan.join(", ")),
+      ],
+    }),
+    kosong,
+    new Paragraph({ children: [new TextRun({ text: "A. Daftar Hadir", bold: true })] }),
+  ];
+
+  if (data.peserta.length === 0) {
+    children.push(new Paragraph({ children: [new TextRun("—")] }));
+  } else {
+    data.peserta.forEach((n, i) => children.push(new Paragraph({ children: [new TextRun(`${i + 1}. ${n}`)] })));
+  }
+
+  children.push(kosong, new Paragraph({ children: [new TextRun({ text: "B. Hasil Keputusan Rapat", bold: true })] }));
+  const keputusan = (data.keputusan ?? "").trim();
+  if (keputusan) {
+    for (const b of keputusan.split(/\r?\n/)) children.push(new Paragraph({ children: [new TextRun(b)] }));
+  } else {
+    children.push(kosong, kosong, kosong);   // ruang kosong untuk diketik notulis
+  }
+
+  // Blok tanda tangan: notulis di kiri, Kepala Sekolah di kanan.
+  children.push(kosong, kosong, new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    rows: [new TableRow({ children: [
+      new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: [
+        new Paragraph({ children: [new TextRun("Notulis,")] }), kosong, kosong, kosong,
+        new Paragraph({ children: [new TextRun({ text: data.notulis || "…", bold: true, underline: {} })] }),
+      ] }),
+      new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: [
+        new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Mengetahui,")] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Kepala Sekolah")] }), kosong, kosong,
+        new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: data.principalName || "…", bold: true, underline: {} })] }),
+      ] }),
+    ] })],
+  }));
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: "Arial Narrow", size: 22 }, paragraph: { spacing: { line: 360 } } } } },
+    sections: [{
+      properties: {
+        titlePage: true,
+        page: { margin: { left: SIDE_MARGIN_TWIPS, right: SIDE_MARGIN_TWIPS, header: 0, footer: 0 } },
+      },
+      headers: kopAtasHeader ? { first: kopAtasHeader } : undefined,
+      footers: kopBawahFooter ? { default: kopBawahFooter, first: kopBawahFooter } : undefined,
+      children,
+    }],
+  });
+  return Packer.toBuffer(doc);
+}

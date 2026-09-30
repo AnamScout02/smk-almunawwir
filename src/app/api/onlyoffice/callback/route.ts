@@ -12,8 +12,11 @@ const SAVEABLE_STATUS = [2, 6];
 
 export async function POST(req: NextRequest) {
   try {
+    /* Satu callback melayani Surat DAN Notulen — ONLYOFFICE hanya memanggil balik alamat yang
+       kita berikan, jadi jenis dokumennya ditentukan dari parameter, bukan ditebak dari isi. */
     const suratId = req.nextUrl.searchParams.get("suratId");
-    if (!suratId) return NextResponse.json({ error: 1 });
+    const notulenId = req.nextUrl.searchParams.get("notulenId");
+    if (!suratId && !notulenId) return NextResponse.json({ error: 1 });
 
     const body = await req.json();
 
@@ -48,13 +51,15 @@ export async function POST(req: NextRequest) {
     if (!fileRes.ok) return NextResponse.json({ error: 1 });
     const buffer = Buffer.from(await fileRes.arrayBuffer());
 
-    const filename = `surat-${suratId}-${Date.now()}.docx`;
-    const docxUrl = await saveDocxToUploads("surat-docx", filename, buffer);
-
-    await prisma.surat.update({
-      where: { id: suratId },
-      data: { docxUrl, docxKey: randomDocxKey() },
-    });
+    if (suratId) {
+      const filename = `surat-${suratId}-${Date.now()}.docx`;
+      const docxUrl = await saveDocxToUploads("surat-docx", filename, buffer);
+      await prisma.surat.update({ where: { id: suratId }, data: { docxUrl, docxKey: randomDocxKey() } });
+    } else if (notulenId) {
+      const filename = `notulen-${notulenId}-${Date.now()}.docx`;
+      const docxUrl = await saveDocxToUploads("notulen-docx", filename, buffer);
+      await prisma.meetingMinutes.update({ where: { id: notulenId }, data: { docxUrl, docxKey: randomDocxKey() } });
+    }
 
     return NextResponse.json({ error: 0 });
   } catch (e) {
