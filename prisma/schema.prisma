@@ -46,6 +46,8 @@ model User {
   menuFavorit       MenuFavorit?
   masukanDikirim   MasukanRekan[] @relation("MasukanDikirim")
   masukanDiterima  MasukanRekan[] @relation("MasukanDiterima")
+  jadwalImam       JadwalImam[]
+  presensiImam     PresensiImam[]
 }
 
 model Teacher {
@@ -3303,4 +3305,42 @@ model MasukanRekan {
 
   @@index([penerimaId, createdAt])
   @@index([pengirimId, createdAt])
+}
+
+/// JADWAL IMAM SHOLAT (30 September 2026) — Duha satu petugas, Dzuhur satu laki & satu perempuan
+/// (sekolah berasrama: jamaah putra & putri terpisah). Polanya PERSIS `DutyRoster`: mingguan
+/// berulang dan ikut rotasi minggu A/B, bukan tanggal satu per satu.
+model JadwalImam {
+  id        String   @id @default(cuid())
+  day       String // SENIN | SELASA | RABU | KAMIS | JUMAT | SABTU
+  weekType  String   @default("SEMUA") // A | B | SEMUA
+  sesi      String // DUHA | DZUHUR
+  /// DZUHUR: "L" | "P". DUHA hanya satu petugas sehingga selalu "-".
+  slot      String   @default("-")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  catatan   String?
+  createdAt DateTime @default(now())
+
+  @@unique([day, weekType, sesi, slot])
+  @@index([userId])
+}
+
+/// Kehadiran IMAM-nya sendiri — sengaja TERPISAH dari `DutyAttendance`: tabel itu unik per
+/// (userId, date) sehingga satu orang yang hari itu piket pagi SEKALIGUS jadi imam tidak akan
+/// muat. Di sini kuncinya (userId, date, sesi) supaya Duha & Dzuhur bisa dicatat sendiri-sendiri.
+model PresensiImam {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  sesi      String // DUHA | DZUHUR
+  status    String // HADIR | IZIN | SAKIT | ALPHA
+  catatan   String?
+  dicatatOleh String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, sesi])
+  @@index([date])
 }

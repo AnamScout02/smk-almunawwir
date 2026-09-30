@@ -10,7 +10,7 @@ import {
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard, Heart, MoreHorizontal, ScanLine, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, CalendarOff, HandCoins, ScanSearch,
-  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen
+  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen, Moon
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -92,6 +92,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/absensi-siswa", label: "Rekap Absensi Siswa", icon: CheckSquare, badge: 0 },
       { href: "/dashboard/admin/izin-siswa", label: "Izin / Sakit Siswa", icon: CalendarOff, badge: 0 },
       { href: "/dashboard/admin/piket-kelas", label: "Jadwal Piket Kelas", icon: ListChecks, badge: 0 },
+      { href: "/dashboard/admin/imam-sholat", label: "Jadwal Imam Sholat", icon: Moon, badge: 0 },
       { href: "/dashboard/admin/absensi-siswa/scan", label: "Absensi Scan QR/Barcode", icon: ScanLine, badge: 0 },
       { href: "/dashboard/admin/absensi-siswa/qr-mandiri", label: "Layar QR Absen Mandiri", icon: QrCode, badge: 0 },
     ],

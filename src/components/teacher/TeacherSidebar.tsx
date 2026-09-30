@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon
 } from "lucide-react";
 import { Siren } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
@@ -271,6 +271,7 @@ export function grupMenuGuru({
         // (siapa pun terjadwal piket HARI INI, bukan jabatan tetap) dapat menu terbatas terpisah,
         // cuma boleh catat Terlambat & seragam/atribut (lihat kesiswaan-guard.ts).
         ...(kesiswaanBkAccess || isKepalaSekolah ? [{ href: "/dashboard/teacher/kesiswaan/papan", label: "Papan Kesiswaan", icon: Activity }] : []),
+        ...(kesiswaanBkAccess || isKepalaSekolah ? [{ href: "/dashboard/teacher/imam-sholat", label: "Jadwal Imam Sholat", icon: Moon }] : []),
         ...(kesiswaanBkAccess ? [
           { href: "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin Siswa", icon: ShieldAlert },
           { href: "/dashboard/teacher/kesiswaan/rekam-bk", label: "Rekam BK — Penanganan Siswa", icon: HeartHandshake },
