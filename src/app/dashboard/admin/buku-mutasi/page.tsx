@@ -137,8 +137,8 @@ export default function BukuMutasiPage() {
   const fetchData = useCallback(async () => {
     if (!tahunPelajaran) return;
     setLoading(true);
-    const res = await fetch(`/api/admin/buku-mutasi?tahunPelajaran=${encodeURIComponent(tahunPelajaran)}&bulan=${bulan}`);
-    const d = await res.json();
+    const res = await fetch(`/api/admin/buku-mutasi?tahunPelajaran=${encodeURIComponent(tahunPelajaran)}&bulan=${bulan}`).catch(() => null);
+    const d = await res?.json();
     setMasuk(Array.isArray(d.masuk) ? d.masuk : []);
     setKeluar(Array.isArray(d.keluar) ? d.keluar : []);
     setPrincipalName(d.principalName ?? "");

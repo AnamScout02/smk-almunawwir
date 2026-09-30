@@ -54,8 +54,8 @@ export default function AdminMajorsPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/majors");
-    if (res.ok) setMajors(await res.json());
+    const res = await fetch("/api/admin/majors").catch(() => null);
+    if (res?.ok) setMajors(await res.json());
     setLoading(false);
   }
 

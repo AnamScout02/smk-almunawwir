@@ -15,8 +15,8 @@ export default function AdminMessagesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/messages");
-    setItems(await res.json());
+    const res = await fetch("/api/admin/messages").catch(() => null);
+    if (res?.ok) setItems(await res.json());
     setLoading(false);
   }, []);
 

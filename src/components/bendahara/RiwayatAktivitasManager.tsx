@@ -50,8 +50,8 @@ export default function RiwayatAktivitasManager() {
     const params = new URLSearchParams({ page: String(page) });
     if (q) params.set("q", q);
     if (action) params.set("action", action);
-    const res = await fetch(`/api/bendahara/activity-log?${params}`);
-    const data = await res.json();
+    const res = await fetch(`/api/bendahara/activity-log?${params}`).catch(() => null);
+    const data = await res?.json();
     setLogs(data.logs ?? []);
     setTotal(data.total ?? 0);
     setActions(data.actions ?? []);

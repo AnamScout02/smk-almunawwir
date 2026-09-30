@@ -38,8 +38,8 @@ export default function AdminTeachersPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/teachers");
-    if (res.ok) setTeachers(await res.json());
+    const res = await fetch("/api/admin/teachers").catch(() => null);
+    if (res?.ok) setTeachers(await res.json());
     setLoading(false);
   }
 

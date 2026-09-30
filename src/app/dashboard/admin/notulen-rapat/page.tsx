@@ -25,7 +25,7 @@ export default function NotulenRapatPage() {
 
   async function handleDelete(id: string, topic: string | null) {
     if (!(await confirmDialog(`Hapus notulen rapat "${topic || "rapat ini"}"?`))) return;
-    await fetch(`/api/admin/notulen-rapat/${id}`, { method: "DELETE" });
+    await fetch(`/api/admin/notulen-rapat/${id}`, { method: "DELETE" }).catch(() => null);
     load();
   }
 

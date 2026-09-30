@@ -43,8 +43,8 @@ export default function SchoolPeriodsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/school-periods");
-    setPeriods(await res.json());
+    const res = await fetch("/api/admin/school-periods").catch(() => null);
+    if (res?.ok) setPeriods(await res.json());
     setLoading(false);
   }, []);
 

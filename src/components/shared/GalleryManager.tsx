@@ -29,8 +29,8 @@ export default function GalleryManager({ kembaliHref }: { kembaliHref?: string }
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/gallery");
-    setItems(await res.json());
+    const res = await fetch("/api/admin/gallery").catch(() => null);
+    if (res?.ok) setItems(await res.json());
     setLoading(false);
   }, []);
 

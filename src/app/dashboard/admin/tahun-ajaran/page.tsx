@@ -86,8 +86,8 @@ export default function TahunAjaranPage() {
 
   const fetchYears = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/tahun-ajaran");
-    const data = await res.json();
+    const res = await fetch("/api/admin/tahun-ajaran").catch(() => null);
+    const data = await res?.json();
     setYears(data);
     setLoading(false);
   }, []);

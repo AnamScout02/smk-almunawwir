@@ -77,8 +77,8 @@ export default function AdminInternshipsPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/internships");
-    if (res.ok) setStudents(await res.json());
+    const res = await fetch("/api/admin/internships").catch(() => null);
+    if (res?.ok) setStudents(await res.json());
     setLoading(false);
   }
 

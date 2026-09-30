@@ -27,9 +27,9 @@ export default function ImpersonationBanner({ adminName }: { adminName: string }
 
   async function handleStop() {
     setLoading(true);
-    const res = await fetch("/api/admin/impersonate/stop", { method: "POST" });
-    if (res.ok) {
-      const d = await res.json();
+    const res = await fetch("/api/admin/impersonate/stop", { method: "POST" }).catch(() => null);
+    if (res?.ok) {
+      const d = await res?.json();
       window.location.href = d.redirectTo || "/dashboard/admin/users";
     } else {
       setLoading(false);

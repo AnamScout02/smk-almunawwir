@@ -74,8 +74,8 @@ export default function MajorDetailPage({ params }: { params: Promise<{ id: stri
 
   async function load() {
     setLoading(true);
-    const res = await fetch(`/api/admin/majors/${id}`);
-    if (res.ok) setMajor(await res.json());
+    const res = await fetch(`/api/admin/majors/${id}`).catch(() => null);
+    if (res?.ok) setMajor(await res.json());
     setLoading(false);
   }
 

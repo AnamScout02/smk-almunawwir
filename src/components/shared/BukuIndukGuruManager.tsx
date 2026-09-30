@@ -91,8 +91,8 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
 
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/buku-induk/guru");
-    const data = await res.json();
+    const res = await fetch("/api/admin/buku-induk/guru").catch(() => null);
+    const data = await res?.json();
     setTeachers(data); setFiltered(data); setLoading(false);
   }, []);
 

@@ -38,8 +38,8 @@ export default function ArsipPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/arsip");
-    const d = await res.json();
+    const res = await fetch("/api/admin/arsip").catch(() => null);
+    const d = await res?.json();
     setData(Array.isArray(d) ? d : []);
     setLoading(false);
   }, []);

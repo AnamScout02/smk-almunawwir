@@ -60,8 +60,8 @@ export default function BukuIndukSiswaPage() {
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/buku-induk/siswa");
-    const data = await res.json();
+    const res = await fetch("/api/admin/buku-induk/siswa").catch(() => null);
+    const data = await res?.json();
     setStudents(data); setFiltered(data); setLoading(false);
   }, []);
 

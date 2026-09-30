@@ -54,8 +54,8 @@ export default function IndustryPartnersManager() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/industry-partners");
-    if (res.ok) setPartners(await res.json());
+    const res = await fetch("/api/admin/industry-partners").catch(() => null);
+    if (res?.ok) setPartners(await res.json());
     setLoading(false);
   }
 

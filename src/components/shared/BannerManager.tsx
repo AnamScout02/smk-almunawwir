@@ -36,8 +36,8 @@ export default function BannerManager({ kembaliHref }: { kembaliHref?: string })
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/banners");
-    const data = await res.json();
+    const res = await fetch("/api/admin/banners").catch(() => null);
+    const data = await res?.json();
     setBanners(data);
     setLoading(false);
   }, []);
