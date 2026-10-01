@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Save, Loader2, User, Home, Heart, GraduationCap, Users, Smile, Award,
-  Trash2, Plus, Clock, CheckCircle2, XCircle,
+  Trash2, Plus, Clock, CheckCircle2, XCircle, AlertCircle,
 } from "lucide-react";
 import Field from "@/components/admin/BukuIndukField";
 import Section from "@/components/admin/BukuIndukSection";
@@ -26,7 +26,7 @@ interface StudentBiodata {
   class: { name: string } | null;
   major: { name: string } | null;
   profileEditRequests: { id: string; createdAt: string }[];
-  history: { id: string; status: string; reviewNote: string | null; reviewedAt: string | null; createdAt: string; changes: Record<string, { label: string }> }[];
+  history: { id: string; status: string; reviewNote: string | null; reviewedAt: string | null; createdAt: string; changes: Record<string, { label: string; ditolak?: boolean }> }[];
 }
 
 interface MasterEntry { category: string; items: string[] }
@@ -133,17 +133,29 @@ export default function StudentBiodataPage() {
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Riwayat Pengajuan</p>
             <div className="space-y-1.5">
-              {data.history.map(h => (
-                <div key={h.id} className="flex items-center gap-2 text-xs">
-                  {h.status === "APPROVED" ? <CheckCircle2 size={14} className="text-emerald-500 shrink-0" /> : <XCircle size={14} className="text-red-400 shrink-0" />}
-                  <span className="text-gray-500">{new Date(h.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} —</span>
-                  <span className={h.status === "APPROVED" ? "text-emerald-600 font-medium" : "text-red-500 font-medium"}>
-                    {h.status === "APPROVED" ? "Disetujui" : "Ditolak"}
-                  </span>
-                  <span className="text-gray-400">({Object.keys(h.changes).length} field)</span>
-                  {h.reviewNote && <span className="text-gray-400 italic">— {h.reviewNote}</span>}
-                </div>
-              ))}
+              {data.history.map(h => {
+                const isian = Object.values(h.changes);
+                const ditolak = isian.filter(c => c.ditolak);
+                const sebagian = h.status === "SEBAGIAN";
+                return (
+                  <div key={h.id} className="flex flex-wrap items-center gap-2 text-xs">
+                    {h.status === "REJECTED"
+                      ? <XCircle size={14} className="text-red-400 shrink-0" />
+                      : sebagian
+                        ? <AlertCircle size={14} className="text-amber-500 shrink-0" />
+                        : <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
+                    <span className="text-gray-500">{new Date(h.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} —</span>
+                    <span className={h.status === "REJECTED" ? "text-red-500 font-medium" : sebagian ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+                      {h.status === "REJECTED" ? "Ditolak" : sebagian ? `${isian.length - ditolak.length} disetujui, ${ditolak.length} ditolak` : "Disetujui"}
+                    </span>
+                    {!sebagian && <span className="text-gray-400">({isian.length} isian)</span>}
+                    {ditolak.length > 0 && (
+                      <span className="text-gray-400">ditolak: {ditolak.map(c => c.label).join(", ")}</span>
+                    )}
+                    {h.reviewNote && <span className="text-gray-400 italic">— {h.reviewNote}</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

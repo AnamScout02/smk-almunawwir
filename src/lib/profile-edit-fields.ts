@@ -68,5 +68,23 @@ export const FIELD_LABELS: Record<string, string> = {
   achievements: "Prestasi/Penghargaan",
 };
 
-export interface ChangeEntry { old: unknown; new: unknown; label: string }
+export interface ChangeEntry {
+  old: unknown; new: unknown; label: string;
+  /** Diisi saat TU memutuskan PER ISIAN (30 Sep 2026): true = isian ini ditolak, jadi nilainya
+   *  TIDAK diterapkan walau pengajuannya secara keseluruhan disetujui. Satu pengajuan sering
+   *  memuat satu isian yang salah tulis — dulu TU harus menolak seluruhnya dan siswa/guru
+   *  mengulang semuanya dari awal. */
+  ditolak?: boolean;
+}
+
+/** Status pengajuan: sebagian isian diterima, sebagian ditolak. */
+export const STATUS_SEBAGIAN = "SEBAGIAN";
+/** Status yang sudah diputuskan TU (dipakai saat mengambil riwayat pengajuan). */
+export const STATUS_SELESAI = ["APPROVED", "REJECTED", STATUS_SEBAGIAN];
+
+/** Memutuskan status akhir pengajuan dari jumlah isian yang diterima & ditolak. */
+export function statusKeputusan(diterima: number, ditolak: number): string {
+  if (diterima === 0) return "REJECTED";
+  return ditolak > 0 ? STATUS_SEBAGIAN : "APPROVED";
+}
 export type ChangeMap = Record<string, ChangeEntry>;

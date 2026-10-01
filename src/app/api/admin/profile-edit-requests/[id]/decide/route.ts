@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
-import { ChangeMap } from "@/lib/profile-edit-fields";
+import { ChangeMap, statusKeputusan } from "@/lib/profile-edit-fields";
 import { normalizeBukuIndukText, toProperCaseName, toProperCaseSchoolName } from "@/lib/text";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 import type { Prisma } from "@prisma/client";
@@ -10,7 +10,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const session = await verifyTasAccess();
     const { id } = await params;
-    const body = await req.json() as { action: "APPROVE" | "REJECT"; note?: string };
+    /** `tolak` = kunci isian yang DITOLAK; sisanya diterapkan. Kosong = setujui semuanya
+     *  (perilaku lama, jadi pemanggil lama tetap jalan). */
+    const body = await req.json() as { action: "APPROVE" | "REJECT"; note?: string; tolak?: string[] };
 
     const request = await prisma.profileEditRequest.findUnique({
       where: { id },
@@ -28,10 +30,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const changes = request.changes as unknown as ChangeMap;
+    const tolak = new Set((body.tolak ?? []).filter(k => k in changes));
+    const diterima = Object.keys(changes).filter(k => !tolak.has(k));
+    if (diterima.length === 0) {
+      // Semua isian ditolak → sama saja dengan menolak pengajuannya.
+      await prisma.profileEditRequest.update({
+        where: { id },
+        data: {
+          status: "REJECTED", reviewNote: body.note || null, reviewedAt: new Date(), reviewedBy: session.name,
+          changes: Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, { ...v, ditolak: true }])) as object,
+        },
+      });
+      return Response.json({ success: true, diterima: 0, ditolak: tolak.size });
+    }
+
     const topData: Record<string, unknown> = {};
     const bukuUpdates: Record<string, unknown> = {};
 
     for (const [key, entry] of Object.entries(changes)) {
+      if (tolak.has(key)) continue;
       const [scope, field] = key.split(":");
       if (scope === "top") {
         let v = field === "birthDate" && entry.new ? new Date(entry.new as string) : (entry.new || null);
@@ -55,7 +72,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }),
       prisma.profileEditRequest.update({
         where: { id },
-        data: { status: "APPROVED", reviewNote: body.note || null, reviewedAt: new Date(), reviewedBy: session.name },
+        data: {
+          status: statusKeputusan(diterima.length, tolak.size),
+          reviewNote: body.note || null, reviewedAt: new Date(), reviewedBy: session.name,
+          // Keputusan per isian disimpan DI DALAM `changes` supaya riwayat siswa bisa menunjukkan
+          // isian mana yang ditolak, bukan cuma "ditolak sebagian".
+          changes: Object.fromEntries(
+            Object.entries(changes).map(([k, v]) => [k, tolak.has(k) ? { ...v, ditolak: true } : v]),
+          ) as object,
+        },
       }),
     ]);
 
@@ -66,7 +91,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (updated) await syncParentAccountForStudent(request.student.id, updated.parentPhone, updated.parentName).catch(() => {});
     }
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, diterima: diterima.length, ditolak: tolak.size });
   } catch (e) {
     lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memproses pengajuan" }, { status: 500 });

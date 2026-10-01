@@ -12,7 +12,7 @@ import Select from "@/components/admin/Select";
 import ImageUpload from "@/components/admin/ImageUpload";
 import WilayahSelect from "@/components/admin/WilayahSelect";
 import Field from "@/components/admin/BukuIndukField";
-import { GURU_COLUMNS } from "@/lib/buku-induk-guru-columns";
+import IsianGrupGuru from "@/components/admin/IsianGrupGuru";
 import Section from "@/components/admin/BukuIndukSection";
 import Alert from "@/components/admin/Alert";
 import Modal from "@/components/admin/Modal";
@@ -63,27 +63,9 @@ const EMPTY_FORM: Partial<Teacher> = {
 };
 const EMPTY_ACCOUNT = { name: "", email: "", password: "", nip: "", subject: "" };
 
-/** Merender semua isian satu grup dari `GURU_COLUMNS` (kolom bertanda `isian`). Formulir dan
- *  tabel/ekspor memakai daftar kunci yang SAMA — menambah isian cukup di
- *  src/lib/buku-induk-guru-columns.ts, tidak perlu menyentuh berkas ini. */
-function IsianGrup({ grup, e, setE }: {
-  grup: string;
-  e: (k: string) => string;
-  setE: (k: string) => (v: string) => void;
-}) {
-  return (
-    <>
-      {GURU_COLUMNS.filter(c => c.isian && c.group === grup).map(c => (
-        <Field key={c.key} label={c.label} value={e(c.key)}
-          type={c.isian?.tipe === "date" ? "date" : c.isian?.tipe === "textarea" ? "textarea" : "text"}
-          wide={c.isian?.tipe === "textarea"}
-          options={c.isian?.opsi}
-          onChange={setE(c.key)} />
-      ))}
-    </>
-  );
-}
-
+/** Isian per grup dirender `IsianGrupGuru` dari `GURU_COLUMNS` — formulir, tabel, dan ekspor
+ *  memakai daftar kunci yang SAMA, jadi menambah isian cukup di
+ *  src/lib/buku-induk-guru-columns.ts tanpa menyentuh berkas ini. */
 export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku-induk/guru" }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -435,7 +417,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
 
               {/* C: Pendidikan */}
               <Section title="C. Riwayat Pendidikan" icon={GraduationCap} open={!!sections.pendidikan} onToggle={() => toggleSection("pendidikan")}>
-                <IsianGrup grup="Riwayat Pendidikan" e={e} setE={setE} />
+                <IsianGrupGuru grup="Riwayat Pendidikan" e={e} setE={setE} />
                 <Field label="Keterangan Riwayat Pendidikan" value={String(form.teacherNotes ?? "")} type="textarea" wide
                   onChange={v => setForm(p => ({...p, teacherNotes: v}))} />
               </Section>
@@ -453,7 +435,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
                 <Field label="RT" value={e("rt")} onChange={setE("rt")} />
                 <Field label="RW" value={e("rw")} onChange={setE("rw")} />
                 <Field label="Kewarganegaraan" value={e("kewarganegaraan")} options={["Indonesia", "Asing"]} onChange={setE("kewarganegaraan")} />
-                <IsianGrup grup="Tempat Tinggal" e={e} setE={setE} />
+                <IsianGrupGuru grup="Tempat Tinggal" e={e} setE={setE} />
               </Section>
 
               {/* E: Akun & Login */}
@@ -553,22 +535,22 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
 
               {/* F–K: isian dari berkas rujukan Buku Induk sekolah (30 September 2026) */}
               <Section title="F. Kesehatan" icon={Home} open={!!sections.kesehatan} onToggle={() => toggleSection("kesehatan")}>
-                <IsianGrup grup="Kesehatan" e={e} setE={setE} />
+                <IsianGrupGuru grup="Kesehatan" e={e} setE={setE} />
               </Section>
               <Section title="G. Perkawinan" icon={User} open={!!sections.kawin} onToggle={() => toggleSection("kawin")}>
-                <IsianGrup grup="Perkawinan" e={e} setE={setE} />
+                <IsianGrupGuru grup="Perkawinan" e={e} setE={setE} />
               </Section>
               <Section title="H. Ibu Kandung" icon={User} open={!!sections.ibu} onToggle={() => toggleSection("ibu")}>
-                <IsianGrup grup="Ibu Kandung" e={e} setE={setE} />
+                <IsianGrupGuru grup="Ibu Kandung" e={e} setE={setE} />
               </Section>
               <Section title="I. Data Anak" icon={Users} open={!!sections.anak} onToggle={() => toggleSection("anak")}>
-                <IsianGrup grup="Anak" e={e} setE={setE} />
+                <IsianGrupGuru grup="Anak" e={e} setE={setE} />
               </Section>
               <Section title="J. Penghargaan" icon={GraduationCap} open={!!sections.penghargaan} onToggle={() => toggleSection("penghargaan")}>
-                <IsianGrup grup="Penghargaan" e={e} setE={setE} />
+                <IsianGrupGuru grup="Penghargaan" e={e} setE={setE} />
               </Section>
               <Section title="K. Pindah / Keluar" icon={Briefcase} open={!!sections.pindah} onToggle={() => toggleSection("pindah")}>
-                <IsianGrup grup="Pindah / Keluar" e={e} setE={setE} />
+                <IsianGrupGuru grup="Pindah / Keluar" e={e} setE={setE} />
               </Section>
       </Modal>
     </div>

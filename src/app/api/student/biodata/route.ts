@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
+import { STATUS_SELESAI } from "@/lib/profile-edit-fields";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
     if (!student) return Response.json({ error: "Data siswa tidak ditemukan" }, { status: 404 });
 
     const history = await prisma.profileEditRequest.findMany({
-      where: { studentId: student.id, status: { in: ["APPROVED", "REJECTED"] } },
+      where: { studentId: student.id, status: { in: STATUS_SELESAI } },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: { id: true, status: true, reviewNote: true, reviewedAt: true, createdAt: true, changes: true },
