@@ -13,6 +13,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.os.Build;
 import android.webkit.CookieManager;
 
@@ -46,7 +48,13 @@ import java.util.Set;
 public class LayananKabar extends JobService {
     private static final int ID_TUGAS = 71;
     private static final long JEDA = 15 * 60 * 1000L; // batas terkecil yang diizinkan Android untuk tugas berkala
-    private static final String SALURAN = "kabar-sekolah";
+    /** ID saluran SENGAJA berganti dari "kabar-sekolah" (v2.3, 30 September 2026).
+     *  Android MEMBEKUKAN setelan sebuah saluran saat pertama kali dibuat: memanggil
+     *  createNotificationChannel lagi dengan importance/suara berbeda TIDAK berpengaruh di HP yang
+     *  sudah memasang aplikasi. Satu-satunya cara menaikkan dari DEFAULT (masuk diam-diam ke laci)
+     *  ke HIGH (berbunyi, bergetar, muncul menonjol) adalah membuat saluran BARU.
+     *  Kalau nanti setelan bunyinya diubah lagi, ganti lagi ID-nya — jangan sunting yang lama. */
+    private static final String SALURAN = "kabar-sekolah-v2";
     private static final String PREF = "kabar", KUNCI_TAMPIL = "sudah-tampil";
     private static final int SIMPAN_ID = 200;
 
@@ -128,8 +136,16 @@ public class LayananKabar extends JobService {
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
         if (Build.VERSION.SDK_INT >= 26) {
-            NotificationChannel saluran = new NotificationChannel(SALURAN, "Kabar sekolah", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel saluran = new NotificationChannel(SALURAN, "Kabar sekolah", NotificationManager.IMPORTANCE_HIGH);
             saluran.setDescription("Pengumuman, pengingat, dan kabar dari sekolah");
+            saluran.enableVibration(true);
+            saluran.setVibrationPattern(new long[]{0, 250, 150, 250});
+            saluran.setSound(
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    new AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .build());
             nm.createNotificationChannel(saluran);
         }
         Intent buka = new Intent(this, MainActivity.class)
@@ -151,6 +167,11 @@ public class LayananKabar extends JobService {
                 .setAutoCancel(true)
                 .setContentIntent(tujuan);
         if (Build.VERSION.SDK_INT >= 21) b.setColor(Color.rgb(15, 26, 69));
+        // Android < 26 tidak mengenal saluran: bunyi, getar, dan pop-up diminta di notifikasinya sendiri.
+        if (Build.VERSION.SDK_INT < 26) {
+            b.setPriority(Notification.PRIORITY_HIGH);
+            b.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
+        }
         nm.notify(id.hashCode(), b.build());
     }
 }

@@ -12,7 +12,7 @@
 // v2 (14 Sep 2026): ikon aplikasi diganti logo bundar — versi baru membuang cache ikon lama yang
 // tersimpan cache-first. Naikkan lagi setiap gambar di /icons atau /images diganti di tempat.
 // Ikon dari Logo Lambang (/ikon-aplikasi/…) SENGAJA tidak di-cache di sini (selalu dari jaringan).
-const CACHE_NAME = "almunawwir-static-v3";
+const CACHE_NAME = "almunawwir-static-v4";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -94,6 +94,11 @@ self.addEventListener("push", (event) => {
       renotify: !!data.tag,
       data: { url: data.url || "/login" },
       lang: "id",
+      // Bunyi notifikasi web tidak bisa ditentukan halaman (dipegang setelan browser di Android),
+      // tetapi GETARAN bisa — dan itu yang paling terasa saat HP dalam mode senyap.
+      // `silent: false` ditulis tegas supaya tidak ada yang diam-diam membisukannya (30 Sep 2026).
+      vibrate: [0, 250, 150, 250],
+      silent: false,
     })
   );
 });

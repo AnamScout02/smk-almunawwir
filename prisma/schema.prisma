@@ -48,6 +48,8 @@ model User {
   masukanDiterima  MasukanRekan[] @relation("MasukanDiterima")
   jadwalImam       JadwalImam[]
   presensiImam     PresensiImam[]
+  pengajuanBiodata PegawaiEditRequest[]
+  biodataPegawai   BiodataPegawai?
 }
 
 model Teacher {
@@ -683,6 +685,7 @@ model Student {
   classHistory                  StudentClassHistory[]
   journalEntries                JournalEntry[]
   profileEditRequests           ProfileEditRequest[]
+  pendaftaranEvent              PendaftaranEvent[]
   assignmentSubmissions         AssignmentSubmission[]
   alumniTracer                  AlumniTracer?
   uksVisits                     UksVisit[]
@@ -1391,6 +1394,106 @@ model JournalEntry {
 }
 
 // Pengajuan perubahan biodata oleh siswa — tidak langsung mengubah data asli, harus disetujui admin/TAS dulu.
+/// Pengajuan perubahan biodata oleh GURU/STAF sendiri — padanan ProfileEditRequest milik siswa.
+/// Dikunci ke `userId` (bukan Teacher) karena akun TAS tidak punya baris Teacher.
+model PegawaiEditRequest {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  changes    Json // { "top:birthPlace" | "buku:nik": { old, new, label } }
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote String?
+  reviewedAt DateTime?
+  reviewedBy String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+/// Biodata pegawai yang BELUM punya baris Teacher (staf TAS). Dibaca/ditulis HANYA lewat
+/// src/lib/biodata-pegawai.ts; begitu baris Teacher-nya dibuat TU, isinya dipindahkan ke
+/// Teacher.bukuIndukData dan baris ini dihapus — jadi tetap satu sumber per pegawai.
+model BiodataPegawai {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Json // { top: {...}, buku: {...} }
+  updatedAt DateTime @updatedAt
+}
+
+/// LOMBA & EVENT (30 September 2026). Dua wujud dalam satu model, dibedakan `milikSekolah`:
+///  - `false` = lomba/event pihak LUAR yang diteruskan sekolah (mis. lomba esai internasional).
+///    Pendaftarnya siswa sekolah ini; panitia sekolah memverifikasi lalu mengirimkan.
+///  - `true`  = event yang DIADAKAN SEKOLAH. Pendaftaran terbuka untuk umum (sekolah lain) TANPA
+///    akun, seperti formulir SPMB — karena itu `PendaftaranEvent.studentId` boleh kosong.
+/// Karya & bukti bayar masuk folder RAHASIA (CLAUDE.md #44/#50), poster & panduan tidak.
+model Event {
+  id             String             @id @default(cuid())
+  judul          String
+  slug           String             @unique
+  /// Nama penyelenggara apa adanya ("Kemendikbud", "Universitas X"); untuk event milik sekolah
+  /// diisi nama sekolah.
+  penyelenggara  String
+  milikSekolah   Boolean            @default(false)
+  jenis          String             @default("LOMBA") // LOMBA | SEMINAR | PELATIHAN | FESTIVAL | LAINNYA
+  tingkat        String             @default("SEKOLAH") // SEKOLAH | KECAMATAN | KABUPATEN | PROVINSI | NASIONAL | INTERNASIONAL
+  deskripsi      String
+  syarat         String?
+  /// Fasilitas & benefit peserta: e-sertifikat, coaching clinic, trophy, dsb.
+  fasilitas      String?
+  berbayar       Boolean            @default(false)
+  biaya          Int? // rupiah
+  /// Keterangan biaya bebas (mis. "atau USD 10", "per tim") + tujuan transfer.
+  biayaCatatan   String?
+  rekening       String?
+  mulai          DateTime?
+  selesai        DateTime?
+  /// Batas akhir pendaftaran / pengumpulan karya.
+  tutupDaftar    DateTime?
+  posterUrl      String?
+  panduanUrl     String?
+  /// Kalau pendaftaran dilakukan di situs penyelenggara, isi tautannya — tombol daftar internal
+  /// diganti tautan itu.
+  tautanLuar     String?
+  kontak         String?
+  jurusanIds     String[]           @default([]) // kosong = semua jurusan
+  aktif          Boolean            @default(true)
+  tampilPublik   Boolean            @default(true)
+  pembuatId      String
+  pembuatNama    String
+  pendaftaran    PendaftaranEvent[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([aktif, tutupDaftar])
+}
+
+model PendaftaranEvent {
+  id             String   @id @default(cuid())
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  /// Siswa sekolah ini. KOSONG untuk peserta dari luar (event milik sekolah, pendaftaran umum).
+  studentId      String?
+  student        Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  namaPeserta    String
+  asalSekolah    String?
+  kontak         String
+  catatan        String?
+  /// Nama berkas di public/uploads/rahasia/event — dibuka hanya lewat rute berizin.
+  karyaBerkas    String?
+  buktiBayar     String?
+  status         String   @default("DIAJUKAN") // DIAJUKAN | DIVERIFIKASI | DITOLAK | JUARA | TIDAK_LOLOS
+  catatanPanitia String?
+  /// Diisi setelah lomba: "Juara 1", "Harapan 2", dst. Dipakai saat mencatat Poin Prestasi.
+  juara          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([eventId, studentId])
+  @@index([eventId, status])
+}
+
 model ProfileEditRequest {
   id         String    @id @default(cuid())
   studentId  String
@@ -2452,8 +2555,19 @@ model IzinKeluarSiswa {
   kembaliPada    DateTime?
   dicatatOleh    String
   dicatatId      String?
+  /// Guru Piket memutuskan saat mencatat: siswa WAJIB mengunggah bukti foto dari tempat tujuan
+  /// (mis. izin ke klinik). Kalau false, di portal siswa izin ini cuma jadi SURAT IZIN KELUAR
+  /// yang bisa ditunjukkan ke security / tempat tujuan (30 Sep 2026).
+  perluFoto      Boolean   @default(false)
+  /// Nama berkas di public/uploads/rahasia/izin-keluar — folder rahasia (CLAUDE.md #44/#50),
+  /// dibuka hanya lewat /api/izin-keluar/[id]/bukti.
+  buktiFoto      String?
+  buktiPada      DateTime?
+  /// QR keaslian surat izin keluar (pola CLAUDE.md #49) — dibuat sekali saat surat pertama dibuka.
+  verifikasiToken String?  @unique
   createdAt      DateTime  @default(now())
 
+  @@index([studentId, keluarPada])
   @@index([keluarPada])
 }
 
@@ -2714,12 +2828,20 @@ model Kegiatan {
   tempat             String?
   mulai              DateTime
   selesai            DateTime
+  /// Hari TERAKHIR kegiatan (tengah malam WIB). Kosong = kegiatan SATU HARI (perilaku lama).
+  /// Jam hariannya sama setiap hari, diambil dari `mulai`/`selesai` — kegiatan berhari-hari seperti
+  /// MPLS dipresensi ULANG tiap hari, bukan sekali untuk seluruh rentang (30 September 2026).
+  sampaiTanggal      DateTime?
   catatan            String?
   // Sasaran (untuk daftar "belum hadir") — aturan sama dengan pengumuman
   targetRole         String             @default("TEACHER")
   targetKelasIds     String[]           @default([])
   targetJurusanIds   String[]           @default([])
   targetJabatan      String[]           @default([])
+  /// ORANG TERTENTU (30 September 2026). Kalau terisi, peserta kegiatan ini PERSIS orang-orang ini dan
+  /// saringan peran/kelas/jurusan/jabatan diabaikan — dipakai saat yang ikut bukan satu kelas utuh
+  /// (mis. panitia, perwakilan kelas). Kosong = aturan sasaran biasa seperti pengumuman.
+  targetUserIds      String[]           @default([])
   pembuatId          String
   pembuatNama        String
   /// PERSETUJUAN KEGIATAN (18 Sep 2026): kegiatan yang dibuat pimpinan/TU langsung DISETUJUI; usulan guru
@@ -2745,8 +2867,12 @@ model PresensiKegiatan {
   metode     String   @default("QR") // QR | MANUAL
   keterangan String? // mis. izin/terlambat (isian manual)
   waktu      DateTime @default(now())
+  /// Tengah malam WIB HARI kehadiran. Kunci uniknya menyertakan tanggal supaya kegiatan berhari-hari
+  /// bisa dipresensi tiap hari; kegiatan satu hari hanya punya satu tanggal, jadi perilakunya sama.
+  tanggal    DateTime
 
-  @@unique([kegiatanId, userId])
+  @@unique([kegiatanId, userId, tanggal])
+  @@index([kegiatanId, tanggal])
 }
 
 // ── MONITORING PKL (17 Sep 2026) — kunjungan/komunikasi pembimbing sekolah ke tempat PKL ─

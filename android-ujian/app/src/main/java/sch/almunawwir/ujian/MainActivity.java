@@ -64,10 +64,13 @@ import java.util.Scanner;
  * ber-wajibAplikasi (src/lib/aplikasi-ujian.ts).
  */
 public class MainActivity extends Activity {
-    private static final String HOST = "smk-almunawwir.tail984090.ts.net";
+    // Domain resmi sekolah, aktif 30 September 2026. Terowongan Tailscale Funnel
+    // (smk-almunawwir.tail984090.ts.net) SENGAJA tetap hidup supaya APK v2.2 ke bawah yang sudah
+    // terpasang di HP tidak mati — jangan dimatikan sebelum semua HP memasang versi ini.
+    private static final String HOST = "smkalmunawwiriibs.sch.id";
     static final String ALAMAT = "https://" + HOST;
     private static final String AWAL = ALAMAT + "/login"; // yang sudah masuk langsung diteruskan ke dashboard-nya
-    static final String VERSI = "2.2";
+    static final String VERSI = "2.3";
     private static final int KODE_BERKAS = 11, KODE_MEDIA = 12, KODE_LOKASI = 13, KODE_SIMPAN = 14, KODE_KABAR = 15;
     private static final int NAVY = Color.rgb(15, 26, 69);
 

@@ -4,28 +4,41 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Download, X } from "lucide-react";
 import { bisaDipasang, langganPasang, pasangSekarang, sudahTerpasang } from "@/lib/pasang-pwa";
-import { lewatAplikasi } from "@/lib/aplikasi-ujian";
+import { BERKAS_APK, NAMA_APLIKASI, lewatAplikasi } from "@/lib/aplikasi-ujian";
 
 const DISMISS_KEY = "pwa-install-dismissed-at";
 const DISMISS_DAYS = 14; // muncul lagi kalau sudah lama di-dismiss, bukan permanen ilang selamanya
 
-/** Banner kecil "Pasang Aplikasi" — muncul HANYA kalau browser benar2 menawarkan pemasangan (event
- * `beforeinstallprompt`, ditangkap sedini mungkin di `src/lib/pasang-pwa.ts`), bukan dipaksa tampil.
- * Ditaruh di root layout (sekali, lintas semua halaman publik & dashboard). Posisi bottom-LEFT (bukan
- * kanan, spy tidak numpuk dgn WhatsAppButton yg bottom-right) dan diangkat di atas MobileBottomNav mobile.
- * Tidak tampil di `/pasang-aplikasi` (halaman itu punya tombol & petunjuk lengkapnya sendiri). Hanya
- * terpicu di HTTPS — lewat alamat HTTP sekolah banner ini memang tidak pernah muncul. */
+/** Banner kecil "Pasang Aplikasi", bottom-LEFT (kanan dipakai WhatsAppButton), diangkat di atas
+ * MobileBottomNav. Tidak tampil di `/pasang-aplikasi` (halaman itu punya tombol & petunjuk sendiri),
+ * dan tidak tampil di dalam aplikasi MyAlwis.
+ *
+ * DUA PERILAKU BERBEDA (keputusan user 30 September 2026: "langsung apk, kecuali iphone dan desktop"):
+ * - **Android** → tombolnya MENGUNDUH APK terbaru langsung, bukan memasang versi Chrome. Karena
+ *   unduhan APK tidak bergantung pada `beforeinstallprompt`, banner ini muncul walau Chrome tidak
+ *   menawarkan pemasangan. Versi Chrome (PWA) tidak punya mode ujian terkunci, notifikasi Android,
+ *   dan dialog cetak — jadi di Android APK selalu yang benar.
+ * - **iPhone & desktop** → tetap pasang versi browser (PWA), dan hanya muncul kalau browser benar-benar
+ *   menawarkannya (`beforeinstallprompt`). APK tidak bisa dipakai di kedua perangkat itu.
+ *
+ * Hanya terpicu di HTTPS — lewat alamat HTTP sekolah (`:3000`) banner ini memang tidak pernah muncul. */
 export default function InstallPwaPrompt() {
   const pathname = usePathname();
   const [tersedia, setTersedia] = useState(false);
+  const [android, setAndroid] = useState(false);
   const [ditutup, setDitutup] = useState(true);
 
   useEffect(() => {
-    if (sudahTerpasang() || lewatAplikasi(navigator.userAgent)) return; // di Aplikasi SMK Android tidak perlu ajakan pasang PWA
+    // Di dalam aplikasi MyAlwis tidak perlu ajakan memasang apa pun.
+    if (lewatAplikasi(navigator.userAgent)) return;
+    const diAndroid = /Android/i.test(navigator.userAgent);
+    setAndroid(diAndroid);
+    if (!diAndroid && sudahTerpasang()) return;
     let dismissedAt = 0;
     try { dismissedAt = Number(localStorage.getItem(DISMISS_KEY) ?? 0); } catch {}
     setDitutup(dismissedAt > 0 && Date.now() - dismissedAt < DISMISS_DAYS * 86400000);
-    const perbarui = () => setTersedia(bisaDipasang() && !sudahTerpasang());
+    // Android: unduhan APK selalu tersedia, tidak menunggu tawaran Chrome.
+    const perbarui = () => setTersedia(diAndroid || (bisaDipasang() && !sudahTerpasang()));
     perbarui();
     return langganPasang(perbarui);
   }, []);
@@ -50,13 +63,22 @@ export default function InstallPwaPrompt() {
         <Download size={18} className="text-primary-700" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-navy">Pasang MyAlwis</p>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">Akses lebih cepat dari layar utama HP/laptop Anda.</p>
+        <p className="text-sm font-semibold text-navy">Pasang {NAMA_APLIKASI}</p>
+        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+          {android
+            ? "Aplikasi resmi sekolah: notifikasi berbunyi, pindai QR, dan mode ujian terkunci."
+            : "Akses lebih cepat dari layar utama HP/laptop Anda."}
+        </p>
         <div className="flex items-center gap-2 mt-2.5">
-          <button type="button" onClick={install}
-            className="btn-modal-save px-3 text-xs">
-            Pasang
-          </button>
+          {android ? (
+            <a href={BERKAS_APK} download onClick={dismiss} className="btn-modal-save px-3 text-xs">
+              Unduh Aplikasi
+            </a>
+          ) : (
+            <button type="button" onClick={install} className="btn-modal-save px-3 text-xs">
+              Pasang
+            </button>
+          )}
           <Link href="/pasang-aplikasi" className="text-xs font-medium text-primary-700 hover:underline px-1 py-1.5">
             Bagikan
           </Link>

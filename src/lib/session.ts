@@ -29,16 +29,22 @@ const encodedKey = new TextEncoder().encode(process.env.SESSION_SECRET);
 type BacaHeader = { get(name: string): string | null } | null | undefined;
 
 /** `Secure` mengikuti cara situs dibuka PADA REQUEST INI, bukan satu setelan global. Situs yang sama
- * dibuka dua jalur sekaligus: HTTP langsung di jaringan sekolah (`http://<IP-PUBLIK-SERVER>:3000`) dan
- * HTTPS lewat terowongan Tailscale Funnel (pembungkus TLS-nya mengirim `X-Forwarded-Proto: https`).
- * Secure=true di jalur HTTP membuat browser MENOLAK menyimpan cookie → tidak ada yang bisa login;
- * Secure=false di jalur HTTPS masih jalan, hanya kurang ketat. Karena itu tanpa header proto,
- * cadangannya NEXT_PUBLIC_APP_URL (perilaku lama). Header palsu dari klien hanya merugikan dirinya
- * sendiri (cookie-nya ditolak browsernya). */
+ * dibuka tiga jalur sekaligus: HTTP langsung di jaringan sekolah (`http://<IP-PUBLIK-SERVER>:3000`),
+ * HTTPS lewat domain sekolah (Caddy di depan, mengirim `X-Forwarded-Proto: https`), dan HTTPS lewat
+ * terowongan Tailscale Funnel. Secure=true di jalur HTTP membuat browser MENOLAK menyimpan cookie →
+ * tidak ada yang bisa login.
+ *
+ * TANPA header proto berarti request datang LANGSUNG ke :3000, dan jalur itu selalu HTTP polos —
+ * jadi cadangannya `false`. Dulu cadangannya `NEXT_PUBLIC_APP_URL.startsWith("https://")`, dan itu
+ * ranjau: begitu variabel alamat publik diisi domain HTTPS (30 September 2026), seluruh jaringan
+ * sekolah yang memakai :3000 tidak akan bisa login. Alamat publik dan keamanan koneksi adalah dua
+ * hal berbeda — jangan disatukan lagi ke satu variabel.
+ *
+ * Header palsu dari klien hanya merugikan dirinya sendiri (cookie-nya ditolak browsernya). */
 export function pakaiSecure(h?: BacaHeader) {
   const proto = h?.get("x-forwarded-proto")?.split(",")[0].trim().toLowerCase();
   if (proto) return proto === "https";
-  return (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://");
+  return false;
 }
 
 /** Tanpa expires/maxAge = cookie sesi browser; masa berlaku sebenarnya dijaga klaim `exp` JWT.
