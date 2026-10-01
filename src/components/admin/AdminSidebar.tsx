@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
-import { BellRing, DatabaseZap, QrCode, Siren, MessagesSquare, MessageSquareHeart, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, Camera, CircleHelp, Gauge, Wrench, FlaskConical, Megaphone, Home, Phone, Target, Handshake, Palette } from "lucide-react";
+import { CalendarX2, FileUser, BellRing, DatabaseZap, QrCode, Siren, MessagesSquare, MessageSquareHeart, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, Camera, CircleHelp, Gauge, Wrench, FlaskConical, Megaphone, Home, Phone, Target, Handshake, Palette } from "lucide-react";
 import NotificationBell from "@/components/shared/NotificationBell";
 import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBottomNav";
 import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
@@ -125,6 +125,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/pkb", label: "Portofolio PKB", icon: Award, badge: 0 },
       { href: "/dashboard/admin/presensi-pegawai", label: "Presensi Pegawai", icon: UserCheck, badge: 0 },
       { href: "/dashboard/admin/kegiatan", label: "Presensi Kegiatan (QR)", icon: CalendarCheck, badge: 0 },
+      { href: "/dashboard/admin/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2, badge: 0 },
       { href: "/dashboard/admin/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck, badge: 0 },
       { href: "/dashboard/admin/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart, badge: 0 },
       { href: "/dashboard/admin/masukan-rekan-pantau", label: "Pantau Masukan Rekan", icon: ShieldCheck, badge: 0 },
@@ -237,6 +238,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/performa-server", label: "Performa Server", icon: Activity, badge: 0 },
       { href: "/dashboard/admin/absen-mandiri", label: "Presensi Mandiri", icon: QrCode, badge: 0 },
       { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard, badge: 0 },
+      { href: "/dashboard/admin/biodata", label: "Biodata Saya", icon: FileUser, badge: 0 },
       { href: "/dashboard/admin/profile", label: "Profil Admin", icon: UserCircle, badge: 0 },
     ],
   },

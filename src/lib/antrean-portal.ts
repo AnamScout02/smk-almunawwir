@@ -1,4 +1,6 @@
 import "server-only";
+import { hitungPengajuanBiodata } from "@/lib/biodata-pegawai";
+import { JAM_BATAS_BUKTI } from "@/lib/izin-keluar";
 import { prisma } from "@/lib/prisma";
 import { getOverdueLoanCount } from "@/lib/perpustakaan-notif";
 import { getClassesMissingAttendance } from "@/lib/attendance-gaps";
@@ -18,11 +20,21 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
 
   if (session.role === "STUDENT" || session.role === "PARENT") {
     const basis = session.role === "STUDENT" ? "/dashboard/student" : "/dashboard/parent";
-    const [belumBaca, belumSurvei] = await Promise.all([
+    const [belumBaca, belumSurvei, buktiIzinKeluar] = await Promise.all([
       jumlahBelumKonfirmasi(session).catch(() => 0),
       jumlahSurveiBelumDiisi(session).catch(() => 0),
+      // Bukti foto izin keluar hanya kewajiban SISWA yang keluar, bukan orang tuanya.
+      session.role === "STUDENT"
+        ? prisma.izinKeluarSiswa.count({
+            where: {
+              student: { user: { email: session.email } }, perluFoto: true, buktiFoto: null,
+              keluarPada: { gte: new Date(Date.now() - JAM_BATAS_BUKTI * 3600_000) },
+            },
+          }).catch(() => 0)
+        : Promise.resolve(0),
     ]);
     return pakai([
+      { label: "Bukti foto izin keluar belum diunggah", count: buktiIzinKeluar, href: `${basis}/izin-keluar` },
       { label: "Pengumuman perlu dikonfirmasi dibaca", count: belumBaca, href: `${basis}/pengumuman` },
       { label: "Survei belum diisi", count: belumSurvei, href: `${basis}/survei` },
     ]);
@@ -46,7 +58,7 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
   const [pesan, pendaftar, verifikasi, bukuTerlambat, kelasBelumAbsen, surat, legalisir, suratMasuk, sudahDisposisi] = await Promise.all([
     prisma.contactMessage.count({ where: { isRead: false } }).catch(() => 0),
     prisma.admission.count({ where: { status: "PENDING" } }).catch(() => 0),
-    prisma.profileEditRequest.count({ where: { status: "PENDING" } }).catch(() => 0),
+    hitungPengajuanBiodata().catch(() => 0),
     getOverdueLoanCount(session.userId).catch(() => 0),
     getClassesMissingAttendance(tengahMalamUtc).then((k: unknown[]) => k.length).catch(() => 0),
     prisma.suratKeterangan.count({ where: { requestStatus: "DIAJUKAN" } }).catch(() => 0),

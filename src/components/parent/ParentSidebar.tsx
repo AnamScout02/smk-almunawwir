@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Printer, CalendarDays, ShieldAlert, CalendarClock, Bell, UserCircle, LogOut, Globe, ChevronDown, FileText, GraduationCap, CalendarX, ClipboardPen, HeartPulse, CircleHelp, MessagesSquare, LayoutGrid } from "lucide-react";
+import { CalendarX2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -109,6 +110,7 @@ const GRUP_ORTU: MenuGroup[] = [
       items: [
         { href: "/dashboard/parent/jadwal", label: "Jadwal Pelajaran", icon: CalendarClock },
         { href: "/dashboard/parent/absensi", label: "Absensi", icon: CalendarDays },
+        { href: "/dashboard/parent/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2 },
         { href: "/dashboard/parent/izin", label: "Ajukan Izin / Sakit", icon: CalendarX },
         { href: "/dashboard/parent/poin", label: "Poin Kedisiplinan", icon: ShieldAlert },
         { href: "/dashboard/parent/kesehatan", label: "Kesehatan (UKS)", icon: HeartPulse },

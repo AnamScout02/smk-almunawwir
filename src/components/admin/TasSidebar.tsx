@@ -12,6 +12,7 @@ import {
   Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
   Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid, 
 } from "lucide-react";
+import { FileUser } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -174,6 +175,7 @@ export const menuGroupsTas = [
       { href: "/dashboard/admin/survei-saya", label: "Survei & Angket", icon: ClipboardPen, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/absen-mandiri", label: "Presensi Mandiri", icon: QrCode, show: (_j: string[], _full: boolean) => true },
       { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/biodata", label: "Biodata Saya", icon: FileUser, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/profile", label: "Profil Saya", icon: UserCircle, show: (_j: string[], _full: boolean) => true },
       { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp, show: (_j: string[], _full: boolean) => true },
     ],

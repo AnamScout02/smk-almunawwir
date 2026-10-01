@@ -6,6 +6,7 @@ import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, User
 } from "lucide-react";
 import { Siren } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
+import { FileUser } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -301,6 +302,7 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart },
         { href: "/dashboard/teacher/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck },
         { href: "/dashboard/teacher/kegiatan", label: "Presensi Kegiatan", icon: CalendarCheck },
+        { href: "/dashboard/teacher/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2 },
         { href: "/dashboard/teacher/pengawas-ujian", label: "Jadwal Pengawas Ujian", icon: UserCheck },
         { href: "/dashboard/teacher/arsip-sk", label: "Arsip SK & Dokumen Saya", icon: Archive },
         { href: "/dashboard/teacher/kedisiplinan-leaderboard", label: "Kedisiplinan & Kinerja", icon: Trophy },
@@ -366,6 +368,7 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/liputan", label: "Kirim Liputan Kegiatan", icon: Camera },
         { href: "/dashboard/teacher/absen-mandiri", label: "Presensi Mandiri", icon: QrCode },
         { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
+        { href: "/dashboard/teacher/biodata", label: "Biodata Saya", icon: FileUser },
         { href: "/dashboard/teacher/profile", label: "Profil Saya", icon: UserCircle },
         { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp },
       ],

@@ -354,7 +354,16 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/admin/kalender-pendidikan": "agenda",
   "/dashboard/admin/parents": "ortu",
   "/dashboard/admin/users": "akunPengguna",
+  "/dashboard/student/izin-keluar": "gembokBuka",
+  // Fitur SAMA di empat portal → gambar WAJIB sama (CLAUDE.md #57).
+  "/dashboard/student/kegiatan-tidak-ikut": "payung",
+  "/dashboard/teacher/kegiatan-tidak-ikut": "payung",
+  "/dashboard/admin/kegiatan-tidak-ikut": "payung",
+  "/dashboard/parent/kegiatan-tidak-ikut": "payung",
   "/dashboard/student/biodata": "biodata",
+  // Fitur SAMA di portal lain → gambar WAJIB sama (CLAUDE.md #57).
+  "/dashboard/teacher/biodata": "biodata",
+  "/dashboard/admin/biodata": "biodata",
   // Kurikulum & pembelajaran
   "/dashboard/admin/pemeriksa-jadwal": "periksaJadwal",
   "/dashboard/admin/supervisi": "teropong",

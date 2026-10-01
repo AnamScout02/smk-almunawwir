@@ -4,8 +4,7 @@ import {
   GraduationCap, UserCog, School, Users, Clock, Mail, BookOpen, TrendingUp, NotebookPen, ClipboardCheck, Contact,
   CircleUser, Award, CircleCheck, Briefcase, ShieldCheck, Printer, Receipt, CircleCheckBig, CircleAlert, ClipboardList,
   ListChecks, ChevronRight, CalendarDays, Percent, CalendarX, Stethoscope, CircleX, Library, BookMarked, TriangleAlert,
-  Footprints, BookCopy, Wallet, HandCoins, DoorOpen, FileText, ScanLine, LibraryBig, TrendingDown, Gauge, Megaphone, ArrowLeft, Boxes, Hammer, Wrench, FlaskConical, QrCode,
-} from "lucide-react";
+  Footprints, BookCopy, Wallet, HandCoins, DoorOpen, FileText, ScanLine, LibraryBig, TrendingDown, Gauge, Megaphone, ArrowLeft, Boxes, Hammer, Wrench, FlaskConical, QrCode, Camera } from "lucide-react";
 
 /** Ikon DIPILIH DI SISI KLIEN berdasarkan nama — Pola tampilan v2 (DESIGN_SYSTEM.md §17, CLAUDE.md #35).
  *
@@ -16,6 +15,7 @@ import {
  * tautan kartu, atau keterangan header teks polos → masing-masing 200). Karena itu halaman server cukup mengirim NAMA ikon. */
 const IKON = {
   pengumuman: Megaphone,
+  foto: Camera,
   kembali: ArrowLeft,
   aset: Boxes,
   rusak: Hammer,

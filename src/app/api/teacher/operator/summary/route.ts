@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { hitungPengajuanBiodata } from "@/lib/biodata-pegawai";
 import { verifyRole } from "@/lib/dal";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
@@ -96,7 +97,7 @@ export async function GET(req: Request) {
       prisma.student.findMany({ where: { studentStatus: "AKTIF" }, select: PILIH_SISWA }),
       prisma.teacher.findMany({ where: { OR: [{ teacherStatus: "AKTIF" }, { teacherStatus: null }] }, select: PILIH_GURU }),
       guru ? Promise.resolve(0) : prisma.admission.count({ where: { status: "PENDING" } }),
-      guru ? Promise.resolve(0) : prisma.profileEditRequest.count({ where: { status: "PENDING" } }),
+      guru ? Promise.resolve(0) : hitungPengajuanBiodata(),
       prisma.dapodikPasangan.count(),
     ]);
 

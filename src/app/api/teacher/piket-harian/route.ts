@@ -5,6 +5,7 @@ import { bagianWib } from "@/lib/waktu-wib";
 import { logActivity } from "@/lib/activity-log";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { isOnDutyToday } from "@/lib/kedisiplinan-guard";
+import { kirimNotifikasi, kirimLatar } from "@/lib/push-server";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ export async function GET() {
       }),
       prisma.izinKeluarSiswa.findMany({
         where: { keluarPada: { gte: awalWib, lt: akhirWib } },
-        select: { id: true, alasan: true, keluarPada: true, kembaliRencana: true, kembaliPada: true, dicatatOleh: true, student: { select: { nis: true, user: { select: { name: true } }, class: { select: { name: true } } } } },
+        select: { id: true, alasan: true, keluarPada: true, kembaliRencana: true, kembaliPada: true, dicatatOleh: true, perluFoto: true, buktiFoto: true, buktiPada: true, student: { select: { nis: true, user: { select: { name: true } }, class: { select: { name: true } } } } },
         orderBy: { keluarPada: "desc" },
       }),
       prisma.guestBookEntry.count({ where: { visitDate: { gte: awal, lt: akhir } } }),
@@ -57,7 +58,7 @@ export async function GET() {
         jam: `${g.schedule.startTime}–${g.schedule.endTime}`, status: g.status, tugas: g.hasTugas, catatan: g.notes,
       })),
       terlambat: terlambat.map(t => ({ nama: t.student.user.name, nis: t.student.nis, kelas: t.student.class?.name ?? "-", poin: t.points, waktu: t.date })),
-      izinKeluar: izin.map(i => ({ id: i.id, nama: i.student.user.name, nis: i.student.nis, kelas: i.student.class?.name ?? "-", alasan: i.alasan, keluar: i.keluarPada, rencana: i.kembaliRencana, kembali: i.kembaliPada, oleh: i.dicatatOleh })),
+      izinKeluar: izin.map(i => ({ id: i.id, nama: i.student.user.name, nis: i.student.nis, kelas: i.student.class?.name ?? "-", alasan: i.alasan, keluar: i.keluarPada, rencana: i.kembaliRencana, kembali: i.kembaliPada, oleh: i.dicatatOleh, perluFoto: i.perluFoto, adaBukti: !!i.buktiFoto, buktiPada: i.buktiPada })),
       tamu, laporan: laporan?.catatan ?? "",
     });
   } catch (e) {
@@ -70,22 +71,49 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await penjaga();
-    const b = await req.json().catch(() => ({})) as Record<string, string>;
+    const b = await req.json().catch(() => ({})) as Record<string, string | boolean>;
     if (b.aksi === "keluar") {
-      const alasan = (b.alasan ?? "").trim().slice(0, 300);
-      if (!b.studentId || alasan.length < 3) return Response.json({ error: "Pilih siswa dan tulis alasan keluar." }, { status: 400 });
-      const siswa = await prisma.student.findFirst({ where: { id: b.studentId, studentStatus: "AKTIF" }, select: { id: true, user: { select: { name: true } } } });
+      const alasan = String(b.alasan ?? "").trim().slice(0, 300);
+      const studentId = String(b.studentId ?? "");
+      const rencana = String(b.kembaliRencana ?? "");
+      if (!studentId || alasan.length < 3) return Response.json({ error: "Pilih siswa dan tulis alasan keluar." }, { status: 400 });
+      const siswa = await prisma.student.findFirst({ where: { id: studentId, studentStatus: "AKTIF" }, select: { id: true, user: { select: { id: true, name: true } } } });
       if (!siswa) return Response.json({ error: "Siswa tidak ditemukan." }, { status: 404 });
       const masih = await prisma.izinKeluarSiswa.findFirst({ where: { studentId: siswa.id, kembaliPada: null, keluarPada: { gte: new Date(Date.now() - 12 * 3600_000) } } });
       if (masih) return Response.json({ error: `${siswa.user.name} masih tercatat di luar sekolah.` }, { status: 409 });
-      await prisma.izinKeluarSiswa.create({
-        data: { studentId: siswa.id, alasan, kembaliRencana: /^\d{2}:\d{2}$/.test(b.kembaliRencana ?? "") ? b.kembaliRencana : null, dicatatOleh: session.name, dicatatId: session.userId },
+      // Perlu bukti foto dari tempat tujuan? Keputusan guru piket, DIPILIH SEBELUM dicatat keluar
+      // (30 Sep 2026) — kalau tidak, di portal siswa izin ini cuma jadi surat izin keluar untuk
+      // ditunjukkan ke petugas keamanan. WAJIB eksplisit: tanpa ini nilai kosong diam-diam menjadi
+      // "tidak perlu bukti", persoalan default-diam-diam yang sama seperti dropdown kehadiran.
+      const pilihanFoto = b.perluFoto;
+      if (pilihanFoto !== true && pilihanFoto !== false && pilihanFoto !== "true" && pilihanFoto !== "false") {
+        return Response.json({ error: "Pilih dulu perlu bukti foto dari tempat tujuan atau tidak." }, { status: 400 });
+      }
+      const perluFoto = pilihanFoto === true || pilihanFoto === "true";
+      const baris = await prisma.izinKeluarSiswa.create({
+        data: {
+          studentId: siswa.id, alasan, perluFoto,
+          kembaliRencana: /^\d{2}:\d{2}$/.test(rencana) ? rencana : null,
+          dicatatOleh: session.name, dicatatId: session.userId,
+        },
+        select: { id: true },
       });
-      await logActivity(session, { action: "IZIN_KELUAR_SISWA", entity: "IzinKeluarSiswa", entityId: siswa.id, description: `Izin keluar ${siswa.user.name}: ${alasan}` }).catch(() => {});
+      await logActivity(session, { action: "IZIN_KELUAR_SISWA", entity: "IzinKeluarSiswa", entityId: siswa.id, description: `Izin keluar ${siswa.user.name}: ${alasan}${perluFoto ? " (wajib bukti foto)" : ""}` }).catch(() => {});
+      // Siswa perlu tahu suratnya sudah bisa ditunjukkan — push tidak boleh memperlambat simpan.
+      kirimLatar(() => kirimNotifikasi({
+        kunci: `izin-keluar:${baris.id}`,
+        jenis: "IZIN_KELUAR",
+        judul: perluFoto ? "Surat izin keluar terbit — wajib unggah bukti foto" : "Surat izin keluar terbit",
+        isi: perluFoto
+          ? `${alasan}. Tunjukkan suratnya di portal, dan unggah bukti foto dari tempat tujuan.`
+          : `${alasan}. Tunjukkan surat izin keluar di portal ke petugas keamanan atau tempat tujuan.`,
+        url: "/dashboard/student/izin-keluar",
+        userIds: [siswa.user.id],
+      }));
       return Response.json({ ok: true });
     }
     if (b.aksi === "kembali") {
-      const kode = (b.kode ?? "").trim();
+      const kode = String(b.kode ?? "").trim();
       if (!kode) return Response.json({ error: "Pindai kartu atau ketik NIS." }, { status: 400 });
       const izin = await prisma.izinKeluarSiswa.findFirst({
         where: { kembaliPada: null, keluarPada: { gte: new Date(Date.now() - 12 * 3600_000) }, OR: [{ id: kode }, { student: { nis: kode } }, { studentId: kode }] },
@@ -96,7 +124,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, nama: izin.student.user.name });
     }
     if (b.aksi === "laporan") {
-      const catatan = (b.catatan ?? "").trim().slice(0, 5000);
+      const catatan = String(b.catatan ?? "").trim().slice(0, 5000);
       const tanggal = bagianWib().iso;
       await prisma.laporanPiket.upsert({ where: { tanggal }, create: { tanggal, catatan, petugas: session.name }, update: { catatan, petugas: session.name } });
       return Response.json({ ok: true });

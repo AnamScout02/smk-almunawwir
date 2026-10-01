@@ -2,7 +2,7 @@
 import TimePicker from "@/components/shared/TimePicker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, ClipboardList, DoorOpen, Loader2, LogIn, Printer, Save, ScanLine, Search, ShieldAlert, Siren } from "lucide-react";
+import { BadgeCheck, ClipboardList, DoorOpen, Loader2, LogIn, Printer, Save, ScanLine, Search, ShieldAlert, Siren, Image as ImageIcon } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
@@ -14,7 +14,7 @@ interface Ringkasan {
   tanggal: string; petugas: string; tamu: number; laporan: string; hak: { piketHariIni: boolean; penjaminMutu: boolean; jadwalPiket: boolean };
   guruTidakHadir: { guru: string; kelas: string; mapel: string; jam: string; status: string; tugas: boolean | null; catatan: string | null }[];
   terlambat: { nama: string; nis: string; kelas: string; poin: number; waktu: string }[];
-  izinKeluar: { id: string; nama: string; nis: string; kelas: string; alasan: string; keluar: string; rencana: string | null; kembali: string | null; oleh: string }[];
+  izinKeluar: { id: string; nama: string; nis: string; kelas: string; alasan: string; keluar: string; rencana: string | null; kembali: string | null; oleh: string; perluFoto: boolean; adaBukti: boolean; buktiPada: string | null }[];
 }
 interface Cari { id: string; nis: string; name: string; className: string }
 const jam = (d: string) => new Date(d).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
@@ -32,6 +32,10 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
   const [pilih, setPilih] = useState<Cari | null>(null);
   const [alasan, setAlasan] = useState("");
   const [rencana, setRencana] = useState("");
+  /** SENGAJA tanpa bawaan (""): guru piket harus memilih dulu sebelum "Catat Keluar" aktif.
+   *  Kalau bawaannya "tidak", petugas yang tidak menyadari pilihan ini selalu menghasilkan izin
+   *  tanpa bukti foto — bug default-diam-diam yang sama seperti dropdown kehadiran (CLAUDE.md #10). */
+  const [perluFoto, setPerluFoto] = useState<"" | "ya" | "tidak">("");
   const [kode, setKode] = useState("");
   const [laporan, setLaporan] = useState("");
   const [sibuk, setSibuk] = useState("");
@@ -54,8 +58,8 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
     return () => clearTimeout(t);
   }, [cari, pilih]);
 
-  async function kirim(body: Record<string, string>, sukses: string) {
-    setSibuk(body.aksi);
+  async function kirim(body: Record<string, string | boolean>, sukses: string) {
+    setSibuk(String(body.aksi));
     const r = await fetch("/api/teacher/piket-harian", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
     const d = await r?.json().catch(() => null);
     setSibuk("");
@@ -68,6 +72,7 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
   if (galat) return <div className="p-6 lg:p-8 pt-16 lg:pt-8"><EmptyState icon={ShieldAlert} title="Tidak tersedia" description={galat} /></div>;
   if (!data) return <div className="p-6 lg:p-8 flex items-center justify-center min-h-[60vh] text-gray-400"><Loader2 size={24} className="animate-spin" /></div>;
   const diLuar = data.izinKeluar.filter(i => !i.kembali);
+  const buktiTertunda = data.izinKeluar.filter(i => i.perluFoto && !i.adaBukti);
   const tanggal = new Date(`${data.tanggal}T00:00:00Z`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
   return (
@@ -75,10 +80,11 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
       <PageHeader icon={<Siren size={22} />} title="Piket Harian" description={`${tanggal} · petugas ${data.petugas}`} printHidden />
 
       <div className="space-y-6 print:hidden">
-        <div className="kisi-kartu kisi-kartu-4">
+        <div className="kisi-kartu kisi-kartu-5">
           <StatTile ikon="guru" color={data.guruTidakHadir.length ? "red" : "emerald"} value={data.guruTidakHadir.length} label="Jam pelajaran guru tidak hadir" />
           <StatTile ikon="jam" color={data.terlambat.length ? "amber" : "emerald"} value={data.terlambat.length} label="Siswa terlambat" />
           <StatTile ikon="kunjungan" color={diLuar.length ? "amber" : "blue"} value={diLuar.length} label="Siswa sedang di luar sekolah" sorot={diLuar.length > 0} />
+          <StatTile ikon="foto" color={buktiTertunda.length ? "red" : "emerald"} value={buktiTertunda.length} label="Bukti foto izin keluar belum masuk" sorot={buktiTertunda.length > 0} />
           <StatTile ikon="kontak" color="purple" value={data.tamu} label="Tamu tercatat" />
         </div>
 
@@ -112,8 +118,32 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
               <input value={alasan} onChange={e => setAlasan(e.target.value)} placeholder="Alasan keluar" className="input-field sm:col-span-2" />
               <TimePicker value={rencana} onChange={v => setRencana(v)} title="Rencana kembali" />
             </div>
-            <button type="button" disabled={!pilih || alasan.trim().length < 3 || sibuk === "keluar"} className="btn-modal-save"
-              onClick={async () => { if (pilih && await kirim({ aksi: "keluar", studentId: pilih.id, alasan, kembaliRencana: rencana }, "tercatat keluar.")) { setPilih(null); setCari(""); setAlasan(""); setRencana(""); } }}>
+            {/* Menentukan wujud izin ini di portal siswa, DIPILIH SEBELUM dicatat keluar (30 Sep 2026):
+                "Wajib bukti foto" = siswa harus mengunggah foto dari tempat tujuan; "Tidak perlu" =
+                izin hanya jadi surat izin keluar untuk ditunjukkan ke petugas keamanan / tempat tujuan. */}
+            <div>
+              <p className="label-field">Bukti foto dari tempat tujuan</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {([
+                  { nilai: "tidak" as const, judul: "Tidak perlu bukti foto", ket: "Siswa hanya menerima surat izin keluar untuk ditunjukkan ke petugas keamanan." },
+                  { nilai: "ya" as const, judul: "Wajib bukti foto", ket: "Siswa harus mengunggah foto dari tempat tujuan di portalnya." },
+                ]).map(o => (
+                  <label key={o.nilai}
+                    className={`sentuh flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
+                      perluFoto === o.nilai ? "border-primary-500 bg-primary-50" : "border-gray-100 bg-[#f5f6fa] hover:bg-gray-50"}`}>
+                    <input type="radio" name="perlu-bukti-foto" value={o.nilai} checked={perluFoto === o.nilai}
+                      onChange={() => setPerluFoto(o.nilai)} className="mt-0.5 h-4 w-4 shrink-0 accent-primary-700" />
+                    <span className="min-w-0 text-sm">
+                      <span className="font-medium text-primary-900">{o.judul}</span>
+                      <span className="block text-xs text-gray-500">{o.ket}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {!perluFoto && <p className="mt-1.5 text-xs text-gray-400">Pilih salah satu dulu sebelum mencatat keluar.</p>}
+            </div>
+            <button type="button" disabled={!pilih || alasan.trim().length < 3 || !perluFoto || sibuk === "keluar"} className="btn-modal-save"
+              onClick={async () => { if (pilih && perluFoto && await kirim({ aksi: "keluar", studentId: pilih.id, alasan, kembaliRencana: rencana, perluFoto: perluFoto === "ya" }, "tercatat keluar.")) { setPilih(null); setCari(""); setAlasan(""); setRencana(""); setPerluFoto(""); } }}>
               {sibuk === "keluar" ? <Loader2 size={15} className="animate-spin" /> : <DoorOpen size={15} />} Catat Keluar
             </button>
             <form className="flex gap-2" onSubmit={async e => { e.preventDefault(); if (await kirim({ aksi: "kembali", kode }, "sudah kembali.")) { setKode(""); kodeRef.current?.focus(); } }}>
@@ -128,6 +158,12 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
                     <span className="text-xs text-gray-500 tabular-nums">keluar {jam(i.keluar)}{i.rencana ? ` · rencana ${i.rencana}` : ""}</span>
                     {i.kembali ? <span className="status-badge bg-emerald-50 text-emerald-700 border-emerald-200">kembali {jam(i.kembali)}</span>
                       : <span className="status-badge bg-amber-50 text-amber-700 border-amber-200">di luar</span>}
+                    {i.perluFoto && (i.adaBukti
+                      ? <a href={`/api/izin-keluar/${i.id}/bukti`} target="_blank" rel="noreferrer"
+                          className="status-badge border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+                          <ImageIcon size={12} /> bukti foto
+                        </a>
+                      : <span className="status-badge bg-red-50 text-red-600 border-red-200">bukti belum ada</span>)}
                   </li>
                 ))}
               </ul>
@@ -183,7 +219,7 @@ export default function BukuPiketHarian({ basePath = BASE_GURU }: { basePath?: s
         <p className="font-bold mt-3">B. Siswa terlambat ({data.terlambat.length})</p>
         <ol className="list-decimal pl-6">{data.terlambat.map((t, i) => <li key={i}>{t.nama} ({t.kelas}) — {jam(t.waktu)}</li>)}</ol>
         <p className="font-bold mt-3">C. Izin keluar lingkungan sekolah ({data.izinKeluar.length})</p>
-        <ol className="list-decimal pl-6">{data.izinKeluar.map(i => <li key={i.id}>{i.nama} ({i.kelas}) — {i.alasan}; keluar {jam(i.keluar)}, {i.kembali ? `kembali ${jam(i.kembali)}` : "belum kembali"}</li>)}</ol>
+        <ol className="list-decimal pl-6">{data.izinKeluar.map(i => <li key={i.id}>{i.nama} ({i.kelas}) — {i.alasan}; keluar {jam(i.keluar)}, {i.kembali ? `kembali ${jam(i.kembali)}` : "belum kembali"}{i.perluFoto ? `; bukti foto ${i.adaBukti ? "sudah masuk" : "BELUM masuk"}` : ""}</li>)}</ol>
         <p className="font-bold mt-3">D. Tamu tercatat: {data.tamu}</p>
         <p className="font-bold mt-3">E. Catatan</p>
         <p className="whitespace-pre-line">{laporan || "-"}</p>

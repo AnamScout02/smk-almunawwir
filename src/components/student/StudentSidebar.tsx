@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown, Library, FileText, Vote } from "lucide-react";
-import { QrCode, MessagesSquare, MessageSquareHeart, Megaphone, ClipboardPen, BriefcaseBusiness, CircleHelp } from "lucide-react";
+import { QrCode, MessagesSquare, MessageSquareHeart, Megaphone, ClipboardPen, BriefcaseBusiness, CircleHelp, DoorOpen } from "lucide-react";
+import { CalendarX2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -11,7 +12,7 @@ import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBo
 import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
 import KotakNotifikasiTombol from "@/components/shared/KotakNotifikasiTombol";
 
-interface MenuItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badge?: number; badgeKey?: "pendingBiodata" }
+interface MenuItem { href: string; label: string; icon: LucideIcon; exact?: boolean; badge?: number; badgeKey?: "pendingBiodata" | "buktiIzinKeluar" }
 interface MenuGroup { label: string | null; items: MenuItem[] }
 
 interface SidebarContentProps {
@@ -22,6 +23,7 @@ interface SidebarContentProps {
   toggleGroup: (label: string) => void;
   isActive: (href: string, exact?: boolean) => boolean;
   hasPendingBiodata: boolean;
+  buktiIzinKeluar: number;
   onLinkClick: () => void;
 }
 
@@ -29,7 +31,7 @@ interface SidebarContentProps {
 // didefinisikan di dalam body, React membongkar-pasang ulang seluruh sidebar tiap render parent).
 // PERBAIKAN 2026-08-11 (keputusan eksplisit user) — dikelompokkan + accordion, sama seperti
 // AdminSidebar/TasSidebar/TeacherSidebar, untuk konsistensi struktur di semua portal.
-function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups, toggleGroup, isActive, hasPendingBiodata, onLinkClick }: SidebarContentProps) {
+function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups, toggleGroup, isActive, hasPendingBiodata, buktiIzinKeluar, onLinkClick }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 py-4 border-b border-white/10">
@@ -65,7 +67,8 @@ function SidebarContent({ logoEmblem, logoFullWhite, filteredGroups, openGroups,
                 <div className="space-y-0.5">
                   {group.items.map(item => {
                     const active = isActive(item.href, item.exact);
-                    const showBadge = item.badgeKey === "pendingBiodata" && hasPendingBiodata;
+                    const showBadge = (item.badgeKey === "pendingBiodata" && hasPendingBiodata)
+                      || (item.badgeKey === "buktiIzinKeluar" && buktiIzinKeluar > 0);
                     const badgeCount = item.badge ?? 0;
                     return (
                       <Link key={item.href} href={item.href} onClick={onLinkClick}
@@ -105,6 +108,8 @@ interface StudentSidebarProps {
   logoEmblem?: string;
   logoFullWhite?: string;
   hasPendingBiodata?: boolean;
+  /** Jumlah izin keluar yang bukti fotonya belum diunggah siswa (30 Sep 2026). */
+  buktiIzinKeluar?: number;
   isKelasAdmin?: boolean;
   overdueBooks?: number;
   /** Admin sedang "Masuk Sebagai" akun ini — topbar mobile digeser turun supaya tidak ketutup
@@ -140,6 +145,8 @@ export function grupMenuSiswa({ hasPendingBiodata = false, isKelasAdmin = false,
       items: [
         { href: "/dashboard/student/absen-mandiri", label: "Absen Mandiri (QR)", icon: QrCode },
         ...(isKelasAdmin ? [{ href: "/dashboard/student/absensi-kelas", label: "Absensi Kelas", icon: CheckSquare }] : []),
+        { href: "/dashboard/student/izin-keluar", label: "Izin Keluar", icon: DoorOpen, badgeKey: "buktiIzinKeluar" },
+        { href: "/dashboard/student/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2 },
         { href: "/dashboard/student/poin-saya", label: "Poin Saya", icon: ShieldAlert },
         { href: "/dashboard/student/konseling", label: "Konseling BK", icon: MessagesSquare },
         { href: "/dashboard/student/aspirasi", label: "Kotak Aspirasi", icon: MessageSquareHeart },
@@ -170,7 +177,7 @@ export function grupMenuSiswa({ hasPendingBiodata = false, isKelasAdmin = false,
   ].map(g => ({ ...g, items: g.items.filter(item => "href" in item) })) as MenuGroup[];
 }
 
-export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, isKelasAdmin = false, overdueBooks = 0, impersonating = false, tindakan = [], kelasXII = false }: StudentSidebarProps) {
+export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png", logoFullWhite, hasPendingBiodata = false, buktiIzinKeluar = 0, isKelasAdmin = false, overdueBooks = 0, impersonating = false, tindakan = [], kelasXII = false }: StudentSidebarProps) {
   const pathname = usePathname();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
@@ -233,7 +240,7 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
         <SidebarContent
           logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}
           filteredGroups={visibleGroups} openGroups={openGroups} toggleGroup={toggleGroup}
-          isActive={isActive} hasPendingBiodata={hasPendingBiodata} onLinkClick={() => {}}
+          isActive={isActive} hasPendingBiodata={hasPendingBiodata} buktiIzinKeluar={buktiIzinKeluar} onLinkClick={() => {}}
         />
       </aside>
       <div className="lg:hidden print:hidden fixed left-0 right-0 z-50 bg-primary-900 px-4 py-3 flex items-center justify-between shadow-lg"

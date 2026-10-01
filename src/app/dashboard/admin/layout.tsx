@@ -1,4 +1,5 @@
 import React from "react";
+import { hitungPengajuanBiodata } from "@/lib/biodata-pegawai";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { getJabatanNames } from "@/lib/jabatan-guard";
@@ -27,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (session.role === "TAS" || session.role === "TEACHER") {
     const [pendingProfileEdits, jabatanNames, overdueBooks] = await Promise.all([
-      prisma.profileEditRequest.count({ where: { status: "PENDING" } }),
+      hitungPengajuanBiodata(),
       getJabatanNames(session.email),
       getOverdueLoanCount(session.userId),
     ]);
@@ -59,7 +60,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
          suratDiajukan, legalisirDiajukan, suratMasukIds, suratSudahDisposisi] = await Promise.all([
     prisma.contactMessage.count({ where: { isRead: false } }),
     prisma.admission.count({ where: { status: "PENDING" } }),
-    prisma.profileEditRequest.count({ where: { status: "PENDING" } }),
+    hitungPengajuanBiodata(),
     getOverdueLoanCount(session.userId),
     getClassesMissingAttendance(todayMidnightUTC),
     prisma.suratKeterangan.count({ where: { requestStatus: "DIAJUKAN" } }),

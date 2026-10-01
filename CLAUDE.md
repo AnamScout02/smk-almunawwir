@@ -1152,3 +1152,202 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
     **Menguji anonimitas jangan lewat status HTTP saja** — `fetch` mengikuti pengalihan, jadi guru
     yang ditolak `verifyRole` tetap menerima **200** berisi HTML halaman portalnya. Periksa
     `redirect: "manual"` (harus `opaqueredirect`) atau isi badannya, bukan angka statusnya.
+
+93. **Guru & staf mengelola biodatanya sendiri lewat PENGAJUAN (30 September 2026).** Padanan alur
+    siswa: `/dashboard/{teacher,admin}/biodata` → `POST /api/pegawai/biodata/request` →
+    `PegawaiEditRequest` → TU memutuskan di tab **"Guru & Staf"** pada
+    `/dashboard/admin/verifikasi-data` → baru tersimpan. Satu pengajuan menunggu per akun (409 kalau
+    masih ada yang PENDING), formulirnya terkunci selama menunggu, seperti siswa.
+    - **Satu pintu baca/tulis: `src/lib/biodata-pegawai.ts`** (`bacaBiodataPegawai`,
+      `terapkanBiodataPegawai`). Sumbernya `Teacher` (kolom scalar + `bukuIndukData`, sama dengan
+      Buku Induk Guru). Akun **TAS tidak punya baris Teacher** (terukur 30 Sep 2026: 32 guru punya,
+      5 TAS & 2 ADMIN tidak), jadi mereka memakai cadangan `BiodataPegawai` — dan begitu TU
+      membuatkan baris Teacher-nya, `bacaBiodataPegawai` MEMINDAHKAN isinya lalu menghapus baris
+      cadangan, sehingga tidak pernah ada dua salinan hidup. Jalur baru yang membaca/menulis biodata
+      pegawai WAJIB lewat helper ini, jangan menyentuh `Teacher.bukuIndukData` langsung.
+    - **JANGAN membuatkan baris `Teacher` untuk staf TAS supaya "seragam".** 22 dari 36 pemanggil
+      `prisma.teacher.findMany()` tidak menyaring `teacherStatus`, jadi staf non-guru akan bocor ke
+      daftar pengampu, beban mengajar, dan cetakan pembagian mengajar.
+    - **Daftar isian diturunkan dari `GURU_COLUMNS`** (`c.isian` minus grup "Pindah / Keluar")
+      ditambah beberapa kunci pribadi yang tak bertanda isian (`nik`, `maritalStatus`, `spouseName`,
+      wilayah). Menambah isian Buku Induk Guru otomatis ikut ke formulir pegawai — itu sebabnya
+      `IsianGrupGuru` (src/components/admin/IsianGrupGuru.tsx) diekstrak dari
+      `BukuIndukGuruManager` dan dipakai keduanya. NIP, mata pelajaran, status kepegawaian, tanggal
+      mulai, nama, dan jabatan struktural SENGAJA di luar jangkauan pegawai (wewenang TU) dan
+      ditampilkan sebagai kartu "Data yang hanya bisa diubah Tata Usaha".
+    - Badge "Perubahan data menunggu verifikasi" = SISWA + PEGAWAI dalam satu angka
+      (`hitungPengajuanBiodata`) karena keduanya diverifikasi di halaman yang sama. Kalau menambah
+      jenis pengajuan biodata baru, tambahkan ke fungsi itu juga, jangan hitung terpisah di layout.
+
+94. **Pengajuan perubahan data diputuskan PER ISIAN, bukan sekali untuk semuanya (30 September 2026).**
+    Permintaan user: "ada yang ditolak jadi tidak semuanya di approve karena kemungkinan ada yang salah
+    datanya". Berlaku untuk pengajuan SISWA (`ProfileEditRequest`) dan GURU/STAF (`PegawaiEditRequest`):
+    - `POST .../decide` menerima `tolak: string[]` = kunci isian yang DITOLAK; sisanya tetap diterapkan.
+      Tanpa `tolak` perilakunya sama seperti dulu (setujui semuanya), jadi pemanggil lama tetap jalan.
+    - Status akhir dari `statusKeputusan(diterima, ditolak)` di `src/lib/profile-edit-fields.ts`:
+      semua diterima = `APPROVED`, sebagian = **`SEBAGIAN`**, tidak ada yang diterima = `REJECTED`.
+      **Setiap kueri riwayat pengajuan WAJIB memakai `STATUS_SELESAI`**, jangan menulis
+      `["APPROVED","REJECTED"]` lagi — kalau lupa, pengajuan yang disetujui sebagian HILANG dari
+      riwayat pemohon dan mereka tidak pernah tahu isian mana yang ditolak.
+    - Keputusan per isian disimpan DI DALAM `changes` (`ChangeEntry.ditolak = true`), bukan di kolom
+      terpisah, supaya riwayat siswa/pegawai bisa menyebut isian yang ditolak satu per satu.
+    - Layar TU: tabel Lama → Baru diberi kolom centang "Setujui" (tercentang semua di awal). Melepas
+      centang = isian itu ditolak. Tombolnya ikut berubah jadi "Simpan N Isian, Tolak M".
+
+95. **Izin keluar punya DUA wujud di portal siswa, ditentukan Guru Piket (30 September 2026).**
+    Satu baris `IzinKeluarSiswa` + kolom `perluFoto`:
+    - **`perluFoto = false`** → di `/dashboard/student/izin-keluar` izin itu hanya jadi **SURAT IZIN
+      KELUAR**: identitas, keperluan, jam keluar, rencana kembali, nama guru piket, dan QR keaslian
+      (pola #49, token dibuat sekali, verifikasi publik di `/verify/izin-keluar/<token>`). Untuk
+      ditunjukkan ke petugas keamanan atau tempat tujuan.
+    - **`perluFoto = true`** → surat yang sama PLUS kewajiban siswa mengunggah bukti foto dari tempat
+      tujuan. **Suratnya tetap berlaku** — guru piket sudah mengizinkan; yang tertunda hanyalah
+      buktinya, dan itu muncul sebagai lencana menu + antrean "Perlu tindakan" siswa.
+    - Satu sumber status: `statusIzinKeluar()` di `src/lib/izin-keluar.ts` (`DI_LUAR` / `KEMBALI` /
+      `BUKTI_TERTUNDA`) — dipakai layar siswa, Buku Piket, dan halaman verifikasi, jadi ketiganya tidak
+      pernah menyebut hal berbeda untuk baris yang sama.
+    - **Bukti foto masuk folder RAHASIA** `public/uploads/rahasia/izin-keluar` (bisa memuat informasi
+      kesehatan, mis. izin ke klinik) — diblokir proxy, dibuka hanya lewat `/api/izin-keluar/[id]/bukti`
+      dengan `bolehLihatBukti`. Batas unggah/ganti `JAM_BATAS_BUKTI` = 24 jam sejak keluar.
+    - **Halaman verifikasi SENGAJA tidak menampilkan alasan keluar** — petugas keamanan cukup tahu surat
+      itu asli, untuk siapa, jam berapa, dan statusnya. Alasan bisa menyangkut kesehatan/urusan keluarga.
+    - Siswa TIDAK membuat izin sendiri; guru piket yang mencatat. Notifikasi `IZIN_KELUAR` dengan kunci
+      `izin-keluar:<id>` memberitahu siswa bahwa suratnya sudah bisa ditunjukkan.
+
+96. **Presensi imam sholat dicek DI BUKU PIKET, satu panel dengan kehadiran petugas piket
+    (30 September 2026).** Permintaan user: "presensi jadwal imam sholat muncul di absensi yang di cek
+    guru piket biar jadi 1". Yang berlaku sekarang:
+    - **Jadwal** imam tetap disusun di `/dashboard/{admin,teacher}/imam-sholat` (`assertImam`:
+      Kesiswaan / Pembina OSIS / Kepala Sekolah). **Tab "Presensi Harian" di halaman itu DIHAPUS** —
+      jangan dihidupkan lagi; dua tempat pengisian untuk satu data berarti keduanya bisa berbeda.
+      Halaman itu sekarang menautkan ke Buku Piket portal yang sama (`bukuPiketHref`, jangan
+      menautkan portal guru ke rute admin — CLAUDE.md #45).
+    - **Kehadirannya** diisi di panel "Kehadiran Guru Piket & Imam Sholat" pada Buku Piket
+      (`KedisiplinanManager`), memakai `viewDate` yang sama, dengan SATU tombol Simpan.
+    - **Tetap dua tabel di DB dan itu disengaja**: `DutyAttendance` unik per (userId, date),
+      `PresensiImam` per (userId, date, sesi) — satu guru bisa piket pagi DAN jadi imam di hari yang
+      sama. Karena itu Simpan mengirim dua permintaan (`duty-attendance` + `/api/imam/presensi`) dan
+      melaporkan kegagalan masing-masing; jangan "menyederhanakan" jadi satu tabel.
+    - **Guru piket harus boleh menyimpan presensi imam**, jadi `/api/imam/presensi` dijaga
+      `assertPresensiImam` = `assertImam` ATAU `assertKedisiplinan` (salah satu lolos cukup).
+      `assertImam` tetap khusus untuk MENGATUR jadwalnya.
+    - Status imam hanya 4 (HADIR/IZIN/SAKIT/ALPHA) — **tanpa TERLAMBAT**, beda dari status guru piket.
+      Mengirim TERLAMBAT ke `/api/imam/presensi` disaring diam-diam, jadi dropdown-nya memang dipisah
+      (`STATUS_OPTIONS_IMAM`). Keduanya tetap default KOSONG (CLAUDE.md #10).
+
+97. **Domain sekolah aktif: `https://smkalmunawwiriibs.sch.id` (30 September 2026).** Port 80/443 IP
+    publik `103.194.175.54` diarahkan ke server situs (`172.15.0.3`) dan diterminasi **Caddy**
+    (`/etc/caddy/Caddyfile`, layanan systemd di HOST — bukan di dalam Docker). Sertifikat Let's Encrypt
+    otomatis & diperpanjang sendiri; tidak ada certbot yang perlu diurus.
+    - **Caddy melayani TIGA nama**: situs sekolah (+`www`) → `127.0.0.1:3000`, `office.…` →
+      `127.0.0.1:8090` (ONLYOFFICE), dan **`technofix-bill.duckdns.org` → `https://172.15.0.11`**.
+      Nama ketiga itu milik penyewa lain di router yang sama; sebelumnya ia yang memegang 80/443.
+      Meneruskannya membuat URL-nya tidak berubah sehingga **webhook pembayarannya tidak perlu
+      didaftarkan ulang**. `header_up Host {host}` WAJIB — tanpa itu Apache di `.11` jatuh ke vhost
+      bawaan dan menyajikan halaman "Koneksi Terisolir" (terbukti saat uji).
+    - **Caddyfile TIDAK memakai `encode`** (Next sudah mengompres; lapis kedua menahan SSE papan
+      pantau ujian) dan **tidak menyetel timeout baca** (sinkron Dapodik 20–47 dtk, long-poll sinyal
+      25 dtk). Jangan menambahkannya.
+    - **`pakaiSecure` tidak lagi memakai `NEXT_PUBLIC_APP_URL` sebagai cadangan.** Dulu cadangannya
+      `NEXT_PUBLIC_APP_URL.startsWith("https://")`; begitu variabel itu diisi domain HTTPS, SELURUH
+      jaringan sekolah yang memakai `:3000` tidak bisa login (cookie `Secure` ditolak di HTTP).
+      Sekarang cadangannya `false`, karena request tanpa `X-Forwarded-Proto` memang datang langsung ke
+      `:3000` yang selalu HTTP polos. Terverifikasi: HTTPS → `Secure` ada, `:3000` → tidak ada.
+      **Alamat publik dan keamanan koneksi jangan disatukan lagi ke satu variabel.**
+    - **Tailscale Funnel SENGAJA tetap hidup.** QR yang sudah tercetak dan APK v2.2 ke bawah yang sudah
+      terpasang di HP menunjuk ke `smk-almunawwir.tail984090.ts.net`. Jangan dimatikan sebelum semua HP
+      memasang v2.3. Jalur `:3000` juga tetap (dst-nat & filter "Website SMK Almunawwir" masih ada).
+    - Empat aturan dst-nat yang diubah tercatat di scratchpad `nat-cadangan.json`; pengembalian =
+      kembalikan `to-addresses` ke `172.15.0.11`.
+
+98. **Notifikasi Android harus BERBUNYI: saluran notifikasi tidak bisa diubah, harus dibuat BARU
+    (30 September 2026).** Saluran lama dibuat `IMPORTANCE_DEFAULT` — masuk diam-diam ke laci, tidak
+    muncul menonjol. Android **membekukan setelan saluran saat pertama kali dibuat**: memanggil
+    `createNotificationChannel` lagi dengan importance/suara berbeda TIDAK berpengaruh di HP yang sudah
+    memasang aplikasi. Karena itu ID-nya diganti `kabar-sekolah` → **`kabar-sekolah-v2`** dengan
+    `IMPORTANCE_HIGH` + suara notifikasi bawaan + getaran, ditambah `PRIORITY_HIGH` &
+    `DEFAULT_SOUND|DEFAULT_VIBRATE` untuk Android < 26. **Kalau setelan bunyinya diubah lagi nanti,
+    ganti lagi ID salurannya — jangan menyunting yang lama.** Push web (`public/sw.js`) tidak bisa
+    menentukan bunyi (dipegang setelan peramban), tetapi `vibrate` + `silent: false` bisa dan itu yang
+    paling terasa saat HP mode senyap.
+    **Perbaikan ini HANYA sampai lewat pemasangan APK baru** — tidak bisa dikirim dari server ke
+    aplikasi yang sudah terpasang. Memperbarui = pasang menimpa (package & kunci tanda tangan sama,
+    data tidak hilang), tetapi **pengguna harus login sekali lagi** karena cookie sesi terikat origin
+    lama (ts.net) dan tidak ikut pindah ke domain baru.
+
+99. **Ajakan pasang aplikasi bercabang per perangkat (30 September 2026, permintaan user "langsung apk,
+    kecuali iphone dan desktop").** `InstallPwaPrompt`: di **Android** tombolnya MENGUNDUH APK terbaru
+    (`BERKAS_APK`) dan banner muncul tanpa menunggu `beforeinstallprompt` — versi Chrome (PWA) tidak
+    punya mode ujian terkunci, notifikasi Android, dan dialog cetak, jadi di Android APK selalu yang
+    benar. Di **iPhone & desktop** tetap memasang PWA dan hanya muncul bila browser menawarkannya.
+
+100. **Kegiatan boleh BERHARI-HARI, dan presensinya diulang tiap hari (30 September 2026).**
+     Permintaan user: "bisa tanggal berapa sampai berapa … misal MPLS 5 hari, hari pertama Pra MPLS,
+     2-3-4 MPLS, hari 5 Penerimaan Tamu Ambalan".
+     - `Kegiatan.sampaiTanggal` (tengah malam WIB hari terakhir, **null = satu hari** seperti dulu).
+       Jam hariannya SAMA setiap hari, diambil dari `mulai`/`selesai`. Rangkaian seperti contoh MPLS
+       dibuat sebagai beberapa kegiatan berjudul sendiri dengan rentangnya masing-masing.
+     - **`PresensiKegiatan` unik per (kegiatan, orang, TANGGAL)**, bukan lagi per (kegiatan, orang) —
+       tanpa itu satu orang hanya bisa tercatat hadir SEKALI untuk seluruh 5 hari. Tabelnya masih
+       kosong saat diubah (0 baris), jadi tidak ada migrasi data.
+     - **Jendela QR dihitung PER HARI** (`jendelaSekarang` di src/lib/kegiatan-qr.ts): tiap hari punya
+       jendela `[jam mulai − 30 mnt, jam selesai + 30 mnt]` sendiri. Memakai satu rentang menerus akan
+       membuat QR sah 24 jam nonstop selama lima hari. Jalur presensi baru WAJIB lewat fungsi ini,
+       jangan membandingkan `mulai`/`selesai` langsung.
+     - Rekap, catat manual, hapus, dan unduhan Excel semuanya berlingkup satu hari (`?tanggal=`),
+       dengan pita tab "Hari 1 · Sen 30 Sep" di layar rekap saat kegiatan lebih dari sehari.
+     - Batas 60 hari per kegiatan.
+     - **Rekap dikelompokkan per KELAS dan satu kelompok "Guru & Staf"** (`kelompokDari`/`kelompokkan`
+       di KegiatanManager), di tab Hadir MAUPUN Tidak Hadir, dengan hitungan "12 / 32 hadir" per
+       kelompok — jadi "siapa yang tidak hadir di kelas mana" terbaca langsung. Excel-nya punya sheet
+       **Ringkasan** (hadir/tidak hadir per kelas) + Hadir + Tidak Hadir, keduanya berkolom Kelas.
+     - **Pencatatan manual bisa SEKELAS sekaligus**: `POST …/presensi` menerima `userIds: []` (maks 500)
+       selain `userId` tunggal, dan tombol "Hadir semua (N)" ada di kepala tiap kelompok. Daftar id dari
+       browser TIDAK dipercaya — disaring dulu ke `penerimaPengumuman(kegiatan)` supaya hanya sasaran
+       kegiatan itu yang bisa dicatat (pola sama CLAUDE.md #10).
+     - **Peserta boleh dipilih ORANG PER ORANG** (`Kegiatan.targetUserIds`, 30 September 2026) untuk
+       kegiatan yang pesertanya bukan satu kelas utuh — panitia, perwakilan kelas, undangan terbatas.
+       Semantiknya **MENANG atas saringan** peran/kelas/jurusan/jabatan: kalau daftar orang terisi,
+       peserta PERSIS orang-orang itu. Menjumlahkannya dengan saringan akan membingungkan ("sudah pilih
+       5 orang kok semua siswa jadi sasaran"), jadi di formulir saringan itu disembunyikan dan diganti
+       keterangan tegas.
+     - `penerimaPengumuman` menerima `targetUserIds` opsional, tetapi `rapikanSasaran` mengembalikannya
+       sebagai field **terpisah** (`orang`), BUKAN di dalam `sasaran` — Announcement & Survei menyebar
+       `...sasaran` langsung ke Prisma dan kedua model itu tidak punya kolom tersebut.
+     - Daftar orang yang boleh dipilih DISARING DI SERVER menurut hak: guru biasa hanya pegawai, wali
+       kelas ditambah siswa kelas walinya, pemegang hak pengumuman seluruh siswa aktif — di GET (apa
+       yang dikirim ke browser) MAUPUN di POST (apa yang boleh disimpan).
+     - **Kegiatan bisa DIUBAH** (`PUT /api/kegiatan/[id]`). Satu aturan yang dijaga: rentang tanggal tidak
+       boleh dipersempit melewati hari yang SUDAH punya catatan kehadiran (409) — memotongnya menyisakan
+       presensi yatim yang tidak bisa dilihat maupun dihapus lewat layar mana pun. Catatan hadir juga bisa
+       diubah keterangannya (Hadir biasa / Izin / Sakit / Terlambat / Dispensasi) lewat tombol pensil;
+       jalur simpannya upsert yang sama dengan mencatat manual.
+     - **Hadir di kegiatan sekolah IKUT MENGISI ABSENSI HARIAN** (`hadirkanAbsensiHarian`,
+       src/lib/absensi-otomatis.ts). Aturannya sama persis dengan pindai kartu gerbang (#33) & presensi
+       pegawai (#52): hanya mengisi kalau hari itu BELUM ada catatan — keputusan wali kelas/TU tidak pernah
+       ditimpa — dan hari libur dilewati (`cekLibur`). Pegawai lewat `catatPresensiPegawai(…, "KEGIATAN")`
+       dan HANYA untuk hari ini, karena fungsi itu selalu bekerja pada hari berjalan; mengisi hari lampau
+       tetap wewenang TU. Gagal di sini tidak boleh menggagalkan presensi kegiatannya (dibungkus `.catch`).
+     - **Ketidakhadiran DIHITUNG, bukan disimpan** (`ketidakhadiranKegiatan`, src/lib/kegiatan-tidak-hadir.ts):
+       sasaran kegiatan dikurangi yang punya baris presensi, dan HANYA untuk hari yang sudah lewat. Menyimpannya
+       sebagai baris sendiri akan jadi sumber kedua yang bisa berbeda saat sasaran diubah atau catatan hadir
+       dihapus. Tampil di `/dashboard/{student,parent,teacher,admin}/kegiatan-tidak-ikut` — SATU komponen,
+       cakupannya ditentukan SERVER: siswa hanya dirinya, orang tua anaknya, wali kelas kelas walinya,
+       Kesiswaan/BK & Admin semua. Tanpa pembatasan itu daftar "siapa bolos" seluruh sekolah terbuka untuk
+       guru mana pun.
+
+101. **Satu HP, dua jenis QR — pemindai Absen Mandiri WAJIB mengenali keduanya (1 Oktober 2026).**
+     Laporan user: "saat absen kegiatan, peserta buka absensi mandiri, malah tertulis barcode tidak di
+     gerbang, jadi tidak ada yang bisa scan." Penyebabnya: QR absensi gerbang/kelas berisi **TOKEN
+     pendek** (`src/lib/absensi-qr.ts`), sedangkan QR presensi kegiatan berisi **ALAMAT**
+     `…/hadir/<id>?t=<token>` (`/api/kegiatan/[id]/qr`). Layar Absen Mandiri mengirim apa pun yang
+     terpindai ke `/api/student/absen-mandiri`, jadi QR kegiatan ditolak dengan pesan tentang gerbang.
+     - Perbaikannya di KLIEN, bukan server: `jalurHadirKegiatan(teks)` (`src/lib/qr-tujuan.ts`, netral —
+       bukan `server-only`) mengenali pola alamat itu, dan pemindai mengarahkan ke sana alih-alih
+       mengirim ke endpoint gerbang. Dipasang di Absen Mandiri SISWA dan PEGAWAI.
+     - **Alamat sengaja dikembalikan RELATIF terhadap origin yang sedang dibuka.** QR yang sudah
+       tercetak/tertayang bisa memuat alamat terowongan lama (ts.net) sementara penggunanya masuk lewat
+       domain sekolah — mengikuti alamat absolutnya melempar mereka ke origin tempat sesinya tidak
+       berlaku, dan mereka diminta login lagi di tengah kegiatan.
+     - Pemindai baru yang menerima QR dari sumber campuran WAJIB memakai fungsi ini dulu sebelum
+       menebak jenis kodenya.
