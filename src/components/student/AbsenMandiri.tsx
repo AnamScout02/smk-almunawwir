@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { Camera, CameraOff, CheckCircle2, Info, Loader2, QrCode, ShieldAlert, XCircle } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import { usePindaiKamera, idPerangkat } from "@/lib/pindai-kamera";
+import { jalurHadirKegiatan } from "@/lib/qr-tujuan";
 import { unlockScanAudio, playScanError, playScanInfo, playScanSuccess } from "@/lib/scan-beep";
 import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 
@@ -17,6 +18,11 @@ export default function AbsenMandiri() {
 
   const kirim = useCallback(async (kode: string) => {
     if (mengirim) return;
+    // QR PRESENSI KEGIATAN berisi alamat /hadir/<id>?t=… — bukan token absensi gerbang. Tanpa cabang
+    // ini, QR kegiatan dikirim ke endpoint gerbang lalu ditolak dengan pesan yang menyesatkan
+    // (laporan user 1 Oktober 2026: "tertulis barcode tidak di gerbang, jadi tidak ada yang bisa scan").
+    const keKegiatan = jalurHadirKegiatan(kode);
+    if (keKegiatan) { setKameraAktif(false); window.location.assign(keKegiatan); return; }
     setMengirim(true);
     const r = await fetch("/api/student/absen-mandiri", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kode, perangkatId: idPerangkat() }),
