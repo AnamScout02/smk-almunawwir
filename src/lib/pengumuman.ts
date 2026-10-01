@@ -78,7 +78,18 @@ export async function jumlahBelumKonfirmasi(s: Sesi): Promise<number> {
 }
 
 /** Seluruh userId sasaran sebuah pengumuman (untuk notifikasi & statistik pembaca). */
-export async function penerimaPengumuman(a: { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[] }): Promise<{ userId: string; peran: string }[]> {
+export async function penerimaPengumuman(a: { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[]; targetUserIds?: string[] }): Promise<{ userId: string; peran: string }[]> {
+  // ORANG TERTENTU menang atas saringan peran/kelas/jabatan (dipakai Kegiatan sejak 30 Sep 2026):
+  // kalau panitia menyebut namanya satu per satu, itulah pesertanya — bukan ditambahkan ke satu kelas
+  // penuh, karena hasilnya akan membingungkan ("sudah pilih 5 orang kok semua siswa jadi sasaran").
+  if (a.targetUserIds?.length) {
+    const u = await prisma.user.findMany({
+      where: { id: { in: a.targetUserIds } },
+      select: { id: true, role: true },
+    });
+    const label: Record<string, string> = { STUDENT: "Siswa", PARENT: "Orang tua", TEACHER: "Guru", TAS: "Staf", ADMIN: "Admin" };
+    return u.map(x => ({ userId: x.id, peran: label[x.role] ?? x.role }));
+  }
   const r = a.targetRole;
   const hasil: { userId: string; peran: string }[] = [];
   const saringSiswa: Prisma.StudentWhereInput = {
@@ -127,21 +138,25 @@ export async function hakPengumuman(s: Sesi): Promise<HakPengumuman> {
 type Sasaran = { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[] };
 
 /** Validasi & rapikan isian sasaran sesuai hak. Mengembalikan `galat` bila tidak sah. */
-export function rapikanSasaran(b: { targetRole?: unknown; targetKelasIds?: unknown; targetJurusanIds?: unknown; targetJabatan?: unknown }, hak: HakPengumuman):
-  { galat: string; sasaran?: undefined } | { galat?: undefined; sasaran: Sasaran } {
+export function rapikanSasaran(b: { targetRole?: unknown; targetKelasIds?: unknown; targetJurusanIds?: unknown; targetJabatan?: unknown; targetUserIds?: unknown }, hak: HakPengumuman):
+  { galat: string; sasaran?: undefined; orang?: undefined } | { galat?: undefined; sasaran: Sasaran; orang: string[] } {
   const daftar = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string" && !!x))].slice(0, 200) : []);
   let targetRole = typeof b.targetRole === "string" && PERAN_SASARAN[b.targetRole] ? b.targetRole : "ALL";
   let targetKelasIds = daftar(b.targetKelasIds);
   let targetJurusanIds = daftar(b.targetJurusanIds);
   let targetJabatan = daftar(b.targetJabatan);
+  // Daftar ORANG TERTENTU; siapa yang boleh dipilih divalidasi pemanggil (lihat /api/kegiatan).
+  const targetUserIds = daftar(b.targetUserIds);
   if (!PERAN_SISWA_ORTU.includes(targetRole)) { targetKelasIds = []; targetJurusanIds = []; }
   if (targetRole !== "TEACHER") targetJabatan = [];
-  if (!hak.semua) {
+  if (!hak.semua && !targetUserIds.length) {
     const milik = new Set(hak.waliKelas.map(k => k.id));
     if (!PERAN_SISWA_ORTU.includes(targetRole)) targetRole = "STUDENT_PARENT";
     targetJurusanIds = [];
     targetKelasIds = targetKelasIds.filter(id => milik.has(id));
     if (!targetKelasIds.length) return { galat: "Pilih kelas wali Anda sebagai sasaran." };
   }
-  return { sasaran: { targetRole, targetKelasIds, targetJurusanIds, targetJabatan } };
+  // `orang` SENGAJA di luar `sasaran`: Announcement & Survei menyebar `...sasaran` langsung ke Prisma
+  // dan kedua model itu tidak punya kolom targetUserIds. Hanya Kegiatan yang memakainya.
+  return { sasaran: { targetRole, targetKelasIds, targetJurusanIds, targetJabatan }, orang: targetUserIds };
 }

@@ -22,7 +22,7 @@ export type HasilPresensi =
 
 const jamWib = () => new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).replace(".", ":");
 
-export async function catatPresensiPegawai(userId: string, metode: "QR" | "KARTU"): Promise<HasilPresensi> {
+export async function catatPresensiPegawai(userId: string, metode: "QR" | "KARTU" | "KEGIATAN"): Promise<HasilPresensi> {
   const h = hariIniWib();
   if (h.hariKe === 0 || (await cekLibur(h.tanggal))) return { hasil: "LIBUR" };
 
@@ -30,7 +30,7 @@ export async function catatPresensiPegawai(userId: string, metode: "QR" | "KARTU
   const ada = await prisma.staffAttendance.findUnique({ where: { userId_tanggal: { userId, tanggal: h.awal } } });
   if (!ada) {
     await prisma.staffAttendance.create({
-      data: { userId, tanggal: h.awal, status: "HADIR", jamMasuk: jam, keterangan: metode === "QR" ? "Pindai QR mandiri" : "Pindai kartu" },
+      data: { userId, tanggal: h.awal, status: "HADIR", jamMasuk: jam, keterangan: metode === "QR" ? "Pindai QR mandiri" : metode === "KARTU" ? "Pindai kartu" : "Hadir kegiatan sekolah" },
     });
     return { hasil: "MASUK", jam };
   }

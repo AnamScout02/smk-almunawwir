@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, pakaiSecure } from "@/lib/session";
 import { sesiMasihHidup } from "@/lib/sesi-server";
-import { dalamWaktu, tokenSah } from "@/lib/kegiatan-qr";
+import { isoWib, jendelaSekarang, tokenSah } from "@/lib/kegiatan-qr";
+import { hadirkanAbsensiHarian } from "@/lib/absensi-otomatis";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     res.cookies.set("lanjut_masuk", `/hadir/${idAman}?t=${tAman}`, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 600, secure: pakaiSecure(req.headers) });
     return res;
   }
-  const k = await prisma.kegiatan.findUnique({ where: { id: idAman }, select: { id: true, judul: true, mulai: true, selesai: true } });
+  const k = await prisma.kegiatan.findUnique({ where: { id: idAman }, select: { id: true, judul: true, mulai: true, selesai: true, sampaiTanggal: true } });
   if (!k) return hasil("gagal", "Kegiatan tidak ditemukan.");
   if (!tokenSah(k.id, tAman)) return hasil("gagal", "QR sudah kedaluwarsa. Pindai QR terbaru yang tampil di layar.", k.judul);
-  if (!dalamWaktu(k)) return hasil("gagal", "Presensi kegiatan ini belum dibuka atau sudah ditutup.", k.judul);
-  const ada = await prisma.presensiKegiatan.findUnique({ where: { kegiatanId_userId: { kegiatanId: k.id, userId: s.userId } }, select: { waktu: true } });
+  // Kegiatan berhari-hari: jendela dihitung PER HARI, dan kehadirannya dicatat per hari.
+  const jendela = jendelaSekarang(k);
+  if (!jendela) return hasil("gagal", "Presensi kegiatan ini belum dibuka atau sudah ditutup.", k.judul);
+  const ada = await prisma.presensiKegiatan.findUnique({
+    where: { kegiatanId_userId_tanggal: { kegiatanId: k.id, userId: s.userId, tanggal: jendela.tanggal } },
+    select: { waktu: true },
+  });
   if (ada) return hasil("ok", `Anda sudah tercatat hadir pukul ${ada.waktu.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}.`, k.judul);
-  await prisma.presensiKegiatan.create({ data: { kegiatanId: k.id, userId: s.userId, nama: s.name, peran: s.role, metode: "QR" } });
+  await prisma.presensiKegiatan.create({ data: { kegiatanId: k.id, userId: s.userId, nama: s.name, peran: s.role, metode: "QR", tanggal: jendela.tanggal } });
+  // Hadir di kegiatan sekolah = ada di sekolah hari itu → absensi harian ikut terisi. TIDAK PERNAH
+  // menimpa catatan wali kelas/TU, dan gagal di sini tidak boleh menggagalkan presensinya.
+  await hadirkanAbsensiHarian([s.userId], isoWib(jendela.mulai)).catch(() => null);
   return hasil("ok", `Kehadiran ${s.name} tercatat.`, k.judul);
 }

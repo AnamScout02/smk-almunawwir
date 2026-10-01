@@ -29,8 +29,49 @@ export function tokenSah(id: string, token: string, sekarang = Date.now()) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function dalamWaktu(k: { mulai: Date; selesai: Date }, sekarang = Date.now()) {
-  return sekarang >= k.mulai.getTime() - BATAS_MENIT * 60_000 && sekarang <= k.selesai.getTime() + BATAS_MENIT * 60_000;
+const HARI_MS = 86_400_000;
+
+/** Tanggal WIB (YYYY-MM-DD) dari sebuah instan — server berjalan UTC. */
+export const isoWib = (d: Date) => new Date(d.getTime() + 7 * 3600_000).toISOString().slice(0, 10);
+/** Tengah malam WIB sebuah tanggal, dipakai sebagai kunci `PresensiKegiatan.tanggal`. */
+export const tengahMalamWib = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+
+export interface RentangKegiatan { mulai: Date; selesai: Date; sampaiTanggal?: Date | null }
+
+/** Berapa HARI kegiatan ini berlangsung. Tanpa `sampaiTanggal` = 1 hari (perilaku lama). */
+export function jumlahHari(k: RentangKegiatan): number {
+  if (!k.sampaiTanggal) return 1;
+  const awal = tengahMalamWib(isoWib(k.mulai)).getTime();
+  return Math.max(1, Math.round((k.sampaiTanggal.getTime() - awal) / HARI_MS) + 1);
+}
+
+/** Semua tanggal WIB yang dicakup kegiatan (YYYY-MM-DD), urut. */
+export function hariKegiatan(k: RentangKegiatan): string[] {
+  const n = jumlahHari(k);
+  return Array.from({ length: n }, (_, i) => isoWib(new Date(k.mulai.getTime() + i * HARI_MS)));
+}
+
+/**
+ * Jendela presensi HARI INI, atau null kalau sedang di luar jam kegiatan.
+ *
+ * Kegiatan berhari-hari memakai JAM HARIAN YANG SAMA (diambil dari `mulai`/`selesai`), jadi
+ * jendelanya dihitung per hari — bukan satu rentang menerus. Tanpa ini, kegiatan 5 hari membuat
+ * QR presensi sah 24 jam nonstop selama lima hari.
+ */
+export function jendelaSekarang(k: RentangKegiatan, sekarang = Date.now()) {
+  const n = jumlahHari(k);
+  for (let i = 0; i < n; i++) {
+    const mulai = k.mulai.getTime() + i * HARI_MS;
+    const selesai = k.selesai.getTime() + i * HARI_MS;
+    if (sekarang >= mulai - BATAS_MENIT * 60_000 && sekarang <= selesai + BATAS_MENIT * 60_000) {
+      return { tanggal: tengahMalamWib(isoWib(new Date(mulai))), mulai: new Date(mulai), selesai: new Date(selesai) };
+    }
+  }
+  return null;
+}
+
+export function dalamWaktu(k: RentangKegiatan, sekarang = Date.now()) {
+  return jendelaSekarang(k, sekarang) !== null;
 }
 
 /** Pembuat kegiatan = pembuat pengumuman (Admin/TU/pimpinan semua sasaran, wali kelas untuk kelasnya)
