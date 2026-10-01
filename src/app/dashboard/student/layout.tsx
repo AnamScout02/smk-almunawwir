@@ -9,11 +9,12 @@ import PusatNotifikasiPortal from "@/components/shared/PusatNotifikasiPortal";
 import ImpersonationBanner from "@/components/shared/ImpersonationBanner";
 import { jumlahBelumKonfirmasi } from "@/lib/pengumuman";
 import { jumlahSurveiBelumDiisi } from "@/lib/survei";
+import { JAM_BATAS_BUKTI } from "@/lib/izin-keluar";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const session = await verifyRole(["STUDENT"]);
   const impersonator = await getImpersonatorSession();
-  const [s, pendingEdit, kelasAdminOf, overdueBooks, belumBaca, belumSurvei] = await Promise.all([
+  const [s, pendingEdit, kelasAdminOf, overdueBooks, belumBaca, belumSurvei, buktiIzinKeluar] = await Promise.all([
     getSettings(["logo.emblem", "logo.full_white"]),
     prisma.profileEditRequest.findFirst({
       where: { status: "PENDING", student: { user: { email: session.email } } },
@@ -26,6 +27,13 @@ export default async function StudentLayout({ children }: { children: React.Reac
     getOverdueLoanCount(session.userId),
     jumlahBelumKonfirmasi(session).catch(() => 0),
     jumlahSurveiBelumDiisi(session),
+    // Bukti foto izin keluar yang masih tertunggak (batas 24 jam sejak keluar) — lencana menu.
+    prisma.izinKeluarSiswa.count({
+      where: {
+        student: { user: { email: session.email } }, perluFoto: true, buktiFoto: null,
+        keluarPada: { gte: new Date(Date.now() - JAM_BATAS_BUKTI * 3600_000) },
+      },
+    }).catch(() => 0),
   ]);
   // Satu sumber antrean "Perlu tindakan" (src/lib/antrean-portal.ts) — dipakai lencana notifikasi
   // DAN halaman Pusat Notifikasi supaya isinya tidak pernah berbeda.
@@ -35,7 +43,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
     <div className="dashboard-shell">
       {impersonator && <ImpersonationBanner adminName={impersonator.name} />}
       <div className="flex min-h-dvh">
-        <StudentSidebar logoEmblem={s["logo.emblem"]} logoFullWhite={s["logo.full_white"]} hasPendingBiodata={!!pendingEdit} isKelasAdmin={isKelasAdmin} overdueBooks={overdueBooks} impersonating={!!impersonator} tindakan={tindakan} kelasXII={kelasAdminOf?.class?.grade === 12} />
+        <StudentSidebar logoEmblem={s["logo.emblem"]} logoFullWhite={s["logo.full_white"]} hasPendingBiodata={!!pendingEdit} buktiIzinKeluar={buktiIzinKeluar} isKelasAdmin={isKelasAdmin} overdueBooks={overdueBooks} impersonating={!!impersonator} tindakan={tindakan} kelasXII={kelasAdminOf?.class?.grade === 12} />
         {/* pb-[...]: ruang utk bottom nav bar mobile (fixed, MobileBottomNav di StudentSidebar) —
             pakai calc(4rem + safe-area-inset-bottom), BUKAN pb-16 polos, supaya di device
             ber-notch/home-indicator (iPhone dll) konten paling bawah tidak ketutup strip aman nav
