@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "./prisma";
 import { assertJabatan } from "./jabatan-guard";
+import { assertKedisiplinan } from "./kedisiplinan-guard";
 import { getWeekTypeForDate } from "./schedule-week.server";
 
 /**
@@ -51,6 +52,25 @@ export async function assertImam(session: { role: string; email: string }) {
 /** Versi tanpa lemparan — untuk menentukan tombol/menu tampil atau tidak. */
 export async function bolehImam(session: { role: string; email: string }): Promise<boolean> {
   try { await assertImam(session); return true; } catch { return false; }
+}
+
+/**
+ * MENGATUR JADWAL vs MENCATAT KEHADIRAN dibedakan (30 September 2026, permintaan user: presensi
+ * imam "muncul di absensi yang dicek guru piket biar jadi 1").
+ *
+ * Jadwalnya tetap disusun Kesiswaan/Pembina OSIS (`assertImam`), tetapi KEHADIRAN hariannya dicek
+ * di Buku Piket bersama kehadiran petugas piket — jadi petugas piket hari itu juga harus boleh
+ * menyimpannya (`assertKedisiplinan`: Penjamin Mutu/Kurikulum, atau siapa pun yang terjadwal piket
+ * hari ini). Salah satu lolos sudah cukup.
+ */
+export async function assertPresensiImam(session: { role: string; email: string }) {
+  try {
+    await assertImam(session);
+    return;
+  } catch {
+    // Bukan pengelola jadwal imam — mungkin petugas piket yang sedang mengisi Buku Piket.
+  }
+  await assertKedisiplinan(session);
 }
 
 export interface PetugasHariIni {

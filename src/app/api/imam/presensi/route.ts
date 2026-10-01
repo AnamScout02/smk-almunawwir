@@ -3,7 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { logActivity } from "@/lib/activity-log";
-import { STATUS, assertImam, petugasTanggal, sesiSah, tanggalKunci } from "@/lib/imam-sholat";
+import { STATUS, assertPresensiImam, petugasTanggal, sesiSah, tanggalKunci } from "@/lib/imam-sholat";
 import { cekLibur } from "@/lib/hari-libur";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ const isoSah = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 export async function GET(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-    await assertImam(session);
+    await assertPresensiImam(session);
     const sp = new URL(req.url).searchParams;
     const tanggal = sp.get("tanggal") ?? new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
     if (!isoSah(tanggal)) return NextResponse.json({ error: "Tanggal tidak sah." }, { status: 400 });
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Khusus Wakil Kepala Kesiswaan / Pembina OSIS." }, { status: 403 });
+      return NextResponse.json({ error: "Khusus Wakil Kepala Kesiswaan / Pembina OSIS atau petugas piket hari ini." }, { status: 403 });
     }
     return NextResponse.json({ error: "Gagal memuat presensi imam." }, { status: 500 });
   }
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
-    await assertImam(session);
+    await assertPresensiImam(session);
     const { tanggal, baris } = await req.json() as { tanggal?: string; baris?: Record<string, string>[] };
     if (!tanggal || !isoSah(tanggal)) return NextResponse.json({ error: "Tanggal tidak sah." }, { status: 400 });
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     lemparBilaPengalihan(e);
     if (e instanceof Error && e.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Khusus Wakil Kepala Kesiswaan / Pembina OSIS." }, { status: 403 });
+      return NextResponse.json({ error: "Khusus Wakil Kepala Kesiswaan / Pembina OSIS atau petugas piket hari ini." }, { status: 403 });
     }
     console.error("[imam presensi POST]", e);
     return NextResponse.json({ error: "Gagal menyimpan presensi imam." }, { status: 500 });

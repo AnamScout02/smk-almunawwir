@@ -63,6 +63,23 @@ interface SlotItem {
 interface DutyAttendanceItem {
   userId: string; userName: string; userRole: string; userNip: string | null; status: string; notes: string;
 }
+/** Satu baris petugas imam sholat pada tanggal itu (dari /api/imam/presensi). */
+interface ImamItem {
+  userId: string; nama: string; sesi: string; slot: string; status: string; catatan: string;
+}
+/** PresensiImam hanya mengenal 4 status (tanpa TERLAMBAT) — lihat STATUS di src/lib/imam-sholat.ts.
+ *  Mengirim TERLAMBAT ke sana akan ditolak diam-diam oleh penyaringnya, jadi jangan disamakan
+ *  dengan pilihan status guru piket. */
+const STATUS_OPTIONS_IMAM = [
+  { value: "", label: "— Pilih —" },
+  { value: "HADIR", label: "Hadir" },
+  { value: "IZIN", label: "Izin" },
+  { value: "SAKIT", label: "Sakit" },
+  { value: "ALPHA", label: "Alpha" },
+];
+const LABEL_TUGAS_IMAM: Record<string, string> = {
+  "DUHA|-": "Imam Duha", "DZUHUR|L": "Imam Dzuhur (Putra)", "DZUHUR|P": "Imam Dzuhur (Putri)",
+};
 
 const STATUS_OPTIONS = [
   { value: "HADIR", label: "Hadir" },
@@ -119,19 +136,35 @@ export default function KedisiplinanManager() {
   // berdekatan tanpa saling tahu).
   const [dirtyDayKeys, setDirtyDayKeys] = useState<Set<string>>(new Set());
 
-  // ===== Kehadiran Guru Piket (petugas piket itu sendiri, bukan absensi mengajar) — pakai viewDate yang sama =====
+  // ===== Kehadiran petugas piket & IMAM SHOLAT (bukan absensi mengajar) — pakai viewDate yang sama.
+  // Presensi imam digabung ke sini atas permintaan user 30 September 2026 ("biar jadi 1"): dua
+  // tabel yang dicek petugas yang sama pada tanggal yang sama tidak perlu dua halaman. Jadwal
+  // imamnya tetap disusun Kesiswaan di halaman Jadwal Imam Sholat; yang pindah hanya presensinya.
   const [dutyAttendance, setDutyAttendance] = useState<DutyAttendanceItem[]>([]);
+  const [imam, setImam] = useState<ImamItem[]>([]);
+  const [imamLibur, setImamLibur] = useState<string | null>(null);
   const [loadingDuty, setLoadingDuty] = useState(true);
   const [savingDuty, setSavingDuty] = useState(false);
   const [dutySaved, setDutySaved] = useState(false);
   const [dirtyDutyUserIds, setDirtyDutyUserIds] = useState<Set<string>>(new Set());
+  /** Kunci baris imam = userId|sesi (satu guru bisa jadi imam Duha DAN Dzuhur di hari yang sama). */
+  const [dirtyImamKeys, setDirtyImamKeys] = useState<Set<string>>(new Set());
 
   function loadDutyAttendance() {
     setLoadingDuty(true);
     setDirtyDutyUserIds(new Set());
-    fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance?date=${viewDate}`)
-      .then(r => r.json()).then(d => setDutyAttendance(Array.isArray(d) ? d : []))
-      .catch(() => {}).finally(() => setLoadingDuty(false));
+    setDirtyImamKeys(new Set());
+    Promise.all([
+      fetch(`/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance?date=${viewDate}`)
+        .then(r => r.json()).catch(() => []),
+      // 403 mungkin (bukan pengelola jadwal imam & tidak piket hari ini) — bagian imam cukup kosong,
+      // jangan menggagalkan seluruh panel kehadiran piket karena itu.
+      fetch(`/api/imam/presensi?tanggal=${viewDate}`).then(r => r.json()).catch(() => null),
+    ]).then(([d, im]) => {
+      setDutyAttendance(Array.isArray(d) ? d : []);
+      setImam(Array.isArray(im?.petugas) ? im.petugas.map((p: ImamItem) => ({ ...p, status: p.status ?? "", catatan: "" })) : []);
+      setImamLibur(im?.libur ?? null);
+    }).catch(() => {}).finally(() => setLoadingDuty(false));
   }
   useEffect(() => { loadDutyAttendance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [viewDate]);
 
@@ -141,21 +174,49 @@ export default function KedisiplinanManager() {
     setDutySaved(false);
   }
 
+  function setImamField(kunci: string, field: "status" | "catatan", value: string) {
+    setImam(prev => prev.map(i => `${i.userId}|${i.sesi}` === kunci ? { ...i, [field]: value } : i));
+    setDirtyImamKeys(prev => new Set(prev).add(kunci));
+    setDutySaved(false);
+  }
+
   async function handleSaveDuty() {
     // Status kosong (belum dipilih) tidak boleh ikut tersimpan — cuma kirim baris yg statusnya
     // benar2 sudah dipilih Wakasek/Guru Piket.
     const changed = dutyAttendance.filter(d => dirtyDutyUserIds.has(d.userId) && d.status !== "");
-    if (changed.length === 0) return;
+    const imamChanged = imam.filter(i => dirtyImamKeys.has(`${i.userId}|${i.sesi}`) && i.status !== "");
+    if (changed.length === 0 && imamChanged.length === 0) return;
     setSavingDuty(true);
-    const res = await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: viewDate, records: changed.map(d => ({ userId: d.userId, status: d.status, notes: d.notes })) }),
-    });
+    // Dua tabel berbeda (DutyAttendance unik per userId+date, PresensiImam per userId+date+sesi),
+    // jadi dua permintaan — tapi satu tombol Simpan. Kegagalan salah satu dilaporkan sendiri
+    // supaya petugas tahu bagian mana yang belum masuk.
+    const [resDuty, resImam] = await Promise.all([
+      changed.length
+        ? fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan/duty-attendance", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: viewDate, records: changed.map(d => ({ userId: d.userId, status: d.status, notes: d.notes })) }),
+          }).catch(() => null)
+        : Promise.resolve(null),
+      imamChanged.length
+        ? fetch("/api/imam/presensi", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tanggal: viewDate, baris: imamChanged.map(i => ({ userId: i.userId, sesi: i.sesi, status: i.status, catatan: i.catatan })) }),
+          }).catch(() => null)
+        : Promise.resolve(null),
+    ]);
     setSavingDuty(false);
-    if (res.ok) {
+    const gagalDuty = changed.length > 0 && !resDuty?.ok;
+    const gagalImam = imamChanged.length > 0 && !resImam?.ok;
+    if (gagalDuty) toast.error("Kehadiran guru piket gagal disimpan.");
+    if (gagalImam) {
+      const d = await resImam?.json().catch(() => null);
+      toast.error(d?.error ?? "Kehadiran imam sholat gagal disimpan.");
+    }
+    if (!gagalDuty) setDirtyDutyUserIds(new Set());
+    if (!gagalImam) setDirtyImamKeys(new Set());
+    if (!gagalDuty && !gagalImam) {
       setDutySaved(true);
       setTimeout(() => setDutySaved(false), 3000);
-      setDirtyDutyUserIds(new Set());
     }
   }
 
@@ -539,9 +600,9 @@ export default function KedisiplinanManager() {
       {/* ===== Kehadiran Guru Piket — petugas piket ITU SENDIRI, bukan absensi mengajar ===== */}
       <div className="panel p-5 mb-5">
         <h3 className="font-heading font-semibold text-primary-900 mb-1 flex items-center gap-2">
-          <CalendarClock size={16} className="text-primary-700" /> Kehadiran Guru Piket
+          <CalendarClock size={16} className="text-primary-700" /> Kehadiran Guru Piket &amp; Imam Sholat
         </h3>
-        <p className="text-xs text-gray-400 mb-4">Apakah petugas yang terjadwal piket tanggal ini benar-benar hadir menjalankan tugasnya.</p>
+        <p className="text-xs text-gray-400 mb-4">Apakah petugas yang terjadwal piket dan imam sholat tanggal ini benar-benar hadir menjalankan tugasnya.</p>
         <div className="flex items-center gap-2 bg-primary-50/60 border border-primary-100 rounded-xl px-3 py-2.5 mb-4">
           <ScanLine size={16} className="text-primary-700 shrink-0" />
           <input value={scanDutyInput} onChange={e => setScanDutyInput(e.target.value)} onKeyDown={handleScanDuty}
@@ -550,31 +611,69 @@ export default function KedisiplinanManager() {
         </div>
         {loadingDuty ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400"><Loader2 size={18} className="animate-spin" /> Memuat...</div>
-        ) : dutyAttendance.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4">Tidak ada guru/staf yang terjadwal piket pada tanggal ini.</p>
+        ) : dutyAttendance.length === 0 && imam.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4">
+            Tidak ada guru/staf yang terjadwal piket atau menjadi imam sholat pada tanggal ini.
+            {imamLibur ? ` Tanggal ini libur (${imamLibur}).` : ""}
+          </p>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {dutyAttendance.map(d => (
-                <div key={d.userId} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
-                  <div>
-                    <p className="text-xs font-semibold text-primary-900">{d.userName}</p>
-                    <p className="text-xs text-gray-400">{d.userNip ?? d.userRole}</p>
+            <p className="label-kecil mb-2 text-gray-400">Petugas Piket</p>
+            {dutyAttendance.length === 0 ? (
+              <p className="text-sm text-gray-400">Tidak ada guru/staf yang terjadwal piket pada tanggal ini.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {dutyAttendance.map(d => (
+                  <div key={d.userId} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
+                    <div>
+                      <p className="text-xs font-semibold text-primary-900">{d.userName}</p>
+                      <p className="text-xs text-gray-400">{d.userNip ?? d.userRole}</p>
+                    </div>
+                    <Select value={d.status} onChange={v => setDutyField(d.userId, "status", v)}
+                      options={STATUS_OPTIONS_ROW}
+                      buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer ${STATUS_BADGE[d.status]}`} />
+                    <input value={d.notes} onChange={e => setDutyField(d.userId, "notes", e.target.value)}
+                      className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
                   </div>
-                  <Select value={d.status} onChange={v => setDutyField(d.userId, "status", v)}
-                    options={STATUS_OPTIONS_ROW}
-                    buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer ${STATUS_BADGE[d.status]}`} />
-                  <input value={d.notes} onChange={e => setDutyField(d.userId, "notes", e.target.value)}
-                    className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
+            <p className="label-kecil mb-2 mt-5 text-gray-400">Imam Sholat</p>
+            {imam.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                {imamLibur
+                  ? `Tanggal ini libur (${imamLibur}) — tidak ada jadwal imam.`
+                  : "Belum ada jadwal imam sholat untuk hari ini. Jadwalnya disusun di menu Jadwal Imam Sholat."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {imam.map(i => {
+                  const kunci = `${i.userId}|${i.sesi}`;
+                  return (
+                    <div key={`${kunci}|${i.slot}`} className="bg-gray-50/60 rounded-xl border border-gray-100 p-3 space-y-2">
+                      <div>
+                        <p className="text-xs font-semibold text-primary-900">{i.nama}</p>
+                        <p className="text-xs text-gray-400">{LABEL_TUGAS_IMAM[`${i.sesi}|${i.slot}`] ?? i.sesi}</p>
+                      </div>
+                      <Select value={i.status} onChange={v => setImamField(kunci, "status", v)}
+                        options={STATUS_OPTIONS_IMAM}
+                        buttonClassName={`w-full flex items-center justify-between gap-1 text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer ${STATUS_BADGE[i.status]}`} />
+                      <input value={i.catatan} onChange={e => setImamField(kunci, "catatan", e.target.value)}
+                        className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="flex items-center justify-end gap-4 mt-4">
               {dutySaved && <p className="text-emerald-600 text-sm font-semibold">✓ Tersimpan!</p>}
-              {!dutySaved && dirtyDutyUserIds.size > 0 && (
-                <p className="text-amber-600 text-xs font-medium">{dirtyDutyUserIds.size} belum disimpan</p>
+              {!dutySaved && dirtyDutyUserIds.size + dirtyImamKeys.size > 0 && (
+                <p className="text-amber-600 text-xs font-medium">{dirtyDutyUserIds.size + dirtyImamKeys.size} belum disimpan</p>
               )}
-              <button onClick={handleSaveDuty} disabled={savingDuty || dirtyDutyUserIds.size === 0} className="btn-modal-save disabled:opacity-40 disabled:cursor-not-allowed">
+              <button onClick={handleSaveDuty} disabled={savingDuty || dirtyDutyUserIds.size + dirtyImamKeys.size === 0}
+                className="btn-modal-save disabled:opacity-40 disabled:cursor-not-allowed">
                 {savingDuty ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan
               </button>
             </div>
