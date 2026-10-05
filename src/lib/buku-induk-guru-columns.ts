@@ -36,7 +36,10 @@ export interface ColDef {
 export const GURU_COLUMNS: ColDef[] = [
   { key: "nip", label: "NIP", group: "Identitas", get: t => t.nip },
   { key: "nik", label: "NIK", group: "Identitas", get: t => b(t, "nik") },
-  { key: "nuptk", label: "NUPTK", group: "Identitas", get: t => b(t, "nuptk") },
+  // Diberi isian 2 Oktober 2026 (temuan user: "di guru apa ada tempat untuk menambahkan NIP/NUPTK").
+  // Sebelumnya NUPTK hanya bisa DILIHAT — tidak ada satu pun layar yang bisa mengisinya, dan 0 dari
+  // 32 guru terisi. NUPTK dipakai memasangkan data guru dengan Dapodik (CLAUDE.md #38).
+  { key: "nuptk", label: "NUPTK", group: "Identitas", get: t => b(t, "nuptk"), isian: {} },
   { key: "nama", label: "Nama Lengkap", group: "Identitas", get: t => t.user.name },
   { key: "gender", label: "JK", group: "Identitas", get: t => t.gender === "L" ? "Laki-laki" : t.gender === "P" ? "Perempuan" : "" },
   { key: "birthPlace", label: "Tempat Lahir", group: "Identitas", get: t => t.birthPlace ?? "" },

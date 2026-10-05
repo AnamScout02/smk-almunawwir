@@ -393,6 +393,10 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
                   <ImageUpload value={e("fotoMasukUrl")} onChange={setE("fotoMasukUrl")} folder="buku-induk/masuk" label="Foto Masuk (saat mulai mengajar)"
                     accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
                 </div>
+                <div className="col-span-2">
+                  <ImageUpload value={e("fotoKartuUrl")} onChange={setE("fotoKartuUrl")} folder="buku-induk/kartu" label="Foto Kartu (Kartu Tanda)"
+                    accept="image/jpeg,image/png" hint="Dipakai di Kartu Tanda. Kosong = memakai Foto Masuk. JPG/PNG 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+                </div>
                 <div>
                   <label className="label-field">Status</label>
                   <Select

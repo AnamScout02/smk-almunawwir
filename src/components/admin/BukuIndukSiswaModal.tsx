@@ -24,6 +24,8 @@ interface Achievement {
 export interface BukuIndukData {
   // A
   fotoMasukUrl?: string;
+  /** Foto khusus Kartu Tanda Siswa (4 Okt 2026) — terpisah dari Foto Masuk/Keluar, lihat src/lib/foto-kartu.ts. */
+  fotoKartuUrl?: string;
   nik?: string; nickname?: string; citizenship?: string;
   childOrder?: string; siblingsCount?: string; halfSiblings?: string;
   adoptedSiblings?: string; orphanStatus?: string; dailyLanguage?: string;
@@ -411,6 +413,11 @@ export default function BukuIndukSiswaModal({
         <div className="col-span-2">
           <ImageUpload value={f("fotoMasukUrl")} onChange={setF("fotoMasukUrl")} folder="buku-induk/masuk" label="Foto Masuk (saat pendaftaran)"
             accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
+        </div>
+        <div className="col-span-2">
+          {/* Foto KHUSUS Kartu Tanda Siswa — terpisah dari Foto Masuk/Keluar (src/lib/foto-kartu.ts). */}
+          <ImageUpload value={f("fotoKartuUrl")} onChange={setF("fotoKartuUrl")} folder="buku-induk/kartu" label="Foto Kartu (KTS)"
+            accept="image/jpeg,image/png" hint="Dipakai di Kartu Tanda Siswa. Kosong = memakai Foto Masuk. JPG/PNG 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
         </div>
         {isNew ? (
           <>

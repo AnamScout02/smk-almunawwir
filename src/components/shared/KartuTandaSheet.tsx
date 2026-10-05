@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { IdCard, Loader2, Pencil } from "lucide-react";
+import { IdCard, Loader2, Pencil, Upload } from "lucide-react";
+import UnggahFotoKartu from "@/components/shared/UnggahFotoKartu";
 import Select from "@/components/admin/Select";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
@@ -175,6 +176,7 @@ export default function KartuTandaSheet({ classes, template, logoEmblem, signatu
   const [classId, setClassId] = useState("");
   const [data, setData] = useState<CardPerson[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [unggah, setUnggah] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -233,8 +235,16 @@ export default function KartuTandaSheet({ classes, template, logoEmblem, signatu
           className="btn-modal-cancel">
           <Pencil size={14} /> Desain Kartu
         </Link>
+        {type !== "PEGAWAI" && (
+          <button type="button" onClick={() => setUnggah(true)} className="btn-modal-cancel btn-teks">
+            <Upload size={14} /> Unggah Foto Kartu
+          </button>
+        )}
         {data && data.length > 0 && <div className="sm:ml-auto"><PrintButton /></div>}
       </div>
+
+      <UnggahFotoKartu open={unggah} onClose={() => setUnggah(false)} jenis={type === "GURU" ? "GURU" : "SISWA"}
+        onSelesai={() => { if (data) void load(); }} />
 
       {!data ? (
         <p className="text-center py-16 text-gray-400 text-sm print:hidden">Pilih jenis kartu lalu klik &quot;Muat Kartu&quot;.</p>
