@@ -4,6 +4,8 @@ import { NextRequest } from "next/server";
 import { verifySession } from "@/lib/dal";
 import { kompresGambar } from "@/lib/kompres-gambar";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { TAS_JABATAN } from "@/lib/tas-jabatan";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,11 +20,18 @@ export async function POST(req: NextRequest) {
     // "soal": gambar/audio yang disisipkan guru ke dalam soal CBT (listening, diagram).
     const isStudentAllowedFolder = folder === "buku-induk/masuk" || folder === "pkl-jurnal" || folder === "tugas-jawaban" || folder === "ujian-jawaban";
     // "osis": foto calon Pemilihan OSIS (Pembina OSIS/Kesiswaan — akses halaman dijaga osis-guard).
-    const isTeacherAllowedFolder = folder === "materi" || folder === "tugas" || folder === "soal" || folder === "osis" || folder === "pkl-jurnal" || folder === "liputan";
+    const isTeacherAllowedFolder = folder === "materi" || folder === "tugas" || folder === "soal" || folder === "osis" || folder === "pkl-jurnal" || folder === "liputan" || folder === "event";
     // "sarpras": foto laporan kerusakan (semua guru & staf, 17 Sep 2026).
-    const isTasAllowedFolder = folder === "bel-sekolah" || folder === "sarpras" || folder === "bkk";
+    // "event": poster & panduan Lomba & Event — isinya memang untuk publik (berkas peserta di folder rahasia, rute sendiri).
+    const isTasAllowedFolder = folder === "bel-sekolah" || folder === "sarpras" || folder === "bkk" || folder === "event";
+    /* FOTO BUKU INDUK (masuk/keluar/kartu) untuk Tata Usaha (4 Okt 2026). Halaman Buku Induk & Kartu Tanda
+       dibuka staf TU (peran TAS) dan guru berjabatan TU (verifyTasAccess), tetapi rute ini dulu hanya
+       mengizinkan Admin — staf TU tidak bisa mengunggah foto siswa sama sekali. Jabatan diperiksa sama persis. */
+    const folderBukuInduk = folder === "buku-induk/masuk" || folder === "buku-induk/keluar" || folder === "buku-induk/kartu";
+    const bolehBukuInduk = folderBukuInduk && (session.role === "TAS"
+      || (session.role === "TEACHER" && (await getJabatanNames(session.email)).some(n => TAS_JABATAN.includes(n))));
     const allowed_ =
-      session.role === "ADMIN" ||
+      session.role === "ADMIN" || bolehBukuInduk ||
       (session.role === "STUDENT" && isStudentAllowedFolder) ||
       (session.role === "TEACHER" && (isTeacherAllowedFolder || isTasAllowedFolder)) ||
       (session.role === "TAS" && (isTasAllowedFolder || folder === "soal"));
@@ -34,8 +43,8 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Tidak ada file" }, { status: 400 });
     }
 
-    const isIdPhotoFolder = folder === "buku-induk/masuk" || folder === "buku-induk/keluar";
-    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban";
+    const isIdPhotoFolder = folderBukuInduk;
+    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban" || folder === "event";
     const isAudioFolder = folder === "bel-sekolah";
     const isSoalFolder = folder === "soal";
     const allowed = isIdPhotoFolder

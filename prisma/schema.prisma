@@ -50,6 +50,7 @@ model User {
   presensiImam     PresensiImam[]
   pengajuanBiodata PegawaiEditRequest[]
   biodataPegawai   BiodataPegawai?
+  perujukSpmb       PerujukSpmb[]
 }
 
 model Teacher {
@@ -527,6 +528,7 @@ model Major {
   classes            Class[]
   gallery            MajorGallery[]
   subjects           Subject[]
+  kuotaSpmb          KuotaSpmb[]
 }
 
 model Subject {
@@ -710,6 +712,7 @@ model Student {
   ijazahHandovers               IjazahHandover[]
   absensiPindai                 AbsensiPindaiLog[]
   penempatanRuangUjian          PenempatanRuangUjian[]
+  perujukSpmb                   PerujukSpmb[]
 }
 
 // ── Modul Bendahara (Tagihan Siswa) ────────────────────────────────────────────────────────
@@ -1482,6 +1485,8 @@ model PendaftaranEvent {
   catatan        String?
   /// Nama berkas di public/uploads/rahasia/event — dibuka hanya lewat rute berizin.
   karyaBerkas    String?
+  /// Tautan karya di luar (Google Drive, YouTube) — untuk karya di atas batas unggah 6 MB.
+  karyaTautan    String?
   buktiBayar     String?
   status         String   @default("DIAJUKAN") // DIAJUKAN | DIVERIFIKASI | DITOLAK | JUARA | TIDAK_LOLOS
   catatanPanitia String?
@@ -1519,8 +1524,115 @@ model News {
   updatedAt DateTime @updatedAt
 }
 
+/// ══ SPMB (Seleksi Penerimaan Murid Baru) — portal /pusat-spmb, 1 Oktober 2026 ══
+/// Keputusan user: pendaftaran BERGELOMBANG, komponen penilaian DITENTUKAN PANITIA (bukan ditanam
+/// di kode), dan calon mendaftar TANPA AKUN — dikenali lewat nomor pendaftaran + tanggal lahir.
+
+/// Satu gelombang pendaftaran: punya tanggal, biaya, dan kuota per jurusan sendiri. Sekolah swasta
+/// lazim membuka beberapa gelombang dengan biaya berbeda (gelombang awal lebih murah).
+model GelombangSpmb {
+  id             String        @id @default(cuid())
+  tahunAjaranId  String?
+  tahunAjaran    AcademicYear? @relation(fields: [tahunAjaranId], references: [id])
+  nama           String // "Gelombang 1"
+  urutan         Int           @default(1)
+  buka           DateTime
+  tutup          DateTime
+  biayaDaftar    Int           @default(0)
+  catatan        String?
+  aktif          Boolean       @default(true)
+  kuota          KuotaSpmb[]
+  pendaftar      Admission[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([aktif, buka])
+}
+
+/// Daya tampung per jurusan DI DALAM satu gelombang. Dipakai meranking pendaftar saat seleksi —
+/// berbeda dari `nominatif.pagu` yang hanya angka untuk dokumen Dinas.
+model KuotaSpmb {
+  id          String        @id @default(cuid())
+  gelombangId String
+  gelombang   GelombangSpmb @relation(fields: [gelombangId], references: [id], onDelete: Cascade)
+  majorId     String
+  major       Major         @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  kuota       Int           @default(0)
+
+  @@unique([gelombangId, majorId])
+}
+
+/// APA YANG DINILAI — didefinisikan panitia, bukan ditanam di kode (keputusan user 1 Okt 2026:
+/// "bisa disesuaikan dari semua pilihan"). Sekolah bisa memakai nilai rapor saja, atau menambah tes
+/// tulis, baca Qur'an, wawancara, dan kesehatan dengan bobotnya masing-masing.
+model KomponenNilaiSpmb {
+  id        String      @id @default(cuid())
+  nama      String // "Nilai Rapor", "Tes Tulis", "Baca Qur'an", "Wawancara"
+  /// ANGKA = ikut perhitungan skor berbobot. LULUS_TIDAK = syarat gugur, tidak menambah skor.
+  jenis     String      @default("ANGKA") // ANGKA | LULUS_TIDAK
+  bobot     Int         @default(0) // persen; jumlah bobot komponen ANGKA sebaiknya 100
+  nilaiMaks Int         @default(100)
+  urutan    Int         @default(0)
+  aktif     Boolean     @default(true)
+  nilai     NilaiSpmb[]
+  createdAt DateTime    @default(now())
+}
+
+model NilaiSpmb {
+  id          String            @id @default(cuid())
+  admissionId String
+  admission   Admission         @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  komponenId  String
+  komponen    KomponenNilaiSpmb @relation(fields: [komponenId], references: [id], onDelete: Cascade)
+  nilai       Float?
+  lulus       Boolean?
+  /// Khusus komponen berjenis PRESTASI: tingkat (KABUPATEN/PROVINSI/NASIONAL/INTERNASIONAL) dan
+  /// peringkat (1/2/3) sertifikat. `nilai` diisi SERVER dari tabel bobot `spmb.bobotPrestasi`,
+  /// supaya angkanya tidak bisa dikarang dari browser dan tetap bisa diaudit.
+  tingkat     String?
+  peringkat   String?
+  catatan     String?
+  penilaiNama String?
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([admissionId, komponenId])
+}
+
+/// Dokumen yang diminta ke pendaftar — daftarnya diatur panitia, jadi formulir publik ikut berubah
+/// tanpa menyentuh kode. Pola sama dengan PklDocumentRequirement.
+model DokumenSyaratSpmb {
+  id        String       @id @default(cuid())
+  nama      String // "Ijazah/SKL", "Kartu Keluarga", "Akta Kelahiran"
+  keterangan String?
+  wajib     Boolean      @default(true)
+  urutan    Int          @default(0)
+  aktif     Boolean      @default(true)
+  berkas    BerkasSpmb[]
+  createdAt DateTime     @default(now())
+}
+
+/// Unggahan pendaftar. Berkas masuk FOLDER RAHASIA (KK, akta, KTP = data pribadi keluarga).
+model BerkasSpmb {
+  id           String            @id @default(cuid())
+  admissionId  String
+  admission    Admission         @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  syaratId     String
+  syarat       DokumenSyaratSpmb @relation(fields: [syaratId], references: [id], onDelete: Cascade)
+  berkas       String
+  diverifikasi Boolean           @default(false)
+  catatan      String?
+  createdAt    DateTime          @default(now())
+
+  @@unique([admissionId, syaratId])
+}
+
 model Admission {
   id                     String    @id @default(cuid())
+  /// Nomor pendaftaran yang dibawa calon (mis. "SPMB-2627-0001"). Dipakai bersama TANGGAL LAHIR
+  /// untuk membuka status tanpa akun — nomor saja mudah ditebak orang lain.
+  nomor                  String?   @unique
+  gelombangId            String?
+  gelombang              GelombangSpmb? @relation(fields: [gelombangId], references: [id])
   fullName               String
   birthPlace             String?
   birthDate              DateTime
@@ -1529,6 +1641,12 @@ model Admission {
   phone                  String
   nisn                   String?
   address                String?
+  // Wilayah terstruktur (2 Okt 2026) — untuk peta sebaran pendaftar. Kode Kepmendagri 2025
+  // (public/data/wilayah); nama disimpan juga supaya tetap terbaca bila kode berubah.
+  kabupatenKode          String?
+  kabupaten              String?
+  kecamatanKode          String?
+  kecamatan              String?
   previousSchool         String?
   email                  String
   guardianName           String?
@@ -1553,10 +1671,22 @@ model Admission {
   daftarUlangConfirmedAt DateTime?
   paymentVerified        Boolean   @default(false)
   createdAt              DateTime  @default(now())
+  /// Token keaslian cetakan formulir pendaftaran (pola CLAUDE.md #49) — dibuat SEKALI saat
+  /// formulir pertama dicetak, jadi cetak ulang memakai token yang sama.
+  cetakToken             String?   @unique
+  /// Kode referral PERSIS seperti yang diketik pendaftar — disimpan apa adanya supaya jejaknya
+  /// tetap ada walau baris perujuknya kelak dihapus/dinonaktifkan.
+  perujukKode            String?
+  perujukId              String?
+  perujuk                PerujukSpmb? @relation(fields: [perujukId], references: [id], onDelete: SetNull)
   // Konversi ke Buku Induk (17 Sep 2026)
   studentId              String?   @unique
   dikonversiPada         DateTime?
   dikonversiOleh         String?
+  nilaiSpmb              NilaiSpmb[]
+  berkasSpmb             BerkasSpmb[]
+
+  @@index([status, chosenMajor])
 }
 
 model Gallery {
@@ -1711,6 +1841,7 @@ model AcademicYear {
   promotionDecisions PromotionDecision[]
   schoolEvents       SchoolEvent[]
   kegiatanUjian      KegiatanUjian[]
+  gelombangSpmb      GelombangSpmb[]
 }
 
 model Surat {
@@ -2144,6 +2275,9 @@ model BellSchedule {
   days      String // comma-separated: "SENIN,SELASA,RABU,KAMIS,SABTU" atau "JUMAT" dst
   audioUrl  String? // path /uploads/... kalau TU upload MP3 sendiri; null = nada bawaan
   active    Boolean  @default(true)
+  /// REGULER | UJIAN (4 Okt 2026). Bel UJIAN menggantikan bel REGULER pada tanggal Kegiatan Ujian yang aktif
+  /// (src/lib/bel-profil.ts) — di speaker pusat MAUPUN di semua TV.
+  profil    String   @default("REGULER")
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3346,6 +3480,11 @@ model Layar {
   /// dibacakan), TEKS (tampil saja, tidak dibacakan — untuk yang tidak mendesak), atau SUARA (dibacakan sekali,
   /// papan TETAP menampilkan panel biasa — untuk panggilan singkat yang tidak perlu menutup seluruh layar).
   papanCara       String  @default("TEKS_SUARA")
+  /// MODE BEL per TV (4 Okt 2026, untuk ruang ANBK/TKA): NORMAL | HENING (bel diam, pengumuman tampil sebagai
+  /// teks tanpa nada/suara) | UJIAN (selalu memakai jadwal bel profil UJIAN). Berlaku sampai `belModeSampai`
+  /// (null = sampai diubah lagi); lewat dari itu dianggap NORMAL tanpa perlu ada yang mengembalikannya.
+  belMode         String  @default("NORMAL")
+  belModeSampai   DateTime?
   papanManualSaja Boolean @default(false)
   /// Kelas yang jadwalnya ditampilkan di papan (TV depan kelas). Kosong = papan umum (agenda & pengumuman saja).
   kelasId    String?
@@ -3475,4 +3614,45 @@ model PresensiImam {
 
   @@unique([userId, date, sesi])
   @@index([date])
+}
+
+/// PERUJUK SPMB (2 Oktober 2026) — daftar orang yang boleh merujuk calon murid.
+/// Registri ini SATU-SATUNYA sumber "siapa boleh merujuk": kode siswa memang diisi dari NIS dan
+/// kode pegawai dari NIP, tetapi yang diperiksa saat pendaftaran adalah BARIS DI SINI — bukan
+/// mencari langsung ke tabel Student/Teacher. Alasannya tiga: (1) kode harus tetap sah & bisa
+/// ditelusuri setelah siswa lulus atau guru keluar, (2) NIS dan NIP hidup di tabel berbeda dan
+/// bisa saja bertabrakan — `kode` unik di sini membuat tabrakan mustahil, (3) perujuk LUAR
+/// (alumni, wali murid, tokoh masyarakat) tidak punya baris di tabel mana pun.
+model PerujukSpmb {
+  id         String   @id @default(cuid())
+  kode       String   @unique
+  nama       String
+  /// SISWA | PEGAWAI | LUAR
+  jenis      String   @default("LUAR")
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  studentId  String?
+  student    Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  /// Nomor WhatsApp perujuk luar — untuk panitia menghubungi, tidak pernah ditampilkan publik.
+  kontak     String?
+  keterangan String?
+  aktif      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  pendaftar  Admission[]
+
+  @@index([jenis, aktif])
+}
+
+/// Jejak corong pendaftaran SPMB (2 Okt 2026) — TANPA data pribadi: `sesi` = id acak per peramban.
+/// Unik per (sesi, tahap) supaya satu orang yang memuat ulang halaman tidak terhitung berkali-kali.
+/// Tahap: KUNJUNG, MULAI, LANGKAH_2, LANGKAH_3, LANGKAH_4, KIRIM, KUIS.
+model SpmbJejak {
+  id        String   @id @default(cuid())
+  sesi      String
+  tahap     String
+  createdAt DateTime @default(now())
+
+  @@unique([sesi, tahap])
+  @@index([tahap, createdAt])
 }

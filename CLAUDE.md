@@ -1351,3 +1351,341 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        berlaku, dan mereka diminta login lagi di tengah kegiatan.
      - Pemindai baru yang menerima QR dari sumber campuran WAJIB memakai fungsi ini dulu sebelum
        menebak jenis kodenya.
+
+102. **Pusat SPMB — portal panitia penerimaan murid baru (1 Oktober 2026).** Permintaan user: "spmb khusus
+     punya portal sendiri seperti ujian … portal untuk mensetting semua kebutuhan spmb baik yang muncul di
+     web juga maupun yang nantinya data spmb masuk ke data sekolah". Rute `/pusat-spmb` (pola `PortalShell`
+     sama Pusat Ujian), penjaga `src/lib/spmb.ts` → `JABATAN_SPMB` / `assertSpmb` / `bolehSpmb`.
+     - **Keputusan bentuk (user, 1 Okt 2026):** pendaftaran **BERGELOMBANG**; komponen penilaian
+       **ditentukan panitia** ("bisa disesuaikan dari semuanya pilihan"); calon mendaftar **TANPA AKUN**,
+       dikenali **nomor pendaftaran + tanggal lahir** (nomor saja mudah ditebak orang lain).
+     - Enam model baru: `GelombangSpmb` (+`KuotaSpmb` per jurusan), `KomponenNilaiSpmb` (+`NilaiSpmb`),
+       `DokumenSyaratSpmb` (+`BerkasSpmb`). `Admission` dapat `nomor @unique` & `gelombangId`.
+     - **Acuan nasional yang dipakai (riset 1 Okt 2026):** SPMB menggantikan PPDB sejak **Permendikdasmen
+       No. 3 Tahun 2025**. Empat jalur resmi (Domisili/Afirmasi/Prestasi/Mutasi) berlaku SD–SMA; **untuk SMK
+       TIDAK ada pembagian jalur baku** — seleksinya nilai rapor **semester 1–5**, **Tes Kemampuan Akademik
+       (TKA)**, dan **pembobotan prestasi**. Karena itu daftar jalur di situs **diatur panitia**
+       (`spmb.jalur`), bukan ditulis mati. **Kuota minimal jalur domisili & batas mutasi 5% TIDAK diterapkan**
+       — itu mengikat sekolah NEGERI, sedangkan Al-Munawwir swasta berbasis pesantren.
+     - **Jenis komponen `PRESTASI`**: panitia memilih **tingkat × peringkat** sertifikat, `nilai` dihitung
+       **SERVER** dari `spmb.bobotPrestasi` (jadi tidak bisa dikarang dari browser) dan disimpan bersama
+       kolom `NilaiSpmb.tingkat/peringkat` supaya bisa diaudit. Bawaan tabelnya pola juknis daerah:
+       berjenjang naik 2× tiap tingkat, turun separuh tiap peringkat (Juara I 16/32/64/128). Angkanya
+       kewenangan sekolah — jangan dikunci di kode.
+     - **Skor** (`hitungSkorSpmb`): bobot dinormalkan terhadap komponen yang BENAR-BENAR dinilai, supaya
+       pendaftar yang satu komponennya belum diisi tidak terlihat jelek. Komponen `LULUS_TIDAK` tidak
+       menambah skor tetapi **menggugurkan** bila ditandai tidak lulus (tes kesehatan / baca Qur'an).
+     - **Gerbang hasil `spmb.hasilDibuka`**: selama "0", `/api/admissions/status` menyembunyikan keputusan
+       dan hanya menyebut berkas sedang diperiksa. Panitia menekan "Buka Hasil" di /pusat-spmb/pengumuman.
+       Penetapan status dari peringkat vs kuota ada di `/api/spmb/pengumuman` (GET = pratinjau, POST =
+       terapkan); pendaftar yang **belum dinilai TIDAK ikut diputuskan** — statusnya dibiarkan apa adanya.
+     - **`cocokJurusan` (src/lib/spmb-konten.ts) WAJIB dipakai setiap kali `Admission.chosenMajor`
+       dibandingkan ke baris `Major`.** Formulir publik menyimpan LABEL `"Teknik Komputer dan Jaringan (TKJ)"`,
+       bukan kode — pemeriksa kuota yang menyamakan `code`/`name` persis TIDAK PERNAH kena, sehingga kuota
+       per jurusan diam-diam tidak pernah berlaku (bug nyata, ditemukan & diperbaiki 1 Okt 2026).
+     - **Route admissions lama dijaga `verifySpmbAccess()`, bukan `verifyTasAccess()`** — portal dipakai guru
+       berjabatan panitia, dan `verifyTasAccess` melempar mereka ke `/login` lalu proxy memantulkannya
+       kembali ke dashboard, yang terbaca pengguna sebagai "tombolnya tidak berfungsi" (pelajaran #90).
+     - `PendaftarManager` (dulu isi `/dashboard/admin/admissions/page.tsx`) kini komponen bersama dengan dua
+       pembungkus tipis (DESIGN_SYSTEM §13).
+
+103. **Formulir SPMB: satu pemeriksa untuk browser DAN server (`src/lib/spmb-form.ts`, 1 Oktober 2026).**
+     Permintaan user: "perhatikan benar-benar saat klik daftar memang bisa digunakan, dan jika tidak bisa ada
+     keterangan yang jelas apa yang kurang atau salah atau yang belum diisi".
+     - Akar masalahnya DUA: (a) **tanggal lahir, jenis kelamin, jurusan, dan jalur dipegang komponen custom**
+       (`DatePicker`, `Select`) yang **tidak ikut validasi bawaan browser**, jadi atribut `required` di situ
+       tidak berlaku; (b) server hanya membalas `"Periksa kembali isian Anda."` tanpa menyebut isian mana.
+       Gabungan keduanya membuat tombol Daftar terasa tidak berfungsi tanpa keterangan apa pun.
+     - `periksaFormulirSpmb()` memeriksa **SELURUH** isian sekali jalan dan mengembalikan PETA kunci→pesan —
+       bukan berhenti di kesalahan pertama, supaya pendaftar tidak menekan Daftar lima kali untuk menemukan
+       lima kesalahan. Dipakai klien (sebelum kirim) DAN server (POST /api/admissions, membalas `kolom`),
+       jadi pesannya identik. Jalur baru yang menyimpan `Admission` WAJIB lewat fungsi ini.
+     - **`chosenMajor` dulu TIDAK WAJIB** — tersimpan `""` dan pendaftar itu tidak bisa diseleksi maupun
+       dihitung kuotanya. Sekarang wajib.
+     - **Isian berisi angka tetap `type="text"` + `inputMode="numeric"`, JANGAN `type="number"`**: NIK 16
+       digit melewati batas aman bilangan JavaScript, angka 0 di depan NISN terbuang, dan `number` menerima
+       "e"/"+" serta memunculkan tombol naik-turun yang tidak ada gunanya untuk nomor identitas.
+     - Nomor WhatsApp diseragamkan ke bentuk `62…` saat disimpan (`rapikanNomorWa`) — tanpa itu satu orang
+       bisa punya dua baris berbeda hanya karena menulis 0812 vs +62812.
+     - Batas usia 11–25 tahun hanya **penjaga salah ketik tahun**, bukan aturan sekolah; ubah di
+       `UMUR_MIN`/`UMUR_MAKS` kalau sekolah memang menerima di luar itu.
+     - Dokumen syarat yang didaftarkan panitia (`DokumenSyaratSpmb`) muncul sebagai unggahan TAMBAHAN di luar
+       lima slot baku, dan yang `wajib` **diperiksa ulang di server** — atribut `required` pada `<input>`
+       hanya menghalangi di browser. Daftar syarat KOSONG tidak menutup pendaftaran (pelajaran PKL, #91).
+     - `/api/admissions/upload` menyaring `type` (`[^a-zA-Z0-9_-]`) sebelum dipakai menyusun jalur folder —
+       sebelumnya nilai dari browser langsung dipakai, bisa keluar dari `public/uploads/admissions` lewat `../`.
+
+104. **Halaman SPMB publik punya tampilannya sendiri, dan ISINYA dari portal (1 Oktober 2026).**
+     Permintaan user: "bisa set poster maupun foto promosi … di web ketika pilih spmb, tampilannya juga
+     berbeda lebih keren", lalu "semua pengaturan spmb dan isi pengaturan halaman web spmb lengkap".
+     - **Alur, syarat, beasiswa, dan tanya jawab DULU tertulis mati** di `src/app/admissions/page.tsx` —
+       panitia tidak bisa mengubah satu kata pun tanpa deploy. Sekarang semuanya dari SiteSetting lewat
+       `bacaKontenSpmb` (`src/lib/spmb-konten.ts`, NETRAL supaya penyunting klien & halaman server memakai
+       bentuk data yang sama). Tiap isian baru WAJIB ada pembacanya di halaman (#39) — kunci yang hanya
+       muncul di editor = isian mati.
+     - **Tiga tema** (`spmb.tema`: malam / fajar / zamrud) memakai token warna yang sudah ada (§2), bukan
+       warna baru. Poster potret, galeri foto promosi, brosur PDF, dan video YouTube (`idYoutube` menerima
+       watch/youtu.be/shorts) diatur di /pusat-spmb/promosi.
+     - **Alur & beasiswa boleh BERGAMBAR, opsional** (`Langkah.gambar`) — langkah tanpa gambar tetap rapi
+       sejajar dengan yang bergambar; jangan dijadikan wajib.
+     - Ditambah: `spmb.jadwal` (garis waktu, tanggal kosong ditulis "Menyusul"), `spmb.rincianBiaya` (tabel
+       bertotal), `spmb.catatan` (pita pemberitahuan di atas halaman — mengubah padding pembuka jadi `pt-12`),
+       `spmb.tautanGrup`, `spmb.jalur`, `spmb.bobotPrestasi`.
+     - Label antarmuka tetap DUA BAHASA (#41); isi dari pengaturan hanya bahasa Indonesia.
+
+105. **Cetak formulir SPMB yang sudah diisi — pendaftar & panitia (2 Oktober 2026).** Permintaan user:
+     "formulir yang sudah diisi siswa juga bisa dicetak baik siswa maupun panitia/superadmin".
+     SATU lembar bersama `FormulirSpmbSheet` dipakai dua pintu, jadi isinya tidak pernah berbeda:
+     `/spmb/formulir?nomor=&t=` (pendaftar, tanpa akun) dan `/pusat-spmb/pendaftar/[id]/cetak` (panitia).
+     - **Tanggal lahir TIDAK ikut di alamat halaman cetak.** `tandaFormulir()` (src/lib/spmb-formulir.ts)
+       = HMAC-SHA256 dari `nomor|tanggal lahir` berkunci `SESSION_SECRET`, dipotong 32 karakter;
+       diterbitkan `/api/admissions/status` HANYA pada jalur nomor + tanggal lahir (jalur WA/e-mail
+       TIDAK diberi tanda — satu nomor WA bisa dipakai beberapa orang serumah). Kekuatan kuncinya
+       sama, tetapi tanggal lahir anak tidak tertinggal di riwayat peramban komputer bersama.
+       Pembandingnya `timingSafeEqual`, bukan `===`.
+     - QR keaslian pola #49: `Admission.cetakToken` dibuat SEKALI lewat `updateMany where cetakToken: null`
+       (dua cetakan bersamaan tidak saling menimpa) → `/verify/formulir-spmb/<token>`. Halaman verifikasi
+       menampilkan IDENTITAS dokumen saja — nama DISAMARKAN, dan NIK/alamat/WhatsApp/e-mail TIDAK pernah
+       ikut; keputusan seleksi juga tetap tertutup selama `spmb.hasilDibuka` masih "0". Terverifikasi di
+       server: kelima data pribadi itu `False` di HTML halaman verifikasi.
+     - `@page` ditaruh DI DALAM komponen lembar bersama (bukan di tiap halaman) justru karena dua pintu
+       mencetak dokumen yang SAMA — kalau dipisah, marginnya bisa berbeda diam-diam.
+
+106. **Tema halaman SPMB sampai ke Footer lewat VARIABEL CSS (2 Oktober 2026).** Temuan user: "tema banyak,
+     tapi bagian footer halaman tersebut dan beberapa tombol dll belum sesuai tema".
+     - Hero memang sudah bertoken, tetapi bagian TERANG di bawahnya (judul seksi, ikon, nomor alur, latar
+       seksi), tab Cek Status, tombol kirim formulir, dan `Footer` memakai navy/emas tertulis mati — dan
+       ketiganya komponen TERPISAH yang juga dipakai halaman lain, jadi mengoper prop berarti mengubah
+       milik halaman lain.
+     - Jalannya: `gayaTema()` (src/lib/spmb-konten.ts) memasang `--spmb-utama|aksen|aksen-teks|tipis|lembut|footer`
+       di satu pembungkus `.tema-spmb`, lalu blok `.tema-spmb …` di akhir `globals.css` memetakannya ke
+       utility yang dipakai DI DALAM pembungkus itu. **Blok itu SENGAJA DI LUAR `@layer`** — aturan tanpa
+       layer menang atas utility Tailwind yang berada di dalam layer, tanpa `!important`. Terbukti di bundel
+       produksi: `@layer properties|theme|base|components|utilities`, aturan `.tema-spmb` kedalaman kurung 0.
+     - **Footer selalu bergradien GELAP, termasuk pada tema Terang** — teks footer putih; footer terang
+       dengan teks putih tidak terbaca.
+     - **Warna status (hijau diterima / kuning menunggu / merah belum diterima) TIDAK ikut tema.** Warna itu
+       membawa arti; kalau berubah mengikuti tema, orang tua bisa salah membaca hasil seleksi.
+     - Tujuh tema: malam, fajar, zamrud, senja, samudra, batik, **terang**. Tema terang baru mungkin setelah
+       18 `text-white` tertulis mati di halaman diubah jadi token (`teks`/`lembut`/`samar`/`kacaIsi`) —
+       sisa `text-white` sekarang NOL. Motif latar tidak di-invert pada tema terang (`polaInvert`).
+
+107. **Dokumen SPMB hanya diatur di SATU tab (2 Oktober 2026).** Temuan user: "dokumen syarat dan isian
+     formulir kok sama-sama ada dokumen?". Saat memindahkan tab "Form SPMB" dari Konten Halaman, kelima
+     saklar dokumen ikut terbawa ke tab Isian Formulir padahal tab Dokumen Syarat sudah mengurus dokumen.
+     - Sekarang `ISIAN_DATA_SPMB` (NIK, NISN, alamat, nama wali) vs `DOKUMEN_BAKU_SPMB` (ijazah, kk,
+       ktp_wali, foto, dokumen_lain). Tab **Isian Data** hanya data; tab **Dokumen & Berkas** memuat
+       SELURUH dokumen: "Dokumen baku" (punya kolom sendiri di `Admission`, tidak bisa dihapus — hanya
+       wajib/opsional/sembunyikan) + "Dokumen tambahan" (`DokumenSyaratSpmb`, bebas).
+     - Saklarnya satu komponen (`PilihanWajib`) dipakai kedua tab supaya tidak pelan-pelan berbeda.
+     - Urutan tab mengikuti alur panitia: Gelombang → Komponen Nilai → Isian Data → Dokumen & Berkas →
+       Isi Halaman Web.
+
+108. **Poster jamak & animasi halaman SPMB (2 Oktober 2026).** Permintaan user: "poster itu beberapa poster,
+     baik poster bisa bergerak … grid kartu gelombang atau yang lainnya bisa bergerak".
+     - `spmb.posterLain` (JSON array) DI SAMPING `spmb.poster` — setelan poster yang sudah ada tidak hilang;
+       `bacaKontenSpmb` menggabungkannya jadi `posters[]` (utama lebih dulu). `PosterSpmb` menampilkan satu
+       poster diam, dua atau lebih berganti tiap 6 detik dengan titik penanda. Poster pertama SUDAH terlihat
+       sejak muat (pergantian menimpanya), berhenti saat disorot & saat `document.hidden`, dan tidak diputar
+       otomatis bila `prefers-reduced-motion: reduce`.
+     - Kelas gerak (`spmb-muncul`, `spmb-kartu`, `spmb-denyut`, `spmb-kilau`) SELURUHNYA di dalam
+       `@media (prefers-reduced-motion: no-preference)`. Itu bukan sekadar sopan santun: artinya tidak ada
+       elemen yang dimulai dari `opacity: 0` bagi yang mematikan animasi, sehingga animasi yang gagal tidak
+       pernah menyembunyikan isi halaman. Jeda berurutan lewat `style={{ animationDelay }}` per kartu.
+
+109. **Kode referral SPMB (2 Oktober 2026) — `PerujukSpmb`, src/lib/spmb-perujuk.ts.** Permintaan user:
+     "saat siswa daftar juga ada kode referral … siswa pakai NIS-nya, guru pakai nomor induk yayasan,
+     dan bisa menambahkan orang luar".
+     - **Registri SATU TABEL, bukan pencarian langsung ke `Student`/`Teacher`.** Kode siswa memang
+       DIISI dari NIS dan kode pegawai dari NIP, tetapi yang diperiksa saat pendaftaran adalah baris
+       `PerujukSpmb`. Tiga alasan: (a) kode harus tetap sah & bisa ditelusuri setelah siswa lulus atau
+       guru keluar, (b) NIS & NIP hidup di tabel berbeda dan bisa bertabrakan — `kode @unique` di satu
+       tabel membuat tabrakan MUSTAHIL secara struktur, (c) perujuk LUAR (alumni, wali murid, tokoh)
+       tidak punya baris di tabel mana pun.
+     - **DUA kolom di `Admission`, bukan satu**: `perujukKode` menyimpan kode PERSIS seperti diketik,
+       `perujukId` hanya terisi bila kodenya ada & aktif. Jejak tetap terbaca walau baris perujuknya
+       kelak dinonaktifkan; kode tak dikenali ditandai "(tidak dikenali)" di daftar pendaftar.
+     - **Kode salah TIDAK PERNAH menggagalkan pendaftaran** (`cocokkanPerujuk` hanya mengosongkan
+       `perujukId`) — salah ketik kode bukan alasan menolak anak orang. Karena itu `perujukKode` juga
+       sengaja TIDAK masuk `periksaFormulirSpmb`.
+     - **Nama perujuk DISAMARKAN di halaman publik + dibatasi 20 pencarian/IP/10 menit**, dan "kode
+       tidak ada" dijawab SAMA dengan "kode nonaktif". Ini bukan kehati-hatian berlebihan: NIS sekolah
+       ini berpola `001/001.064` dan NIP `TMP-004` — keduanya mudah ditebak — dengan 1.180 siswa, tanpa
+       penyamaran endpoint ini menjadi pintu memanen seluruh nama siswa dari halaman yang terbuka umum.
+     - **Bentuk kode massal bawaannya `NIS/NIP + 4 karakter acak`, BUKAN NIS polos.** NIS juga dipakai
+       sebagai kartu absensi gerbang (#33) dan kartu perpustakaan (#34/#53) — menyebarkannya sebagai
+       kode referral di media sosial berarti menyebarkan nomor kartu itu. Pilihan "apa adanya" tetap
+       disediakan sesuai permintaan user, dengan peringatan tegas di layar saat dipilih. Penghasilnya
+       aman ditekan berulang (yang sudah punya dilewati) dan memakai `randomInt`, bukan `Math.random`.
+     - **Perujuk yang sudah membawa pendaftar tidak bisa DIHAPUS** (409) — hanya dinonaktifkan;
+       menghapusnya memutus jejak asal pendaftar.
+     - Yang dibagikan perujuk adalah TAUTAN/QR `…/admissions?ref=KODE`, bukan kodenya. Formulir
+       menangkap `?ref=` → `sessionStorage` → terisi sendiri, jadi calon tidak mengetik apa pun.
+
+110. **Kartu referral: tiga bentuk, tanpa halaman kartu baru (2 Oktober 2026).**
+     - **Kartu pribadi tiap akun** ditempel DI BAWAH kartu identitas pada `/kartu-identitas`
+       (`KartuReferral`) — BUKAN halaman kartu kedua, karena CLAUDE.md #53 melarangnya. Akun yang
+       belum terdaftar sebagai perujuk TIDAK melihat apa pun (bukan kartu kosong / pesan "belum punya
+       kode") — sebagian besar pengguna memang tidak perlu.
+     - **Kartu A6 per perujuk**: `/pusat-spmb/qr?ref=KODE` — halaman kartu QR yang sama dipakai ulang,
+       kakinya berubah menyebut nama perujuk.
+     - **Cetak massal**: `/pusat-spmb/perujuk/cetak`, 8 kartu per A4 bergaris gunting, disaring per
+       jenis. **Dibatasi 200 kartu sekali cetak** — tiap kartu memuat QR sebagai data URL, dan 1.180
+       kartu sekaligus menjadi muatan puluhan megabita yang membuat peramban sekolah berhenti menanggapi.
+     - **Beda alamat QR yang disengaja**: kartu Buku Tamu & kartu QR meja memakai HOST PERMINTAAN
+       (kartu itu dipakai di dalam sekolah, bisa lewat `http://<ip>:3000`), sedangkan kartu referral
+       memakai `ALAMAT_APLIKASI` — kartunya dicetak lalu beredar berbulan-bulan DI LUAR sekolah, jadi
+       alamatnya harus yang permanen.
+
+111. **Halaman SPMB: gerak, statistik, kuis, OCR (2 Oktober 2026).**
+     - **Gerak situs publik tanpa pustaka** (blok "GERAK SITUS PUBLIK" di globals.css + `PengamatGerak` yang dipasang
+       `Navbar`): `.gerak-naik/.gerak-judul/.gerak-ungkap/.gerak-batang/.gerak-alur`, judul dipecah `TeksGerak`.
+       Keadaan tersembunyi HANYA di bawah `html.gerak-siap` (dipasang skrip) → bila skrip gagal isi tetap tampil.
+       Pakai `animation` + fill **backwards**, BUKAN transition/forwards — keduanya menimpa transisi & `transform`
+       hover kartu. Elemen ber-`clip-path` penuh (`.gerak-ungkap`) diamati lewat INDUKNYA: Chrome menghitung luas
+       terlihatnya nol sehingga IntersectionObserver tidak pernah terpicu (foto berita sempat tertutup selamanya).
+       Menguji tangkapan layar halaman berlapis banyak: gulir dengan `mouse.wheel` + tunggu; `scrollIntoView` lalu
+       langsung memotret di headless menghasilkan kotak kosong palsu (gambar belum dirasterisasi).
+     - **Satu sumber statistik `src/lib/spmb-statistik.ts`** (corong, sebaran wilayah, asal sekolah, peringkat
+       perujuk) dipakai halaman publik & `/pusat-spmb/statistik`. Corong dari `SpmbJejak` (sesi acak per peramban +
+       tahap, unik per pasangan, TANPA IP/isian) lewat `catatJejak` (src/lib/spmb-jejak.ts). Nama perujuk di halaman
+       publik WAJIB `samarkanNama` (#109).
+     - **Wilayah pendaftar = kode Kepmendagri 2025** di `public/data/wilayah` (sumber di SUMBER.txt). Server tidak
+       percaya kode dari browser: `rapikanWilayah` mencocokkan ke berkas itu dan mengambil NAMA dari sana; kode
+       salah = dikosongkan, bukan menolak pendaftaran.
+     - **Kuis minat jurusan disusun dari data jurusan** (`susunKuis`, src/lib/kuis-jurusan.ts: keahlian/karier/
+       fasilitas di Kelola Jurusan) — tidak ada daftar jurusan di kode (#11). Urutan pilihan memakai hash, bukan
+       Math.random (#15). Hasil "Daftar" mengisi jurusan lewat peristiwa `spmb-pilih-jurusan` / `?jurusan=KODE`.
+     - **OCR KK & ijazah jalan di BROWSER** (`tesseract.js`, dimuat dinamis; src/lib/ocr-berkas.ts) dan hanya
+       MEMERIKSA ketikan (cocok / tidak + tombol "Pakai") — tidak pernah mengisi sendiri: KK memuat NIK seluruh
+       keluarga, dan OCR bisa salah baca. Tanpa regex lookbehind (#66).
+     - **Pratinjau tautan WA** = `src/app/admissions/opengraph-image.tsx`, WAJIB `force-dynamic` (#29). Gambar
+       unggahan dibaca dari disk; ukuran asli dibaca dari kepala JPEG/PNG supaya poster tidak gepeng/terpotong.
+     - **Kartu & galeri tidak boleh memotong poster/foto**: bentuk dipilih panitia (`RASIO_GAMBAR`, utuh/penuh),
+       galeri tambahan di `spmb.galeriLain`. Formulir disembunyikan saat tidak ada gelombang buka; Cek Status tetap.
+
+112. **Teknologi & efek situs publik gelombang 2 (2 Oktober 2026).**
+     - **Speculation Rules + View Transitions lintas dokumen** dipasang `PramuatTransisi` (lewat Navbar → hanya
+       halaman publik). Daftar jalur pra-muat DITULIS TEGAS — rute yang mengubah data saat dibuka (`/hadir`,
+       `/aset`, keluar) jangan pernah dimasukkan. Halaman publik yang menulis ke DB saat dirender WAJIB melewati
+       permintaan pra-muat (`headers().get("sec-purpose")` berisi prefetch/prerender) — contoh penghitung baca
+       berita. Pencatat jejak SPMB menunda diri selama `document.prerendering`.
+       Elemen "terbang" antarhalaman memakai `transisiJurusan`/`transisiBerita` (src/lib/nama-transisi.ts) dan
+       HANYA bekerja untuk navigasi DOKUMEN — kartu yang ditautkan memakai `<a>`, bukan `<Link>` (navigasi klien
+       tidak memicu transisi lintas dokumen). Nama harus unik per halaman.
+     - Scroll-driven animation (`.bilah-baca`, `.gulir-zoom`) dibungkus `@supports (animation-timeline: scroll())`.
+     - Bagikan = `TombolBagikan`: Web Share API, cadangan menu Popover API + CSS Anchor Positioning.
+     - Sorot kursor (`.sorot-kursor`) dihitung SATU pendengar di `PengamatGerak`. `.tekstur-noise`/`.latar-aurora`
+       untuk bagian gelap; isi di atasnya harus berposisi (relative) supaya berada di atas lapisan itu.
+     - Bento Keunggulan beranda: foto `why.foto` (isian gambar baru di Konten Halaman, `type: "image"`); kosong =
+       latar navy bertekstur. JANGAN memakai foto promosi SPMB sebagai cadangan — isinya poster bertulisan yang
+       terpotong `object-cover` dan bertabrakan dengan judul (terlihat di uji 3 Okt 2026). Bento di HP = 1 kolom
+       (2 kolom di 390px memotong kata panjang). Pita kata = `beranda.kataBerjalan`.
+     - Story, deret logo, sebelum/sesudah mengambil bahan dari Pusat SPMB → Poster & Promosi (`spmb.galeriLain`,
+       `spmb.logoMitra`, `spmb.sebelumSesudah`) — beranda membaca kunci yang sama. Galeri Foto situs (model
+       `Gallery`) dan data mitra industri MASIH KOSONG per 2 Okt 2026; jangan mengisi contoh karangan.
+     - Ikon merek (Facebook dsb.) TIDAK ADA di lucide-react 1.x — jangan diimpor.
+
+113. **Papan TV: mode pengumuman, Mode Bel per TV, dan Bel Ujian (4 Oktober 2026).**
+     - **Bug "pilih teks saja malah teks + suara"**: `PapanLayar` dulu memulai state `kabar.cara` dari
+       `"TEKS_SUARA"` tertulis mati, dan mode yang benar baru terbaca dari `/kabar` 10 detik kemudian — padahal
+       dashboard MEMBUKA ULANG papan tepat setelah mengirim pengumuman, jadi bug itu terjadi setiap kali. Sekarang
+       `manualCara` ikut muatan halaman. Penanda "sudah dibacakan" disimpan di localStorage TV
+       (`papan-dibacakan:<token>`) supaya muat ulang tiap 10 menit tidak membacakan ulang; dihapus saat pengumuman
+       dicabut. **Setiap nilai yang menentukan perilaku SAAT DIMUAT wajib ikut muatan awal, bukan menunggu denyut.**
+     - **Profil bel** (`BellSchedule.profil` REGULER | UJIAN, src/lib/bel-profil.ts): bel UJIAN menggantikan bel
+       REGULER pada tanggal Kegiatan Ujian AKTIF — di speaker pusat (`/bel-sekolah/player`, lewat kolom `berlaku`
+       yang dihitung SERVER di GET bell-schedule) MAUPUN di semua TV. Tanpa bel UJIAN yang disusun, hari ujian tetap
+       memakai bel REGULER (tidak pernah jadi hari tanpa bel). Bel ujian tetap mengikuti hari yang dicentang.
+     - **Mode Bel per TV** (`Layar.belMode` NORMAL | HENING | UJIAN + `belModeSampai`, lewat `modeBelBerlaku`) untuk
+       ruang ANBK/TKA. HENING: bel & volume tidak disentuh, pengumuman TETAP TAMPIL sebagai teks tanpa nada/suara —
+       termasuk mode "suara saja" (kalau tidak, pesan seperti token hilang di ruang ujian). Status hening ikut
+       `/kabar` (10 dtk); jadwal bel UJIAN per TV terpakai saat papan dimuat ulang. Mode Hening SENGAJA hanya untuk
+       TV yang dipilih — speaker pusat tetap berbunyi (keputusan user).
+
+114. **Daya TV & izin ADB (4 Oktober 2026).**
+     - **"Matikan" = KEYCODE_SLEEP (223), bukan tombol daya (26).** Tombol daya mengikuti mode daya yang disetel di
+       TV — Doze mematikan WiFi sehingga TV tidak bisa dinyalakan lagi dari jauh. Tidur hanya memadamkan layar;
+       sistem tetap hidup apa pun modenya (diuji di TV Lab DKV: Asleep tetap menjawab ADB, KEYCODE_WAKEUP
+       menyalakan). Tombol daya sungguhan tetap ada sebagai `dayaTotal`. Jadwal mati otomatis ikut memakai tidur.
+     - **Mode daya TCL TIDAK bisa diubah lewat ADB.** Satu-satunya setelan yang berbeda antar-mode adalah
+       `system tcl_sys_network_standby_enabled` (1 = Siaga jaringan); Tanpa layar vs Doze dipegang layanan daya
+       TCL sendiri. Jangan menulis setelan TCL setengah jalan.
+     - **Android 11+ membatalkan izin debugging setelah 7 hari tanpa sambungan ADB.** `terapkanPenjaga`
+       (src/lib/layar-adb.ts) menyetel `adb_allowed_connection_time 0` + `screen_off_timeout` maksimum +
+       `sleep_timeout -1` tiap kali tersambung (≤ sekali per 6 jam per TV — TV bisa mengembalikan setelannya).
+       TV yang sedang mati baru mendapatkannya saat menyala berikutnya.
+     - **Status "hidup" dari router ≠ layar menyala.** `statusLayar` membaca `mWakefulness` (disinggahkan 60 dtk)
+       dan daftar TV menampilkan "Siaga · layar mati".
+     - **IP basi**: DHCP bisa memberikan alamat TV yang sedang mati ke TV lain. `daftarLayar` memakai tabel ARP +
+       host hotspot sebagai pemilik alamat dan MEMBUANG alamat milik MAC lain dari calon, sekaligus menghapus
+       `ipTerakhir` yang sudah dipakai perangkat lain — rute ADB memakai `ipTetap || ipTerakhir` langsung, jadi
+       alamat basi berarti perintah dikirim ke TV yang salah (kasus TV Ruang B3 ↔ Lab DKV).
+
+115. **Foto Kartu (KTS) terpisah + hairpin router (4 Oktober 2026).**
+     - Kartu Tanda memakai urutan SATU sumber `fotoUntukKartu` (src/lib/foto-kartu.ts): `bukuIndukData.fotoKartuUrl`
+       → Foto Masuk → foto profil akun (keputusan user: foto resmi didahulukan). Foto Kartu diisi per orang di Buku
+       Induk (siswa & guru, folder `buku-induk/kartu`) atau MASSAL di Kartu Tanda → "Unggah Foto Kartu"
+       (`/api/admin/kartu-tanda/foto-massal`): langkah `cocok` hanya menerima NAMA berkas (NIS/NISN siswa, NIP guru,
+       tanda baca dibuang — NIS `001/001.064` boleh `001-001.064.jpg`), langkah `simpan` setelah pratinjau. Nomor
+       yang dimiliki >1 orang (GANDA) dan dua berkas untuk satu orang (DOBEL) DILEWATI, tidak pernah ditebak.
+     - `/api/upload` dulu menolak staf TU (peran TAS) & guru berjabatan TU untuk folder `buku-induk/*`, padahal
+       halaman Buku Induk/Kartu Tanda terbuka bagi mereka — sekarang diizinkan dengan pemeriksaan jabatan yang
+       sama dengan `verifyTasAccess`.
+     - **Router: aturan srcnat `*38A`** ("Hairpin NAT - situs sekolah via domain (80/443) dari subnet server sendiri",
+       `src=172.15.0.0/28 dst=172.15.0.3 tcp 80,443 masquerade`). Tanpa itu SERVER SENDIRI (dan Proxmox/PC Dapodik
+       di 172.15.0.x) tidak bisa membuka domain sekolah — jawaban server tidak kembali lewat router. WiFi guru/siswa
+       berbeda subnet dan sudah tertangani aturan dst-nat `dstType=local` port 80/443 yang ada sebelumnya.
+
+116. **Lomba & Event (4 Oktober 2026) — `Event` + `PendaftaranEvent`, src/lib/event-{label,guard,server}.ts.**
+     Pengelola: `/dashboard/{admin,teacher}/event` (`EventManager`); publik: `/lomba` & `/lomba/<slug>`;
+     siswa: `/dashboard/student/lomba` (status & catatan panitia). Daftar jabatan pengelola SATU sumber
+     `JABATAN_EVENT` di `event-label.ts` (netral) — dipakai penjaga server DAN TeacherSidebar.
+     - **Siapa boleh mendaftar diputuskan SERVER** (`POST /api/event/[slug]/daftar`): siswa yang masuk =
+       dirinya sendiri (`studentId` dari sesi, unik per event, disaring `jurusanIds`); event **milik sekolah**
+       juga menerima peserta luar tanpa akun (5 kiriman/IP/10 mnt); lomba **pihak luar** HANYA siswa; bila
+       `tautanLuar` diisi, pendaftaran di situs penyelenggara. Halaman detail hanya memilih tampilan.
+     - Batas daftar = akhir hari `tutupDaftar` **WIB** (`batasDaftar`). Tanggal event disimpan tengah malam
+       UTC tanggal itu dan ditampilkan dengan `timeZone: "UTC"` (`tglEvent`).
+     - **Karya & bukti bayar = folder RAHASIA** `public/uploads/rahasia/event`, dibuka lewat
+       `/api/event/berkas/[pid]/karya|bukti` (pengelola atau siswa pemilik). Menghapus event/pendaftar ikut
+       menghapus berkasnya. Poster & panduan PDF memang publik → folder `event` di `/api/upload`.
+     - **Batas unggah 6 MB (karya) + 3 MB (bukti)** karena proxy Next memotong badan permintaan di atas
+       10 MB (`proxyClientMaxBodySize` bawaan). Karya lebih besar lewat `karyaTautan` (Drive/YouTube) —
+       jangan menaikkan batas berkas tanpa menaikkan setelan proxy itu.
+     - Tidak ada notifikasi otomatis (belum diminta). Status `JUARA` wajib berisi `juara` ("Juara 1").
+
+117. **Kunci komputer lab: Safe Exam Browser + MyAlwis Ujian Windows (4 Oktober 2026).** Referensi user: Exambrowser
+     Client & Proktor Browser ANBK/TKA (Pusmenjar). Program itu TIDAK dipakai/diubah — kodenya disamarkan, setelannya
+     terenkripsi, dan terikat server Pusmenjar; yang diterapkan cara kerjanya.
+     - **Bug lama SEB: `req.url` di Next standalone = `http://<hostname>:3000/…`**, padahal SEB meng-hash
+       `https://smkalmunawwiriibs.sch.id/…` — kunci yang benar pun selalu ditolak. URL kini disusun ulang dari
+       X-Forwarded-Proto + Host (`urlDilihatSeb`). Isian kunci SEB juga tidak pernah ada di layar dan PUT tidak
+       menyimpannya; GET mengirim kunci ke semua guru — ketiganya diperbaiki.
+     - **Berkas `.seb` dibangkitkan situs** (`src/lib/seb-konfig.ts`, unduh dari Pengaturan Ujian, sandi keluar = PIN
+       keluar `ujian.pinAplikasi`). Config Key dihitung server dari berkas yang sama, TETAPI baru dipakai mengunci
+       setelah terbukti cocok sekali di komputer lab lewat `/seb-uji` (`ujian.sebCkTerverifikasi`). Algoritmanya
+       belum bisa diuji dari server; kalau meleset, ujian tidak terkunci mati. Ubah isi `pengaturanSeb` = Config
+       Key berubah = semua komputer lab wajib menyalin berkas baru & uji ulang.
+     - **MyAlwis Ujian Windows** (`windows-ujian/`, Electron 33, portabel zip, dibangun `bangun-exe.sh` tanpa wine —
+       ikon dipasang `resedit`). Zip ±115 MB disimpan di VOLUME unggahan (`public/uploads/unduh`), BUKAN image, dan
+       diunduh lewat `/api/unduh/windows-ujian` (dialirkan; `/api/uploads` membaca utuh ke memori). Jembatan
+       `window.AplikasiSMK` SAMA dengan Android → halaman ujian tidak perlu diubah. User-Agent `MyAlwisUjianWin/1.0`
+       ikut `lewatAplikasi`. Sesi hanya di memori (komputer bergantian). Batas jujur: Ctrl+Alt+Del & tombol Windows
+       tidak bisa dicegat — untuk itu SEB.
+
+118. **TV setelah listrik padam = SIAGA DINGIN (5 Oktober 2026).** Laporan user: setelah mati lampu, TV Lab TKJ/AKL/DKV
+     tidak bisa dinyalakan dari papan. Setelan pabrik TCL `ro.odm.tcl.poweron_shop_status = standby`: begitu listrik
+     kembali TV siaga dingin — Android belum jalan, WiFi mati, router & ADB tidak melihatnya sampai remote ditekan
+     sekali. Setelan penjaga (#114: izin ADB tanpa batas, layar tak padam) TERBUKTI bertahan setelah padam.
+     - Penawar permanen = menu **Hotel** TV → **Mode Nyala** (`EnHotelMenu.PowerOnMode`, lewat middleware TCL —
+       BUKAN kunci `settings`, jadi tidak bisa diubah ADB; `am start com.tcl.hotelmenu/.MainActivity` diam-diam
+       ditolak TV). Harus lewat remote dengan kode menu hotel model itu — jangan menebak kodenya. Kunci
+       `tcl_app_factory_poweron_shop_status` = mode TOKO, jangan disentuh.
+     - Pilihan yang disarankan "Langsung menyala", karena `matikanLayarTerjadwal` hanya menembak SEKALI di menit
+       jadwalnya. Penutup celahnya `tidurkanSetelahPadam` (layar-jadwal.ts, tiap 5 mnt): di LUAR [jadwalNyala,
+       jadwalMati) atau hari libur, TV yang baru boot (< 40 mnt, `keadaanBoot`), layar menyala, dan yang tampil
+       beranda/papan → ditidurkan SEKALI per boot. Hanya TV yang punya KEDUA jadwal. `bukaPapanOtomatis` kini
+       melewati TV yang layarnya padam supaya tidak membangunkan yang baru ditidurkan.
+     - Pesan "TV tidak terjangkau" (`PESAN_STATUS.TIDAK_TERJANGKAU`) & pemberitahuan di Papan & TV menyebut siaga
+       dingin lebih dulu — itu penyebab tersering, bukan papan rusak.
