@@ -2,8 +2,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal
 } from "lucide-react";
+import { JABATAN_EVENT } from "@/lib/event-label";
 import { Siren } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
 import { FileUser } from "lucide-react";
@@ -199,8 +200,11 @@ export function grupMenuGuru({
         ...(isOperatorSekolah ? [
           { href: "/dashboard/teacher/operator", label: "Dashboard Operator Sekolah", icon: Database },
           { href: "/dashboard/teacher/dapodik", label: "Sinkron Dapodik", icon: DatabaseZap },
-          { href: "/dashboard/teacher/operator/spmb", label: "SPMB → Buku Induk", icon: UserPlus },
         ] : []),
+        // Panitia SPMB = JABATAN_SPMB di src/lib/spmb.ts. Daftarnya disebut di DUA tempat (penjaga
+        // server + menu ini); kalau menambah jabatan panitia, ubah keduanya.
+        ...(isOperatorSekolah || isWakasekKesiswaan || isWakasekHumas || isKepalaSekolah || isKoordinatorBranding
+          ? [{ href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList }] : []),
         ...(isKepalaUks ? [{ href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse }] : []),
         ...(isBendahara ? [{ href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet }] : []),
       ],
@@ -284,6 +288,8 @@ export function grupMenuGuru({
         ...(isGuruPiketOnDutyToday && !kesiswaanBkAccess ? [{ href: "/dashboard/teacher/piket/poin-siswa", label: "Catat Poin Siswa (Piket)", icon: ShieldAlert }] : []),
         ...(isGuruPiketOnDutyToday ? [{ href: "/dashboard/teacher/absensi-scan", label: "Scan Kartu Absensi", icon: ScanLine }] : []),
         ...(isPembinaOsis || isWakasekKesiswaan ? [{ href: "/dashboard/teacher/pemilihan-osis", label: "Pemilihan OSIS", icon: Vote }] : []),
+        // Pengelola Lomba & Event — daftar jabatan SATU sumber dengan penjaga server (src/lib/event-label.ts).
+        ...(JABATAN_EVENT.some(n => jabatanNames.includes(n)) ? [{ href: "/dashboard/teacher/event", label: "Lomba & Event", icon: Medal }] : []),
         ...(ekstrakurikulerAccess ? [
           { href: "/dashboard/teacher/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag },
           { href: "/dashboard/teacher/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare },

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown, Library, FileText, Vote } from "lucide-react";
 import { QrCode, MessagesSquare, MessageSquareHeart, Megaphone, ClipboardPen, BriefcaseBusiness, CircleHelp, DoorOpen } from "lucide-react";
-import { CalendarX2 } from "lucide-react";
+import { CalendarX2, Medal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -135,6 +135,7 @@ export function grupMenuSiswa({ hasPendingBiodata = false, isKelasAdmin = false,
         { href: "/ujian-online", label: "Ujian Online (CBT)", icon: FileQuestion },
         { href: "/dashboard/student/rapor", label: "Rapor Nilai", icon: Printer },
         { href: "/dashboard/student/portofolio", label: "Portofolio Saya", icon: Trophy },
+        { href: "/dashboard/student/lomba", label: "Lomba & Event", icon: Medal },
         { href: "/dashboard/student/pkl", label: "PKL Saya", icon: Briefcase },
         ...(kelasXII ? [{ href: "/dashboard/student/lowongan", label: "Lowongan Kerja", icon: BriefcaseBusiness }] : []),
       ],

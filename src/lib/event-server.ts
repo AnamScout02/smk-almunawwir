@@ -1,6 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { slugEvent, JENIS_EVENT, TINGKAT_EVENT } from "@/lib/event-guard";
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
+import { randomBytes } from "crypto";
+import { getSession } from "@/lib/session";
+import { sesiMasihHidup } from "@/lib/sesi-server";
+import { kompresGambar } from "@/lib/kompres-gambar";
+import { bolehEvent } from "@/lib/event-guard";
 
 /* Pembantu bersama POST & PUT event. SENGAJA di lib, bukan diekspor dari route.ts — `next build`
    menolak ekspor selain handler HTTP & konfigurasi dari route (CLAUDE.md #26). */
@@ -51,4 +58,60 @@ export async function susunEvent(b: Record<string, unknown>, idLama?: string) {
       tampilPublik: b.tampilPublik !== false && b.tampilPublik !== "false",
     },
   };
+}
+
+// ── Pendaftaran & berkas ──────────────────────────────────────────────────
+
+
+
+/** Karya & bukti bayar bisa memuat data pribadi (wajah, nomor rekening) → folder RAHASIA yang diblokir
+ *  proxy, dibuka hanya lewat /api/event/berkas/[id]/[jenis] (CLAUDE.md #44 & #50). */
+export const FOLDER_EVENT = join(process.cwd(), "public", "uploads", "rahasia", "event");
+
+export const MIME_EVENT: Record<string, string> = {
+  jpg: "image/jpeg", png: "image/png", webp: "image/webp", pdf: "application/pdf",
+  zip: "application/zip", mp4: "video/mp4",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
+
+/** Sesi bila pengunjung sedang masuk, tanpa mengalihkan ke /login — halaman & pendaftaran lomba
+ *  terbuka untuk umum. Baris sesi tetap diperiksa masih hidup, sama seperti verifySession. */
+export async function sesiOpsional() {
+  const s = await getSession().catch(() => null);
+  if (!s?.userId || !s.sid) return null;
+  return (await sesiMasihHidup(s.sid).catch(() => false)) ? s : null;
+}
+
+/** Simpan satu berkas unggahan pendaftaran. Mengembalikan nama berkas, null bila tidak ada berkas,
+ *  atau `{ galat }` bila jenis/ukurannya ditolak. Ekstensi DITENTUKAN dari jenis berkas yang
+ *  dikenal, bukan dari nama kiriman browser. */
+export async function simpanBerkasEvent(file: FormDataEntryValue | null, maksMb: number, label: string) {
+  if (!(file instanceof File) || !file.size) return null;
+  const dariNama = file.name.split(".").pop()?.toLowerCase() ?? "";
+  let ext = Object.entries(MIME_EVENT).find(([, m]) => m === file.type)?.[0]
+    ?? (["docx", "pptx", "zip"].includes(dariNama) ? dariNama : "");
+  if (ext === "jpeg") ext = "jpg";
+  if (!ext) return { galat: `${label}: gunakan JPG/PNG/WEBP, PDF, DOCX, PPTX, ZIP, atau MP4.` };
+  if (file.size > maksMb * 1024 * 1024) return { galat: `${label}: ukuran maksimal ${maksMb} MB.` };
+  let isi = Buffer.from(await file.arrayBuffer());
+  if (["jpg", "png", "webp"].includes(ext)) {
+    const kecil = await kompresGambar(isi);
+    if (kecil) { isi = Buffer.from(kecil.buffer); ext = kecil.ext; }
+  }
+  const nama = `${Date.now()}-${randomBytes(12).toString("hex")}.${ext}`;
+  await mkdir(FOLDER_EVENT, { recursive: true });
+  await writeFile(join(FOLDER_EVENT, nama), isi);
+  return nama;
+}
+
+/** Berkas pendaftaran boleh dibuka pengelola event, atau siswa pemilik pendaftaran itu. */
+export async function bolehLihatBerkasEvent(
+  session: { role: string; email: string; userId: string },
+  p: { studentId: string | null },
+): Promise<boolean> {
+  if (await bolehEvent(session)) return true;
+  if (session.role !== "STUDENT" || !p.studentId) return false;
+  const s = await prisma.student.findUnique({ where: { userId: session.userId }, select: { id: true } }).catch(() => null);
+  return s?.id === p.studentId;
 }

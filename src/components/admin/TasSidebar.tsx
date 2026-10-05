@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Calendar, CalendarCheck, Bell, BarChart2, GraduationCap,
   UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, Award, Building2, ListChecks, Boxes,
-  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, IdCard,
+  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, Medal, IdCard,
   ChevronDown, Search, CheckSquare, MoreHorizontal, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, FileText, CalendarOff, HandCoins, ClipboardCheck, ScanSearch,
   Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
@@ -49,8 +49,7 @@ export const menuGroupsTas = [
   {
     label: "Data Siswa & Guru",
     items: [
-      { href: "/dashboard/admin/admissions", label: "Pendaftaran Siswa", icon: ClipboardList, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/spmb-konversi", label: "SPMB → Buku Induk", icon: UserPlus, show: (_j: string[], full: boolean) => full },
+      { href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog, show: (_j: string[], full: boolean) => full },
@@ -166,6 +165,7 @@ export const menuGroupsTas = [
     label: "Website & Informasi",
     items: [
       { href: "/dashboard/admin/announcements", label: "Kelola Pengumuman", icon: Bell, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/event", label: "Lomba & Event", icon: Medal, show: (_j: string[], full: boolean) => full },
     ],
   },
   {

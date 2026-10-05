@@ -140,6 +140,8 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   unggah: p => <S {...p}><rect x="9" y="5" width="22" height="28" rx="4" fill={W} /><path d="M14 13h12M14 19h9" stroke={N} strokeWidth="2.2" strokeLinecap="round" /><circle cx="34" cy="33" r="10" fill={B} /><path d="M34 38v-9M30 33.5l4-4 4 4" stroke={N} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" /></S>,
   pesan: p => <S {...p}><path d="M8 8h32a4 4 0 014 4v17a4 4 0 01-4 4H22l-9 7v-7H8a4 4 0 01-4-4V12a4 4 0 014-4z" fill={W} /><path d="M15 17h18M15 24h12" stroke={N} strokeWidth="2.8" strokeLinecap="round" /></S>,
   jam: p => <S {...p}><circle cx="24" cy="25" r="18" fill={W} /><circle cx="24" cy="25" r="13.5" fill={G} /><path d="M24 16v9.5l6 4" stroke={N} strokeWidth="3" strokeLinecap="round" /><rect x="20" y="3" width="8" height="5" rx="2" fill={B} /></S>,
+  /* Medali berpita + bintang — Lomba & Event (beda dari piala "prestasi" milik papan peringkat) */
+  medali: p => <S {...p}><path d="M14 4h8l4 14h-8z" fill={B} /><path d="M34 4h-8l-4 14h8z" fill={G} /><circle cx="24" cy="30" r="13" fill={W} /><circle cx="24" cy="30" r="9" fill={N2} /><path d="M24 23.5l2 4.1 4.5.6-3.3 3.1.8 4.4-4-2.2-4 2.2.8-4.4-3.3-3.1 4.5-.6z" fill={W} /></S>,
   prestasi: p => <S {...p}><path d="M14 6h20v10a10 10 0 01-20 0z" fill={W} /><path d="M14 9H8v3a8 8 0 006 7.7M34 9h6v3a8 8 0 01-6 7.7" stroke={B} strokeWidth="2.6" fill="none" /><rect x="21" y="26" width="6" height="8" fill={B} /><path d="M14 42c0-4 4.5-7 10-7s10 3 10 7z" fill={W} /></S>,
   /* Layar TV di kaki penyangga + siaran — Papan & TV */
   papanTv: p => <S {...p}><rect x="5" y="8" width="38" height="25" rx="4" fill={W} /><rect x="10" y="13" width="17" height="3" rx="1.5" fill={N} /><rect x="10" y="19" width="12" height="3" rx="1.5" fill={N2} /><path d="M19 33h10l3 8H16z" fill={B} /><path d="M13 41h22" stroke={G} strokeWidth="3" strokeLinecap="round" /></S>,
@@ -380,6 +382,10 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/teacher/rapor-kelas": "nilai",
   "/dashboard/admin/rapor-kelas": "nilai", // fitur sama di portal admin (#57)
   "/dashboard/student/portofolio": "sertifikat",
+  // Lomba & Event (4 Okt 2026) — fitur yang SAMA di tiga portal = gambar yang sama (CLAUDE.md #57).
+  "/dashboard/admin/event": "medali",
+  "/dashboard/teacher/event": "medali",
+  "/dashboard/student/lomba": "medali",
   "/dashboard/admin/cek-kelulusan": "kelulusan",
   "/dashboard/teacher/pengawas-ujian": "pengawasUjian",
   // Kehadiran

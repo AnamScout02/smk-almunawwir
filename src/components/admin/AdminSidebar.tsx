@@ -7,7 +7,7 @@ import {
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, CalendarCheck, Database, CalendarDays,
   Archive, Repeat, Mail, BookMarked, Clock, Users2, ShieldCheck, Award, Building2, ListChecks, Boxes,
-  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
+  UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Medal, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard, Heart, MoreHorizontal, ScanLine, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, CalendarOff, HandCoins, ScanSearch,
   Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen, Moon
@@ -55,8 +55,7 @@ export const menuGroups = [
   {
     label: "Data Siswa & Guru",
     items: [
-      { href: "/dashboard/admin/admissions", label: "Pendaftaran", icon: ClipboardList, badgeKey: "pendingAdmissions" as const },
-      { href: "/dashboard/admin/spmb-konversi", label: "SPMB → Buku Induk", icon: UserPlus, badge: 0 },
+      { href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList, badgeKey: "pendingAdmissions" as const },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, badge: 0 },
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, badge: 0 },
       { href: "/dashboard/admin/majors", label: "Jurusan", icon: BookOpen, badge: 0 },
@@ -220,6 +219,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/bantuan", label: "Pusat Bantuan (tiket)", icon: CircleHelp, badge: 0 },
       { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" as const },
       { href: "/dashboard/admin/news", label: "Berita", icon: Newspaper, badge: 0 },
+      { href: "/dashboard/admin/event", label: "Lomba & Event", icon: Medal, badge: 0 },
       { href: "/dashboard/admin/branding", label: "Branding & Identitas", icon: Palette, badge: 0 },
       { href: "/dashboard/admin/gallery", label: "Galeri Foto", icon: GalleryHorizontal, badge: 0 },
       { href: "/dashboard/admin/banners", label: "Banner / Hero", icon: Image, badge: 0 },
@@ -484,7 +484,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions, pendingProfileEdits, overdueBooks, permintaanSurat, belumDisposisi };
   const notifications = [
     { label: "Pesan masuk belum dibaca", count: unreadMessages, href: "/dashboard/admin/messages" },
-    { label: "Pendaftaran PPDB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
+    { label: "Pendaftar SPMB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
     { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
     { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
     { label: "Kelas belum absen hari ini", count: missingAttendanceClasses, href: "/dashboard/admin/absensi-siswa" },
