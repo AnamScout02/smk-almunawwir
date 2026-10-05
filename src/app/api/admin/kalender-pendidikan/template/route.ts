@@ -44,7 +44,7 @@ export async function GET() {
     [],
     ["4.", "Kolom Pelaksana boleh dikosongkan. Isinya masuk sebagai keterangan agenda."],
     [],
-    ["5.", "JENIS agenda (Libur / Ujian / KBM / Rapat / PPDB / Kegiatan) TIDAK diisi di sini —"],
+    ["5.", "JENIS agenda (Libur / Ujian / KBM / Rapat / SPMB / Kegiatan) TIDAK diisi di sini —"],
     ["", "ditebak otomatis dari kata pada judul agenda. Contoh: judul memuat \"libur\" → Libur,"],
     ["", "\"sumatif\"/\"ujian\"/\"UKK\"/\"ANBK\" → Ujian, \"rapat\"/\"pleno\" → Rapat."],
     ["", "Kalau ada yang meleset, betulkan lewat tombol Edit setelah impor."],

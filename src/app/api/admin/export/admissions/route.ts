@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifySpmbAccess } from "@/lib/spmb";
 import { balasanExcel } from "@/lib/ekspor-excel";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET() {
   try {
-    await verifyTasAccess();
+    await verifySpmbAccess();
 
     const admissions = await prisma.admission.findMany({
       orderBy: { createdAt: "desc" },

@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { verifyTasAccess } from "@/lib/tas-access-guard";
+import { verifySpmbAccess } from "@/lib/spmb";
 import { logActivity } from "@/lib/activity-log";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await verifyTasAccess();
+    const session = await verifySpmbAccess();
     const { id } = await params;
     const body = await req.json();
     const before = await prisma.admission.findUnique({ where: { id }, select: { status: true, fullName: true } });
@@ -36,7 +36,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await verifyTasAccess();
+    const session = await verifySpmbAccess();
     const { id } = await params;
     const admission = await prisma.admission.delete({ where: { id } });
     await logActivity(session, {

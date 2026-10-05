@@ -102,7 +102,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <main className="flex-1 min-w-0 min-h-dvh pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0">
           <PusatNotifikasiPortal tindakan={[
             { label: "Pesan masuk belum dibaca", count: unreadMessages, href: "/dashboard/admin/messages" },
-            { label: "Pendaftaran PPDB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
+            { label: "Pendaftar SPMB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
             { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
             { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
             { label: "Kelas belum absen hari ini", count: missingAttendance.length, href: "/dashboard/admin/absensi-siswa" },

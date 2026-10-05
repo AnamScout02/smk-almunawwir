@@ -23,7 +23,7 @@ const ACTION_LABEL: Record<string, string> = {
   UPDATE_JABATAN: "Ubah Jabatan",
   UPDATE_STUDENT_NAME: "Ubah Nama Siswa",
   DELETE_STUDENT: "Hapus Siswa",
-  DECIDE_ADMISSION: "Keputusan PPDB",
+  DECIDE_ADMISSION: "Keputusan SPMB",
   DELETE_ADMISSION: "Hapus Pendaftar",
   UPDATE_BUKU_INDUK: "Ubah Buku Induk",
   TES_DAPODIK: "Tes Koneksi Dapodik",
@@ -97,7 +97,7 @@ export default function LogAktivitasClient() {
       <PageHeader
         icon={<History size={22} />}
         title="Log Aktivitas"
-        description="Jejak aksi sensitif: reset password, ubah jabatan, hapus akun, keputusan PPDB, dll — khusus Administrator"
+        description="Jejak aksi sensitif: reset password, ubah jabatan, hapus akun, keputusan SPMB, dll — khusus Administrator"
       />
 
       <div className="baris-alat mb-5">

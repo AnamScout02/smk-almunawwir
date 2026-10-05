@@ -5,6 +5,7 @@ import { IdCard } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import KartuAnggotaDigital from "@/components/perpustakaan/KartuAnggotaDigital";
 import TombolKembali from "@/components/shared/TombolKembali";
+import KartuReferral from "@/components/spmb/KartuReferral";
 
 export const metadata = { title: "Kartu Identitas Digital" };
 
@@ -24,6 +25,9 @@ export default async function Page() {
         <TombolKembali href={BERANDA[session.role] ?? "/login"} />
       </div>
       <KartuAnggotaDigital mode="identitas" />
+      {/* Kartu referral SPMB — hanya tampil bagi akun yang terdaftar sebagai perujuk.
+          Ditempel di sini, bukan di halaman kartu sendiri (CLAUDE.md #53). */}
+      <KartuReferral />
     </div>
   );
 }

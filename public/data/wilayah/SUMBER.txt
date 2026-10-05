@@ -1,0 +1,4 @@
+Kode & nama wilayah (kabupaten/kota & kecamatan) sesuai Kepmendagri No 300.2.2-2138 Tahun 2025.
+Diturunkan dari https://github.com/cahyadsn/wilayah (MIT, (c) 2025 cahya dsn) pada 2 Oktober 2026.
+kabupaten.json = [{k: kode, n: nama, p: provinsi}], kec/<kode-kabupaten>.json = [{k, n}].
+Dipakai formulir SPMB (isian Kabupaten/Kota & Kecamatan) dan peta sebaran pendaftar.

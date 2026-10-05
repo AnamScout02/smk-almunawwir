@@ -1,7 +1,6 @@
-import KonversiSpmbManager from "@/components/spmb/KonversiSpmbManager";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "SPMB ke Buku Induk" };
-
+/** Lihat catatan di /dashboard/admin/spmb-konversi — dilebur ke Pusat SPMB. */
 export default function Page() {
-  return <KonversiSpmbManager />;
+  redirect("/pusat-spmb/konversi");
 }

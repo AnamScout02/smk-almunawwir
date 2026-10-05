@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const type = (formData.get("type") as string) || "misc";
+    // `type` datang dari browser dan ikut menyusun jalur folder — disaring supaya tidak bisa
+    // keluar dari public/uploads/admissions lewat "../".
+    const type = ((formData.get("type") as string) || "misc").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) || "misc";
 
     if (!file) return Response.json({ error: "Tidak ada file" }, { status: 400 });
     if (!ALLOWED_TYPES.includes(file.type)) {

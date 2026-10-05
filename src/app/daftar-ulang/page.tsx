@@ -8,13 +8,13 @@ import { getLang } from "@/lib/lang";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Daftar Ulang PPDB — SMK Al Munawwir IIBS",
+  title: "Daftar Ulang SPMB — SMK Al Munawwir IIBS",
   description: "Konfirmasi daftar ulang & unggah bukti pembayaran untuk calon siswa yang sudah dinyatakan diterima.",
 };
 
 const TEKS = {
   id: {
-    label: "SPMB", judul: "Daftar Ulang PPDB", awal: "Khusus calon siswa yang sudah dinyatakan", diterima: "DITERIMA",
+    label: "SPMB", judul: "Daftar Ulang SPMB", awal: "Khusus calon siswa yang sudah dinyatakan", diterima: "DITERIMA",
     akhir: "Masukkan nama lengkap & nomor WA sesuai formulir pendaftaran untuk konfirmasi daftar ulang.",
   },
   en: {

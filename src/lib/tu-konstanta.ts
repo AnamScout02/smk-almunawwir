@@ -184,7 +184,7 @@ export const JENIS_AGENDA = [
   { value: "LIBUR",    label: "Libur",             style: "bg-red-50 text-red-600 border-red-200",            dot: "#ef4444" },
   { value: "KEGIATAN", label: "Kegiatan Sekolah",  style: "bg-blue-50 text-blue-700 border-blue-200",         dot: "#3b82f6" },
   { value: "RAPAT",    label: "Rapat",             style: "bg-purple-50 text-purple-700 border-purple-200",   dot: "#a855f7" },
-  { value: "PPDB",     label: "PPDB / SPMB",       style: "bg-cyan-50 text-cyan-700 border-cyan-200",         dot: "#06b6d4" },
+  { value: "PPDB",     label: "SPMB",       style: "bg-cyan-50 text-cyan-700 border-cyan-200",         dot: "#06b6d4" },
   { value: "LAINNYA",  label: "Lainnya",           style: "bg-gray-50 text-gray-600 border-gray-200",         dot: "#9ca3af" },
 ] as const;
 
