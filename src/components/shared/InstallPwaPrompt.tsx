@@ -22,6 +22,12 @@ const DISMISS_DAYS = 14; // muncul lagi kalau sudah lama di-dismiss, bukan perma
  *   menawarkannya (`beforeinstallprompt`). APK tidak bisa dipakai di kedua perangkat itu.
  *
  * Hanya terpicu di HTTPS — lewat alamat HTTP sekolah (`:3000`) banner ini memang tidak pernah muncul. */
+/** Layar dinding (papan TV, layar kegiatan, layar QR presensi): tidak ada yang mengetuk banner di sana, dan
+ *  banner itu menutupi pengumuman (laporan user 4 Okt 2026 — "di tv masih muncul pasang MyAlwis Mobile"). */
+const TANPA_AJAKAN = ["/pasang-aplikasi", "/layar", "/layar-kegiatan", "/hadir", "/seb-uji", "/seb-selesai"];
+/** TV Android / Google TV — aplikasi HP bukan untuk TV, apa pun halamannya. */
+const PERANGKAT_TV = /Android TV|GoogleTV|Google TV|SmartTV|Smart-TV|BRAVIA|AFT[A-Z]|\bTV\b|; TV|Large Screen/i;
+
 export default function InstallPwaPrompt() {
   const pathname = usePathname();
   const [tersedia, setTersedia] = useState(false);
@@ -30,7 +36,7 @@ export default function InstallPwaPrompt() {
 
   useEffect(() => {
     // Di dalam aplikasi MyAlwis tidak perlu ajakan memasang apa pun.
-    if (lewatAplikasi(navigator.userAgent)) return;
+    if (lewatAplikasi(navigator.userAgent) || PERANGKAT_TV.test(navigator.userAgent)) return;
     const diAndroid = /Android/i.test(navigator.userAgent);
     setAndroid(diAndroid);
     if (!diAndroid && sudahTerpasang()) return;
@@ -53,7 +59,7 @@ export default function InstallPwaPrompt() {
     setTersedia(false);
   }
 
-  if (!tersedia || ditutup || pathname === "/pasang-aplikasi") return null;
+  if (!tersedia || ditutup || TANPA_AJAKAN.some(p => pathname === p || pathname?.startsWith(p + "/"))) return null;
 
   return (
     <div

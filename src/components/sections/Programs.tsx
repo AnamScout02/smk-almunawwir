@@ -4,7 +4,10 @@ import { Network, Calculator, Leaf, Palette, Building2, GraduationCap, ArrowRigh
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
 import { prisma } from "@/lib/prisma";
+import { getSettings } from "@/lib/site-settings";
 import { themeGradient, themeGradientRight } from "@/lib/color";
+import { transisiJurusan } from "@/lib/nama-transisi";
+import TeksGerak from "@/components/gerak/TeksGerak";
 
 const iconByCode: Record<string, React.ElementType> = {
   TKJ: Network, AK: Calculator, ATU: Leaf, DKV: Palette, DPIB: Building2,
@@ -20,14 +23,27 @@ const colorClassByCode: Record<string, string> = {
 export default async function Programs() {
   const lang = await getLang();
   const tr = t(lang);
-  const majors = await prisma.major.findMany({ orderBy: { name: "asc" } }).catch(() => []);
+  const [majors, s] = await Promise.all([
+    prisma.major.findMany({ orderBy: { name: "asc" } }).catch(() => []),
+    getSettings(["programIslami.arab", "programIslami.judul", "programIslami.desc", "programIslami.butir", "programIslami.foto"]),
+  ]);
+  // Kartu Program Islami — Konten Halaman → "Kartu Program Islami (Beranda)" (4 Okt 2026). Teks Indonesia dari
+  // pengaturan, Inggris dari terjemahan bawaan (CLAUDE.md #41); teks Arab sama untuk kedua bahasa.
+  const id = lang === "id";
+  const islami = {
+    arab: s["programIslami.arab"]?.trim() ?? "",
+    judul: (id && s["programIslami.judul"]?.trim()) || tr.islamic_program_title,
+    desc: (id && s["programIslami.desc"]?.trim()) || tr.islamic_program_desc,
+    butir: (s["programIslami.butir"] ?? "").split(/[·|•]/).map(x => x.trim()).filter(Boolean).slice(0, 8),
+    foto: s["programIslami.foto"]?.trim() ?? "",
+  };
   return (
     <section className="section-padding bg-cream">
       <div className="container-custom">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-14">
           <div>
             <span className="text-gold font-semibold text-sm uppercase tracking-widest">{tr.programs_label}</span>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-navy mt-2">{tr.programs_heading}</h2>
+            <h2 className="gerak-judul font-heading text-3xl md:text-4xl font-bold text-navy mt-2"><TeksGerak teks={tr.programs_heading} /></h2>
             <p className="text-gray-500 mt-3 max-w-lg">{tr.programs_sub}</p>
           </div>
           <Link href="/programs" className="btn-primary whitespace-nowrap self-start md:self-auto">
@@ -36,21 +52,21 @@ export default async function Programs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {majors.map((m) => {
+          {majors.map((m, i) => {
             const customColor = m.themeColor;
             const Icon = iconByCode[m.code.toUpperCase()] ?? GraduationCap;
             const fallbackClass = colorClassByCode[m.code.toUpperCase()] ?? "from-primary-700 to-primary-900";
             const desc = m.tagline || m.description;
             const features = m.features?.length ? m.features : [];
             return (
-            <div key={m.id}
-              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div key={m.id} style={{ ["--tunda" as string]: `${(i % 3) * 110}ms` }}
+              className="gerak-naik group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className={`h-1.5 ${customColor ? "" : `bg-gradient-to-r ${fallbackClass}`}`}
                 style={customColor ? { background: themeGradientRight(customColor) } : undefined} />
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className={`w-11 h-11 rounded-xl ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white shrink-0 flex items-center justify-center overflow-hidden relative`}
-                    style={customColor ? { background: themeGradient(customColor) } : undefined}>
+                    style={{ ...(customColor ? { background: themeGradient(customColor) } : {}), viewTransitionName: transisiJurusan(m.code) }}>
                     {m.logoUrl ? (
                       <Image src={m.logoUrl} alt={m.name} fill sizes="44px" className="object-contain p-1.5" />
                     ) : (
@@ -72,32 +88,41 @@ export default async function Programs() {
                     ))}
                   </div>
                 )}
-                <Link href={`/programs/${m.code.toLowerCase()}`}
+                <a href={`/programs/${m.code.toLowerCase()}`}
                   className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:text-gold transition-colors group-hover:gap-2.5">
                   {tr.programs_explore} <ArrowRight size={15} />
-                </Link>
+                </a>
               </div>
             </div>
             );
           })}
 
-          {/* Islamic programs card */}
-          <div className="relative rounded-2xl p-6 text-white overflow-hidden bg-gradient-to-br from-primary-700 to-primary-900">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-              style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }}
-            />
+          {/* Kartu Program Islami — isi dari Konten Halaman; foto latar opsional diberi lapisan navy. */}
+          <div className="gerak-naik relative rounded-2xl p-6 text-white overflow-hidden bg-gradient-to-br from-primary-700 to-primary-900">
+            {islami.foto ? (
+              <>
+                <Image src={islami.foto} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary-900 via-primary-900/85 to-primary-900/55" />
+              </>
+            ) : (
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+              />
+            )}
             <div className="relative">
-              <p className="font-arabic text-gold text-2xl mb-3">إِقْرَأْ بِاسْمِ رَبِّكَ</p>
-              <h3 className="font-heading text-xl font-bold mb-2">{tr.islamic_program_title}</h3>
-              <p className="text-white/70 text-sm leading-relaxed mb-5">{tr.islamic_program_desc}</p>
-              <div className="grid grid-cols-2 gap-3">
-                {["Tahfidz Al-Qur'an", "Bahasa Arab", "Fiqh & Aqidah", "Tilawah"].map((f) => (
-                  <div key={f} className="flex items-center gap-2 text-sm text-white/80">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-                    {f}
-                  </div>
-                ))}
-              </div>
+              {islami.arab && <p className="font-arabic text-gold text-2xl mb-3" dir="rtl" style={{ lineHeight: 2.2 }}>{islami.arab}</p>}
+              <h3 className="font-heading text-xl font-bold mb-2">{islami.judul}</h3>
+              <p className="text-white/70 text-sm leading-relaxed mb-5">{islami.desc}</p>
+              {islami.butir.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {islami.butir.map((f) => (
+                    <div key={f} className="flex items-center gap-2 text-sm text-white/80">
+                      <div className="w-1.5 h-1.5 shrink-0 rounded-full bg-gold" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

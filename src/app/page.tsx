@@ -11,6 +11,11 @@ import Testimonials from "@/components/sections/Testimonials";
 import CTABanner from "@/components/sections/CTABanner";
 import PrayerTimes from "@/components/shared/PrayerTimes";
 import IslamicQuote from "@/components/shared/IslamicQuote";
+import StoryGaleri from "@/components/gerak/StoryGaleri";
+import PitaKata from "@/components/gerak/PitaKata";
+import DeretLogo from "@/components/gerak/DeretLogo";
+import { bacaKontenSpmb } from "@/lib/spmb-konten";
+import { bacaTestimoni } from "@/lib/testimoni";
 import { getLang } from "@/lib/lang";
 import { getSettings } from "@/lib/site-settings";
 import { prisma } from "@/lib/prisma";
@@ -18,10 +23,20 @@ import { prisma } from "@/lib/prisma";
 export default async function HomePage() {
   const lang = await getLang();
   const [s, studentCount, majorCount] = await Promise.all([
-    getSettings(["stats.founded_year", "stats.graduation_rate", "school.tagline", "school.hero_subtitle"]),
+    getSettings(["stats.founded_year", "stats.graduation_rate", "school.tagline", "school.hero_subtitle",
+      "beranda.kataBerjalan", "beranda.testimoni", "spmb.fotoPromosi", "spmb.judulGaleri", "spmb.galeriLain", "spmb.logoMitra", "spmb.judulLogo"]),
     prisma.student.count({ where: { studentStatus: "AKTIF" } }).catch(() => 0),
     prisma.major.count().catch(() => 0),
   ]);
+  // Story & deret logo memakai bahan yang SUDAH diunggah panitia di Pusat SPMB → Poster & Promosi.
+  const k = bacaKontenSpmb(s);
+  const story = [
+    ...(k.fotoPromosi.length ? [{ judul: k.judulGaleri || (lang === "id" ? "Galeri" : "Gallery"), foto: k.fotoPromosi }] : []),
+    ...k.galeriLain.map(g => ({ judul: g.judul || (lang === "id" ? "Galeri" : "Gallery"), foto: g.foto })),
+  ];
+  // Kosong = pita disembunyikan (Konten Halaman → Keunggulan).
+  const kata = (s["beranda.kataBerjalan"] ?? "").trim();
+  const testimoni = bacaTestimoni(s["beranda.testimoni"]);
   return (
     <>
       <Navbar transparent />
@@ -40,7 +55,14 @@ export default async function HomePage() {
           </div>
         </div>
 
+        {story.length > 0 && (
+          <section className="bg-white py-6">
+            <div className="container-custom"><StoryGaleri story={story} gelap={false} /></div>
+          </section>
+        )}
+
         <Stats />
+        <PitaKata kata={kata} />
         <Programs />
         <WhyChooseUs />
 
@@ -51,8 +73,9 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <Testimonials lang={lang} />
+        <Testimonials lang={lang} data={testimoni} />
         <NewsPreview />
+        <DeretLogo logo={k.logoMitra} judul={k.judulLogo || (lang === "id" ? "Mitra Industri & Kampus Alumni" : "Industry Partners & Alumni Universities")} />
         <CTABanner />
       </main>
       <Footer />

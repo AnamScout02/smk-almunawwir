@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { transisiBerita } from "@/lib/nama-transisi";
+import TombolBagikan from "@/components/shared/TombolBagikan";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
@@ -42,8 +45,12 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     news = await prisma.news.findUnique({ where: { slug, published: true } });
   } catch { /* DB unavailable */ }
   if (!news) notFound();
-  // Jumlah pembaca (tanpa memblokir render).
-  prisma.news.update({ where: { id: news.id }, data: { views: { increment: 1 } } }).catch(() => null);
+  // Jumlah pembaca (tanpa memblokir render). Permintaan PRA-MUAT (Speculation Rules, header
+  // Sec-Purpose: prefetch / prefetch;prerender) bukan pembaca — tanpa ini angka baca menggelembung.
+  const tujuan = (await headers()).get("sec-purpose") ?? "";
+  if (!/prefetch|prerender/i.test(tujuan)) {
+    prisma.news.update({ where: { id: news.id }, data: { views: { increment: 1 } } }).catch(() => null);
+  }
 
   let related: Awaited<ReturnType<typeof prisma.news.findMany>> = [];
   try {
@@ -59,7 +66,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
       <Navbar />
       <main className="min-h-dvh bg-gray-50" style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(15,26,69,0.07) 0px, rgba(15,26,69,0.07) 1px, transparent 1px, transparent 18px)" }}>
         {/* Foto header */}
-        <div className="relative h-72 md:h-96 w-full bg-primary-900">
+        {/* Bilah kemajuan membaca — CSS scroll-driven animation, tanpa JavaScript (globals.css .bilah-baca). */}
+        <div className="bilah-baca" aria-hidden />
+        <div className="relative h-72 md:h-96 w-full overflow-hidden bg-primary-900" style={{ viewTransitionName: transisiBerita(news.slug) }}>
           {news.thumbnail ? (
             <Image src={news.thumbnail} alt={news.title} fill sizes="100vw" className="object-cover" priority />
           ) : null}
@@ -73,8 +82,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               <h1 className="font-heading text-2xl md:text-4xl font-bold text-white leading-tight max-w-3xl">{news.title}</h1>
               <p className="text-white/60 text-sm mt-3 flex items-center gap-1.5">
                 <Calendar size={13} />
-                {new Date(news.createdAt).toLocaleDateString(c.locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {new Date(news.createdAt).toLocaleDateString(c.locale, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}
               </p>
+              <TombolBagikan judul={news.title} label={lang === "id" ? "Bagikan" : "Share"}
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20" />
             </div>
           </div>
         </div>
@@ -94,8 +105,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                 <h2 className="font-heading text-xl font-bold text-primary-900 mb-5">{c.related}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {related.map(n => (
-                    <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
-                      <div className="relative h-36 bg-gray-100">
+                    <a href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
+                      <div className="relative h-36 bg-gray-100 overflow-hidden" style={{ viewTransitionName: transisiBerita(n.slug) }}>
                         {n.thumbnail ? (
                           <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" />
                         ) : (
@@ -108,7 +119,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                         <h3 className="font-semibold text-sm text-primary-900 group-hover:text-gold transition-colors line-clamp-2 leading-snug">{n.title}</h3>
                         <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleDateString(c.locale, { day: "numeric", month: "short", year: "numeric" })}</p>
                       </div>
-                    </Link>
+                    </a>
                   ))}
                 </div>
               </div>

@@ -1497,3 +1497,249 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
     color: var(--color-primary-900); line-height: 1.3;
   }
 }
+
+/* ===================================================================================
+   TEMA HALAMAN SPMB (2 Oktober 2026) — permintaan user: "tema banyak, tapi bagian footer
+   halaman tersebut dan beberapa tombol dll belum sesuai tema".
+
+   Hero halaman /admissions sudah memakai token tema lewat className, tetapi BAGIAN TERANG di
+   bawahnya (judul seksi, ikon, nomor alur, latar seksi), tab Cek Status, tombol kirim formulir,
+   dan Footer memakai navy/emas yang tertulis mati — dan ketiganya komponen TERPISAH, jadi
+   mengoper prop ke semuanya berarti mengubah komponen yang juga dipakai halaman lain.
+
+   Karena itu pemetaannya dilakukan di CSS: `gayaTema()` memasang variabel di pembungkus
+   halaman, blok ini memetakannya ke utility yang dipakai di dalam pembungkus itu saja.
+   SENGAJA DI LUAR @layer — aturan tanpa layer menang atas utility Tailwind yang berada di
+   dalam layer, tanpa perlu `!important`. Lingkupnya hanya `.tema-spmb`, jadi halaman lain
+   tidak tersentuh.
+   =================================================================================== */
+.tema-spmb .text-navy,
+.tema-spmb .text-primary-900,
+.tema-spmb .text-primary-700 { color: var(--spmb-utama); }
+.tema-spmb .text-primary-100 { color: var(--spmb-tipis); }
+.tema-spmb .bg-cream { background-color: var(--spmb-lembut); }
+.tema-spmb .bg-primary-50 { background-color: var(--spmb-lembut); }
+.tema-spmb .border-primary-100 { border-color: var(--spmb-tipis); }
+
+/* Tombol: tab Cek Status (bg-primary-700) & tombol kirim formulir (btn-gold). */
+.tema-spmb .bg-primary-700 { background-color: var(--spmb-utama); }
+.tema-spmb .btn-gold {
+  background: var(--spmb-aksen);
+  color: var(--spmb-aksen-teks);
+  border-color: var(--spmb-aksen);
+}
+.tema-spmb .btn-gold:hover { filter: brightness(0.94); }
+
+/* Footer ikut tema. Gradiennya SELALU gelap — termasuk pada tema Terang — karena teks footer
+   putih; footer terang dengan teks putih tidak terbaca sama sekali. */
+.tema-spmb footer.bg-primary-900 { background: var(--spmb-footer); }
+.tema-spmb footer .text-gold { color: var(--spmb-aksen); }
+.tema-spmb footer .hover\:text-gold:hover { color: var(--spmb-aksen); }
+.tema-spmb footer .from-primary-700 { --tw-gradient-from: var(--spmb-utama); }
+.tema-spmb footer .via-gold { --tw-gradient-via: var(--spmb-aksen); }
+.tema-spmb footer .to-primary-700 { --tw-gradient-to: var(--spmb-utama); }
+
+/* --- Gerak halaman SPMB (2 Oktober 2026, permintaan user: poster & kartu gelombang bisa bergerak).
+   SEMUANYA di dalam `prefers-reduced-motion: no-preference` — jadi pengguna yang mematikan animasi
+   di perangkatnya melihat halaman DIAM dan TETAP LENGKAP: tanpa blok ini tidak ada satu pun elemen
+   yang dimulai dari opacity 0, sehingga animasi yang gagal tidak pernah menyembunyikan isi. */
+@media (prefers-reduced-motion: no-preference) {
+  .spmb-muncul { animation: spmbMuncul .55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes spmbMuncul { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+  /* Kartu gelombang & jalur: terangkat sedikit saat disentuh penunjuk. */
+  .spmb-kartu { transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .35s; }
+  .spmb-kartu:hover { transform: translateY(-4px); box-shadow: 0 14px 34px -18px rgb(0 0 0 / .55); }
+
+  /* Gelombang yang SEDANG DIBUKA — cincin berdenyut pelan supaya mata langsung ke situ. */
+  .spmb-denyut { animation: spmbDenyut 2.8s ease-in-out infinite; }
+  @keyframes spmbDenyut {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(255 255 255 / .22); }
+    50%      { box-shadow: 0 0 0 10px rgb(255 255 255 / 0); }
+  }
+
+  /* Sapuan kilau sekali jalan di pita pemberitahuan. */
+  .spmb-kilau { position: relative; overflow: hidden; }
+  .spmb-kilau::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .35) 50%, transparent 65%);
+    transform: translateX(-120%); animation: spmbKilau 4.5s ease-in-out 1.2s infinite;
+  }
+  @keyframes spmbKilau { 0% { transform: translateX(-120%); } 45%, 100% { transform: translateX(120%); } }
+}
+
+/* ======================================================================
+   GERAK SITUS PUBLIK (2 Oktober 2026) — terinspirasi thursinaiibs.sch.id (permintaan user:
+   "beberapa layout tampilan dan animasinya keren"), TANPA GSAP/jQuery: CSS + satu
+   IntersectionObserver (`PengamatGerak`). Aturan pengaman:
+   - Keadaan TERSEMBUNYI hanya berlaku di bawah `html.gerak-siap` — kelas itu dipasang oleh
+     PengamatGerak. Jadi kalau JavaScript gagal/lambat, isi halaman tetap tampil biasa.
+   - Semuanya di dalam `prefers-reduced-motion: no-preference`.
+   - `.kilau` (sapuan cahaya saat ditunjuk) murni CSS dan tidak menyembunyikan apa pun.
+   ====================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* Dipakai `animation` + fill-mode BACKWARDS, BUKAN transition: transition menimpa transisi hover
+     kartu (hover jadi ikut tertunda), dan fill `both/forwards` menahan `transform` sehingga hover
+     terangkat tidak jalan. `backwards` hanya berlaku selama jeda — setelah selesai, gaya biasa kembali. */
+
+  /* Naik & memudar masuk; jeda bertahap lewat style={{ "--tunda": "120ms" }} */
+  .gerak-siap .gerak-naik:not(.tampak) { opacity: 0; }
+  .gerak-siap .gerak-naik.tampak { animation: gerakNaik .8s cubic-bezier(0.16, 1, 0.3, 1) var(--tunda, 0ms) backwards; }
+  @keyframes gerakNaik { from { opacity: 0; transform: translateY(36px); } }
+
+  /* Judul huruf demi huruf (TeksGerak memecah teks jadi .gerak-huruf ber-indeks --i) */
+  .gerak-siap .gerak-judul .gerak-kata { perspective: 400px; }
+  .gerak-siap .gerak-judul .gerak-huruf { display: inline-block; transform-origin: 50% 100%; }
+  .gerak-siap .gerak-judul:not(.tampak) .gerak-huruf { opacity: 0; }
+  .gerak-siap .gerak-judul.tampak .gerak-huruf {
+    animation: gerakHuruf .7s cubic-bezier(0.16, 1, 0.3, 1) calc(min(var(--i), 60) * 22ms) backwards;
+  }
+  @keyframes gerakHuruf { from { opacity: 0; transform: translateY(.45em) rotateX(-75deg); } }
+
+  /* Gambar "dibuka": tirai menyapu dari kiri, lalu foto mengecil dari zoom */
+  .gerak-siap .gerak-ungkap:not(.tampak) { clip-path: inset(0 100% 0 0); }
+  .gerak-siap .gerak-ungkap.tampak { animation: gerakUngkap 1s cubic-bezier(0.77, 0, 0.18, 1) var(--tunda, 0ms) backwards; }
+  .gerak-siap .gerak-ungkap.tampak img { animation: gerakZoom 1.4s cubic-bezier(0.16, 1, 0.3, 1) var(--tunda, 0ms) backwards; }
+  @keyframes gerakUngkap { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes gerakZoom { from { transform: scale(1.3); } }
+
+  /* Yang sudah terlihat saat halaman dibuka tidak dianimasikan ulang (tidak berkedip hilang). */
+  .gerak-siap .tampak.gerak-diam, .gerak-siap .gerak-diam.tampak .gerak-huruf,
+  .gerak-siap .gerak-diam.tampak img { animation: none; }
+
+  /* Judul di PEMBUKA halaman: huruf demi huruf langsung saat dimuat, murni CSS (tanpa menunggu
+     skrip) — elemen ini sudah terlihat sejak awal, jadi pola "tunggu masuk layar" tidak cocok. */
+  .gerak-judul-awal .gerak-kata { perspective: 400px; }
+  .gerak-judul-awal .gerak-huruf {
+    display: inline-block; transform-origin: 50% 100%;
+    animation: gerakHuruf .8s cubic-bezier(0.16, 1, 0.3, 1) calc(150ms + min(var(--i), 60) * 28ms) backwards;
+  }
+
+  /* Batang kuota terisi dari kiri saat masuk layar (isi = <span style="width:…%">). */
+  .gerak-siap .gerak-batang:not(.tampak) > span { transform: scaleX(0); }
+  .gerak-siap .gerak-batang.tampak > span {
+    transform-origin: left; animation: gerakBatang 1.3s cubic-bezier(0.16, 1, 0.3, 1) var(--tunda, 200ms) backwards;
+  }
+  @keyframes gerakBatang { from { transform: scaleX(0); } }
+
+  /* Alur pendaftaran: garis penghubung TERGAMBAR dari atas, lalu tiap nomor langkah menyala bergiliran. */
+  .gerak-siap .gerak-alur:not(.tampak) .garis-alur { transform: scaleY(0); }
+  .gerak-siap .gerak-alur.tampak .garis-alur { transform-origin: top; animation: gerakGaris 1.8s cubic-bezier(0.65, 0, 0.35, 1) backwards; }
+  @keyframes gerakGaris { from { transform: scaleY(0); } }
+  .gerak-siap .gerak-alur:not(.tampak) .titik-alur { opacity: 0; transform: scale(.4); }
+  .gerak-siap .gerak-alur.tampak .titik-alur { animation: gerakTitik .6s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i) * 280ms) backwards; }
+  @keyframes gerakTitik { from { opacity: 0; transform: scale(.4); } }
+
+  /* Sapuan cahaya di atas gambar saat kartu induknya (.group) ditunjuk */
+  .kilau { position: relative; overflow: hidden; }
+  .kilau::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / .35) 50%, transparent 70%);
+    transform: translateX(-130%);
+  }
+  .group:hover .kilau::after, .kilau:hover::after { transform: translateX(130%); transition: transform .9s ease; }
+
+  /* Deretan bergulir tanpa henti (logo mitra/kampus). Isi diduplikasi sekali oleh komponennya. */
+  .gerak-pita { animation: gerakPita var(--durasi, 40s) linear infinite; }
+  .gerak-pita:hover { animation-play-state: paused; }
+  @keyframes gerakPita { to { transform: translateX(-50%); } }
+}
+.sr-hanya { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ======================================================================
+   EFEK & KONSEP SITUS PUBLIK — gelombang 2 (2 Oktober 2026)
+   Satu blok untuk: transisi halaman, bilah baca bergulir, sorot kursor, tekstur noise, latar aurora,
+   pita kata berjalan, deret logo, bento, Story, penggeser sebelum/sesudah. Semua gerak dibungkus
+   `prefers-reduced-motion: no-preference`; yang memakai fitur CSS baru dibungkus @supports, jadi
+   peramban lama hanya kehilangan efeknya, tidak kehilangan isinya.
+   ====================================================================== */
+
+/* Transisi lintas halaman (View Transitions). `@view-transition` sendiri dipasang oleh Navbar
+   (PramuatTransisi) supaya HANYA berlaku antar-halaman publik, tidak di dashboard. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* Bilah kemajuan membaca — scroll-driven animation (CSS murni, tanpa JavaScript). */
+.bilah-baca { display: none; }
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .bilah-baca {
+      display: block; position: fixed; inset: 0 0 auto 0; z-index: 60; height: 3px;
+      background: linear-gradient(90deg, #E8A020, #F5C842); transform-origin: left;
+      animation: bilahBaca linear both; animation-timeline: scroll(root);
+    }
+    @keyframes bilahBaca { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    /* Gambar perlahan membesar selama dilewati layar — mengikuti guliran, bukan sekali jalan. */
+    .gulir-zoom { animation: gulirZoom linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
+    @keyframes gulirZoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+  }
+}
+
+/* Sorot kursor: cahaya lembut mengikuti kursor di permukaan kartu (posisi dari PengamatGerak). */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sorot-kursor { position: relative; isolation: isolate; }
+  .sorot-kursor::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+    background: radial-gradient(360px circle at var(--sx, 50%) var(--sy, 50%), rgb(245 200 66 / .16), transparent 45%);
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .sorot-kursor:hover::after { opacity: 1; }
+}
+
+/* Tekstur noise tipis di atas latar gelap — supaya tidak terlihat "datar digital". */
+.tekstur-noise { position: relative; }
+.tekstur-noise::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: .07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Latar aurora: dua cahaya navy-emas yang bergeser sangat pelan. */
+.latar-aurora { position: absolute; inset: -20%; pointer-events: none; z-index: 0; filter: blur(60px); opacity: .55;
+  background:
+    radial-gradient(40% 35% at 20% 30%, rgb(232 160 32 / .35), transparent 70%),
+    radial-gradient(45% 40% at 80% 20%, rgb(46 63 143 / .7), transparent 70%),
+    radial-gradient(40% 40% at 60% 85%, rgb(122 136 196 / .35), transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .latar-aurora { animation: aurora 26s ease-in-out infinite alternate; }
+  @keyframes aurora {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    50%  { transform: translate3d(4%, -3%, 0) rotate(8deg) scale(1.08); }
+    100% { transform: translate3d(-4%, 3%, 0) rotate(-6deg) scale(1.02); }
+  }
+}
+
+/* Pita kata berjalan (kinetic typography) & deret logo — isi DIGANDAKAN oleh komponennya supaya
+   putarannya menyambung tanpa jeda; `.gerak-pita` (blok gerak gelombang 1) yang menggerakkannya. */
+.gerak-pita { display: flex; width: max-content; }   /* tata letak berlaku juga saat "kurangi gerak" */
+.pita-kata { overflow: hidden; white-space: nowrap; content-visibility: auto; contain-intrinsic-size: auto 4rem; }
+.pita-kata-isi { display: inline-flex; align-items: center; gap: 2rem; padding-right: 2rem; }
+.pita-logo { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+@media (prefers-reduced-motion: reduce) { .pita-kata, .pita-logo { overflow-x: auto; } }
+
+/* Bento: satu kotak besar + kotak kecil tak seragam (ala Apple). */
+/* HP: satu kolom (dua kolom di 390px memotong kata panjang seperti "Berpengalaman"); tablet: dua kolom. */
+.kisi-bento { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+.kisi-bento > * { min-width: 0; }
+.bento-besar { min-height: 18rem; }
+@media (min-width: 640px) {
+  .kisi-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bento-besar { grid-column: span 2; }
+}
+@media (min-width: 1024px) {
+  .kisi-bento { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(11rem, auto); }
+  .bento-besar { grid-column: span 2; grid-row: span 2; }
+  .bento-lebar { grid-column: span 2; }
+}
+
+/* Story ala Instagram. */
+.cincin-story { background: conic-gradient(from 210deg, #E8A020, #F5C842, #2E3F8F, #E8A020); padding: 3px; border-radius: 9999px; }
+.cincin-story > span { display: block; border-radius: 9999px; padding: 2px; background: var(--latar-story, #0F1A45); }
+.story-bilah > span { transform-origin: left; }
+@media (prefers-reduced-motion: no-preference) {
+  .story-berjalan { animation: storyBilah var(--durasi-story, 5s) linear forwards; }
+  .story-jeda .story-berjalan { animation-play-state: paused; }
+  @keyframes storyBilah { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+}

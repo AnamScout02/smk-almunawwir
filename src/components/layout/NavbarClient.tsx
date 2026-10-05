@@ -17,10 +17,10 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "Fasilitas", href: "/facilities" }, { name: "Ekstrakurikuler", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
     ] },
     { key: "informasi", name: "Informasi", items: [
-      { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Galeri", href: "/gallery" },
+      { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Lomba & Event", href: "/lomba" }, { name: "Galeri", href: "/gallery" },
     ] },
     { key: "layanan", name: "Layanan", items: [
-      { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Daftar Ulang PPDB", href: "/daftar-ulang" },
+      { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Daftar Ulang SPMB", href: "/daftar-ulang" },
       { name: "Tracer Study Alumni", href: "/tracer-study" }, { name: "Aplikasi MyAlwis Mobile", href: "/pasang-aplikasi" },
     ] },
     { key: "kontak", name: "Kontak", href: "/contact" },
@@ -32,7 +32,7 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "Facilities", href: "/facilities" }, { name: "Extracurricular", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
     ] },
     { key: "informasi", name: "Information", items: [
-      { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Gallery", href: "/gallery" },
+      { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Competitions & Events", href: "/lomba" }, { name: "Gallery", href: "/gallery" },
     ] },
     { key: "layanan", name: "Services", items: [
       { name: "Graduation Status", href: "/cek-kelulusan" }, { name: "Re-registration", href: "/daftar-ulang" },

@@ -88,7 +88,7 @@ export default async function FacilitiesPage() {
   const statValues = [
     settings["facilities.labs"],
     `${settings["facilities.dormitory_capacity"]}+`,
-    bookStock > 0 ? `${bookStock}+` : "5.000+",
+    bookStock > 0 ? `${bookStock}+` : "—",   // jumlah buku perpustakaan sungguhan; tanpa data = "—", bukan angka karangan
     settings["facilities.campus_area"],
   ];
   const stats = c.statLabels.map((label, i) => ({ label, value: statValues[i] }));

@@ -218,7 +218,8 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
             { v: stats?.students ? `${stats.students}+` : "1.200+", l: tr.hero_active_students },
             { v: stats?.foundedYear || "2014", l: tr.hero_founded },
             { v: stats?.majors || "5", l: tr.hero_majors },
-            { v: stats?.graduationRate ? `${stats.graduationRate}%` : "98%", l: tr.hero_graduation },
+            // Tingkat kelulusan hanya tampil bila admin mengisinya — tidak ada angka bawaan.
+            ...(stats?.graduationRate ? [{ v: `${stats.graduationRate}%`, l: tr.hero_graduation }] : []),
           ].map(s => (
             <div key={s.l} className="text-center">
               <div className="text-2xl font-heading font-bold text-gold">{s.v}</div>

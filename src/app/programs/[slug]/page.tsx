@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { transisiJurusan } from "@/lib/nama-transisi";
+import TombolBagikan from "@/components/shared/TombolBagikan";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { programs } from "@/data/programs";
@@ -108,6 +110,7 @@ export default async function ProgramDetailPage({ params }: Props) {
     <>
       <Navbar />
       <main className="min-h-dvh">
+        <div className="bilah-baca" aria-hidden />
         {/* Hero */}
         <section className={`relative ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} text-white section-padding overflow-hidden`}
           style={heroStyle}>
@@ -127,7 +130,8 @@ export default async function ProgramDetailPage({ params }: Props) {
             </nav>
 
             <div className="flex items-center gap-6">
-              <div className="w-24 h-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative">
+              <div className="w-24 h-24 p-4 bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 flex items-center justify-center overflow-hidden relative"
+                style={{ viewTransitionName: transisiJurusan(code) }}>
                 {logoUrl ? (
                   <Image src={logoUrl} alt={name} fill sizes="96px" className="object-contain p-3" />
                 ) : (
@@ -142,6 +146,8 @@ export default async function ProgramDetailPage({ params }: Props) {
                 <p className="text-white/80 text-lg max-w-2xl leading-relaxed">
                   {tagline}
                 </p>
+                <TombolBagikan judul={`${name} — SMK Al Munawwir IIBS`} label={lang === "id" ? "Bagikan" : "Share"}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20" />
               </div>
             </div>
           </div>

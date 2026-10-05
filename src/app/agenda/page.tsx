@@ -35,7 +35,7 @@ const TEKS = {
     label: "Kalender Pendidikan", judul: "Agenda Sekolah", tahun: (n: string) => `Tahun Pelajaran ${n}`,
     kosong: "Belum ada agenda yang dipublikasikan.", akanDatang: "Akan Datang", sudahLewat: "Sudah Berlangsung",
     kembali: "Kembali ke Beranda", locale: "id-ID",
-    jenis: { KBM: "KBM", LIBUR: "Libur", UJIAN: "Ujian", KEGIATAN: "Kegiatan", RAPAT: "Rapat", PPDB: "PPDB", LAINNYA: "Lainnya" } as Record<string, string>,
+    jenis: { KBM: "KBM", LIBUR: "Libur", UJIAN: "Ujian", KEGIATAN: "Kegiatan", RAPAT: "Rapat", PPDB: "SPMB", LAINNYA: "Lainnya" } as Record<string, string>,
   },
   en: {
     label: "Academic Calendar", judul: "School Agenda", tahun: (n: string) => `Academic Year ${n}`,

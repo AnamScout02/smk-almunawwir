@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { getSettings } from "@/lib/site-settings";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
+import TeksGerak from "@/components/gerak/TeksGerak";
 
 export default async function CTABanner() {
   const lang = await getLang();
@@ -15,8 +16,9 @@ export default async function CTABanner() {
   const subtitle = s["cta.subtitle"].replace(/\d{4}\/\d{4}/, s["cta.ppdb_year"]);
 
   return (
-    <section className="section-padding relative overflow-hidden">
+    <section className="tekstur-noise section-padding relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-primary-900 via-primary-700 to-primary-500" />
+      <div className="latar-aurora" aria-hidden />
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
@@ -30,8 +32,8 @@ export default async function CTABanner() {
             &ldquo;{s["islamic.cta_trans"]}&rdquo; ({s["islamic.cta_source"]})
           </p>
 
-          <h2 className="font-heading text-3xl md:text-5xl font-bold text-white mb-4">
-            {s["cta.title"]}
+          <h2 className="gerak-judul font-heading text-3xl md:text-5xl font-bold text-white mb-4">
+            <TeksGerak teks={s["cta.title"]} />
           </h2>
           <p className="text-white/70 text-lg mb-10 max-w-2xl mx-auto">
             {subtitle}
@@ -46,7 +48,7 @@ export default async function CTABanner() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="gerak-naik flex flex-col sm:flex-row gap-4 justify-center" style={{ ["--tunda" as string]: "250ms" }}>
             <Link href="/admissions" className="btn-gold text-base !px-10 !py-4 inline-flex items-center gap-2">
               {tr.cta_register}
               <ArrowRight size={18} />

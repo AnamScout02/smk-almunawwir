@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/translations";
 import { NEWS_CATEGORY_COLORS as categoryColors } from "@/lib/news-categories";
+import { transisiBerita } from "@/lib/nama-transisi";
+import TeksGerak from "@/components/gerak/TeksGerak";
 
 export default async function NewsPreview() {
   const lang = await getLang();
@@ -17,14 +19,14 @@ export default async function NewsPreview() {
       take: 3,
     });
   } catch {
-    // DB unavailable — tampilkan placeholder di bawah
+    // DB tidak terjangkau — bagian berita disembunyikan di bawah
   }
 
-  const items = news.length > 0 ? news : [
-    { id: "1", slug: "spmb-2026-2027-resmi-dibuka", title: "SPMB 2026/2027 Resmi Dibuka", category: "Pengumuman", createdAt: new Date(), content: "Sistem Penerimaan Murid Baru tahun pelajaran 2026/2027 telah resmi dibuka.", thumbnail: null },
-    { id: "2", slug: "ramadan-camp-1447h", title: "Ramadan Camp 1447H: Menghidupkan Malam dengan Ibadah", category: "Kegiatan", createdAt: new Date(), content: "SMK Al Munawwir menggelar Ramadan Camp selama 10 hari penuh.", thumbnail: null },
-    { id: "3", slug: "juara-1-lomba-jaringan-nasional", title: "Siswa TKJ Raih Juara 1 Lomba Jaringan Nasional", category: "Prestasi", createdAt: new Date(), content: "Tim siswa TKJ SMK Al Munawwir meraih juara pertama tingkat nasional.", thumbnail: null },
-  ];
+  // Tanpa berita terbit, bagian ini TIDAK tampil (4 Okt 2026). Dulu diganti tiga berita contoh bertanggal hari ini
+  // ("Siswa TKJ Raih Juara 1 Lomba Jaringan Nasional", dst.) yang tautannya 404 — situs resmi tidak boleh
+  // memajang berita karangan.
+  if (!news.length) return null;
+  const items = news;
 
   return (
     <section className="section-padding bg-white">
@@ -32,7 +34,7 @@ export default async function NewsPreview() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
           <div>
             <span className="text-gold font-semibold text-sm uppercase tracking-widest">{tr.news_label}</span>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-navy mt-2">{tr.news_heading}</h2>
+            <h2 className="gerak-judul font-heading text-3xl md:text-4xl font-bold text-navy mt-2"><TeksGerak teks={tr.news_heading} /></h2>
           </div>
           <Link href="/news" className="btn-primary whitespace-nowrap self-start">
             {tr.news_view_all}
@@ -40,10 +42,11 @@ export default async function NewsPreview() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <article key={item.id}
-              className="group rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <div className="h-44 bg-gradient-to-br from-primary-700 to-primary-900 relative overflow-hidden">
+          {items.map((item, i) => (
+            <article key={item.id} style={{ ["--tunda" as string]: `${i * 120}ms` }}
+              className="gerak-naik group rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="gerak-ungkap kilau h-44 bg-gradient-to-br from-primary-700 to-primary-900 relative overflow-hidden"
+                style={{ ["--tunda" as string]: `${i * 120 + 150}ms`, viewTransitionName: transisiBerita(item.slug) }}>
                 {item.thumbnail ? (
                   <Image src={item.thumbnail} alt={item.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
                 ) : (
@@ -66,10 +69,10 @@ export default async function NewsPreview() {
                 <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
                   {item.content.slice(0, 120)}...
                 </p>
-                <Link href={`/news/${item.slug}`}
+                <a href={`/news/${item.slug}`}
                   className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:text-gold transition-colors group-hover:gap-2.5">
                   {tr.news_read_more} <ArrowRight size={14} />
-                </Link>
+                </a>
               </div>
             </article>
           ))}

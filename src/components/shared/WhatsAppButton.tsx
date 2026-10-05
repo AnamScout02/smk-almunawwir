@@ -4,8 +4,13 @@ import { usePathname } from "next/navigation";
 import { X, MessageCircle } from "lucide-react";
 import { lewatAplikasi } from "@/lib/aplikasi-ujian";
 
-const WA_NUMBER = "6283878203670";
+/** Cadangan terakhir bila pengaturan belum terbaca — nilainya sama dengan `contact.phone` di
+ *  DEFAULTS. Nomor yang SEBENARNYA dipakai diambil dari /api/public/kontak-wa (temuan user
+ *  1 Oktober 2026: nomor di tombol ini ditulis mati sehingga tidak ikut berubah saat pengaturan
+ *  Konten Halaman atau Pengaturan SPMB diganti). */
+const WA_CADANGAN = "6283878203670";
 const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir IIBS.";
+const WA_MESSAGE_SPMB = "Assalamualaikum, saya ingin bertanya tentang pendaftaran SPMB SMK Al Munawwir IIBS.";
 
 /** Widget kontak WhatsApp — HANYA untuk halaman publik (beranda, tentang, kontak, dll), bukan
  * portal internal. Dipasang di root layout (dipakai semua halaman), jadi disaring sendiri di sini
@@ -17,21 +22,35 @@ const WA_MESSAGE = "Assalamualaikum, saya ingin bertanya tentang SMK Al Munawwir
 // + /login (23 Sep 2026): halaman masuk kini halaman penuh tanpa navbar — bubble hijau merusak tampilannya.
 const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei", "/login",
   // Papan informasi TV & layar kegiatan: layar publik yang dipajang di dinding — tidak boleh ada tombol apa pun.
-  "/layar", "/layar-kegiatan", "/hadir"];
+  "/layar", "/layar-kegiatan", "/hadir", "/seb-uji", "/seb-selesai"];
 
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   // Di Aplikasi SMK Al-Munawwir (Android) tidak ada tombol WA melayang — aplikasi bukan situs publik (22 Sep 2026).
   const [diAplikasi, setDiAplikasi] = useState(false);
+  const [nomor, setNomor] = useState<{ umum: string; spmb: string }>({ umum: "", spmb: "" });
   useEffect(() => { const ua = navigator.userAgent; queueMicrotask(() => setDiAplikasi(lewatAplikasi(ua))); }, []);
+  useEffect(() => {
+    fetch("/api/public/kontak-wa")
+      .then(r => r.json())
+      .then(d => setNomor({ umum: d?.umum ?? "", spmb: d?.spmb ?? "" }))
+      .catch(() => {});
+  }, []);
 
   if (diAplikasi || HIDDEN_PREFIXES.some(p => pathname?.startsWith(p))) return null;
 
-  const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
+  // Di halaman SPMB, nomor PANITIA dipakai bila diisi — penanya di situ bertanya soal pendaftaran,
+  // bukan soal sekolah secara umum.
+  const diSpmb = !!pathname?.startsWith("/admissions");
+  const tujuan = (diSpmb && nomor.spmb) || nomor.umum || WA_CADANGAN;
+  const pesan = diSpmb ? WA_MESSAGE_SPMB : WA_MESSAGE;
+  const href = `https://wa.me/${tujuan}?text=${encodeURIComponent(pesan)}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 print:hidden">
+    // Di HP halaman SPMB sudah punya bilah bawah berisi tombol WA panitia — tombol melayang ini
+    // disembunyikan di sana supaya keduanya tidak bertumpuk di pojok bawah.
+    <div className={`fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 print:hidden ${diSpmb ? "max-lg:hidden" : ""}`}>
       {/* Popup */}
       {open && (
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-72 animate-fade-in">

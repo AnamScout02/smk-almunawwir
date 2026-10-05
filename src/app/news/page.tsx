@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
+import { transisiBerita } from "@/lib/nama-transisi";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Calendar, Search, Newspaper, CalendarDays } from "lucide-react";
@@ -130,9 +131,9 @@ export default async function NewsPage({
             ) : (
               <>
                 {/* Berita utama */}
-                <Link href={`/news/${news[0].slug}`} className="block mb-10 group">
+                <a href={`/news/${news[0].slug}`} className="block mb-10 group">
                   <div className="bg-white rounded-3xl overflow-hidden shadow-sm border hover:shadow-lg transition-all flex flex-col lg:flex-row">
-                    <div className="relative h-64 lg:h-auto lg:w-1/2 bg-gray-100 shrink-0">
+                    <div className="relative h-64 lg:h-auto lg:w-1/2 bg-gray-100 shrink-0 overflow-hidden" style={{ viewTransitionName: transisiBerita(news[0].slug) }}>
                       {news[0].thumbnail ? (
                         <Image src={news[0].thumbnail} alt={news[0].title} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
@@ -152,14 +153,14 @@ export default async function NewsPage({
                       <span className="mt-4 inline-flex items-center text-primary-700 font-semibold text-sm gap-1 group-hover:gap-2 transition-all">{c.readMore}</span>
                     </div>
                   </div>
-                </Link>
+                </a>
 
                 {/* Grid berita lainnya */}
                 {news.length > 1 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {news.slice(1).map(n => (
-                      <Link href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                        <div className="relative h-48 bg-gray-100">
+                      <a href={`/news/${n.slug}`} key={n.id} className="group block bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                        <div className="relative h-48 bg-gray-100 overflow-hidden" style={{ viewTransitionName: transisiBerita(n.slug) }}>
                           {n.thumbnail ? (
                             <Image src={n.thumbnail} alt={n.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
@@ -177,7 +178,7 @@ export default async function NewsPage({
                           <h3 className="font-heading font-bold text-primary-900 leading-snug mb-2 group-hover:text-gold transition-colors line-clamp-2">{n.title}</h3>
                           <p className="text-gray-500 text-sm line-clamp-2">{n.content.slice(0, 120)}...</p>
                         </div>
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 )}
