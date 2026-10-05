@@ -1,0 +1,10 @@
+{
+  "name": "myalwis-ujian",
+  "productName": "MyAlwis Ujian",
+  "version": "1.0.0",
+  "description": "Browser ujian SMK Al-Munawwir IIBS untuk komputer Windows (layar penuh terkunci)",
+  "main": "main.js",
+  "author": "SMK Al-Munawwir IIBS",
+  "license": "UNLICENSED",
+  "private": true
+}

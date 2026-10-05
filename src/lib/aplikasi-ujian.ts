@@ -10,6 +10,10 @@ export const NAMA_PENDEK = "MyAlwis";
 export const PENANDA_APLIKASI = "MyAlwisMobile"; // ditambahkan aplikasi ke User-Agent: "… MyAlwisMobile/2.2"
 /** Penanda versi lama: 2.0 (nama Aplikasi SMK Al-Munawwir) & 1.0 (khusus ujian). */
 const PENANDA_LAMA = ["SMKAlMunawwirApp", "SMKUjianApp"];
+/** MyAlwis Ujian untuk Windows (4 Okt 2026, windows-ujian/) — browser ujian komputer lab, padanan Exambrowser ANBK. */
+export const PENANDA_WINDOWS = "MyAlwisUjianWin";
+export const VERSI_WINDOWS = "1.0";
+export const BERKAS_WINDOWS = "/api/unduh/windows-ujian";
 export const VERSI_APLIKASI = "2.3";
 export const BERKAS_APK = "/unduh/myalwis-mobile.apk";
 /** Satu halaman untuk aplikasi Android MAUPUN pemasangan dari browser (23 Sep 2026: /aplikasi & /pasang-aplikasi digabung). */
@@ -17,7 +21,7 @@ export const HALAMAN_APLIKASI = "/pasang-aplikasi";
 
 export const lewatAplikasi = (ua: string | null | undefined) => {
   const s = ua ?? "";
-  return s.includes(PENANDA_APLIKASI) || PENANDA_LAMA.some(p => s.includes(p));
+  return s.includes(PENANDA_APLIKASI) || s.includes(PENANDA_WINDOWS) || PENANDA_LAMA.some(p => s.includes(p));
 };
 export const hpAndroid = (ua: string | null | undefined) => /Android/i.test(ua ?? "");
 

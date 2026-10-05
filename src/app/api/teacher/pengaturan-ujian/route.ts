@@ -16,7 +16,7 @@ const KUNCI = [
   // Safe Exam Browser — kunci dari SEB Configuration Tool di komputer sekolah (lihat src/lib/seb.ts).
   "ujian.sebKunci", "ujian.sebConfigKey",
   // Aplikasi Ujian Android: PIN keluar saat mengerjakan (dicek /api/ujian/aplikasi/keluar).
-  "ujian.pinAplikasi",
+  "ujian.pinAplikasi", "ujian.sebCkTerverifikasi",
 ] as const;
 
 /** Pengaturan bawaan ujian baru. GET terbuka untuk semua petugas ujian (penyusun ujian memakai
@@ -25,7 +25,10 @@ export async function GET() {
   try {
     const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
     const [s, bolehAtur] = await Promise.all([getSettings([...KUNCI]), bolehAturUjian(session)]);
-    return Response.json({ ...s, bolehAtur });
+    // Kunci SEB & PIN keluar hanya untuk pengatur ujian — guru lain cukup tahu ada/tidaknya.
+    if (!bolehAtur) for (const k of ["ujian.sebKunci", "ujian.sebConfigKey", "ujian.pinAplikasi"] as const) s[k] = s[k] ? "(diatur)" : "";
+    const sebTerverifikasi = s["ujian.sebCkTerverifikasi"] ? "1" : "";
+    return Response.json({ ...s, "ujian.sebCkTerverifikasi": undefined, sebTerverifikasi, bolehAtur });
   } catch (e) {
     lemparBilaPengalihan(e);
     return Response.json({ error: "Gagal memuat pengaturan." }, { status: 500 });
@@ -48,6 +51,13 @@ export async function PUT(req: NextRequest) {
       if (b[k] !== undefined) bersih[k] = b[k] === true || b[k] === "1" ? "1" : "0";
     }
     if (b["ujian.pinAplikasi"] !== undefined) bersih["ujian.pinAplikasi"] = String(b["ujian.pinAplikasi"] ?? "").replace(/\D/g, "").slice(0, 8);
+    // Kunci SEB tempelan manual (heksadesimal 64 huruf) — cadangan bila berkas .seb disusun sendiri di SEB Configuration Tool.
+    for (const k of ["ujian.sebKunci", "ujian.sebConfigKey"] as const) {
+      if (b[k] === undefined) continue;
+      const v = String(b[k] ?? "").trim().toLowerCase();
+      if (v && !/^[0-9a-f]{64}$/.test(v)) return Response.json({ error: "Kunci Safe Exam Browser harus 64 karakter heksadesimal." }, { status: 400 });
+      bersih[k] = v;
+    }
     if (b["ujian.petunjukTambahan"] !== undefined) bersih["ujian.petunjukTambahan"] = String(b["ujian.petunjukTambahan"] ?? "").slice(0, 2000);
 
     await prisma.$transaction(Object.entries(bersih).map(([key, value]) =>

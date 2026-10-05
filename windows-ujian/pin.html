@@ -1,0 +1,32 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><title>PIN Keluar</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#fff;color:#0F1A45}
+  .kepala{background:linear-gradient(135deg,#0A1030 0%,#0F1A45 40%,#1B2B6B 100%);color:#fff;padding:14px 18px;font-weight:600}
+  .isi{padding:18px}
+  p{margin:0 0 12px;font-size:13px;color:#4b5563}
+  input{width:100%;box-sizing:border-box;font-size:22px;letter-spacing:.4em;text-align:center;padding:10px;border:1px solid #e5e7eb;border-radius:12px;outline:none}
+  input:focus{border-color:#2E3F8F;box-shadow:0 0 0 3px rgba(46,63,143,.15)}
+  .galat{color:#dc2626;font-size:13px;min-height:18px;margin-top:8px}
+  .tombol{display:flex;gap:8px;margin-top:10px}
+  button{flex:1;padding:10px;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer}
+  .batal{background:#fff;border:1px solid #d1d5db;color:#374151}.kirim{background:#1B2B6B;border:0;color:#fff}
+</style></head><body>
+<div class="kepala">Keluar saat ujian berlangsung</div>
+<div class="isi">
+  <p>Masukkan PIN dari pengawas. Jawaban yang sudah tersimpan tidak hilang.</p>
+  <input id="pin" inputmode="numeric" maxlength="8" autocomplete="off" autofocus>
+  <div class="galat" id="galat"></div>
+  <div class="tombol"><button class="batal" id="batal">Batal</button><button class="kirim" id="kirim">Keluar</button></div>
+</div>
+<script>
+  const el = id => document.getElementById(id);
+  async function kirim() {
+    el("kirim").disabled = true; el("galat").textContent = "";
+    const h = await window.pinKeluar.kirim(el("pin").value.replace(/\D/g, ""));
+    if (!h.ok) { el("galat").textContent = h.error; el("pin").value = ""; el("pin").focus(); }
+    el("kirim").disabled = false;
+  }
+  el("kirim").onclick = kirim; el("batal").onclick = () => window.pinKeluar.batal();
+  el("pin").addEventListener("keydown", e => { if (e.key === "Enter") kirim(); if (e.key === "Escape") window.pinKeluar.batal(); });
+</script></body></html>

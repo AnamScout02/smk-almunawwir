@@ -1,0 +1,17 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Tidak tersambung</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Arial,sans-serif;
+    background:linear-gradient(135deg,#0A1030 0%,#0F1A45 40%,#1B2B6B 100%);color:#fff;text-align:center}
+  h1{font-size:22px;margin:0 0 8px}p{color:rgba(255,255,255,.7);margin:0 0 20px;font-size:14px}
+  button{background:#E8A020;color:#0F1A45;border:0;border-radius:999px;padding:12px 28px;font-weight:700;font-size:15px;cursor:pointer}
+</style></head><body><div>
+  <h1>Server ujian tidak bisa dihubungi</h1>
+  <p>Periksa kabel jaringan / WiFi komputer ini, lalu coba lagi.<br>Jawaban yang sudah tersimpan tidak hilang.</p>
+  <button id="ulang">Coba Lagi</button>
+</div>
+<script>
+  const ke = new URLSearchParams(location.search).get("ke") || "";
+  document.getElementById("ulang").onclick = () => window.muatUlang ? window.muatUlang(ke) : location.reload();
+  setInterval(() => window.muatUlang && navigator.onLine && window.muatUlang(ke), 15000);
+</script></body></html>

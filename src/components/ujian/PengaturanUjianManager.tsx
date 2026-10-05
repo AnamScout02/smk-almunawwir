@@ -349,6 +349,36 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
                     Diminta aplikasi bila peserta ingin keluar SAAT mengerjakan ujian — beri tahu pengawas saja. Kosong = keluar cukup dengan konfirmasi.
                   </p>
                 </div>
+                {/* Safe Exam Browser untuk komputer lab (4 Okt 2026) — lihat src/lib/seb.ts & src/lib/seb-konfig.ts. */}
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
+                  <p className="label-field mb-0">Safe Exam Browser (komputer lab)</p>
+                  <p className="text-xs text-emerald-800/80 leading-snug">
+                    Kunci layar sungguhan di Windows (Alt-Tab, tombol Windows, aplikasi lain tertutup). Langkah: (1) pasang Safe Exam Browser
+                    di komputer lab, (2) unduh berkas di bawah lalu salin ke komputer itu dan klik dua kali, (3) di dalam SEB buka
+                    <span className="font-mono"> /seb-uji</span> sekali untuk membuktikan konfigurasinya. Sandi keluar SEB = PIN keluar di atas
+                    (ubah PIN = unduh &amp; salin ulang berkasnya).
+                  </p>
+                  <p className={`text-xs font-semibold ${atur.sebTerverifikasi === "1" ? "text-emerald-700" : "text-amber-700"}`}>
+                    {atur.sebTerverifikasi === "1"
+                      ? "✓ Sudah lolos uji — ujian bertanda \"Wajib SEB\" hanya bisa dikerjakan lewat SEB."
+                      : "Belum ada komputer yang lolos uji — ujian bertanda \"Wajib SEB\" belum dikunci."}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="/api/teacher/ujian/seb-konfig" className={`btn-modal-cancel btn-teks text-xs ${bolehAtur && atur["ujian.pinAplikasi"] ? "" : "pointer-events-none opacity-50"}`}>Unduh berkas .seb</a>
+                    <a href="https://safeexambrowser.org/download_en.html" target="_blank" rel="noopener noreferrer" className="btn-modal-cancel btn-teks text-xs">Unduh Safe Exam Browser</a>
+                    <a href="/pasang-aplikasi" className="btn-modal-cancel btn-teks text-xs">MyAlwis Ujian (Windows)</a>
+                  </div>
+                  {!atur["ujian.pinAplikasi"] && <p className="text-xs text-amber-700">Isi PIN keluar dulu — berkas .seb memakainya sebagai sandi keluar.</p>}
+                  <details className="text-xs text-gray-600">
+                    <summary className="cursor-pointer font-medium text-emerald-800">Kunci manual (bila berkas .seb disusun sendiri)</summary>
+                    <div className="mt-2 space-y-2">
+                      <input value={atur["ujian.sebKunci"] ?? ""} disabled={!bolehAtur} placeholder="Browser Exam Key (64 karakter)"
+                        onChange={e => setAtur(a => ({ ...a, "ujian.sebKunci": e.target.value.trim() }))} className="input-field font-mono text-xs" />
+                      <input value={atur["ujian.sebConfigKey"] ?? ""} disabled={!bolehAtur} placeholder="Config Key (64 karakter, opsional)"
+                        onChange={e => setAtur(a => ({ ...a, "ujian.sebConfigKey": e.target.value.trim() }))} className="input-field font-mono text-xs" />
+                    </div>
+                  </details>
+                </div>
                 {([
                   ["ujian.acakSoal", "Acak urutan soal per siswa"],
                   ["ujian.acakOpsi", "Acak urutan pilihan jawaban"],
