@@ -10,12 +10,19 @@ import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { useToast } from "@/components/shared/ToastProvider";
 import { playBellAudio, unlockAudio } from "@/lib/bell-chime";
 
-interface BellItem { id: string; label: string; time: string; days: string; audioUrl: string | null; active: boolean }
+interface BellItem { id: string; label: string; time: string; days: string; audioUrl: string | null; active: boolean; profil?: string; berlaku?: boolean }
 
 const DAY_OPTIONS = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 const DAY_SHORT: Record<string, string> = { SENIN: "Sen", SELASA: "Sel", RABU: "Rab", KAMIS: "Kam", JUMAT: "Jum", SABTU: "Sab" };
 
-const EMPTY_FORM = { label: "", time: "06:45", days: [...DAY_OPTIONS], audioUrl: "" as string | null, active: true };
+const EMPTY_FORM = { label: "", time: "06:45", days: [...DAY_OPTIONS], audioUrl: "" as string | null, active: true, profil: "REGULER" };
+
+/** Profil bel (4 Okt 2026, src/lib/bel-profil.ts): bel UJIAN otomatis menggantikan bel REGULER pada tanggal
+ *  Kegiatan Ujian yang aktif — di speaker pusat & semua TV. */
+const PROFIL = [
+  { nilai: "REGULER", label: "Bel Reguler" },
+  { nilai: "UJIAN", label: "Bel Ujian" },
+];
 
 /** Bel Sekolah Otomatis — jadwal dikelola TU, diputar oleh halaman Player (/dashboard/admin/bel-sekolah/player)
  * yang dibuka di PC TU/Piket sepanjang hari. Native, browser-based — tidak ada hardware relay,
@@ -30,18 +37,25 @@ export default function BelSekolahPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [tab, setTab] = useState("REGULER");
+  const [hariIni, setHariIni] = useState<{ profil: string; kegiatan: string }>({ profil: "REGULER", kegiatan: "" });
 
   function load() {
     setLoading(true);
-    fetch("/api/admin/bell-schedule").then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : []))
+    fetch("/api/admin/bell-schedule")
+      .then(r => {
+        setHariIni({ profil: r.headers.get("X-Profil-Bel") || "REGULER", kegiatan: decodeURIComponent(r.headers.get("X-Kegiatan-Ujian") || "") });
+        return r.json();
+      })
+      .then(d => setItems(Array.isArray(d) ? d : []))
       .catch(() => {}).finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
 
-  function openCreate() { setEditing(null); setForm(EMPTY_FORM); setModal(true); }
+  function openCreate() { setEditing(null); setForm({ ...EMPTY_FORM, profil: tab }); setModal(true); }
   function openEdit(item: BellItem) {
     setEditing(item);
-    setForm({ label: item.label, time: item.time, days: item.days.split(","), audioUrl: item.audioUrl, active: item.active });
+    setForm({ label: item.label, time: item.time, days: item.days.split(","), audioUrl: item.audioUrl, active: item.active, profil: item.profil || "REGULER" });
     setModal(true);
   }
   function toggleDay(d: string) {
@@ -109,14 +123,37 @@ export default function BelSekolahPage() {
         <button onClick={openCreate} className="btn-modal-save"><Plus size={15} /> Tambah Jadwal</button>
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-4 text-sm mb-6">
+      <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-4 text-sm mb-5">
         Buka halaman <strong>Player</strong> di PC yang tersambung ke speaker sekolah, biarkan terbuka sepanjang jam sekolah (mode layar penuh) — bel akan otomatis berbunyi sesuai jadwal di bawah. Tidak perlu hardware tambahan.
+        <span className="mt-2 block">
+          <strong>Bel Ujian</strong> otomatis menggantikan Bel Reguler pada tanggal <strong>Kegiatan Ujian</strong> yang aktif (diatur di
+          Pusat Ujian), di speaker pusat dan semua TV. Selama Bel Ujian belum disusun, hari ujian tetap memakai Bel Reguler.
+        </span>
+      </div>
+
+      <div className={`mb-5 rounded-xl border px-4 py-3 text-sm ${hariIni.profil === "UJIAN" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+        Hari ini berlaku: <strong>{hariIni.profil === "UJIAN" ? "Bel Ujian" : "Bel Reguler"}</strong>
+        {hariIni.profil === "UJIAN" && hariIni.kegiatan ? ` — ${hariIni.kegiatan}` : ""}
+      </div>
+
+      <div className="baris-alat mb-5">
+        <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
+          {PROFIL.map(p => (
+            <button key={p.nilai} type="button" onClick={() => setTab(p.nilai)}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${tab === p.nilai ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+              {p.label} <span className="angka opacity-70">({items.filter(i => (i.profil || "REGULER") === p.nilai).length})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <div className="py-16 flex justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
-      ) : items.length === 0 ? (
-        <EmptyState icon={Bell} title="Belum Ada Jadwal Bel" description="Tambahkan jadwal bel pertama, mis. Bel Masuk jam 06:45." />
+      ) : items.filter(i => (i.profil || "REGULER") === tab).length === 0 ? (
+        <EmptyState icon={Bell} title={tab === "UJIAN" ? "Belum Ada Bel Ujian" : "Belum Ada Jadwal Bel"}
+          description={tab === "UJIAN"
+            ? "Susun bel untuk hari ujian, mis. Masuk Sesi 1 07.30, Selesai Sesi 1 09.30. Dipakai otomatis pada tanggal Kegiatan Ujian."
+            : "Tambahkan jadwal bel pertama, mis. Bel Masuk jam 06:45."} />
       ) : (
         <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
@@ -128,7 +165,7 @@ export default function BelSekolahPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map(item => (
+                {items.filter(i => (i.profil || "REGULER") === tab).map(item => (
                   <tr key={item.id} className={`${!item.active ? "opacity-40" : ""}`}>
                     <td className="font-bold text-primary-900 font-mono">{item.time}</td>
                     <td>{item.label}</td>
@@ -164,6 +201,17 @@ export default function BelSekolahPage() {
           <div>
             <label className="label-field">Nama Jadwal</label>
             <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} className="input-field" placeholder="cth: Bel Masuk, Pergantian Jam 1, Istirahat, Bel Pulang" />
+          </div>
+          <div>
+            <label className="label-field">Jenis Bel</label>
+            <div className="flex flex-wrap gap-2">
+              {PROFIL.map(p => (
+                <button key={p.nilai} type="button" onClick={() => setForm(f => ({ ...f, profil: p.nilai }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${form.profil === p.nilai ? "bg-primary-900 text-white border-primary-900" : "bg-white text-gray-400 border-gray-200"}`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <label className="label-field">Waktu</label>

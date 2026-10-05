@@ -30,11 +30,27 @@ export async function POST(req: NextRequest) {
     const b = await req.json().catch(() => ({})) as {
       ids?: string[]; tombol?: keyof typeof TOMBOL; aksi?: "buka-papan";
       pengumuman?: { judul?: string; isi?: string; cara?: string } | null;
+      belMode?: { mode?: string; sampai?: string | null };
     };
     const ids = Array.isArray(b.ids) ? b.ids.filter(x => typeof x === "string").slice(0, 40) : [];
     if (!ids.length) return Response.json({ error: "Belum ada layar yang dipilih." }, { status: 400 });
     // PENGUMUMAN MASSAL (24 Sep 2026): satu ketikan tampil & DIBACAKAN di semua TV terpilih. `pengumuman: null`
     // mengosongkannya serentak — pengumuman mendesak harus bisa dicabut secepat menayangkannya.
+    // MODE BEL (4 Okt 2026, ruang ANBK/TKA): NORMAL | HENING | UJIAN untuk TV terpilih, berlaku sampai waktu
+    // tertentu (kosong = sampai diubah). Papan membaca status hening lewat denyut 10 detik (/kabar); jadwal bel
+    // ujian terpakai saat papan dimuat ulang (dashboard membukanya ulang setelah menyimpan).
+    if (b.belMode !== undefined) {
+      const mode = ["NORMAL", "HENING", "UJIAN"].includes(b.belMode?.mode ?? "") ? b.belMode!.mode! : "NORMAL";
+      const sampai = mode !== "NORMAL" && b.belMode?.sampai ? new Date(b.belMode.sampai) : null;
+      if (sampai && (Number.isNaN(sampai.getTime()) || sampai.getTime() <= Date.now()))
+        return Response.json({ error: "Batas waktu mode bel harus di masa depan." }, { status: 400 });
+      await prisma.layar.updateMany({ where: { id: { in: ids } }, data: { belMode: mode, belModeSampai: sampai } });
+      await logActivity(session, {
+        action: "MODE_BEL_LAYAR", entity: "Layar", entityId: "-",
+        description: `Mode bel ${mode}${sampai ? ` sampai ${sampai.toISOString()}` : ""} untuk ${ids.length} layar`,
+      });
+      return Response.json({ ok: true, berhasil: ids.length, total: ids.length, hasil: [] });
+    }
     if (b.pengumuman !== undefined) {
       const judul = b.pengumuman?.judul?.trim() || null;
       const isi = b.pengumuman?.isi?.trim() || null;

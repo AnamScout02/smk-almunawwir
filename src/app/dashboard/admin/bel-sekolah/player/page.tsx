@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Bell, Play, ArrowLeft, Volume2, CheckCircle2 } from "lucide-react";
 import { playBellAudio, unlockAudio } from "@/lib/bell-chime";
 
-interface BellItem { id: string; label: string; time: string; days: string; audioUrl: string | null; active: boolean }
+/** `berlaku` dari server: bel ini dipakai hari ini (profil Reguler / Ujian — src/lib/bel-profil.ts). */
+interface BellItem { id: string; label: string; time: string; days: string; audioUrl: string | null; active: boolean; berlaku?: boolean }
 
 const DAY_BY_JS_INDEX: Record<number, string> = { 1: "SENIN", 2: "SELASA", 3: "RABU", 4: "KAMIS", 5: "JUMAT", 6: "SABTU" };
 
@@ -51,7 +52,7 @@ export default function BelSekolahPlayerPage() {
       const hhmm = `${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`;
 
       for (const item of items) {
-        if (!item.active) continue;
+        if (!item.active || item.berlaku === false) continue;
         if (item.time !== hhmm) continue;
         if (!item.days.split(",").includes(dayCode)) continue;
         const fireKey = `${item.id}-${key}`;
@@ -71,7 +72,7 @@ export default function BelSekolahPlayerPage() {
 
   const todayCode = DAY_BY_JS_INDEX[now.getDay()];
   const todaySchedule = items
-    .filter(i => i.active && todayCode && i.days.split(",").includes(todayCode))
+    .filter(i => i.active && i.berlaku !== false && todayCode && i.days.split(",").includes(todayCode))
     .sort((a, b) => a.time.localeCompare(b.time));
   const nowStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const nextUp = todaySchedule.find(i => i.time > nowStr);

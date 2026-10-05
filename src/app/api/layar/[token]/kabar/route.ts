@@ -1,5 +1,6 @@
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { prisma } from "@/lib/prisma";
+import { modeBelBerlaku } from "@/lib/bel-profil";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     const { token } = await params;
     const layar = await prisma.layar.findUnique({
       where: { token },
-      select: { aktif: true, papanJudul: true, papanIsi: true, papanManualSaja: true, papanCara: true },
+      select: { aktif: true, papanJudul: true, papanIsi: true, papanManualSaja: true, papanCara: true, belMode: true, belModeSampai: true },
     }).catch(() => null);
     if (!layar || !layar.aktif) return Response.json({ error: "Layar tidak dikenal." }, { status: 404 });
 
@@ -30,6 +31,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       isi: layar.papanIsi,
       manualSaja: layar.papanManualSaja,
       cara: layar.papanCara,
+      // Mode Hening ikut denyut 10 detik supaya menyala/padam tanpa memuat ulang papan (ruang ANBK/TKA).
+      hening: modeBelBerlaku(layar) === "HENING",
     });
   } catch (galat) {
     lemparBilaPengalihan(galat);

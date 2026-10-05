@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { aksesSarpras, daftarRuang } from "@/lib/sarpras-akses";
 import { daftarLayar, kandidatPerangkat, mungkinMacAcak } from "@/lib/layar-server";
+import { statusLayar } from "@/lib/layar-adb";
 import { randomBytes } from "node:crypto";
 import { logActivity } from "@/lib/activity-log";
 import { NextRequest } from "next/server";
@@ -22,7 +23,9 @@ export async function GET() {
       daftarRuang().catch(() => [] as string[]),
       prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }], select: { id: true, name: true } }).catch(() => []),
     ]);
-    return Response.json({ baris, routerOk, kandidat, ruang, kelas, bolehKelola: akses.kelola });
+    // Status layar hanya untuk TV yang terlihat hidup di jaringan — sekaligus, masing-masing dibatasi ±6 detik.
+    const layar = await Promise.all(baris.map(b => (b.status !== "OFFLINE" && b.ip ? statusLayar(b.ip).catch(() => null) : Promise.resolve(null))));
+    return Response.json({ baris: baris.map((b, i) => ({ ...b, layar: layar[i] })), routerOk, kandidat, ruang, kelas, bolehKelola: akses.kelola });
   } catch (galat) {
     lemparBilaPengalihan(galat);
     return Response.json({ error: "Gagal memuat daftar layar." }, { status: 500 });

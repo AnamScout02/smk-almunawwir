@@ -7,6 +7,7 @@ import PapanLayar, { type IsiPapan } from "@/components/sarpras/PapanLayar";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { kutipanHariIni, peringkatKedisiplinan, perluPerhatian } from "@/lib/papan-kelas";
+import { modeBelBerlaku, profilBelHariIni } from "@/lib/bel-profil";
 
 /** PAPAN INFORMASI TV (24 September 2026) — halaman yang ditampilkan TV saat menganggur.
  *
@@ -22,8 +23,9 @@ export default async function Page({ params }: { params: Promise<{ token: string
   const layar = await prisma.layar.findUnique({
     where: { token },
     select: {
-      nama: true, ruang: true, papanJudul: true, papanIsi: true, papanManualSaja: true, papanQr: true,
-      papanJenis: true, papanGiliran: true, volumeBel: true, kelas: { select: { id: true, name: true } },
+      nama: true, ruang: true, papanJudul: true, papanIsi: true, papanManualSaja: true, papanCara: true, papanQr: true,
+      papanJenis: true, papanGiliran: true, volumeBel: true, belMode: true, belModeSampai: true,
+      kelas: { select: { id: true, name: true } },
     },
   }).catch(() => null);
   if (!layar) notFound();
@@ -81,9 +83,17 @@ export default async function Page({ params }: { params: Promise<{ token: string
     prisma.bellSchedule.findMany({
       where: { active: true },
       orderBy: { time: "asc" },
-      select: { label: true, time: true, days: true, audioUrl: true },
+      select: { label: true, time: true, days: true, audioUrl: true, profil: true },
     }).catch(() => []),
   ]);
+
+  /* BEL YANG BERLAKU (4 Okt 2026, src/lib/bel-profil.ts): profil hari ini (Reguler / Ujian pada tanggal Kegiatan
+     Ujian), ditimpa mode TV ini — HENING tidak membunyikan apa pun, UJIAN selalu memakai bel ujian (ruang
+     ANBK/TKA). TV "ikut bel ujian" saat TU belum menyusun bel ujian tetap memakai bel reguler, bukan diam. */
+  const modeBel = modeBelBerlaku(layar);
+  const { profil: profilSekolah } = await profilBelHariIni().catch(() => ({ profil: "REGULER" as const }));
+  const adaBelUjian = bel.some(b => b.profil === "UJIAN");
+  const profilTv = modeBel === "UJIAN" && adaBelUjian ? "UJIAN" : profilSekolah;
 
   // Halaman kedua papan kelas (kutipan harian, peringkat kedisiplinan, siswa perlu diperhatikan). Keduanya
   // dibungkus .catch sendiri: papan tidak boleh gagal total hanya karena satu panel tambahan bermasalah.
@@ -98,6 +108,8 @@ export default async function Page({ params }: { params: Promise<{ token: string
     manualJudul: layar.papanJudul,
     manualIsi: layar.papanIsi,
     manualSaja: layar.papanManualSaja,
+    // Mode pengumuman (TEKS / SUARA / TEKS_SUARA) WAJIB ikut muatan awal — lihat PapanLayar.
+    manualCara: layar.papanCara,
     namaLayar: layar.nama,
     ruang: layar.ruang,
     kelas: layar.kelas?.name ?? null,
@@ -114,7 +126,13 @@ export default async function Page({ params }: { params: Promise<{ token: string
     peringkat,
     perluPerhatian: perhatian.siswa,
     rekapKelas: perhatian.rekap,
-    bel: bel.filter(b => b.days.split(",").map(d => d.trim()).includes(hari)).map(b => ({ label: b.label, jam: b.time, audioUrl: b.audioUrl })),
+    bel: bel
+      .filter(b => (b.profil || "REGULER") === profilTv)
+      // Bel ujian juga mengikuti hari yang dicentang TU (Jumat lazim punya jam sesi berbeda).
+      .filter(b => b.days.split(",").map(d => d.trim()).includes(hari))
+      .map(b => ({ label: b.label, jam: b.time, audioUrl: b.audioUrl })),
+    belHening: modeBel === "HENING",
+    profilBel: profilTv,
   };
 
   return <PapanLayar isi={isi} />;

@@ -1,13 +1,14 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { salinTeks } from "@/lib/salin-teks";
-import { Tv, Loader2, Plus, RefreshCw, Wifi, WifiOff, TriangleAlert, Pencil, Trash2, Search, MonitorPlay, Copy, Power, Sun, Home, Megaphone, Send, Save } from "lucide-react";
+import { Tv, Loader2, Plus, RefreshCw, Wifi, WifiOff, TriangleAlert, Pencil, Trash2, Search, MonitorPlay, Copy, Power, Sun, Home, Megaphone, Send, Save, BellOff } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
 import Select from "@/components/admin/Select";
 import TimePicker from "@/components/shared/TimePicker";
+import DatePicker from "@/components/shared/DatePicker";
 import DindingLayar from "@/components/sarpras/DindingLayar";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
@@ -19,7 +20,26 @@ interface Baris {
   diamDetik: number | null; trafikMb: number | null; nyalaDetik: number | null; jadwalMati: string | null; jadwalNyala: string | null;
   token: string | null; kelasId: string | null; papanJudul: string | null; papanIsi: string | null; papanOtomatis: boolean; papanQr: string; papanJenis: string; papanGiliran: number; volumeBel: number | null; ipTetap: string | null;
   perangkatModel: string | null; aplikasiDepan: string | null;
+  /** Mode Bel yang berlaku sekarang (NORMAL | HENING | UJIAN) dan batasnya (ISO, null = sampai diubah). */
+  belMode: string; belModeSampai: string | null;
+  /** Dibaca lewat ADB: MENYALA / TIDUR (layar padam, sistem hidup — bisa dinyalakan dari sini) / null. */
+  layar?: "MENYALA" | "TIDUR" | null;
 }
+
+/** MODE BEL per TV (4 Okt 2026) — untuk ruang yang dipakai ANBK/TKA. Lihat src/lib/bel-profil.ts. */
+const MODE_BEL = [
+  { value: "NORMAL", label: "Normal — ikut bel sekolah" },
+  { value: "HENING", label: "Hening — bel diam, pengumuman tampil tanpa suara" },
+  { value: "UJIAN", label: "Ikut Bel Ujian — jadwal bel ujian di TV ini" },
+];
+const BATAS_MODE = [
+  { value: "UBAH", label: "Sampai diubah lagi" },
+  { value: "HARI_INI", label: "Sampai akhir hari ini" },
+  { value: "TANGGAL", label: "Sampai tanggal & jam tertentu" },
+];
+/** Tanggal/jam WIB → ISO. Formulir selalu berbicara dalam WIB, apa pun zona waktu komputer petugas. */
+const isoWib = (tgl: string, jam: string) => new Date(`${tgl}T${jam || "23:59"}:00+07:00`).toISOString();
+const hariIniWib = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 interface Kandidat {
   mac: string; ip: string; namaHost: string | null; jaringan: string | null;
   sistem: string | null; macAcak: boolean; mungkinTv: boolean; barusanMuncul: boolean;
@@ -66,6 +86,7 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
   const [form, setForm] = useState<{ id?: string; nama: string; ruang: string; mac: string; catatan: string; jadwalMati: string; jadwalNyala: string; kelasId: string; papanJudul: string; papanIsi: string; papanOtomatis: boolean; papanQr: string; papanJenis: string; papanGiliran: number; volumeBel: string; ipTetap: string } | null>(null);
   const [pilih, setPilih] = useState<Set<string>>(new Set());
   const [umum, setUmum] = useState<{ judul: string; isi: string; cara: string } | null>(null);
+  const [modeBel, setModeBel] = useState<{ mode: string; batas: string; tanggal: string; jam: string } | null>(null);
   const [kelolaTemplat, setKelolaTemplat] = useState(false);
   const [suntingTemplat, setSuntingTemplat] = useState<{ id?: string; judul: string; isi: string; cara: string } | null>(null);
   const toast = useToast();
@@ -139,7 +160,7 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
   const massal = async (isi: { tombol?: "daya" | "bangunkan" | "beranda"; aksi?: "buka-papan" }, judul: string) => {
     const ids = [...pilih];
     if (!ids.length) return;
-    if (isi.tombol === "daya" && !await confirm(`Matikan ${ids.length} TV terpilih? Masing-masing masuk standby.`)) return;
+    if (isi.tombol === "daya" && !await confirm(`Matikan ${ids.length} TV terpilih? Layarnya padam, dan bisa dinyalakan lagi dari sini dengan tombol Nyalakan.`)) return;
     setSibuk(true);
     try {
       const r = await fetch("/api/sarpras/layar/massal", {
@@ -150,6 +171,28 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
       const gagal = (d.hasil ?? []).filter((h: { ok: boolean }) => !h.ok);
       if (gagal.length === 0) toast.success(`${judul}: ${d.berhasil} TV berhasil`);
       else toast.warning(`${judul}: ${d.berhasil} berhasil, ${gagal.length} gagal — ${gagal.slice(0, 2).map((g: { nama: string; pesan: string }) => `${g.nama} (${g.pesan})`).join("; ")}`);
+      await muat(true);
+    } finally { setSibuk(false); }
+  };
+
+  const simpanModeBel = async () => {
+    if (!modeBel) return;
+    const ids = [...pilih];
+    if (!ids.length) return;
+    const sampai = modeBel.mode === "NORMAL" || modeBel.batas === "UBAH" ? null
+      : modeBel.batas === "HARI_INI" ? isoWib(hariIniWib(), "23:59")
+      : modeBel.tanggal ? isoWib(modeBel.tanggal, modeBel.jam) : null;
+    if (modeBel.mode !== "NORMAL" && modeBel.batas === "TANGGAL" && !modeBel.tanggal) { toast.warning("Pilih tanggal berakhirnya."); return; }
+    setSibuk(true);
+    try {
+      const r = await fetch("/api/sarpras/layar/massal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, belMode: { mode: modeBel.mode, sampai } }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok) { toast.error(d?.error || "Gagal menyimpan mode bel"); return; }
+      toast.success(`Mode bel ${ids.length} TV disimpan`);
+      setModeBel(null);
       await muat(true);
     } finally { setSibuk(false); }
   };
@@ -225,6 +268,15 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
         </div>
       )}
 
+      {mati > 0 && (
+        <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+          <strong className="text-blue-800">{mati} TV tidak terlihat.</strong> Setelah listrik padam, TV TCL masuk siaga dingin (WiFi mati)
+          sehingga tidak bisa dinyalakan dari sini — nyalakan SEKALI dengan remote, sesudah itu bisa dikendalikan dari sini lagi.
+          Supaya menyala sendiri saat listrik kembali, atur menu Hotel TV → Mode Nyala ke &quot;Langsung menyala&quot;; TV yang menyala di
+          luar jam papan akan ditidurkan otomatis.
+        </div>
+      )}
+
       <div className="kisi-kartu kisi-kartu-4 mb-5">
         <StatTile ikon="perisai" color="primary" value={data.baris.filter(b => b.aktif).length} label="TV terdaftar" />
         <StatTile ikon="hadir" color="emerald" value={hidup} label="Sedang hidup" />
@@ -259,6 +311,7 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
             <button type="button" disabled={sibuk} onClick={() => massal({ aksi: "buka-papan" }, "Buka papan")} className="btn-modal-save btn-teks"><MonitorPlay /> Buka Papan Sekolah</button>
             <button type="button" disabled={sibuk} onClick={() => setUmum({ judul: "", isi: "", cara: "TEKS_SUARA" })} className="btn-modal-cancel btn-teks"><Megaphone /> Pengumuman</button>
             <button type="button" disabled={sibuk} onClick={() => kirimPengumuman(null)} className="btn-modal-cancel btn-teks">Cabut pengumuman</button>
+            <button type="button" disabled={sibuk} onClick={() => setModeBel({ mode: "HENING", batas: "HARI_INI", tanggal: hariIniWib(), jam: "15:00" })} className="btn-modal-cancel btn-teks"><BellOff /> Mode Bel</button>
             <button type="button" disabled={sibuk} onClick={() => massal({ tombol: "daya" }, "Matikan")} className="btn-hapus btn-teks"><Power /> Matikan</button>
           </div>
         </div>
@@ -294,10 +347,26 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
                     <td className="font-medium text-primary-900 whitespace-nowrap">
                       {b.nama}
                       {b.macAcak && <span className="ml-2 status-badge bg-amber-50 text-amber-700 border-amber-200" title="MAC ini MAC acak WiFi — bisa berubah sendiri dan membuat pemantauan berhenti">MAC acak</span>}
+                      {b.belMode !== "NORMAL" && (
+                        <span className={`ml-2 status-badge ${b.belMode === "HENING" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}
+                          title={b.belModeSampai ? `Sampai ${new Date(b.belModeSampai).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" })}` : "Sampai diubah lagi"}>
+                          {b.belMode === "HENING" ? "Bel hening" : "Bel ujian"}
+                        </span>
+                      )}
                       <span className="block font-mono text-xs font-normal text-gray-400">{b.mac}</span>
                     </td>
                     <td className="text-sm text-gray-600">{b.ruang}</td>
-                    <td><span className={`status-badge ${GAYA[b.status]}`}>{b.status === "ONLINE" ? <Wifi size={12} /> : <WifiOff size={12} />} {LABEL[b.status]}</span></td>
+                    <td>
+                      {b.status !== "OFFLINE" && b.layar === "TIDUR" ? (
+                        <span className="status-badge bg-gray-50 text-gray-600 border-gray-200" title="Layar padam, sistem TV tetap hidup — bisa dinyalakan dengan tombol Nyalakan">
+                          <Wifi size={12} /> Siaga · layar mati
+                        </span>
+                      ) : (
+                        <span className={`status-badge ${GAYA[b.status]}`}
+                          title={b.status === "OFFLINE" ? "Tidak terlihat router. Setelah listrik padam, TV masuk siaga dingin (WiFi mati) — nyalakan SEKALI dengan remote, sesudah itu bisa dikendalikan dari sini lagi." : undefined}>
+                          {b.status === "ONLINE" ? <Wifi size={12} /> : <WifiOff size={12} />} {LABEL[b.status]}</span>
+                      )}
+                    </td>
                     <td className="text-xs">{(() => { const a = aktivitas(b); return a ? <span className={`font-semibold ${a.kelas}`}>{a.teks}</span> : <span className="text-gray-400">—</span>; })()}</td>
                     <td className="text-xs tabular-nums text-gray-600">{b.trafikMb === null ? "—" : `${b.trafikMb} MB`}</td>
                     <td className="font-mono text-xs">{b.ip ?? "—"}<span className="block text-gray-400">{b.jaringan ?? ""}</span></td>
@@ -348,6 +417,43 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
           </div>
         </div>
       )}
+
+      <Modal open={!!modeBel} onClose={() => setModeBel(null)} title={`Mode bel ${pilih.size} TV terpilih`} size="md"
+        footer={<>
+          <button type="button" onClick={() => setModeBel(null)} className="btn-modal-cancel flex-1">Batal</button>
+          <button type="button" disabled={sibuk} onClick={simpanModeBel} className="btn-modal-save flex-1">
+            {sibuk ? <Loader2 className="animate-spin" /> : <Save />} Simpan
+          </button>
+        </>}>
+        {modeBel && (
+          <div className="space-y-4">
+            <div>
+              <label className="label-field">Mode bel</label>
+              <Select value={modeBel.mode} onChange={v => setModeBel({ ...modeBel, mode: v })} options={MODE_BEL} />
+              <p className="mt-1.5 text-xs text-gray-500">
+                {modeBel.mode === "HENING"
+                  ? "Untuk ruang ANBK/TKA: bel tidak berbunyi dan volume TV tidak disentuh. Pengumuman tetap tampil di layar (mis. token) tanpa nada maupun suara."
+                  : modeBel.mode === "UJIAN"
+                    ? "TV ini memakai jadwal Bel Ujian (menu Bel Sekolah) walaupun ruang lain memakai bel biasa. Mulai terpakai paling lambat 10 menit setelah disimpan, saat papan memuat ulang."
+                    : "Kembali mengikuti bel sekolah: Bel Reguler, atau Bel Ujian pada tanggal Kegiatan Ujian."}
+              </p>
+            </div>
+            {modeBel.mode !== "NORMAL" && (
+              <div>
+                <label className="label-field">Berlaku</label>
+                <Select value={modeBel.batas} onChange={v => setModeBel({ ...modeBel, batas: v })} options={BATAS_MODE} />
+                {modeBel.batas === "TANGGAL" && (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div><label className="label-field">Tanggal</label><DatePicker value={modeBel.tanggal} onChange={v => setModeBel({ ...modeBel, tanggal: v })} /></div>
+                    <div><label className="label-field">Jam</label><TimePicker value={modeBel.jam} onChange={v => setModeBel({ ...modeBel, jam: v })} /></div>
+                  </div>
+                )}
+                <p className="mt-1.5 text-xs text-gray-500">Setelah batasnya lewat, TV otomatis kembali ke mode Normal — tidak perlu ada yang mengembalikan.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       <Modal open={!!umum} onClose={() => setUmum(null)} title={`Pengumuman ke ${pilih.size} TV terpilih`} size="md"
         footer={<>

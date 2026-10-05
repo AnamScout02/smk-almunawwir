@@ -10,12 +10,16 @@ export interface IsiPapan {
   jenis: string; giliran: number;
   /** Volume TV (persen) selama bel berbunyi; null = volume TV tidak pernah disentuh. */
   volumeBel: number | null;
-  manualJudul: string | null; manualIsi: string | null; manualSaja: boolean;
+  manualJudul: string | null; manualIsi: string | null; manualSaja: boolean; manualCara: string;
   namaLayar: string; ruang: string; kelas: string | null; namaSekolah: string; logo: string | null;
   jadwal: { mapel: string; mulai: string; selesai: string; guru: string | null; ruang: string | null; kelas: string | null }[];
   pengumuman: { judul: string; isi: string }[];
   agenda: { judul: string; tanggal: string; jenis: string }[];
   bel: { label: string; jam: string; audioUrl: string | null }[];
+  /** Mode Bel TV = HENING (ruang ANBK/TKA): bel diam, pengumuman tampil tanpa nada/suara. */
+  belHening: boolean;
+  /** REGULER | UJIAN — jadwal bel yang dipakai TV ini hari ini (src/lib/bel-profil.ts). */
+  profilBel: string;
   /** Halaman KEDUA papan kelas (25 Sep 2026). Papan kelas tidak bergilir per panel seperti papan ruang guru —
    *  ia berganti HALAMAN berisi empat panel sekaligus, supaya tampilannya tetap yang sudah dikenal. */
   kutipan: { arab: string; terjemahan: string; sumber: string } | null;
@@ -71,8 +75,13 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
   /* Pengumuman kantor disimpan di state supaya bisa BERUBAH DI TEMPAT. Nilai awalnya dari muatan halaman;
      sesudah itu disegarkan tiap 10 detik lewat /kabar. Memuat ulang halaman untuk ini akan mengembalikan
      giliran panel ke awal dan menyentak layar di dinding. */
-  const [kabar, setKabar] = useState<{ judul: string | null; isi: string | null; manualSaja: boolean; cara: string }>(
-    { judul: isi.manualJudul, isi: isi.manualIsi, manualSaja: isi.manualSaja, cara: "TEKS_SUARA" });
+  const [kabar, setKabar] = useState<{ judul: string | null; isi: string | null; manualSaja: boolean; cara: string; hening: boolean }>(
+    /* Mode dari muatan halaman, BUKAN "TEKS_SUARA" tertulis mati. Dulu mode yang benar baru terbaca dari /kabar
+       10 detik kemudian — saat itu pengumuman "teks saja" sudah telanjur dibacakan dan "suara saja" sudah menutup
+       layar. Karena dashboard membuka ulang papan tepat setelah mengirim, bug itu terjadi SETIAP kali
+       (laporan user 4 Okt 2026: "pilih teks saja malah ada teks dan suara"). */
+    { judul: isi.manualJudul, isi: isi.manualIsi, manualSaja: isi.manualSaja, cara: isi.manualCara || "TEKS_SUARA", hening: isi.belHening });
+  const hening = kabar.hening;
 
   useEffect(() => {
     const perbarui = () => setWaktu(new Date());
@@ -88,7 +97,17 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
      biasa suara mungkin ditahan sampai ada interaksi — itu keterbatasan peramban, bukan kesalahan papan. */
   const belBerbunyi = useRef<Set<string>>(new Set());
   const volumeDinaikkan = useRef<Set<string>>(new Set());
+  /* Penanda "sudah dibacakan" disimpan di TV (localStorage), bukan hanya di memori: papan memuat ulang dirinya
+     tiap 10 menit, dan tanpa ini pengumuman yang sama dibacakan ulang setiap kali dimuat. Pengumuman BARU
+     (teksnya berbeda) tetap dibacakan. */
   const pengumumanDibacakan = useRef<string | null>(null);
+  useEffect(() => {
+    try { pengumumanDibacakan.current = localStorage.getItem(`papan-dibacakan:${isi.token}`); } catch { /* abaikan */ }
+  }, [isi.token]);
+  const tandaiDibacakan = (teks: string) => {
+    pengumumanDibacakan.current = teks;
+    try { localStorage.setItem(`papan-dibacakan:${isi.token}`, teks); } catch { /* abaikan */ }
+  };
 
   useEffect(() => { unlockAudio(); }, []);
 
@@ -101,7 +120,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
         if (!r.ok) return;
         const d = await r.json().catch(() => null);
         if (!hidup || !d) return;
-        setKabar({ judul: d.judul ?? null, isi: d.isi ?? null, manualSaja: !!d.manualSaja, cara: d.cara ?? "TEKS_SUARA" });
+        setKabar({ judul: d.judul ?? null, isi: d.isi ?? null, manualSaja: !!d.manualSaja, cara: d.cara ?? "TEKS_SUARA", hening: !!d.hening });
       } catch { /* jaringan sekolah kadang putus sesaat — coba lagi di denyut berikutnya */ }
     };
     const t = setInterval(ambil, 10_000);
@@ -111,7 +130,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
   // BEL SEKOLAH: tiap TV jadi titik bel. Dicocokkan per menit, dan tiap bel hanya berbunyi SEKALI per hari
   // (penanda jam+label) supaya tidak berdentang berulang selama menit itu berjalan.
   useEffect(() => {
-    if (!waktu) return;
+    if (!waktu || hening) return;   // Mode Hening (ruang ujian): bel tidak dibunyikan sama sekali
     const w = new Date(waktu.getTime() + (waktu.getTimezoneOffset() * 60_000) + 7 * 3600_000);
     const jjmm = `${String(w.getHours()).padStart(2, "0")}:${String(w.getMinutes()).padStart(2, "0")}`;
     for (const b of isi.bel) {
@@ -123,13 +142,13 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
         if (isi.volumeBel != null) void kirimVolume(isi.token, "selesai");
       });
     }
-  }, [waktu, isi.bel, isi.volumeBel, isi.token]);
+  }, [waktu, isi.bel, isi.volumeBel, isi.token, hening]);
 
   /* VOLUME TV SAAT BEL — dinaikkan 15 DETIK SEBELUM bel, bukan pas bel berbunyi. Perintah ADB menempuh jaringan
      sekolah dan perlu satu sampai tiga detik; kalau baru dimulai bersamaan dengan belnya, justru detik-detik
      pertama bel yang terdengar pelan — bagian yang paling perlu terdengar. */
   useEffect(() => {
-    if (!waktu || isi.volumeBel == null) return;
+    if (!waktu || isi.volumeBel == null || hening) return;
     const w = new Date(waktu.getTime() + (waktu.getTimezoneOffset() * 60_000) + 7 * 3600_000);
     const detikHari = w.getHours() * 3600 + w.getMinutes() * 60 + w.getSeconds();
     for (const b of isi.bel) {
@@ -141,7 +160,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
       volumeDinaikkan.current.add(kunci);
       void kirimVolume(isi.token, "mulai");
     }
-  }, [waktu, isi.bel, isi.volumeBel, isi.token]);
+  }, [waktu, isi.bel, isi.volumeBel, isi.token, hening]);
 
   // PENGUMUMAN KANTOR: nada perhatian lalu dibacakan. Suara Indonesia belum tentu ada di tiap TV — kalau tidak
   // ada, nada perhatian + tulisan besar tetap jalan, jadi pengumumannya tidak pernah hilang begitu saja.
@@ -149,9 +168,20 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
     const teks = [kabar.judul, kabar.isi].filter(Boolean).join(". ");
     // Mode TEKS = tampil saja, tidak dibacakan. Penandanya tetap dicatat supaya berpindah mode tidak
     // membuat pengumuman yang sama dibacakan ulang.
-    if (!teks || pengumumanDibacakan.current === teks) return;
-    if (kabar.cara === "TEKS") { pengumumanDibacakan.current = teks; return; }
-    pengumumanDibacakan.current = teks;
+    // Pengumuman dicabut → penanda dihapus, supaya teks yang sama yang dikirim ulang nanti dibacakan lagi.
+    if (!teks) {
+      pengumumanDibacakan.current = null;
+      try { localStorage.removeItem(`papan-dibacakan:${isi.token}`); } catch { /* abaikan */ }
+      return;
+    }
+    /* Penanda = MODE + teks: mengirim ulang teks yang sama dengan mode lain (teks saja → teks + suara) harus
+       dibacakan; memuat ulang papan dengan pengumuman yang sama tidak. */
+    const tanda = `${kabar.cara}|${teks}`;   // tanpa status hening: hening berakhir ≠ pengumuman baru
+    if (pengumumanDibacakan.current === tanda) return;
+    try { if (localStorage.getItem(`papan-dibacakan:${isi.token}`) === tanda) { pengumumanDibacakan.current = tanda; return; } } catch { /* abaikan */ }
+    // Mode Hening: tampil saja, tanpa nada & suara — ruang ANBK/TKA tetap bisa diberi pengumuman (mis. token).
+    if (kabar.cara === "TEKS" || hening) { tandaiDibacakan(tanda); return; }
+    tandaiDibacakan(tanda);
 
     /* VOLUME DINAIKKAN JUGA UNTUK PENGUMUMAN (permintaan user 25 Sep 2026), memakai jalur yang sama dengan bel.
        Durasi bicara tidak diketahui — jembatan Android tidak melaporkan selesainya — jadi diperkirakan dari
@@ -184,7 +214,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
         suara.speak(ucap);
       } catch { /* tanpa mesin suara — cukup nada perhatian & tulisan */ }
     }, 2000);
-  }, [kabar.judul, kabar.isi, kabar.cara, isi.volumeBel, isi.token]);
+  }, [kabar.judul, kabar.isi, kabar.cara, isi.volumeBel, isi.token, hening]);
 
   const wib = waktu ? new Date(waktu.getTime() + (waktu.getTimezoneOffset() * 60_000) + 7 * 3600_000) : null;
   const jam = wib ? `${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")}` : "--:--";
@@ -200,7 +230,9 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
   /* Mode SUARA hanya DIBACAKAN — papan tetap menampilkan panel biasa. Dipakai untuk panggilan singkat
      ("Ananda Fulan dimohon ke Ruang BK") yang tidak pantas menutup seluruh layar selama berjam-jam sampai
      ada yang ingat mencabutnya (permintaan user 25 Sep 2026). */
-  const adaPengumumanKantor = !!(kabar.judul || kabar.isi) && kabar.cara !== "SUARA";
+  // Saat Hening pengumuman "suara saja" pun DITAMPILKAN — kalau tidak, pesan itu hilang sama sekali di ruang ujian.
+  const adaPengumumanKantor = !!(kabar.judul || kabar.isi) && (kabar.cara !== "SUARA" || hening);
+  const judulBel = hening ? "Bel hari ini · diheningkan" : isi.profilBel === "UJIAN" ? "Bel ujian hari ini" : "Bel hari ini";
 
   /* PAPAN RUANG GURU: pengumuman, agenda, dan bel yang sudah ikut di muatan halaman DISERTAKAN ke putaran panel.
      Papan ruang guru bukan berarti guru tidak perlu tahu pengumuman sekolah — yang berbeda hanya panel jadwal
@@ -229,7 +261,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
       }),
     }] : []),
     ...(isi.bel.length ? [{
-      kunci: "bel", judul: "Bel hari ini", kosong: "Tidak ada jadwal bel hari ini.",
+      kunci: "bel", judul: judulBel, kosong: "Tidak ada jadwal bel hari ini.",
       baris: jendela(isi.bel, b => b.jam, kini, 8).isi.map(b => ({ utama: b.label, sisi: b.jam })),
     }] : []),
   ];
@@ -462,7 +494,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
               ) : undefined}
             </Panel>
 
-            <Panel judul="Bel hari ini" kosong="Tidak ada jadwal bel hari ini.">
+            <Panel judul={judulBel} kosong="Tidak ada jadwal bel hari ini.">
               {isi.bel.length > 0 ? (
                 <ul className="space-y-1.5">
                   {belTampil.isi.map((b, i) => {

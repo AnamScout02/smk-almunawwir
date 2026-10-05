@@ -31,6 +31,21 @@ function jalankan(args: string[], batasMs = BATAS_MS): Promise<{ keluar: Buffer;
   });
 }
 
+/* SETELAN PENJAGA TV (4 Okt 2026) — diterapkan otomatis tiap kali tersambung, paling sering sekali per 6 jam
+   per TV (TV bisa mengembalikan setelannya sendiri setelah pembaruan sistem / reset):
+   - `adb_allowed_connection_time = 0`: Android 11+ MEMBATALKAN izin debugging yang sudah disetujui bila TV tidak
+     tersambung ADB 7 hari (laporan user: "siaga jaringan ada kalanya minta akses debugging lagi"). 0 = tidak pernah.
+   - `screen_off_timeout` maksimum: TV sekolah ternyata kembali ke 10 menit, sehingga papan padam sendiri. */
+const PENJAGA_TERAKHIR = new Map<string, number>();
+async function terapkanPenjaga(ip: string) {
+  const t = PENJAGA_TERAKHIR.get(ip) ?? 0;
+  if (Date.now() - t < 6 * 3600_000) return;
+  PENJAGA_TERAKHIR.set(ip, Date.now());
+  await jalankan(["-s", `${ip}:${PORT}`, "shell",
+    "settings put global adb_allowed_connection_time 0; settings put system screen_off_timeout 2147483647; settings put secure sleep_timeout -1"],
+    10_000).catch(() => null);
+}
+
 export type StatusAdb = "SIAP" | "BELUM_DIIZINKAN" | "TIDAK_TERJANGKAU" | "ADB_TIDAK_ADA" | "TERPROTEKSI";
 
 /** Pastikan tersambung. Dipanggil di depan setiap perintah — `adb connect` yang sudah tersambung sangat murah. */
@@ -52,7 +67,7 @@ export async function sambung(ip: string): Promise<StatusAdb> {
     const baris = d.keluar.toString("utf8").split("\n").find(b => b.startsWith(`${ip}:${PORT}`));
     if (baris) {
       const status = baris.split(/\s+/)[1] ?? "";
-      if (status === "device") return "SIAP";
+      if (status === "device") { void terapkanPenjaga(ip); return "SIAP"; }
       if (status === "unauthorized") return "BELUM_DIIZINKAN";
     }
     if (coba < 2) await new Promise(r => setTimeout(r, 1500));
@@ -64,7 +79,9 @@ export async function sambung(ip: string): Promise<StatusAdb> {
 export const PESAN_STATUS: Record<StatusAdb, string> = {
   SIAP: "Siap",
   BELUM_DIIZINKAN: "TV terhubung, tetapi izin debug belum disetujui. LIHAT LAYAR TV — ada dialog \"Izinkan proses debug?\"; centang \"Selalu izinkan\" lalu OK. Kalau dialognya tidak muncul, matikan lalu nyalakan lagi Debugging jaringan di Opsi Pengembang.",
-  TIDAK_TERJANGKAU: "TV tidak menjawab. Pastikan TV menyala (bukan standby) dan Opsi Pengembang → Debugging jaringan aktif.",
+  // Penyebab tersering ditulis lebih dulu (5 Okt 2026): setelah listrik padam TV TCL masuk SIAGA DINGIN — WiFi mati
+  // sampai remote ditekan sekali — dan pesan lama "tidak menjawab" membuat petugas mengira papan yang rusak.
+  TIDAK_TERJANGKAU: "TV tidak terjangkau dari jaringan. Paling sering: TV mati total atau siaga dingin setelah listrik padam — nyalakan SEKALI dengan remote, sesudah itu bisa dikendalikan dari sini lagi. Kalau TV jelas menyala, periksa WiFi TV dan Opsi Pengembang → Debugging jaringan.",
   ADB_TIDAK_ADA: "Perkakas ADB tidak tersedia di server.",
   TERPROTEKSI: "Layar tidak bisa ditangkap karena tayangannya berproteksi salinan.",
 };
@@ -144,7 +161,11 @@ export async function infoPerangkat(ip: string): Promise<{
  * Sengaja HANYA tombol yang aman: tidak ada yang bisa mengubah setelan pabrik, menghapus aplikasi, atau
  * mengeluarkan akun. Kode angkanya adalah keycode Android baku. */
 export const TOMBOL = {
-  daya: "26",          // standby / bangun (hanya jalan selama ADB masih menjawab)
+  /* "Matikan" = TIDUR (KEYCODE_SLEEP), BUKAN tombol daya (26). Tombol daya mengikuti mode daya yang disetel di TV
+     (Doze mematikan WiFi → tidak bisa dinyalakan lagi dari jauh). Tidur hanya memadamkan layar dan sistem tetap
+     hidup, apa pun modenya — diuji 4 Okt 2026 di TV Lab DKV: Asleep tetap menjawab ADB, KEYCODE_WAKEUP menyalakan. */
+  daya: "223",
+  dayaTotal: "26",     // tombol daya sungguhan — mengikuti mode daya TV (Doze = tidak bisa dibangunkan dari jauh)
   bangunkan: "224",    // KEYCODE_WAKEUP — layar mati tapi jaringan hidup
   beranda: "3",
   kembali: "4",
@@ -339,4 +360,44 @@ export function namaAplikasi(paket: string): string {
   if (NAMA[paket]) return NAMA[paket];
   if (/tvinput|hdmi|tif/i.test(paket)) return "Input HDMI / sumber luar";
   return paket;
+}
+
+/** STATUS LAYAR (4 Okt 2026): TV yang "dimatikan" dengan tidur tetap hidup di jaringan, sehingga router saja
+ *  menganggapnya menyala (laporan user: "dimatikan dari papan masih masuk list TV hidup"). Dibaca dari
+ *  `mWakefulness` lewat ADB — CEPAT dan tanpa percobaan ulang (dipanggil untuk banyak TV sekaligus saat daftar
+ *  dimuat), disinggahkan 60 detik. null = tidak bisa dibaca (ADB belum diizinkan / tidak menjawab). */
+const SINGGAH_LAYAR = new Map<string, { t: number; v: "MENYALA" | "TIDUR" | null }>();
+export async function statusLayar(ip: string): Promise<"MENYALA" | "TIDUR" | null> {
+  const s = SINGGAH_LAYAR.get(ip);
+  if (s && Date.now() - s.t < 60_000) return s.v;
+  let v: "MENYALA" | "TIDUR" | null = null;
+  try {
+    await jalankan(["connect", `${ip}:${PORT}`], 5_000);
+    const r = await jalankan(["-s", `${ip}:${PORT}`, "shell", "dumpsys power | grep -m1 mWakefulness="], 6_000);
+    const t = r.keluar.toString("utf8");
+    if (/mWakefulness=Awake/.test(t)) { v = "MENYALA"; void terapkanPenjaga(ip); }
+    else if (/mWakefulness=(Asleep|Dozing|Dreaming)/.test(t)) v = "TIDUR";
+  } catch { v = null; }
+  SINGGAH_LAYAR.set(ip, { t: Date.now(), v });
+  return v;
+}
+
+/** KEADAAN BOOT (5 Okt 2026) — untuk penjaga "menyala sendiri setelah listrik kembali" (layar-jadwal.ts).
+ *  Satu perintah shell: lama menyala (detik, dari /proc/uptime), layar menyala/tidak, dan aplikasi depan.
+ *  CEPAT & tanpa percobaan ulang karena dipanggil untuk semua TV tiap 5 menit di luar jam papan;
+ *  null = TV tidak terjangkau (siaga dingin/mati) atau ADB belum diizinkan. */
+export async function keadaanBoot(ip: string): Promise<{ uptimeDetik: number; menyala: boolean; paketDepan: string | null } | null> {
+  try {
+    await jalankan(["connect", `${ip}:${PORT}`], 5_000);
+    const r = await jalankan(["-s", `${ip}:${PORT}`, "shell",
+      "cat /proc/uptime; dumpsys power | grep -m1 mWakefulness=; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"], 8_000);
+    const t = r.keluar.toString("utf8");
+    const up = Number(t.match(/^\s*([\d.]+)\s/)?.[1]);
+    if (!Number.isFinite(up)) return null;
+    return {
+      uptimeDetik: Math.floor(up),
+      menyala: /mWakefulness=Awake/.test(t),
+      paketDepan: t.match(/Activit[a-z]*Record\{\S+ \S+ ([A-Za-z0-9_.]+)\//)?.[1] ?? null,
+    };
+  } catch { return null; }
 }

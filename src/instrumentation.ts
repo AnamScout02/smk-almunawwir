@@ -50,9 +50,10 @@ export async function register() {
   // menyalakan TV dari jauh tidak mungkin lewat WiFi (lihat src/lib/layar-jadwal.ts).
   async function cekJadwalLayar() {
     try {
-      const { matikanLayarTerjadwal, nyalakanLayarTerjadwal, bukaPapanOtomatis } = await import("@/lib/layar-jadwal");
+      const { matikanLayarTerjadwal, nyalakanLayarTerjadwal, bukaPapanOtomatis, tidurkanSetelahPadam } = await import("@/lib/layar-jadwal");
       await nyalakanLayarTerjadwal();
       await matikanLayarTerjadwal();
+      await tidurkanSetelahPadam();
       // TV yang baru dinyalakan dan sedang menganggur dikembalikan sendiri ke papan informasi.
       await bukaPapanOtomatis();
     } catch {

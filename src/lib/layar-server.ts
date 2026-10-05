@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { modeBelBerlaku } from "@/lib/bel-profil";
 import { type MikrotikRow } from "@/lib/mikrotik";
 import { bacaRouter, cekJangkauan, detik, mungkinMacAcak, rapikanMac, type DataRouter } from "@/lib/router-perangkat";
 
@@ -39,6 +40,8 @@ export interface BarisLayar {
   papanJenis: string;
   papanGiliran: number;
   volumeBel: number | null;
+  /** Mode Bel yang BERLAKU sekarang (sudah memperhitungkan batas waktunya) + batasnya untuk ditampilkan. */
+  belMode: string; belModeSampai: string | null;
   papanCara: string;
   ipTetap: string | null;
   perangkatModel: string | null; aplikasiDepan: string | null; terakhirDenyut: Date | null;
@@ -82,16 +85,27 @@ export async function daftarLayar(): Promise<{ baris: BarisLayar[]; routerOk: bo
   const petaHost = new Map<string, MikrotikRow>();
   for (const [k, v] of semuaHost) petaHost.set(k, [...v].sort(urutBaru)[0]);
 
+  /* PEMILIK ALAMAT SAAT INI (4 Okt 2026, laporan user: "ip TV Ruang B3 dan lab dkv sama"). DHCP memberikan
+     alamat lama TV yang sedang mati ke TV lain; alamat itu tetap MENJAWAB, sehingga TV yang mati ikut tampil
+     menyala memakai alamat milik TV lain — dan perintah ADB untuknya (tangkapan layar, daya, buka papan, volume
+     bel) nyasar ke TV yang salah. Patokan pemilik = tabel ARP + host hotspot (peta alamat→MAC yang sedang
+     berlaku), BUKAN daftar sewa yang bisa menyimpan sewa basi. Alamat milik MAC lain dibuang dari calon. */
+  const pemilikIp = new Map<string, string>();
+  for (const r of [...(data?.arp ?? []), ...(data?.hostHotspot ?? [])]) {
+    if (r.address && r["mac-address"]) pemilikIp.set(r.address, rapikanMac(r["mac-address"]));
+  }
+  const milikLain = (alamat: string, mac: string) => { const p = pemilikIp.get(alamat); return !!p && p !== mac; };
+
   /** Semua alamat yang mungkin untuk satu layar, sudah diurutkan dari yang paling menjanjikan. */
   const kandidatAlamat = (l: { mac: string; ipTetap: string | null; ipTerakhir: string | null }) => {
     const k = rapikanMac(l.mac);
     const dari = [
-      l.ipTetap,                                                   // ditetapkan petugas — selalu menang
       ...[...(semuaSewa.get(k) ?? [])].sort(urutBaru).flatMap(x => [x["active-address"], x.address]),
       ...[...(semuaHost.get(k) ?? [])].sort(urutBaru).map(x => x.address),
       l.ipTerakhir,
-    ];
-    return [...new Set(dari.filter((x): x is string => !!x))];
+    ].filter((x): x is string => !!x && !milikLain(x, k));
+    // IP tetap ditetapkan petugas — selalu menang dan tidak disaring.
+    return [...new Set([l.ipTetap, ...dari].filter((x): x is string => !!x))];
   };
 
   const sudahLogin = new Set((data?.aktifHotspot ?? []).map(a => rapikanMac(a["mac-address"] ?? "")));
@@ -127,13 +141,20 @@ export async function daftarLayar(): Promise<{ baris: BarisLayar[]; routerOk: bo
       nyalaDetik: detik(h?.uptime),
       macAcak: mungkinMacAcak(mac),
       catatan: l.catatan, jadwalMati: l.jadwalMati, jadwalNyala: l.jadwalNyala, token: l.token, kelasId: l.kelasId, papanJudul: l.papanJudul, papanIsi: l.papanIsi, papanOtomatis: l.papanOtomatis, papanQr: l.papanQr, papanJenis: l.papanJenis, papanGiliran: l.papanGiliran, volumeBel: l.volumeBel, papanCara: l.papanCara, ipTetap: l.ipTetap,
+      belMode: modeBelBerlaku(l), belModeSampai: modeBelBerlaku(l) === "NORMAL" ? null : l.belModeSampai?.toISOString() ?? null,
       perangkatModel: l.perangkatModel, aplikasiDepan: l.aplikasiDepan, terakhirDenyut: l.terakhirDenyut,
     };
   });
   // Simpan IP & jaringan terakhir yang terlihat: rute ADB (tangkapan layar, tombol) memerlukannya, dan
   // TV yang sedang mati tetap punya alamat terakhir untuk dicoba begitu ia menyala lagi.
   if (data) {
-    const perlu = baris.filter((b, i) => b.ip && (b.ip !== layar[i].ipTerakhir || b.jaringan !== layar[i].jaringan));
+    // Alamat simpanan yang kini dipakai perangkat lain DIHAPUS — rute ADB memakai `ipTetap || ipTerakhir` langsung,
+    // jadi alamat basi di sini berarti perintah dikirim ke TV yang salah.
+    const basi = layar.filter(l => l.ipTerakhir && milikLain(l.ipTerakhir, rapikanMac(l.mac)));
+    if (basi.length) {
+      await Promise.all(basi.map(l => prisma.layar.update({ where: { id: l.id }, data: { ipTerakhir: null } }).catch(() => null)));
+    }
+    const perlu = baris.filter((b, i) => b.ip && b.ip !== layar[i].ipTetap && (b.ip !== layar[i].ipTerakhir || b.jaringan !== layar[i].jaringan));
     if (perlu.length) {
       await Promise.all(perlu.map(b => prisma.layar.update({
         where: { id: b.id }, data: { ipTerakhir: b.ip, jaringan: b.jaringan },

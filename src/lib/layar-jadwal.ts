@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { tekanTombol, infoPerangkat, bukaAlamat } from "@/lib/layar-adb";
+import { tekanTombol, infoPerangkat, bukaAlamat, keadaanBoot } from "@/lib/layar-adb";
 import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 import { cekLibur } from "@/lib/hari-libur";
 
@@ -81,6 +81,65 @@ export async function matikanLayarTerjadwal(): Promise<{ dicoba: number; berhasi
   return { dicoba, berhasil };
 }
 
+/* ------------------------- penjaga menyala sendiri setelah padam ------------------------- */
+
+/** TIDURKAN TV YANG MENYALA SENDIRI DI LUAR JAM PAPAN (5 Oktober 2026).
+ *
+ * TV TCL sekolah aslinya bermode-nyala "siaga" setelah listrik kembali: siaga DINGIN, WiFi mati, sehingga papan
+ * tidak bisa menyalakannya sampai ada yang menekan remote (laporan user 5 Okt 2026 setelah mati lampu: Lab TKJ,
+ * AKL, DKV tidak bisa dihidupkan dari papan). Penawarnya: menu Hotel TV → Mode Nyala = "Langsung menyala".
+ * Tetapi `matikanLayarTerjadwal` hanya menembak SEKALI di menit jadwalnya — listrik kembali pukul 02.00 berarti
+ * TV menyala semalaman. Penjaga ini menutup celah itu: di LUAR rentang [jadwalNyala, jadwalMati) — dan seharian
+ * pada hari libur — TV yang baru boot (< 40 menit) dengan layar menyala dan tidak sedang dipakai (yang tampil
+ * beranda atau papan sekolah) ditidurkan. Tidur, bukan daya: TV tetap terjangkau untuk dinyalakan esok pagi.
+ *
+ * Hanya TV yang punya KEDUA jadwal — tanpa jadwal, tidak ada dasar untuk menganggap jam berapa pun "di luar jam".
+ * Satu kali per boot (diingat dari uptime), jadi guru yang sengaja menyalakan lagi tidak ditidurkan terus. */
+const PAPAN_PAKET = "sch.almunawwir.papan";
+const SUDAH_DITIDURKAN = new Map<string, number>(); // layarId → waktu boot (ms) yang sudah ditangani
+
+function keMenit(hhmm: string | null): number | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((hhmm ?? "").trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+export async function tidurkanSetelahPadam(): Promise<{ diperiksa: number; ditidurkan: number }> {
+  const layar = await prisma.layar.findMany({
+    where: { aktif: true, NOT: [{ jadwalMati: null }, { jadwalNyala: null }] },
+    select: { id: true, jadwalMati: true, jadwalNyala: true, ipTetap: true, ipTerakhir: true },
+  });
+  if (!layar.length) return { diperiksa: 0, ditidurkan: 0 };
+  const { jam, menit, tanggal } = jamWib();
+  const sekarang = jam * 60 + menit;
+  const libur = !!(await cekLibur(tanggal.toISOString().slice(0, 10)).catch(() => null));
+
+  const calon = layar.filter(l => {
+    const a = keMenit(l.jadwalNyala), b = keMenit(l.jadwalMati);
+    if (a === null || b === null || !(l.ipTetap || l.ipTerakhir)) return false;
+    if (libur) return true;
+    const jamPapan = a < b ? sekarang >= a && sekarang < b : sekarang >= a || sekarang < b;
+    return !jamPapan;
+  });
+
+  let ditidurkan = 0;
+  // Empat sekaligus: TV yang siaga dingin baru gagal setelah batas waktu sambung, jangan antre satu per satu.
+  for (let i = 0; i < calon.length; i += 4) {
+    await Promise.all(calon.slice(i, i + 4).map(async l => {
+      const ip = (l.ipTetap || l.ipTerakhir)!;
+      const k = await keadaanBoot(ip);
+      if (!k || !k.menyala || k.uptimeDetik > 40 * 60) return;
+      const boot = Date.now() - k.uptimeDetik * 1000;
+      const tercatat = SUDAH_DITIDURKAN.get(l.id);
+      if (tercatat && Math.abs(tercatat - boot) < 120_000) return;      // boot ini sudah ditangani
+      if (k.paketDepan && !PELUNCUR.includes(k.paketDepan) && k.paketDepan !== PAPAN_PAKET) return; // sedang dipakai
+      SUDAH_DITIDURKAN.set(l.id, boot);
+      const h = await tekanTombol(ip, "daya").catch(() => ({ ok: false }));
+      if (h.ok) ditidurkan += 1;
+    }));
+  }
+  return { diperiksa: calon.length, ditidurkan };
+}
+
 /* ------------------------------ buka papan otomatis ------------------------------ */
 
 /** Paket peluncur (beranda) TV. Kalau salah satu ini yang sedang di depan, berarti TV MENGANGGUR —
@@ -128,6 +187,7 @@ export async function bukaPapanOtomatis(): Promise<{ dibuka: number }> {
     const info = await infoPerangkat(ip).catch(() => null);
     if (!info || info.status !== "SIAP") continue;      // TV mati/tidur — tidak ada yang bisa dibuka
     if (!info.paketDepan || !PELUNCUR.includes(info.paketDepan)) continue; // SEDANG DIPAKAI — jangan diganggu
+    if (info.layarNyala === false) continue; // sengaja ditidurkan (jadwal/penjaga padam) — jangan dibangunkan
 
     terakhirCoba.set(l.id, Date.now());
     const hasil = await bukaAlamat(ip, `${ALAMAT_APLIKASI}/layar/${l.token}`).catch(() => ({ ok: false }));

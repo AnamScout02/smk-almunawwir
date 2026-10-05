@@ -64,7 +64,7 @@ export default function DindingLayar({ layar, bolehKelola }: { layar: LayarRingk
   }, []);
 
   const kirim = async (l: LayarRingkas, isi: { tombol?: Tombol; aksi?: "buka-papan" | "mulai-ulang" | "terima-layar" | "pasang-papan" | "unduh-suara" }) => {
-    if (isi.tombol === "daya" && !await confirm(`Tekan tombol daya pada "${l.nama}"? TV masuk standby, dan setelah itu TIDAK bisa dinyalakan lagi dari sistem selama tersambung lewat WiFi.`)) return;
+    if (isi.tombol === "daya" && !await confirm(`Matikan layar "${l.nama}"? Layarnya padam, tetapi TV tetap bisa dinyalakan lagi dari sini (tombol Bangun).`)) return;
     if (isi.aksi === "mulai-ulang" && !await confirm(`Mulai ulang "${l.nama}"? TV padam sekitar satu menit.`)) return;
     setSibuk(true);
     try {
@@ -140,7 +140,7 @@ export default function DindingLayar({ layar, bolehKelola }: { layar: LayarRingk
               {bolehKelola && <>
                 <button type="button" onClick={() => kirim(l, { tombol: "beranda" })} title="Kembali ke beranda TV" className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg"><Home size={14} /></button>
                 <button type="button" onClick={() => kirim(l, { tombol: "bisu" })} title="Bisukan" className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg"><VolumeX size={14} /></button>
-                <button type="button" onClick={() => kirim(l, { tombol: "daya" })} title="Matikan (standby)" className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Power size={14} /></button>
+                <button type="button" onClick={() => kirim(l, { tombol: "daya" })} title="Matikan layar (bisa dinyalakan lagi)" className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Power size={14} /></button>
               </>}
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function DindingLayar({ layar, bolehKelola }: { layar: LayarRingk
                     <TombolRemote l={besar} tombol="volumeNaik" judul="Volume naik"><Volume2 size={16} /></TombolRemote>
                     <TombolRemote l={besar} tombol="sumber" judul="Ganti sumber (HDMI/TV)" kelas="text-xs">HDMI</TombolRemote>
                     <TombolRemote l={besar} tombol="bangunkan" judul="Bangunkan layar" kelas="text-xs">Bangun</TombolRemote>
-                    <TombolRemote l={besar} tombol="daya" judul="Matikan (standby)" kelas="text-red-300"><Power size={16} /></TombolRemote>
+                    <TombolRemote l={besar} tombol="daya" judul="Matikan layar (bisa dinyalakan lagi)" kelas="text-red-300"><Power size={16} /></TombolRemote>
                   </div>
 
                   <div className="mt-3 space-y-2">
