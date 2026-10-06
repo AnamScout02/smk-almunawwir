@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, ShieldCheck, Loader2, KeyRound, Smartphone, UserPlus } from "lucide-react";
+import MasukPasskey from "@/components/shared/MasukPasskey";
 import { useState, useEffect, type ReactNode } from "react";
 import { login, verifyLoginTotp, type LoginState } from "@/app/actions/auth";
 import { NAMA_APLIKASI } from "@/lib/aplikasi-ujian";
@@ -166,6 +167,8 @@ export default function LoginClient({ ayat, keteranganAyat, lang = "id", modeApl
       </button>
     </form>
   )}
+  {/* Masuk dengan passkey (5 Okt 2026) — hanya tampil bila peramban & alamatnya mendukung. */}
+  {!showTotpStep && <MasukPasskey lang={lang} />}
     </>
   );
 

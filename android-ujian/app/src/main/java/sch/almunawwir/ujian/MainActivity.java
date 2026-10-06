@@ -36,10 +36,18 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.app.KeyguardManager;
+import android.content.SharedPreferences;
+import android.hardware.biometrics.BiometricManager;
+import android.hardware.biometrics.BiometricPrompt;
+import android.os.CancellationSignal;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.OutputStream;
@@ -70,8 +78,9 @@ public class MainActivity extends Activity {
     private static final String HOST = "smkalmunawwiriibs.sch.id";
     static final String ALAMAT = "https://" + HOST;
     private static final String AWAL = ALAMAT + "/login"; // yang sudah masuk langsung diteruskan ke dashboard-nya
-    static final String VERSI = "2.3";
-    private static final int KODE_BERKAS = 11, KODE_MEDIA = 12, KODE_LOKASI = 13, KODE_SIMPAN = 14, KODE_KABAR = 15;
+    static final String VERSI = "2.5";
+    private static final String NAMA = "MyAlwis";
+    private static final int KODE_BERKAS = 11, KODE_MEDIA = 12, KODE_LOKASI = 13, KODE_SIMPAN = 14, KODE_KABAR = 15, KODE_KUNCI = 16;
     private static final int NAVY = Color.rgb(15, 26, 69);
 
     private WebView web;
@@ -87,6 +96,17 @@ public class MainActivity extends Activity {
 
     private boolean modeUjian = false;
     private boolean memilihBerkas = false;
+
+    /* KUNCI SIDIK JARI (v2.5, 5 Okt 2026 — permintaan user "seperti aplikasi bank"): setiap kali aplikasi dibuka atau
+       kembali dari latar lebih dari TENGGANG, isi aplikasi ditutup tirai sampai pemilik membuka dengan sidik jari / wajah /
+       PIN layar. Hanya bila: sudah masuk (cookie sesi_segar ada), perangkat punya kunci layar, setelan menyala (bawaan
+       NYALA), dan TIDAK sedang ujian. Waktu ke latar dicatat di onStop, BUKAN onPause — dialog sidik jari sendiri memicu
+       onPause/onResume dan akan berputar tanpa henti. Tenggang juga melindungi kembali dari kamera/pemilih berkas/unduhan. */
+    private static final long TENGGANG_MS = 2 * 60_000L;
+    private static final String PREF = "myalwis", PREF_KUNCI = "kunci_sidik_jari";
+    private View tirai;
+    private boolean terkunci = false, sedangMinta = false, pernahDibuka = false;
+    private long keLatarPada = 0;
 
     @Override
     protected void onCreate(Bundle simpan) {
@@ -125,6 +145,7 @@ public class MainActivity extends Activity {
         web.setBackgroundColor(Color.WHITE);
         akar.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(akar);
+        buatTirai();
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -138,6 +159,12 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setSupportMultipleWindows(false);
         s.setUserAgentString(s.getUserAgentString() + " MyAlwisMobile/" + VERSI);
+        // PASSKEY (v2.4): WebView bawaan menolak WebAuthn kecuali dinyalakan. Mode FOR_APP = aplikasi ini bertindak
+        // atas nama situs sekolah; Android memeriksa https://<domain>/.well-known/assetlinks.json (paket + sidik jari
+        // sertifikat). Pada WebView lama yang belum mendukung, dilewati — login sandi tetap berjalan.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_AUTHENTICATION)) {
+            WebSettingsCompat.setWebAuthenticationSupport(s, WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP);
+        }
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
 
@@ -268,6 +295,18 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void cetak(String judul) { runOnUiThread(() -> cetakHalaman(judul)); }
+
+        /** Kartu "Kunci aplikasi" di halaman Profil (hanya tampil di aplikasi v2.5+). */
+        @JavascriptInterface
+        public boolean kunciSidikJari() { return kunciMenyala(); }
+
+        @JavascriptInterface
+        public boolean bisaKunci() { return perangkatBerkunci(); }
+
+        @JavascriptInterface
+        public void aturKunciSidikJari(boolean nyala) {
+            getSharedPreferences(PREF, MODE_PRIVATE).edit().putBoolean(PREF_KUNCI, nyala).apply();
+        }
     }
 
     /* ---------------- siklus hidup ---------------- */
@@ -276,6 +315,14 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (modeUjian && !memilihBerkas) sematkan();
+        if (perluKunci()) kunci();
+        pernahDibuka = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (!sedangMinta) keLatarPada = System.currentTimeMillis();
     }
 
     @Override
@@ -300,6 +347,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int kode, int hasil, Intent data) {
         super.onActivityResult(kode, hasil, data);
+        if (kode == KODE_KUNCI) { sedangMinta = false; if (hasil == RESULT_OK) bukaKunci(); return; }
         if (kode != KODE_BERKAS) return;
         memilihBerkas = false;
         if (tungguBerkas != null) {
@@ -473,6 +521,109 @@ public class MainActivity extends Activity {
             + "<p><a href='" + AWAL + "' style='display:inline-block;margin-top:20px;padding:12px 22px;background:#1B2B6B;color:#fff;"
             + "border-radius:12px;text-decoration:none'>Coba Lagi</a></p></body></html>";
         web.loadDataWithBaseURL(ALAMAT, html, "text/html", "UTF-8", null);
+    }
+
+
+    /* ---------------- kunci sidik jari ---------------- */
+
+    private boolean kunciMenyala() { return getSharedPreferences(PREF, MODE_PRIVATE).getBoolean(PREF_KUNCI, true); }
+
+    private boolean perangkatBerkunci() {
+        KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        return km != null && km.isDeviceSecure();
+    }
+
+    private boolean sudahMasuk() {
+        String c = CookieManager.getInstance().getCookie(ALAMAT);
+        return c != null && c.contains("sesi_segar=");
+    }
+
+    private boolean perluKunci() {
+        if (terkunci || sedangMinta || modeUjian || memilihBerkas) return false;
+        if (!kunciMenyala() || !perangkatBerkunci() || !sudahMasuk()) return false;
+        return !pernahDibuka || System.currentTimeMillis() - keLatarPada > TENGGANG_MS;
+    }
+
+    private void buatTirai() {
+        LinearLayout t = new LinearLayout(this);
+        t.setOrientation(LinearLayout.VERTICAL);
+        t.setGravity(Gravity.CENTER);
+        t.setBackgroundColor(NAVY);
+        t.setPadding(dp(32), dp(32), dp(32), dp(32));
+        t.setClickable(true); // menahan sentuhan supaya isi di bawahnya tidak bisa disentuh
+        TextView ikon = new TextView(this);
+        ikon.setText("🔒");
+        ikon.setTextSize(44);
+        ikon.setGravity(Gravity.CENTER);
+        t.addView(ikon);
+        TextView judul = new TextView(this);
+        judul.setText(NAMA + " terkunci");
+        judul.setTextColor(Color.WHITE);
+        judul.setTextSize(20);
+        judul.setTypeface(Typeface.DEFAULT_BOLD);
+        judul.setGravity(Gravity.CENTER);
+        judul.setPadding(0, dp(12), 0, dp(6));
+        t.addView(judul);
+        TextView ket = new TextView(this);
+        ket.setText("Buka dengan sidik jari, wajah, atau PIN layar HP ini.");
+        ket.setTextColor(Color.argb(190, 255, 255, 255));
+        ket.setTextSize(14);
+        ket.setGravity(Gravity.CENTER);
+        ket.setPadding(0, 0, 0, dp(24));
+        t.addView(ket);
+        t.addView(tombol("Buka", v -> mintaBuka()));
+        TextView lain = new TextView(this);
+        lain.setText("Masuk dengan akun lain");
+        lain.setTextColor(Color.argb(200, 232, 160, 32));
+        lain.setTextSize(14);
+        lain.setGravity(Gravity.CENTER);
+        lain.setPadding(0, dp(20), 0, 0);
+        // Jalan keluar bila sidik jari/PIN tidak bisa dipakai: keluar dari akun (login ulang dengan sandi).
+        lain.setOnClickListener(v -> CookieManager.getInstance().removeAllCookies(ok -> { bukaKunci(); web.loadUrl(ALAMAT + "/login?keluar=1"); }));
+        t.addView(lain);
+        t.setVisibility(View.GONE);
+        addContentView(t, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        tirai = t;
+    }
+
+    private void kunci() {
+        terkunci = true;
+        tirai.setVisibility(View.VISIBLE);
+        tirai.bringToFront();
+        mintaBuka();
+    }
+
+    private void bukaKunci() {
+        terkunci = false;
+        sedangMinta = false;
+        tirai.setVisibility(View.GONE);
+        keLatarPada = System.currentTimeMillis();
+    }
+
+    private void mintaBuka() {
+        if (sedangMinta) return;
+        sedangMinta = true;
+        if (Build.VERSION.SDK_INT >= 28) {
+            BiometricPrompt.Builder b = new BiometricPrompt.Builder(this)
+                .setTitle("Buka " + NAMA)
+                .setSubtitle("Sidik jari, wajah, atau PIN layar");
+            if (Build.VERSION.SDK_INT >= 30) {
+                b.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL);
+            } else if (Build.VERSION.SDK_INT >= 29) {
+                b.setDeviceCredentialAllowed(true);
+            } else {
+                b.setNegativeButton("Batal", getMainExecutor(), (d, w) -> sedangMinta = false);
+            }
+            b.build().authenticate(new CancellationSignal(), getMainExecutor(), new BiometricPrompt.AuthenticationCallback() {
+                @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult r) { bukaKunci(); }
+                @Override public void onAuthenticationError(int kode, CharSequence pesan) { sedangMinta = false; }
+            });
+        } else {
+            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            Intent niat = km == null ? null : km.createConfirmDeviceCredentialIntent("Buka " + NAMA, "PIN atau pola layar HP ini");
+            if (niat == null) { bukaKunci(); return; }
+            startActivityForResult(niat, KODE_KUNCI);
+        }
     }
 
     private Button tombol(String teks, View.OnClickListener aksi) {

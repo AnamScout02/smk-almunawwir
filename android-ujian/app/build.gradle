@@ -1,6 +1,6 @@
 plugins { id 'com.android.application' }
 
-// MyAlwis Mobile (versi 2.2, 23 September 2026) — seluruh portal; terkunci otomatis hanya saat mengerjakan ujian.
+// MyAlwis Mobile (versi 2.5, 5 Oktober 2026 — passkey di WebView + kunci sidik jari saat dibuka) — seluruh portal; terkunci otomatis hanya saat mengerjakan ujian.
 // Kunci penandatangan TIDAK di repo: /root/.cache/android-ujian/kunci-rilis.jks (WAJIB dicadangkan — tanpa kunci yang
 // sama, versi berikutnya tidak bisa dipasang menimpa versi lama di HP siswa).
 android {
@@ -10,8 +10,8 @@ android {
         applicationId 'sch.almunawwir.ujian'
         minSdk 24
         targetSdk 34
-        versionCode 5
-        versionName '2.3'
+        versionCode 7
+        versionName '2.5'
     }
     signingConfigs {
         rilis {
@@ -31,4 +31,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+// SATU-SATUNYA pustaka (v2.4, 5 Okt 2026): androidx.webkit untuk menyalakan WebAuthn/passkey di WebView
+// (WebSettingsCompat.setWebAuthenticationSupport). Aplikasi tetap tanpa pustaka lain supaya APK kecil.
+dependencies {
+    implementation 'androidx.webkit:webkit:1.14.0'
 }

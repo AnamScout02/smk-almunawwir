@@ -8,8 +8,7 @@ import { setPendingTotpCookie, getPendingTotp, clearPendingTotpCookie } from "@/
 import { masukkanSesi, keluarkanSesiIni } from "@/lib/sesi-server";
 import { checkRateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
 import { verifyTotpToken, consumeBackupCode } from "@/lib/totp";
-import { getJabatanNames } from "@/lib/jabatan-guard";
-import { BENDAHARA_JABATAN } from "@/lib/bendahara-guard";
+import { REDIRECT_MAP, resolveRedirectTarget, ambilLanjut } from "@/lib/tujuan-masuk";
 
 const loginSchema = z.object({
   email: z.string().includes("@"),
@@ -22,28 +21,6 @@ export type LoginState = {
    * lihat verifyLoginTotp() di bawah. Form login.tsx harus ganti tampilan jadi input kode kalau ini true. */
   needsTotp?: boolean;
 } | undefined;
-
-const REDIRECT_MAP: Record<string, string> = {
-  ADMIN: "/dashboard/admin",
-  TAS: "/dashboard/admin",
-  TEACHER: "/dashboard/teacher",
-  STUDENT: "/dashboard/student",
-  PARENT: "/dashboard/parent",
-};
-
-/** Staf (TEACHER/TAS) yang jabatannya CUMA Bendahara (Sekolah/BOS/BPOPP — tidak ada jabatan lain
- * sama sekali) langsung diarahkan ke portal Bendahara sendiri begitu login, bukan lewat Dashboard
- * Guru/Admin dulu — keputusan eksplisit user 2026-08-28. Kalau punya jabatan lain juga, tetap ke
- * dashboard biasa (menu "Bendahara" tetap ada di situ sbg pintu masuk tambahan). ADMIN/STUDENT/
- * PARENT tidak pernah kena override ini (jabatan cuma berlaku utk TEACHER/TAS). */
-async function resolveRedirectTarget(role: string, email: string): Promise<string> {
-  const base = REDIRECT_MAP[role] ?? "/dashboard/student";
-  if (role === "TEACHER" || role === "TAS") {
-    const names = await getJabatanNames(email);
-    if (names.length > 0 && names.every(n => BENDAHARA_JABATAN.includes(n))) return "/dashboard/bendahara";
-  }
-  return base;
-}
 
 export async function login(state: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = loginSchema.safeParse({
@@ -97,16 +74,6 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
   await masukkanSesi({ id: user.id, name: user.name, email: user.email, role: user.role }, ingatSaya);
 
   redirect((await ambilLanjut()) ?? await resolveRedirectTarget(user.role, user.email));
-}
-
-/** Tujuan setelah masuk yang dititipkan tautan QR (cookie `lanjut_masuk`, 10 menit). Hanya jalur internal
- * berawalan /aset/ atau /hadir/ (presensi kegiatan) — bukan pengalihan bebas (open redirect). */
-async function ambilLanjut(): Promise<string | null> {
-  const jar = await cookies();
-  const v = jar.get("lanjut_masuk")?.value;
-  if (!v) return null;
-  jar.delete("lanjut_masuk");
-  return /^\/aset\/[A-Za-z0-9_-]{1,40}$/.test(v) || /^\/hadir\/[A-Za-z0-9_-]{1,40}\?t=\d{1,12}\.[A-Za-z0-9_-]{1,32}$/.test(v) ? v : null;
 }
 
 /** Langkah kedua login kalau login() tadi mengembalikan `needsTotp: true` — verifikasi kode 6

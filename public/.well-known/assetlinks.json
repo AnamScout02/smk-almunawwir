@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sch.almunawwir.ujian",
+      "sha256_cert_fingerprints": ["F7:B2:DB:23:79:E9:89:B6:36:B7:28:D0:07:74:5B:13:D9:0A:9C:6D:E3:36:8D:93:D7:B0:E6:0D:BE:D3:C7:92"]
+    }
+  }
+]

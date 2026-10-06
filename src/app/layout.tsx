@@ -6,6 +6,8 @@ import WhatsAppButton from "@/components/shared/WhatsAppButton";
 import Providers from "@/components/shared/Providers";
 import ServiceWorkerRegister from "@/components/shared/ServiceWorkerRegister";
 import InstallPwaPrompt from "@/components/shared/InstallPwaPrompt";
+import PitaPerbaruiAplikasi from "@/components/shared/PitaPerbaruiAplikasi";
+import TawaranPasskey from "@/components/shared/TawaranPasskey";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -100,6 +102,8 @@ export default function RootLayout({
           <WhatsAppButton />
           <ServiceWorkerRegister />
           <InstallPwaPrompt />
+          <PitaPerbaruiAplikasi />
+          <TawaranPasskey />
         </Providers>
       </body>
     </html>
