@@ -9,6 +9,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { DOKUMEN_IJAZAH, PENGAMBIL_IJAZAH, labelOf } from "@/lib/tu-konstanta";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** Buku Penyerahan Ijazah per tahun — `?year=YYYY` (default tahun berjalan).
  * Kolom tanda tangan dibiarkan kosong: buku ini ditandatangani basah oleh pengambil saat
@@ -35,6 +37,8 @@ export default async function CetakIjazahSerahPage({ searchParams }: { searchPar
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
   const th = "border border-gray-800 bg-primary-900 text-white px-2 py-1.5 text-center align-middle";
   const td = "border border-gray-800 px-2 py-1 align-middle";
 
@@ -105,7 +109,7 @@ export default async function CetakIjazahSerahPage({ searchParams }: { searchPar
         <div className="text-xs text-right pr-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-10" />
+          <GambarTtd src={ttdKepala} tinggi={40} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

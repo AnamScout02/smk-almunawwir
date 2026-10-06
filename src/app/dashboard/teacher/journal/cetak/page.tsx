@@ -21,6 +21,7 @@ function CetakJurnalContent() {
 
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [teacherName, setTeacherName] = useState("");
+  const [ttdGuru, setTtdGuru] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -28,11 +29,12 @@ function CetakJurnalContent() {
     if (!classId || !subject) return;
     Promise.all([
       fetch(`/api/teacher/journal/history?classId=${classId}&subject=${encodeURIComponent(subject)}&semester=${encodeURIComponent(semester)}`).then(r => r.json()),
-      fetch("/api/teacher/me").then(r => r.json()),
+      fetch("/api/teacher/me?ttd=1").then(r => r.json()),
       fetch("/api/settings/logos").then(r => r.json()),
     ]).then(([hist, me, logos]) => {
       setRows(Array.isArray(hist) ? hist : []);
       setTeacherName(me.name ?? "");
+      setTtdGuru(me.ttd ?? null);
       setLogoUrl(logos.fullWhite ?? "");
       setLoading(false);
     }).catch(() => { setLoading(false); });
@@ -123,7 +125,8 @@ function CetakJurnalContent() {
           <div>
             <p>Singojuruh, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p>Guru Mata Pelajaran</p>
-            <div className="h-12" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD (src/lib/ttd.ts) */}
+            {ttdGuru ? <img src={ttdGuru} alt="" className="mx-auto h-12 object-contain" /> : <div className="h-12" />}
             <p className="font-bold underline text-primary-900">{teacherName || "—"}</p>
           </div>
         </div>

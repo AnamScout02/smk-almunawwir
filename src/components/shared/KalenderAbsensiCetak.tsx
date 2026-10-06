@@ -1,4 +1,6 @@
 import { verifyRole } from "@/lib/dal";
+import { petaTtd } from "@/lib/ttd";
+import GambarTtd from "@/components/shared/GambarTtd";
 import { prisma } from "@/lib/prisma";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { KESISWAAN_BK_JABATAN } from "@/lib/kesiswaan-guard";
@@ -64,7 +66,7 @@ export default async function KalenderAbsensiCetak({ searchParams, basePath, kem
 
   const classes = await prisma.class.findMany({
     where: allowedClassIds ? { id: { in: allowedClassIds } } : undefined,
-    include: { major: { select: { name: true } }, homeroom: { select: { user: { select: { name: true } } } } },
+    include: { major: { select: { name: true } }, homeroom: { select: { userId: true, user: { select: { name: true } } } } },
     orderBy: [{ grade: "asc" }, { name: "asc" }],
   });
   const activeClass = qClassId ? classes.find(c => c.id === qClassId) : classes[0];
@@ -104,6 +106,7 @@ export default async function KalenderAbsensiCetak({ searchParams, basePath, kem
   const jumlahP = rows.filter(r => r.gender === "P").length;
   const monthLabel = `${BULAN[m - 1]} ${y}`;
   const homeroomName = activeClass?.homeroom?.user.name ?? "";
+  const ttdWali = activeClass?.homeroom ? (await petaTtd([activeClass.homeroom.userId])).get(activeClass.homeroom.userId) : undefined;
 
   const prevMonthDate = new Date(Date.UTC(y, m - 2, 1));
   const nextMonthDate = new Date(Date.UTC(y, m, 1));
@@ -221,7 +224,7 @@ export default async function KalenderAbsensiCetak({ searchParams, basePath, kem
             <div className="text-xs text-primary-700 text-center">
               <p>Singojuruh, {monthLabel}</p>
               <p>Wali Kelas</p>
-              <div className="h-12" />
+              <GambarTtd src={ttdWali} tinggi={48} />
               <p className="font-bold underline text-primary-900">{homeroomName || "—"}</p>
             </div>
           </div>

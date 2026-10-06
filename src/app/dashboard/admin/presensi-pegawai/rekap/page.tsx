@@ -8,6 +8,8 @@ import { getSettings, getPrincipalName } from "@/lib/site-settings";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** Singkatan status di kalender rekap — satu huruf supaya 31 kolom tetap muat di satu halaman. */
 const KODE: Record<string, string> = {
@@ -47,6 +49,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
 
   const pegawai = users.filter(u => u.teacher?.teacherStatus !== "KELUAR" && u.teacher?.teacherStatus !== "PENSIUN");
   const principalName = getPrincipalName(settings["school.structure"]);
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
   const monthLabel = new Date(y, m - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
 
   // peta: userId -> tanggal(1-31) -> kode status
@@ -139,7 +142,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
         <div className="text-xs text-right pr-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-10" />
+          <GambarTtd src={ttdKepala} tinggi={40} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

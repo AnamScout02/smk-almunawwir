@@ -11,6 +11,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import Alert from "@/components/admin/Alert";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 const ZONA = "Asia/Jakarta";
 const jk = (g: string) => (/^l/i.test(g.trim()) ? "L" : /^p/i.test(g.trim()) ? "P" : "");
@@ -40,6 +42,7 @@ export default async function BeritaAcaraVervalPage({ searchParams }: { searchPa
   const sekolah = settings["school.name"] || "SMK Al Munawwir IIBS";
   const kota = settings["nominatif.kabKota"] || "Banyuwangi";
   const kepala = getPrincipalName(settings["school.structure"]);
+  const ttdKepala = await ttdDariNama(kepala);
 
   // Satu baris per kompetensi keahlian (urutan & nama dari tabel Major; jurusan tanpa calon tetap tampil 0).
   const baris = majors.map(m => {
@@ -157,7 +160,7 @@ export default async function BeritaAcaraVervalPage({ searchParams }: { searchPa
           <div>
             <p>{kota}, {bagian({ day: "numeric", month: "long", year: "numeric" })}</p>
             <p>Kepala {sekolah}</p>
-            <div className="h-16" />
+            <GambarTtd src={ttdKepala} tinggi={64} />
             <p className="font-semibold underline">{kepala || "( .................................... )"}</p>
             <p>NIP. —</p>
           </div>

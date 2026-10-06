@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { petaTtd } from "@/lib/ttd";
 
 export async function GET(req: Request) {
   try {
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
     const adminTeacherId = searchParams.get("teacherId");
 
     const select = {
-      nip: true,
+      nip: true, userId: true,
       user: { select: { name: true } },
       jabatan: { select: { jabatan: { select: { id: true, name: true } } } },
     } as const;
@@ -18,7 +19,11 @@ export async function GET(req: Request) {
       ? await prisma.teacher.findUnique({ where: { id: adminTeacherId }, select })
       : await prisma.teacher.findFirst({ where: { user: { email: session.email } }, select });
 
+    // `?ttd=1` — TTD guru itu (data URL) untuk tanda tangan dokumen cetak klien (Jurnal Mengajar). Hanya guru itu
+    // sendiri atau Admin/TU (cabang teacherId di atas), sama dengan siapa yang boleh membuka cetakan jurnalnya.
+    const ttd = searchParams.get("ttd") === "1" && teacher ? (await petaTtd([teacher.userId])).get(teacher.userId) ?? null : null;
     return Response.json({
+      ttd,
       name: teacher?.user.name ?? session.name,
       nip: teacher?.nip ?? "",
       jabatan: teacher?.jabatan.map(j => j.jabatan.name) ?? [],

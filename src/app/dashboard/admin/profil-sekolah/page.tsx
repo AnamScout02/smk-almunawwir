@@ -9,6 +9,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import StatTile from "@/components/admin/StatTile";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 const TRACER_LABEL: Record<string, string> = {
   BEKERJA: "Bekerja", KULIAH: "Melanjutkan Kuliah", WIRAUSAHA: "Wirausaha",
@@ -52,6 +54,8 @@ export default async function ProfilSekolahPage() {
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
   const aktif = students.filter(s => s.studentStatus === "AKTIF");
 
   const perJurusan = majors.map(m => {
@@ -372,7 +376,7 @@ export default async function ProfilSekolahPage() {
         <div className="text-xs text-right pr-8 mt-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-12" />
+          <GambarTtd src={ttdKepala} tinggi={48} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

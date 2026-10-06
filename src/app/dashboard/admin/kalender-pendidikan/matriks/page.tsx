@@ -8,6 +8,8 @@ import { bangunMatriks } from "@/lib/kalender-matriks";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** Kalender Pendidikan bentuk MATRIKS — baris bulan × kolom tanggal 1–31.
  *
@@ -25,6 +27,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
     getSettings(["logo.full_white", "school.structure"]).catch(() => ({} as Record<string, string>)),
   ]);
   const principalName = getPrincipalName(settings["school.structure"] ?? "");
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
 
   const th = "border border-primary-900/30 bg-primary-900 text-white text-[8px] font-bold text-center px-0.5 py-1";
 
@@ -173,7 +176,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
             <div className="w-[20%] shrink-0 text-center text-[7px] leading-[1.6]">
               <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
               <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-              <div className="h-8" />
+              <GambarTtd src={ttdKepala} tinggi={32} />
               <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
             </div>
           </div>

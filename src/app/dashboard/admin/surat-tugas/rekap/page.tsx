@@ -8,6 +8,8 @@ import { getSettings, getPrincipalName } from "@/lib/site-settings";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** Rekap penugasan per pegawai dalam satu tahun — `?year=YYYY` (default tahun berjalan).
  * Dipakai sebagai lampiran kinerja: berapa kali seorang pegawai ditugaskan dan ke mana saja. */
@@ -26,6 +28,8 @@ export default async function RekapSuratTugasPage({ searchParams }: { searchPara
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
 
   // Satu baris per pegawai, berisi berapa kali ditugaskan & daftar kegiatannya.
   const perPegawai = new Map<string, { nama: string; nip: string | null; tugas: { tanggal: Date; maksud: string; tempat: string }[] }>();
@@ -103,7 +107,7 @@ export default async function RekapSuratTugasPage({ searchParams }: { searchPara
         <div className="text-xs text-right pr-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-10" />
+          <GambarTtd src={ttdKepala} tinggi={40} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

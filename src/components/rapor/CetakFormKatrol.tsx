@@ -3,6 +3,8 @@ import { getSettings } from "@/lib/site-settings";
 import { aksesForm, muatForm } from "@/lib/rapor-form-server";
 import { hitungSiswa, katrol } from "@/lib/rapor-form";
 import PrintButton from "@/components/shared/PrintButton";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { petaTtd } from "@/lib/ttd";
 import { TautanIkon } from "@/components/shared/IkonNama";
 
 /** FORM NILAI KATROL — padanan "FORM KATROL_Fiks.xlsx" sekolah: nilai asli → hasil perbaikan per lingkup materi & SAS
@@ -13,6 +15,8 @@ export default async function CetakFormKatrol({ classId, subject, semester, kemb
   const session = await verifyRole(["TEACHER", "ADMIN", "TAS"]);
   const akses = await aksesForm(session, classId, subject);
   const data = akses ? await muatForm(classId, subject, semester) : null;
+  // TTD guru pengampu hanya setelah form DIKIRIM (angkanya sudah final dari sisi guru) — src/lib/ttd.ts.
+  const ttdGuru = data?.status === "DIKIRIM" && data.guruUserId ? (await petaTtd([data.guruUserId])).get(data.guruUserId) : undefined;
   if (!data) return <div className="p-8 text-sm text-gray-600">Form tidak ditemukan atau Anda tidak berhak membukanya.</div>;
   const st = await getSettings(["nominatif.kabKota"]);
   const f = data.pengaturan;
@@ -65,7 +69,8 @@ export default async function CetakFormKatrol({ classId, subject, semester, kemb
           <div className="text-center w-64">
             <p>{st["nominatif.kabKota"] || ""}{st["nominatif.kabKota"] ? ", " : ""}{tanggal}</p>
             <p>Guru Mata Pelajaran</p>
-            <p className="mt-16 font-bold underline">{data.guru ?? "...................................."}</p>
+            <GambarTtd src={ttdGuru} tinggi={64} />
+            <p className="font-bold underline">{data.guru ?? "...................................."}</p>
           </div>
         </div>
       </div>

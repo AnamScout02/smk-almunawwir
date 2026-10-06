@@ -1,3 +1,4 @@
+import { cocokkanNamaPegawai } from "@/lib/ttd";
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
@@ -24,6 +25,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = await req.json();
     const { date, time, place, leader, topic, openedBy, greetings, decisions, notulis, photos, attendees } = body;
     if (!date) return Response.json({ error: "Tanggal rapat wajib diisi." }, { status: 400 });
+    // Akun pegawai tiap peserta → TTD di daftar hadir cetak (src/lib/ttd.ts). Nama ganda/tamu luar = tanpa akun.
+    const akun = await cocokkanNamaPegawai(((attendees ?? []) as AttendeeInput[]).map(a => a.name?.trim()).filter(Boolean));
 
     await prisma.$transaction(async (tx) => {
       await tx.meetingAttendee.deleteMany({ where: { meetingId: id } });
@@ -36,7 +39,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           attendees: {
             create: ((attendees ?? []) as AttendeeInput[])
               .filter(a => a.name?.trim())
-              .map((a, i) => ({ name: a.name.trim(), order: i })),
+              .map((a, i) => ({ name: a.name.trim(), order: i, userId: akun.get(a.name.trim()) ?? null })),
           },
         },
       });

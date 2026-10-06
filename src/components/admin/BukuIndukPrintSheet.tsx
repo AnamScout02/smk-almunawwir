@@ -180,7 +180,7 @@ function PrintPage({ pageNum, first, last, nis, name, children }: {
 /** Lembar cetak Buku Induk Siswa — A4, tanpa margin browser, 4 halaman tetap dengan footer bernomor.
  * `isLastInSequence` (default true): set false saat dipakai dalam cetak massal dan bukan siswa terakhir,
  * supaya halaman ke-4 tetap diberi jeda halaman sebelum siswa berikutnya. */
-export default function BukuIndukPrintSheet({ student, logoUrl, principalName, qrDataUrl, isLastInSequence = true }: { student: PrintStudent; letterheadUrl?: string; logoUrl?: string; principalName?: string; qrDataUrl?: string; isLastInSequence?: boolean }) {
+export default function BukuIndukPrintSheet({ student, logoUrl, principalName, ttdKepala, qrDataUrl, isLastInSequence = true }: { student: PrintStudent; letterheadUrl?: string; logoUrl?: string; principalName?: string; ttdKepala?: string | null; qrDataUrl?: string; isLastInSequence?: boolean }) {
   const b = (student.bukuIndukData ?? {}) as PrintBukuIndukData;
   const birth = tglParts(student.birthDate);
   const fatherBirth = tglParts(b.fatherBirthDate);
@@ -441,7 +441,9 @@ export default function BukuIndukPrintSheet({ student, logoUrl, principalName, q
             </div>
           )}
           <div className="text-center text-xs w-56 ml-auto">
-            <p className="mb-16 text-primary-700">Kepala SMK Al Munawwir IIBS</p>
+            <p className={`${ttdKepala ? "" : "mb-16 "}text-primary-700`}>Kepala SMK Al Munawwir IIBS</p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD Kepala Sekolah (src/lib/ttd.ts) */}
+            {ttdKepala && <img src={ttdKepala} alt="" className="mx-auto h-16 object-contain" />}
             <div className="pt-1">
               <p className="font-bold underline text-primary-900">( {principalName || "__________________"} )</p>
             </div>

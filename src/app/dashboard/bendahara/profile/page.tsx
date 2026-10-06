@@ -4,6 +4,8 @@ import { verifyBendaharaLayoutAccess } from "@/lib/bendahara-guard";
 import PageHeader from "@/components/admin/PageHeader";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import KunciAplikasi from "@/components/shared/KunciAplikasi";
+import KelolaPasskey from "@/components/shared/KelolaPasskey";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import { UserCircle } from "lucide-react";
 
@@ -24,6 +26,8 @@ export default async function BendaharaProfilePage() {
 
       <div className="mt-6 max-w-lg"><NotifikasiPerangkat /></div>
       <div className="mt-6 max-w-lg"><PerangkatAktif /></div>
+      <div className="mt-6 max-w-lg"><KelolaPasskey /></div>
+      <div className="mt-6 max-w-lg"><KunciAplikasi /></div>
     </div>
   );
 }

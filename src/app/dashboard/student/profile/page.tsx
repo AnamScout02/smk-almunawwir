@@ -6,6 +6,7 @@ import { ArrowLeft, Mail, IdCard, BookOpen, School, UserCircle, Hash } from "luc
 import Link from "next/link";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import KunciAplikasi from "@/components/shared/KunciAplikasi";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import PageHeader from "@/components/admin/PageHeader";
@@ -93,6 +94,7 @@ export default async function StudentProfilePage() {
         <NotifikasiPerangkat />
 
         <PerangkatAktif />
+        <KunciAplikasi />
       </div>
     </div>
   );

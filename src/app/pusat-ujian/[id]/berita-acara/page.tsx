@@ -12,6 +12,8 @@ import { ruangUntukSiswa, teksRuang } from "@/lib/denah-ruang";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { pengawasKelasUjian, petaTtd, ttdDariNama } from "@/lib/ttd";
 
 /** BERITA ACARA PELAKSANAAN UJIAN — satu lembar per kelas peserta. Angka kehadiran, nama yang tidak
  * hadir, dan catatan pelanggaran diambil dari data pengerjaan; kejadian lain ditulis tangan pengawas. */
@@ -35,7 +37,11 @@ export default async function BeritaAcaraPage({ params, searchParams }: { params
   const tahun = Number(bagian({ year: "numeric" }));
   const kegiatanNama = detail?.kegiatan ? `${detail.kegiatan.nama}${detail.kegiatan.academicYear ? ` Tahun Pelajaran ${detail.kegiatan.academicYear.name}` : ""}` : "Ujian Berbasis Komputer";
   const kepala = getPrincipalName(settings["school.structure"]);
+  const ttdKepala = await ttdDariNama(kepala);
   const tempat = exam.kegiatanId ? await ruangUntukSiswa(exam.kegiatanId, per.flatMap(p => p.siswa.map(s => s.id))) : null;
+  // Pengawas per kelas + TTD-nya (src/lib/ttd.ts) — kosong bila pengawasnya tidak bisa dipastikan.
+  const pengawas = await Promise.all(per.map(p => pengawasKelasUjian(exam, p.kelas.id, p.siswa.map(s => s.id))));
+  const ttd = await petaTtd(pengawas.map(p => p?.userId));
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 bg-white">
@@ -102,12 +108,12 @@ export default async function BeritaAcaraPage({ params, searchParams }: { params
             <div className="grid grid-cols-2 gap-10 text-center">
               <div>
                 <p>Pengawas,</p>
-                <div className="h-16" />
-                <p>( .............................................. )</p>
+                <GambarTtd src={pengawas[idx] ? ttd.get(pengawas[idx]!.userId) : null} tinggi={64} />
+                <p>{pengawas[idx] ? <span className="font-semibold underline">{pengawas[idx]!.nama}</span> : "( .............................................. )"}</p>
               </div>
               <div>
                 <p>Mengetahui,<br />Kepala Sekolah</p>
-                <div className="h-12" />
+                <GambarTtd src={ttdKepala} tinggi={48} />
                 <p className="font-semibold underline">{kepala || "( .............................................. )"}</p>
               </div>
             </div>

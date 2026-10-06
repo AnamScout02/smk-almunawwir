@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Printer, ArrowLeft, Loader2, ClipboardCheck, Pencil } from "lucide-react";
@@ -53,6 +53,7 @@ interface ClassInfo {
   id: string; name: string; grade: number;
   major: { name: string };
   homeroom: { user: { name: string } } | null;
+  ttdWali?: string | null;
   students: RosterStudent[];
 }
 
@@ -168,7 +169,8 @@ export default function CetakAbsensiJurnalPage() {
         </div>
       </div>
 
-      {/* Print container */}
+      {/* Print container — TTD wali kelas lewat konteks supaya tidak dioper ke tiap lembar */}
+      <TtdWaliKonteks.Provider value={cls.ttdWali ?? null}>
       <div className={`print-doc py-8 print:py-0 px-4 print:px-0 mx-auto print:mx-0 space-y-8 print:space-y-0 ${isLandscape ? "max-w-[1150px]" : "max-w-[850px]"}`}>
         {tab === "cover" && (
           <div className="shadow-lg print:shadow-none">
@@ -195,6 +197,7 @@ export default function CetakAbsensiJurnalPage() {
           </div>
         )}
       </div>
+      </TtdWaliKonteks.Provider>
     </div>
   );
 }
@@ -240,12 +243,16 @@ function genderCounts(students: RosterStudent[]) {
   return { L, P, total: L + P };
 }
 
+const TtdWaliKonteks = createContext<string | null>(null);
+
 function SignatureBlock({ monthLabel, homeroomName }: { monthLabel: string; homeroomName: string }) {
+  const ttd = useContext(TtdWaliKonteks);
   return (
     <div className="text-xs text-primary-700 ml-auto text-center mt-2">
       <p>Singojuruh, {monthLabel}</p>
       <p>Wali Kelas</p>
-      <div className="h-12" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD */}
+      {ttd ? <img src={ttd} alt="" className="mx-auto h-12 object-contain" /> : <div className="h-12" />}
       <p className="font-bold underline text-primary-900">{homeroomName || "—"}</p>
     </div>
   );

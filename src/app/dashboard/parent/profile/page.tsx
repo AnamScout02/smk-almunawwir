@@ -5,6 +5,8 @@ import { getParentChildrenOrRedirect } from "@/lib/parent-guard";
 import PageHeader from "@/components/admin/PageHeader";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import KunciAplikasi from "@/components/shared/KunciAplikasi";
+import KelolaPasskey from "@/components/shared/KelolaPasskey";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import { UserCircle, Users } from "lucide-react";
 
@@ -28,6 +30,9 @@ export default async function ParentProfilePage() {
         <NotifikasiPerangkat />
 
         <PerangkatAktif />
+
+        <KelolaPasskey />
+        <KunciAplikasi />
 
         <div className="panel overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-50">

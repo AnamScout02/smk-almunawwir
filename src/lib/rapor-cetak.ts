@@ -1,4 +1,5 @@
 import "server-only";
+import { petaTtd } from "@/lib/ttd";
 import { prisma } from "@/lib/prisma";
 import { getSettings, getPrincipalName } from "@/lib/site-settings";
 import { rentangSemester } from "@/lib/rapor-verifikasi";
@@ -41,7 +42,8 @@ export async function susunRaporKelas(classId: string, semester: string) {
     where: { id: classId },
     select: {
       id: true, name: true, grade: true, majorId: true, major: { select: { name: true } },
-      homeroom: { select: { nip: true, user: { select: { name: true } } } },
+      homeroom: { select: { nip: true, userId: true, user: { select: { name: true } } } },
+      raporKunci: { where: { semester }, select: { id: true } },
       teachingAssignments: { select: { subject: { select: { name: true, category: true, order: true, namaArab: true } } } },
       raporApprovals: { where: { semester }, select: { approvedAt: true, approvedBy: true } },
     },
@@ -150,6 +152,10 @@ export async function susunRaporKelas(classId: string, semester: string) {
   const m = /^(Ganjil|Genap)\s+(\d{4})\/(\d{4})$/.exec(semester);
   const genap = m?.[1] === "Genap";
   const sah = kelas.raporApprovals[0];
+  // TTD wali kelas (src/lib/ttd.ts) — hanya setelah wali kelas MENGUNCI nilai semester ini (padanan: TTD Kepala
+  // Sekolah hanya setelah disahkan). Sebelum dikunci isinya masih bisa berubah, jadi belum ditandatangani.
+  const ttdWali = kelas.homeroom && kelas.raporKunci.length
+    ? (await petaTtd([kelas.homeroom.userId])).get(kelas.homeroom.userId) ?? "" : "";
   return {
     sekolah: {
       // Penulisan nama & alamat Arab mengikuti lembar rapor makro sekolah (DASHBOARD G14, RAPORT D baris 6).
@@ -160,7 +166,7 @@ export async function susunRaporKelas(classId: string, semester: string) {
       ttdKepala: st["letterhead.ttdKepalaSekolah"] ?? "",
       alamatArab: "شَارِعُ كِيدُوعْ لِيُوعْ نِمْرَةَ ٣٥، كِمِيرِي، سِيْعُو جُورُوهْ، بَنْيُوَانْجِي، جَاوَةُ ٱلشَّرْقِيَّةِ ٦٨٤٦٤",
     },
-    kelas: { id: kelas.id, nama: kelas.name, grade: kelas.grade, jurusan: kelas.major?.name ?? "", wali: kelas.homeroom?.user.name ?? "", nipWali: kelas.homeroom?.nip ?? "" },
+    kelas: { id: kelas.id, nama: kelas.name, grade: kelas.grade, jurusan: kelas.major?.name ?? "", wali: kelas.homeroom?.user.name ?? "", nipWali: kelas.homeroom?.nip ?? "", ttdWali },
     semester, genap, tahun: m ? `${m[2]} / ${m[3]}` : "", labelSemester: genap ? "2 (Dua)" : "1 (Satu)",
     fase: kelas.grade <= 10 ? "Fase ( E )" : "Fase ( F )",
     /** Halaman awal rapor akhir (4 halaman per semester, seperti makro): X-1→1, X-2→5, XI-1→9, XI-2→13, XII-1→17, XII-2→21. */

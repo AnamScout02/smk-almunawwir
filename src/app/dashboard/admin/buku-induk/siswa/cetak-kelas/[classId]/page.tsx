@@ -15,6 +15,7 @@ export default function CetakKelasPage() {
   usePrintTitle(className ? buildPrintFilename("BUKU_INDUK-Kelas", className) : null);
   const [logo, setLogo] = useState("");
   const [principalName, setPrincipalName] = useState("");
+  const [ttdKepala, setTtdKepala] = useState<string | null>(null);
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +29,7 @@ export default function CetakKelasPage() {
       }).catch(() => { setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
+    fetch("/api/ttd/kepala").then(r => (r.ok ? r.json() : null)).then(d => setTtdKepala(d?.ttd ?? null)).catch(() => {});
     fetch(`/api/admin/buku-induk/siswa/qr?classId=${classId}`).then(r => r.json()).then(setQrMap).catch(() => {});
   }, [classId]);
 
@@ -63,7 +65,7 @@ export default function CetakKelasPage() {
       <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0 space-y-8 print:space-y-0 overflow-x-auto print:overflow-visible">
         {students.map((s, i) => (
           <div key={s.id} className="shadow-lg print:shadow-none">
-            <BukuIndukPrintSheet student={s} logoUrl={logo} principalName={principalName} qrDataUrl={qrMap[s.id]} isLastInSequence={i === students.length - 1} />
+            <BukuIndukPrintSheet student={s} logoUrl={logo} principalName={principalName} ttdKepala={ttdKepala} qrDataUrl={qrMap[s.id]} isLastInSequence={i === students.length - 1} />
           </div>
         ))}
       </div>

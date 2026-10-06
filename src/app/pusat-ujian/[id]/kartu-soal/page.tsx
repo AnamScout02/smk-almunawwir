@@ -13,6 +13,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import HtmlSoal from "@/components/ujian/HtmlSoal";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama, petaTtd } from "@/lib/ttd";
 
 /** KARTU SOAL — satu kartu per butir, format yang dipakai sekolah untuk berkas administrasi ujian
  * (dilampirkan bersama kisi-kisi). Seluruh isinya sudah ada di sistem: identitas ujian, kolom
@@ -30,7 +32,7 @@ export default async function KartuSoalPage({ params }: { params: Promise<{ id: 
   const [detail, soal, kelas, settings] = await Promise.all([
     prisma.exam.findUnique({
       where: { id },
-      select: { kegiatan: { select: { nama: true, academicYear: { select: { name: true } } } }, teacher: { select: { nip: true, user: { select: { name: true } } } } },
+      select: { kegiatan: { select: { nama: true, academicYear: { select: { name: true } } } }, teacher: { select: { nip: true, userId: true, user: { select: { name: true } } } } },
     }),
     prisma.examQuestion.findMany({
       where: { examId: id }, orderBy: { order: "asc" },
@@ -46,6 +48,9 @@ export default async function KartuSoalPage({ params }: { params: Promise<{ id: 
     : "Ujian Berbasis Komputer";
   const kepala = getPrincipalName(settings["school.structure"]);
   const penyusun = detail?.teacher.user.name ?? "-";
+  const [ttdKepala, ttdPenyusun] = await Promise.all([
+    ttdDariNama(kepala), detail?.teacher ? petaTtd([detail.teacher.userId]).then(m => m.get(detail.teacher.userId)) : undefined,
+  ]);
   const namaKelas = kelas.map(k => k.name).join(", ") || "-";
 
   /** Kunci jawaban ditulis apa adanya sesuai jenis soalnya — uraian & unggah memang tidak berkunci. */
@@ -203,11 +208,13 @@ export default async function KartuSoalPage({ params }: { params: Promise<{ id: 
                 <div className="text-center">
                   <p>Mengetahui,</p>
                   <p>Kepala Sekolah</p>
-                  <p className="mt-14 font-semibold underline">{kepala || "……………………………"}</p>
+                  <GambarTtd src={ttdKepala} tinggi={56} />
+                  <p className="font-semibold underline">{kepala || "……………………………"}</p>
                 </div>
                 <div className="text-center">
                   <p>Penyusun Soal</p>
-                  <p className="mt-16 font-semibold underline">{penyusun}</p>
+                  <GambarTtd src={ttdPenyusun} tinggi={64} />
+                  <p className="font-semibold underline">{penyusun}</p>
                   {detail?.teacher.nip && <p>NIP. {detail.teacher.nip}</p>}
                 </div>
               </div>

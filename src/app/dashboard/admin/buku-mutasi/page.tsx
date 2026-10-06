@@ -116,6 +116,7 @@ export default function BukuMutasiPage() {
   const [masuk, setMasuk] = useState<MutasiMasuk[]>([]);
   const [keluar, setKeluar] = useState<MutasiKeluar[]>([]);
   const [principalName, setPrincipalName] = useState("");
+  const [ttdKepala, setTtdKepala] = useState<string | null>(null);
   const [rekap, setRekap] = useState<RekapRow[]>([]);
   const [totalAktif, setTotalAktif] = useState(0);
   const [totalAwalBulan, setTotalAwalBulan] = useState(0);
@@ -132,6 +133,7 @@ export default function BukuMutasiPage() {
       if (active) setTahunPelajaran(active.name);
       else if (d[0]) setTahunPelajaran(d[0].name);
     }).catch(() => {});
+    fetch("/api/ttd/kepala").then(r => (r.ok ? r.json() : null)).then(d => setTtdKepala(d?.ttd ?? null)).catch(() => {});
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -431,7 +433,9 @@ export default function BukuMutasiPage() {
 
             <div className="grid grid-cols-2 gap-3 sm:gap-8 text-sm text-center mt-8">
               <div className="min-w-0">
-                <p className="mb-8">Mengetahui,<br />Kepala SMK Al Munawwir IIBS</p>
+                <p className={ttdKepala ? "" : "mb-8"}>Mengetahui,<br />Kepala SMK Al Munawwir IIBS</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD Kepala Sekolah (/api/ttd/kepala) */}
+                {ttdKepala && <img src={ttdKepala} alt="" className="mx-auto h-12 object-contain" />}
                 <p className="font-semibold underline break-words">{principalName || "( _____________ )"}</p>
               </div>
               <div className="min-w-0">

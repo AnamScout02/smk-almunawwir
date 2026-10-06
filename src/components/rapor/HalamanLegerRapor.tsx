@@ -136,12 +136,15 @@ export default async function HalamanLegerRapor({ sp, kembaliHref }: { sp: { cla
           <div className="mt-6 grid grid-cols-2 text-center text-[12px] break-inside-avoid">
             <div>
               <p>Mengetahui,</p><p>Kepala {d.sekolah.nama}</p>
-              <div className="h-16" />
+              {/* TTD jabatan Kepala Sekolah hanya setelah rapor disahkan — aturan yang sama dengan cetak rapor. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {d.disahkan && d.sekolah.ttdKepala ? <img src={d.sekolah.ttdKepala} alt="" className="mx-auto h-16 object-contain" /> : <div className="h-16" />}
               <p className="font-bold underline">{d.sekolah.kepala || "........................................"}</p><p>NIP.-</p>
             </div>
             <div>
               <p>{d.sekolah.kota}, {hariIni}</p><p>Wali Kelas</p>
-              <div className="h-16" />
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD, hanya setelah nilai dikunci */}
+              {d.kelas.ttdWali ? <img src={d.kelas.ttdWali} alt="" className="mx-auto h-16 object-contain" /> : <div className="h-16" />}
               <p className="font-bold underline">{d.kelas.wali || "........................................"}</p><p>NIP.{d.kelas.nipWali ? ` ${d.kelas.nipWali}` : "-"}</p>
             </div>
           </div>

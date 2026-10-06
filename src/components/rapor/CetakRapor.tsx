@@ -252,7 +252,7 @@ function TandaTangan({ data, tanggal, kepala = true, qr }: { data: DataRaporKela
         </div>
         <div className="tengah">
           <p>{data.sekolah.kota}, {tglPanjang(tanggal)}</p><p>Wali Kelas</p>
-          <div style={{ height: "18mm" }} />
+          <TtdWali src={data.kelas.ttdWali} />
           <p style={garisNama}>{data.kelas.wali || ".............................................."}</p>
           <p>NIP.{data.kelas.nipWali ? ` ${data.kelas.nipWali}` : "-"}</p>
         </div>
@@ -588,7 +588,7 @@ function dokDiniyah(data: DataRaporKelas, s: SiswaRapor, o: { tanggal: string; q
       <div className="rp" style={{ paddingTop: "5mm", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
         <div className="tengah">
           <p>&nbsp;</p><p>Wali Kelas</p>
-          <div style={{ height: "18mm" }} />
+          <TtdWali src={data.kelas.ttdWali} />
           <p style={{ fontWeight: "bold", textDecoration: "underline" }}>{data.kelas.wali || ".............................................."}</p>
           <p>NIP.{data.kelas.nipWali ? ` ${data.kelas.nipWali}` : "-"}</p>
         </div>
@@ -853,4 +853,11 @@ function dokDepan(data: DataRaporKelas, depan: DataHalamanDepan, b: BiodataRapor
     },
   };
   return HALAMAN_DEPAN.map(h => h[0]).filter(h => pilih.includes(h)).map(h => halaman[h]());
+}
+
+/** TTD wali kelas — hanya terisi setelah nilai dikunci (src/lib/rapor-cetak.ts); tingginya sama dengan ruang kosong. */
+function TtdWali({ src }: { src?: string }) {
+  if (!src) return <div style={{ height: "18mm" }} />;
+  // eslint-disable-next-line @next/next/no-img-element -- data URL TTD
+  return <img src={src} alt="" style={{ height: "18mm", maxWidth: "45mm", objectFit: "contain", margin: "0 auto", display: "block" }} />;
 }

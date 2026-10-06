@@ -9,6 +9,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { JENIS_AGENDA, labelOf } from "@/lib/tu-konstanta";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 const dotOf = (j: string) => JENIS_AGENDA.find(x => x.value === j)?.dot ?? "#9ca3af";
 
@@ -29,6 +31,8 @@ export default async function CetakKalenderPendidikanPage({ searchParams }: { se
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
 
   const perBulan = new Map<string, typeof rows>();
   for (const a of rows) {
@@ -124,7 +128,7 @@ export default async function CetakKalenderPendidikanPage({ searchParams }: { se
         <div className="text-xs text-right pr-8 mt-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-10" />
+          <GambarTtd src={ttdKepala} tinggi={40} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { buildPrintFilename } from "@/lib/print-filename";
 import TombolKembali from "@/components/shared/TombolKembali";
+import { cocokkanNamaPegawai, petaTtd } from "@/lib/ttd";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -54,10 +55,28 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
   const kopBawah = s["letterhead.kopBawah"];
 
   const greetings = meeting.greetings.length > 0 ? meeting.greetings : [""];
-  const half = Math.ceil(meeting.attendees.length / 2);
-  const attendeesLeft = meeting.attendees.slice(0, half);
-  const attendeesRight = meeting.attendees.slice(half);
-  const rowCount = Math.max(attendeesLeft.length, attendeesRight.length, 15);
+  // Kolom KIRI diisi penuh dulu (1–15), baru kolom kanan (16–30) — nomor berurutan tanpa celah. Dulu peserta dibagi
+  // separuh-separuh sehingga 20 peserta tercetak 1–10 lalu langsung 16–25 (temuan user 5 Okt 2026). Lebih dari 30 peserta:
+  // baris bertambah dan tetap dibagi rata.
+  const rowCount = Math.max(15, Math.ceil(meeting.attendees.length / 2));
+  const attendeesLeft = meeting.attendees.slice(0, rowCount);
+  const attendeesRight = meeting.attendees.slice(rowCount);
+  // TTD peserta & notulis (src/lib/ttd.ts): akun dari MeetingAttendee.userId, cadangan nama yang cocok PERSIS satu
+  // pegawai. Peserta tanpa TTD/akun (tamu luar) tetap bertanda ✓ seperti dulu.
+  const cocok = await cocokkanNamaPegawai([...meeting.attendees.map(a => a.name), meeting.notulis ?? "", principalName].filter(Boolean));
+  const akunDari = (nama: string, userId?: string | null) => userId ?? cocok.get(nama) ?? null;
+  // Kepala Sekolah ikut ditandatangani dengan TTD PRIBADI-nya (permintaan user 5 Okt 2026) — nama dari Struktur Organisasi
+  // dicocokkan ke akun seperti peserta; bukan TTD jabatan berstempel (itu untuk surat atas nama sekolah).
+  const ttd = await petaTtd([...meeting.attendees.map(a => akunDari(a.name, a.userId)), meeting.notulis ? akunDari(meeting.notulis) : null,
+    principalName ? akunDari(principalName) : null]);
+  const ttdNotulis = meeting.notulis ? ttd.get(akunDari(meeting.notulis) ?? "") : undefined;
+  const ttdKepala = principalName ? ttd.get(akunDari(principalName) ?? "") : undefined;
+  const selHadir = (a?: { name: string; userId: string | null }) => {
+    if (!a) return "";
+    const src = ttd.get(akunDari(a.name, a.userId) ?? "");
+    // eslint-disable-next-line @next/next/no-img-element -- data URL TTD
+    return src ? <img src={src} alt="TTD" className="mx-auto h-[7mm] max-w-full object-contain" /> : "✓";
+  };
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 print:pt-0 bg-gray-100 print:bg-white">
@@ -96,12 +115,16 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
             <div className="flex justify-between items-start mt-6">
               <div className="text-sm text-center min-w-[180px]">
                 <p className="mb-1">&nbsp;</p>
-                <p className="mb-16">Notulis</p>
+                <p className={ttdNotulis ? "" : "mb-16"}>Notulis</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD */}
+                {ttdNotulis && <img src={ttdNotulis} alt="TTD notulis" className="mx-auto h-16 object-contain" />}
                 <p className="font-bold underline">{meeting.notulis || "__________________"}</p>
               </div>
               <div className="text-sm text-center min-w-[220px]">
                 <p className="mb-1">Singojuruh, {fmtLong(meeting.date)}</p>
-                <p className="mb-16">Kepala SMK Al Munawwir IIBS</p>
+                <p className={ttdKepala ? "" : "mb-16"}>Kepala SMK Al Munawwir IIBS</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL TTD */}
+                {ttdKepala && <img src={ttdKepala} alt="TTD Kepala Sekolah" className="mx-auto h-16 object-contain" />}
                 <p className="font-bold underline">( {principalName || "__________________"} )</p>
               </div>
             </div>
@@ -132,17 +155,17 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
             <h2 className="text-center font-bold text-sm uppercase mb-3">Daftar Hadir Peserta Rapat</h2>
             <table className="w-full text-sm border border-gray-800 table-fixed">
               <colgroup>
-                <col style={{ width: "7%" }} /><col style={{ width: "36%" }} /><col style={{ width: "7%" }} />
-                <col style={{ width: "7%" }} /><col style={{ width: "36%" }} /><col style={{ width: "7%" }} />
+                <col style={{ width: "6%" }} /><col style={{ width: "30%" }} /><col style={{ width: "14%" }} />
+                <col style={{ width: "6%" }} /><col style={{ width: "30%" }} /><col style={{ width: "14%" }} />
               </colgroup>
               <thead>
                 <tr style={{ background: "#0F1A45" }}>
                   <th className="border border-gray-800 text-white py-1.5">No</th>
                   <th className="border border-gray-800 text-white py-1.5">Nama</th>
-                  <th className="border border-gray-800 text-white py-1.5">Hadir</th>
+                  <th className="border border-gray-800 text-white py-1.5">Paraf</th>
                   <th className="border border-gray-800 text-white py-1.5">No</th>
                   <th className="border border-gray-800 text-white py-1.5">Nama</th>
-                  <th className="border border-gray-800 text-white py-1.5">Hadir</th>
+                  <th className="border border-gray-800 text-white py-1.5">Paraf</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,15 +173,15 @@ export default async function CetakNotulenPage({ params }: { params: Promise<{ i
                   <tr key={i}>
                     <td className="border border-gray-800 text-center py-1.5">{i + 1}</td>
                     <td className="border border-gray-800 py-1.5 px-2 truncate">{attendeesLeft[i]?.name ?? ""}</td>
-                    <td className="border border-gray-800 text-center py-1.5 font-bold">{attendeesLeft[i] ? "✓" : ""}</td>
+                    <td className="border border-gray-800 text-center py-0.5 font-bold">{selHadir(attendeesLeft[i])}</td>
                     <td className="border border-gray-800 text-center py-1.5">{rowCount + i + 1}</td>
                     <td className="border border-gray-800 py-1.5 px-2 truncate">{attendeesRight[i]?.name ?? ""}</td>
-                    <td className="border border-gray-800 text-center py-1.5 font-bold">{attendeesRight[i] ? "✓" : ""}</td>
+                    <td className="border border-gray-800 text-center py-0.5 font-bold">{selHadir(attendeesRight[i])}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="text-[10px] text-gray-500 mt-1">✓ menandakan kehadiran telah dikonfirmasi sistem saat notulen dibuat.</p>
+            <p className="text-[10px] text-gray-500 mt-1">Kolom paraf berisi tanda tangan digital peserta yang terdaftar di sistem; ✓ = hadir, tanda tangan belum diunggah.</p>
         </LembarSurat>
 
         {/* Halaman 3 — Hasil Keputusan */}

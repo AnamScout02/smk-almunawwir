@@ -11,6 +11,8 @@ import PrintButton from "@/components/shared/PrintButton";
 import LembarSurat from "@/components/shared/LembarSurat";
 import { SUMBER_BIAYA, labelOf } from "@/lib/tu-konstanta";
 import TombolKembali from "@/components/shared/TombolKembali";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 const tglPanjang = (d: Date | string | null) =>
   d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -45,6 +47,7 @@ export default async function CetakSuratTugasPage({ params }: { params: Promise<
 
   const principalName = getPrincipalName(settings["school.structure"]);
   const penandaTangan = st.penandaTangan || principalName;
+  const ttdKepala = await ttdDariNama(penandaTangan); // TTD pribadi penanda tangan (src/lib/ttd.ts)
   const hari = lamaHari(st.tanggalBerangkat, st.tanggalKembali);
   const pelaksana = st.pegawai.filter(p => p.peran !== "PENGIKUT");
   const pengikut = st.pegawai.filter(p => p.peran === "PENGIKUT");
@@ -68,7 +71,7 @@ export default async function CetakSuratTugasPage({ params }: { params: Promise<
       <div className="text-[12px] text-center w-[8cm]">
         <p>Banyuwangi, {tglPanjang(tanggal)}</p>
         <p>Kepala SMK Al Munawwir IIBS</p>
-        <div className="h-16" />
+        <GambarTtd src={ttdKepala} tinggi={64} />
         <p className="font-bold underline">{penandaTangan || "( _____________ )"}</p>
         <p>NIP. —</p>
       </div>

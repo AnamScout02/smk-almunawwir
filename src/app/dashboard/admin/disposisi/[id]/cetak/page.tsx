@@ -10,6 +10,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { SIFAT_DISPOSISI, TUJUAN_DISPOSISI_UMUM, labelOf } from "@/lib/tu-konstanta";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 const tgl = (d: Date | string | null) =>
   d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "—";
@@ -37,6 +39,8 @@ export default async function CetakDisposisiPage({ params }: { params: Promise<{
   const label = "text-[11px] font-semibold text-gray-600";
   const nilai = "text-[12px] text-gray-900";
 
+  // TTD pribadi penanda tangan: nama pemberi disposisi bila diisi manual (Plt./Wakil), selain itu Kepala Sekolah.
+  const ttdKepala = await ttdDariNama(d.dariNama || principalName);
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 min-h-dvh print:min-h-0 bg-white">
       <style>{"@page { size: A4; margin: 1.5cm; }"}</style>
@@ -117,7 +121,7 @@ export default async function CetakDisposisiPage({ params }: { params: Promise<{
           <div className="text-xs text-center w-[7cm]">
             <p>Banyuwangi, {tgl(d.tanggal)}</p>
             <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-            <div className="h-14" />
+            <GambarTtd src={ttdKepala} tinggi={56} />
             {/* Nama pemberi disposisi boleh diisi manual (mis. Plt./Wakil yang menandatangani);
                 kalau kosong, jatuh ke nama Kepala Sekolah dari Struktur Organisasi. */}
             <p className="font-semibold underline">{d.dariNama || principalName || "( _____________ )"}</p>

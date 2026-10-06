@@ -10,6 +10,8 @@ import { hariTanggal } from "@/lib/administrasi-ujian";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** REKAP PEMBAGIAN RUANG — satu tabel semua ruang × sesi: kelas, rentang nomor peserta, jumlah. Untuk panitia & pengawas. */
 export default async function RekapRuangPage({ searchParams }: { searchParams: Promise<{ kegiatan?: string }> }) {
@@ -21,6 +23,7 @@ export default async function RekapRuangPage({ searchParams }: { searchParams: P
 
   const judul = `${data.kegiatan.nama}${data.kegiatan.tahunAjaran ? ` Tahun Pelajaran ${data.kegiatan.tahunAjaran}` : ""}`;
   const kepala = getPrincipalName(settings["school.structure"]);
+  const ttdKepala = await ttdDariNama(kepala);
   const th = "border border-gray-800 bg-primary-900 text-white px-2 py-1.5 text-center align-middle";
   const td = "border border-gray-800 px-2 py-1 align-top";
 
@@ -70,7 +73,7 @@ export default async function RekapRuangPage({ searchParams }: { searchParams: P
           <div className="text-center w-64">
             <p>{hariTanggal(new Date())}</p>
             <p>Mengetahui, Kepala Sekolah</p>
-            <div className="h-16" />
+            <GambarTtd src={ttdKepala} tinggi={64} />
             <p className="font-semibold underline">{kepala || "( .............................................. )"}</p>
           </div>
         </div>

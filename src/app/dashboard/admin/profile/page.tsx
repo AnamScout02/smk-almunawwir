@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { Mail, ShieldCheck, UserCircle } from "lucide-react";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
+import KunciAplikasi from "@/components/shared/KunciAplikasi";
+import KelolaPasskey from "@/components/shared/KelolaPasskey";
+import TandaTanganSaya from "@/components/shared/TandaTanganSaya";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import PageHeader from "@/components/admin/PageHeader";
@@ -61,6 +64,9 @@ export default async function AdminProfilePage() {
 
       <div className="mt-6"><NotifikasiPerangkat /></div>
       <div className="mt-6"><PerangkatAktif /></div>
+      <div className="mt-6"><TandaTanganSaya /></div>
+      <div className="mt-6"><KelolaPasskey /></div>
+      <div className="mt-6"><KunciAplikasi /></div>
 
       {/* 2FA — KHUSUS role ADMIN (superadmin), bukan TAS. Impersonasi (fitur paling sensitif di
           sistem ini) cuma bisa dipakai ADMIN, jadi lapis tambahan ini juga dibatasi situ saja —

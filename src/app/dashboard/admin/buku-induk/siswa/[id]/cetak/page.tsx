@@ -14,6 +14,7 @@ export default function CetakBukuIndukPage() {
   usePrintTitle(student ? buildPrintFilename("BUKU_INDUK", student.user.name, student.nis) : null);
   const [logo, setLogo] = useState("");
   const [principalName, setPrincipalName] = useState("");
+  const [ttdKepala, setTtdKepala] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -24,6 +25,7 @@ export default function CetakBukuIndukPage() {
       .then(d => { if (d) setStudent(d); setLoading(false); }).catch(() => { setLoading(false); });
     fetch("/api/settings/logos").then(r => r.json()).then(d => setLogo(d.fullWhite ?? "")).catch(() => {});
     fetch("/api/settings/school-info").then(r => r.json()).then(d => setPrincipalName(d.principalName ?? "")).catch(() => {});
+    fetch("/api/ttd/kepala").then(r => (r.ok ? r.json() : null)).then(d => setTtdKepala(d?.ttd ?? null)).catch(() => {});
     fetch(`/api/admin/buku-induk/siswa/${id}/qr`).then(r => r.json()).then(d => setQrDataUrl(d.qrDataUrl ?? "")).catch(() => {});
   }, [id]);
 
@@ -54,7 +56,7 @@ export default function CetakBukuIndukPage() {
       {/* Print container */}
       <div className="py-8 print:py-0 px-4 print:px-0 max-w-[850px] mx-auto print:max-w-none print:mx-0 overflow-x-auto print:overflow-visible">
         <div className="shadow-lg print:shadow-none">
-          <BukuIndukPrintSheet student={student} logoUrl={logo} principalName={principalName} qrDataUrl={qrDataUrl} />
+          <BukuIndukPrintSheet student={student} logoUrl={logo} principalName={principalName} ttdKepala={ttdKepala} qrDataUrl={qrDataUrl} />
         </div>
       </div>
     </div>

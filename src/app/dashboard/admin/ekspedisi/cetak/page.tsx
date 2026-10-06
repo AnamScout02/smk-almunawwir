@@ -9,6 +9,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
 import { CARA_KIRIM, labelOf } from "@/lib/tu-konstanta";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /** Buku Ekspedisi per bulan — `?month=YYYY-MM` (default bulan berjalan).
  * Kolom "Tanda Tangan Penerima" sengaja dibiarkan kosong lebar: buku ini memang dibawa petugas
@@ -28,6 +30,8 @@ export default async function CetakEkspedisiPage({ searchParams }: { searchParam
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
   const monthLabel = new Date(y, m - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
   const totalBerkas = rows.reduce((a, r) => a + r.jumlah, 0);
 
@@ -103,7 +107,7 @@ export default async function CetakEkspedisiPage({ searchParams }: { searchParam
         <div className="text-xs text-right pr-8" style={{ breakInside: "avoid" }}>
           <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
           <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-          <div className="h-10" />
+          <GambarTtd src={ttdKepala} tinggi={40} />
           <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
         </div>
       </div>

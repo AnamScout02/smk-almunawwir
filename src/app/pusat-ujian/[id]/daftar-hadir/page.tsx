@@ -12,6 +12,8 @@ import { ruangUntukSiswa, teksRuang } from "@/lib/denah-ruang";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { pengawasKelasUjian, petaTtd } from "@/lib/ttd";
 
 /** DAFTAR HADIR PESERTA UJIAN — satu halaman per kelas peserta. Kolom "Status" terisi otomatis dari
  * data pengerjaan (siswa yang menekan MULAI tercatat hadir), kolom tanda tangan tetap diisi di ruang. */
@@ -27,6 +29,8 @@ export default async function DaftarHadirPage({ params, searchParams }: { params
     getSettings(["logo.full_white"]),
   ]);
   const tempat = exam.kegiatanId ? await ruangUntukSiswa(exam.kegiatanId, per.flatMap(p => p.siswa.map(s => s.id))) : null;
+  const pengawas = await Promise.all(per.map(p => pengawasKelasUjian(exam, p.kelas.id, p.siswa.map(s => s.id))));
+  const ttd = await petaTtd(pengawas.map(p => p?.userId));
 
   const th = "border border-gray-800 bg-primary-900 text-white px-2 py-1.5 text-center align-middle";
   const td = "border border-gray-800 px-2 py-1 align-middle";
@@ -53,7 +57,7 @@ export default async function DaftarHadirPage({ params, searchParams }: { params
                   ["Mata Pelajaran", exam.subject, "Hari / Tanggal", hariTanggal(exam.startTime)],
                   ["Ujian", exam.title, "Waktu", `${rentangWaktu(exam.startTime, exam.endTime).teks} (${exam.duration} menit)`],
                   ["Kelas", k.name, "Ruang", teksRuang(tempat, siswa.map(s => s.id)) ?? "...................................."],
-                  ["Guru Pengampu", detail?.teacher.user.name ?? "-", "Pengawas", "...................................."],
+                  ["Guru Pengampu", detail?.teacher.user.name ?? "-", "Pengawas", pengawas[idx]?.nama ?? "...................................."],
                 ].map((r, i) => (
                   <tr key={i}>
                     <td className="py-0.5 pr-2 text-gray-600 w-[17%]">{r[0]}</td><td className="py-0.5 pr-4 w-[33%]">: {r[1]}</td>
@@ -81,8 +85,8 @@ export default async function DaftarHadirPage({ params, searchParams }: { params
             <div className="flex justify-end mt-6 text-[12px]">
               <div className="text-center w-64">
                 <p>Pengawas,</p>
-                <div className="h-16" />
-                <p>( .............................................. )</p>
+                <GambarTtd src={pengawas[idx] ? ttd.get(pengawas[idx]!.userId) : null} tinggi={64} />
+                <p>{pengawas[idx] ? <span className="font-semibold underline">{pengawas[idx]!.nama}</span> : "( .............................................. )"}</p>
               </div>
             </div>
           </div>

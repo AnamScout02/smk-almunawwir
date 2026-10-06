@@ -9,6 +9,8 @@ import { getKelasXIIEnrollYears, computeAutoPagu } from "@/lib/nominatif-pagu";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { ttdDariNama } from "@/lib/ttd";
 
 /* SATU elemen ikon dipakai kedua cabang — halaman server tidak boleh membuat dua
    elemen lucide yang sama (CLAUDE.md #35). */
@@ -73,6 +75,8 @@ export default async function RekapPesertaDidikCetakPage({ searchParams }: { sea
   ]);
 
   const principalName = getPrincipalName(settings["school.structure"]);
+
+  const ttdKepala = await ttdDariNama(principalName); // TTD pribadi Kepala Sekolah (src/lib/ttd.ts)
   const paguMap = (() => { try { return JSON.parse(settings["nominatif.pagu"] || "{}"); } catch { return {}; } })() as Record<string, Record<string, number>>;
 
   if (!selectedYear) {
@@ -249,7 +253,7 @@ export default async function RekapPesertaDidikCetakPage({ searchParams }: { sea
           <div>
             <p>Banyuwangi, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p className="font-semibold">Kepala SMK Al Munawwir IIBS</p>
-            <div className="h-10 mt-3" />
+            <GambarTtd src={ttdKepala} tinggi={40} className="mt-3" />
             <p className="font-semibold underline">{principalName || "( _____________ )"}</p>
             <p>NIP. —</p>
           </div>

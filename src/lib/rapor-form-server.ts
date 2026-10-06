@@ -121,7 +121,7 @@ export async function muatForm(classId: string, subject: string, semester: strin
     siswaKelas(classId),
     petaKkm({ grade: kelas.grade, majorId: kelas.majorId }),
     prisma.formNilaiRapor.findUnique({ where: { classId_subject_semester: { classId, subject, semester } } }),
-    prisma.teachingAssignment.findFirst({ where: { classId, subject: { name: subject } }, select: { teacher: { select: { id: true, user: { select: { name: true } } } } } }),
+    prisma.teachingAssignment.findFirst({ where: { classId, subject: { name: subject } }, select: { teacher: { select: { id: true, userId: true, user: { select: { name: true } } } } } }),
   ]);
   const jenis = kelompokMapel(mapel?.category) === "DINIYAH" ? "DINIYAH" : "UMUM";
   const kkm = form?.kkm ?? kkmPeta.kkmUntuk(subject);
@@ -133,6 +133,7 @@ export async function muatForm(classId: string, subject: string, semester: strin
     kelas: { id: kelas.id, nama: kelas.name, grade: kelas.grade, wali: kelas.homeroom?.user.name ?? null },
     mapel: { nama: subject, kategori: mapel?.category ?? null, namaArab: mapel?.namaArab ?? null },
     guru: tugas?.teacher.user.name ?? null,
+    guruUserId: tugas?.teacher.userId ?? null,
     semester, pengaturan,
     nilai: (form?.nilai ?? {}) as Record<string, NilaiSiswaForm>,
     status: form?.status ?? "BELUM",

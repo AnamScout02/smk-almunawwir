@@ -14,6 +14,8 @@ import { kunciKeTeks } from "@/lib/soal-kunci";
 import PageHeader from "@/components/admin/PageHeader";
 import PrintButton from "@/components/shared/PrintButton";
 import PrintKop from "@/components/shared/PrintKop";
+import GambarTtd from "@/components/shared/GambarTtd";
+import { petaTtd, ttdDariNama } from "@/lib/ttd";
 
 /** CETAK KISI-KISI PENULISAN SOAL — A4 landscape. Butir berurutan yang KD, materi, indikator, level, dan bentuknya
  * sama digabung satu baris (nomor soal didaftar), sesuai format kisi-kisi yang dipakai sekolah.
@@ -30,7 +32,7 @@ export default async function CetakKisiKisiPage({ params, searchParams }: { para
   const [detail, soal, kelas, settings] = await Promise.all([
     prisma.exam.findUnique({
       where: { id },
-      select: { kegiatan: { select: { nama: true, academicYear: { select: { name: true } } } }, teacher: { select: { user: { select: { name: true } } } } },
+      select: { kegiatan: { select: { nama: true, academicYear: { select: { name: true } } } }, teacher: { select: { userId: true, user: { select: { name: true } } } } },
     }),
     prisma.examQuestion.findMany({
       where: { examId: id }, orderBy: { order: "asc" },
@@ -53,6 +55,8 @@ export default async function CetakKisiKisiPage({ params, searchParams }: { para
   const th = "border border-gray-800 bg-primary-900 text-white px-2 py-1.5 text-center align-middle";
   const td = "border border-gray-800 px-2 py-1 align-top";
 
+  const ttdKepala = await ttdDariNama(kepala);
+  const ttdGuru = detail?.teacher ? (await petaTtd([detail.teacher.userId])).get(detail.teacher.userId) : undefined;
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8 print:p-0 bg-white">
       <style>{"@page { size: A4 landscape; margin: 1cm; }"}</style>
@@ -121,12 +125,12 @@ export default async function CetakKisiKisiPage({ params, searchParams }: { para
         <div className="grid grid-cols-2 gap-10 text-center mt-8 break-inside-avoid">
           <div>
             <p>Mengetahui,<br />Kepala Sekolah</p>
-            <div className="h-14" />
+            <GambarTtd src={ttdKepala} tinggi={56} />
             <p className="font-semibold underline">{kepala || "( .............................................. )"}</p>
           </div>
           <div>
             <p>{hariTanggal(new Date())}<br />Guru Mata Pelajaran</p>
-            <div className="h-14" />
+            <GambarTtd src={ttdGuru} tinggi={56} />
             <p className="font-semibold underline">{detail?.teacher.user.name ?? "( .............................................. )"}</p>
           </div>
         </div>
