@@ -13,7 +13,7 @@ docker run --rm -v "$K/kerja":/kerja -v "$K/electron":/root/.cache/electron -v "
   apk add --no-cache zip >/dev/null
   npm i --no-audit --no-fund --silent @electron/packager@18 resedit@2 png-to-ico@2 sharp@0.33 >/dev/null
   npx electron-packager app MyAlwisUjian --platform=win32 --arch=x64 --electron-version=33.4.11 --out=out --overwrite \
-    --app-copyright="SMK Al-Munawwir IIBS" --app-version=1.0.0 --win32metadata.CompanyName="SMK Al-Munawwir IIBS" \
+    --app-copyright="SMK Al-Munawwir IIBS" --app-version=1.1.0 --win32metadata.CompanyName="SMK Al-Munawwir IIBS" \
     --win32metadata.FileDescription="MyAlwis Ujian" --win32metadata.ProductName="MyAlwis Ujian" >/dev/null
   node -e "
     const sharp=require(\"sharp\"), pngToIco=require(\"png-to-ico\").default ?? require(\"png-to-ico\"), fs=require(\"fs\"), ResEdit=require(\"resedit\");

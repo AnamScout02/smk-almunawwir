@@ -16,12 +16,34 @@ const path = require("path");
 const ALAMAT = process.env.MYALWIS_ALAMAT || "https://smkalmunawwiriibs.sch.id";
 const AWAL = `${ALAMAT}/ujian-online`;
 const HOST = new URL(ALAMAT).host;
-const VERSI = "1.0";
+const VERSI = "1.1";
 
 let win = null;
 let pin = null;          // jendela PIN keluar
 let modeUjian = false;
 let bolehTutup = false;
+let pewaktuPotret = null;
+
+/* LAYAR PROKTOR (v1.1, 5 Okt 2026): selama mode ujian, potret JENDELA UJIAN ini (bukan seluruh desktop) dikirim
+   tiap 10 detik ke server untuk kisi "Layar Peserta" di Papan Pantau pengawas. Server hanya menyimpan potret
+   terakhir di memori. Peserta diberi tahu lewat tanda di layar (preload.js). */
+function idUjianDariUrl() {
+  try { return new URL(win.webContents.getURL()).pathname.match(/^\/ujian-online\/([A-Za-z0-9_-]+)/)?.[1] ?? null; }
+  catch { return null; }
+}
+async function kirimPotret() {
+  if (!win || win.isDestroyed() || !modeUjian) return;
+  const examId = idUjianDariUrl();
+  if (!examId) return;
+  try {
+    const gambar = await win.webContents.capturePage();
+    const kecil = gambar.resize({ width: 640, quality: "good" }).toJPEG(55);
+    await session.fromPartition("ujian").fetch(`${ALAMAT}/api/student/exams/${examId}/cuplikan`, {
+      method: "POST", body: kecil,
+      headers: { "Content-Type": "image/jpeg", "X-Fokus": win.isFocused() ? "1" : "0", "User-Agent": session.fromPartition("ujian").getUserAgent() },
+    });
+  } catch { /* jaringan putus — dicoba lagi di putaran berikutnya */ }
+}
 
 if (!app.requestSingleInstanceLock()) app.quit();
 app.on("second-instance", () => { if (win) { win.show(); win.focus(); } });
@@ -36,6 +58,8 @@ function aturModeUjian(aktif) {
   if (!win) return;
   win.setContentProtection(modeUjian);
   win.setAlwaysOnTop(true, modeUjian ? "screen-saver" : "pop-up-menu");
+  clearInterval(pewaktuPotret); pewaktuPotret = null;
+  if (modeUjian) { setTimeout(kirimPotret, 3000); pewaktuPotret = setInterval(kirimPotret, 10_000); }
 }
 
 function buatJendela() {
@@ -74,7 +98,11 @@ function buatJendela() {
   });
   win.on("close", e => { if (!bolehTutup) { e.preventDefault(); mintaKeluar(); } });
   // Fokus berpindah (Alt-Tab): jendela tetap di atas; situs yang mencatat pelanggarannya.
-  win.on("blur", () => { if (modeUjian && !pin) setTimeout(() => win && !win.isDestroyed() && win.moveTop(), 150); });
+  win.on("blur", () => {
+    if (!modeUjian) return;
+    void kirimPotret(); // pengawas langsung melihat "tidak fokus", tidak menunggu putaran 10 detik
+    if (!pin) setTimeout(() => win && !win.isDestroyed() && win.moveTop(), 150);
+  });
 }
 
 async function mintaKeluar() {

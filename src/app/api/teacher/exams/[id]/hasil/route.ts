@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { ujianDalamCakupan, kelasPeserta } from "@/lib/ujian-server";
 import { balasanExcelBanyakSheet } from "@/lib/ekspor-excel";
-import { ikutDinilai, hitungBelumDikoreksi, type Jawaban } from "@/lib/soal";
-import { kunciKeTeks } from "@/lib/soal-kunci";
+import { hitungBelumDikoreksi } from "@/lib/soal";
+import { hitungAnalisisButir } from "@/lib/analisis-butir";
 import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -28,93 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       prisma.class.findMany({ where: { id: { in: kelasPeserta(exam) } }, select: { name: true }, orderBy: { name: "asc" } }),
     ]);
 
-    const rekap = attempts.map(a => ({
-      student: a.student, score: a.score, submittedAt: a.submittedAt, startedAt: a.startedAt,
-      pelanggaran: Array.isArray(a.pelanggaran) ? (a.pelanggaran as unknown[]).length : 0,
-      skorButir: (a.skorButir as Record<string, number | null>) ?? {},
-      jawaban: (a.answers as Record<string, Jawaban>) ?? {},
-      urutan: ((a.urutan as { urutanSoal?: string[] })?.urutanSoal ?? []),
-      waktuSoal: (a.waktuSoal as Record<string, number>) ?? {},
-      ubahJawaban: (a.ubahJawaban as Record<string, number>) ?? {},
-    }));
-    const selesai = rekap.filter(r => r.submittedAt);
-
-    // Soal JELEK ditandai otomatis (17 Sep 2026) — hanya bila peserta cukup (≥10) supaya tidak menuduh soal dari sampel kecil.
-    const tandaiKualitas = (x: { peserta: number; p: number | null; d: number | null; pengecohMati: number }) => {
-      const alasan: string[] = [];
-      if (x.peserta >= 10) {
-        if (x.d !== null && x.d < 0) alasan.push("daya beda terbalik (siswa pintar lebih banyak salah) — periksa kunci");
-        else if (x.d !== null && x.d < 0.2) alasan.push("daya beda lemah — tidak membedakan siswa paham & belum");
-        if (x.p !== null && x.p < 0.1) alasan.push("terlalu sukar (< 10% benar)");
-        if (x.p !== null && x.p > 0.95) alasan.push("terlalu mudah (> 95% benar)");
-        if (x.pengecohMati >= 2) alasan.push(`${x.pengecohMati} pengecoh tidak dipilih siapa pun`);
-      }
-      return { perluRevisi: alasan.length > 0, alasanRevisi: alasan };
-    };
-
-    // Analisis butir: tingkat kesukaran (p) dan daya beda (kelompok atas vs bawah 27%).
-    const bernilai = selesai.filter(r => r.score !== null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-    const nAtas = Math.max(1, Math.round(bernilai.length * 0.27));
-    const atas = bernilai.slice(0, nAtas), bawah = bernilai.slice(-nAtas);
-    const analisis = soal.filter(q => ikutDinilai(q.tipe)).map(q => {
-      const peserta = selesai.filter(r => !r.urutan.length || r.urutan.includes(q.id));
-      const rasio = (grup: typeof rekap) => {
-        const g = grup.filter(r => !r.urutan.length || r.urutan.includes(q.id));
-        if (!g.length) return null;
-        return g.reduce((s, r) => s + ((r.skorButir[q.id] ?? 0) / (q.skor || 1)), 0) / g.length;
-      };
-      const p = rasio(peserta);
-      const pa = rasio(atas), pb = rasio(bawah);
-      const d = pa !== null && pb !== null ? pa - pb : null;
-      const jawab = (r: typeof rekap[number]) => (r.skorButir[q.id] ?? 0) >= q.skor ? 1 : 0;
-      const benar = peserta.reduce((s, r) => s + jawab(r), 0);
-
-      // Analisis PENGECOH (distraktor) untuk soal pilihan: berapa peserta memilih tiap opsi.
-      // Pengecoh dianggap BERFUNGSI kalau dipilih minimal 5% peserta — opsi salah yang nyaris tak
-      // pernah dipilih tidak mengecoh siapa pun dan sebaiknya diganti.
-      const opsiSoal = (Array.isArray(q.opsi) ? q.opsi : []) as { kode: string; teks: string; benar?: boolean }[];
-      const pakaiSebaran = q.tipe === "PG" || q.tipe === "PG_KOMPLEKS";
-      const sebaran = pakaiSebaran ? opsiSoal.map(o => {
-        const dipilih = peserta.filter(r => {
-          const j = r.jawaban[q.id];
-          return Array.isArray(j) ? j.includes(o.kode) : j === o.kode;
-        }).length;
-        const persen = peserta.length ? Math.round((dipilih / peserta.length) * 1000) / 10 : 0;
-        return {
-          kode: o.kode, teks: o.teks.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 80),
-          benar: !!o.benar, dipilih, persen,
-          berfungsi: o.benar ? null : peserta.length ? dipilih / peserta.length >= 0.05 : null,
-        };
-      }) : [];
-      const kosong = pakaiSebaran ? peserta.filter(r => {
-        const j = r.jawaban[q.id];
-        return j === undefined || j === null || j === "" || (Array.isArray(j) && !j.length);
-      }).length : 0;
-      const pengecohMati = sebaran.filter(o => o.berfungsi === false).length;
-
-      // WAKTU & KERAGUAN per soal: rata-rata detik yang dihabiskan (hanya peserta yang tercatat
-      // waktunya) dan rata-rata berapa kali jawabannya diganti.
-      const berwaktu = peserta.filter(r => (r.waktuSoal[q.id] ?? 0) > 0);
-      const rataWaktu = berwaktu.length ? Math.round(berwaktu.reduce((s, r) => s + r.waktuSoal[q.id], 0) / berwaktu.length) : null;
-      const rataUbah = peserta.length ? Math.round((peserta.reduce((s, r) => s + (r.ubahJawaban[q.id] ?? 0), 0) / peserta.length) * 10) / 10 : null;
-      return {
-        questionId: q.id, nomor: q.order + 1, tipe: q.tipe, kd: q.kd, skor: q.skor,
-        kunci: kunciKeTeks({ tipe: q.tipe, opsi: (q.opsi as { kode: string; teks: string; benar?: boolean }[]) ?? [], kunci: (q.kunci as never) ?? null }),
-        peserta: peserta.length, benar,
-        kesukaran: p, kategoriKesukaran: p === null ? "-" : p >= 0.7 ? "Mudah" : p >= 0.3 ? "Sedang" : "Sukar",
-        dayaBeda: d, kategoriDayaBeda: d === null ? "-" : d >= 0.4 ? "Baik" : d >= 0.2 ? "Cukup" : d >= 0 ? "Lemah" : "Terbalik",
-        sebaran, kosong, pengecohMati, rataWaktu, rataUbah,
-        ...tandaiKualitas({ peserta: peserta.length, p, d, pengecohMati }),
-      };
-    });
-    const nilaiSah = selesai.map(r => r.score).filter((s): s is number => s !== null);
-    const statistik = {
-      peserta: attempts.length, selesai: selesai.length,
-      rerata: nilaiSah.length ? Math.round(nilaiSah.reduce((a, b) => a + b, 0) / nilaiSah.length * 100) / 100 : null,
-      tertinggi: nilaiSah.length ? Math.max(...nilaiSah) : null,
-      terendah: nilaiSah.length ? Math.min(...nilaiSah) : null,
-      menungguKoreksi: selesai.filter(r => hitungBelumDikoreksi(r.skorButir) > 0).length,
-    };
+    const { rekap, selesai, analisis, statistik } = hitungAnalisisButir(soal, attempts);
 
     if (format !== "xlsx") {
       return Response.json({

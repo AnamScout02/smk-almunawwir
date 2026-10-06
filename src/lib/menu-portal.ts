@@ -21,6 +21,7 @@ export const MENU_PUSAT_UJIAN: ItemNavPortal[] = [
   { href: "/pusat-ujian/rekap-nilai", label: "Rekap Nilai", singkat: "Rekap", ikon: "rekap" },
   { href: "/pusat-ujian/administrasi", label: "Administrasi", ikon: "administrasi" },
   { href: "/pusat-ujian/panduan", label: "Panduan", ikon: "panduan" },
+  { href: "/pusat-ujian/analisis-butir", label: "Analisis Butir Soal", singkat: "Analisis", ikon: "analisis" },
   { href: "/pusat-ujian/pengaturan", label: "Pengaturan Ujian", singkat: "Pengaturan", ikon: "pengaturan" },
   { href: "/pusat-ujian/data", label: "Cadangan & Hapus Data", singkat: "Data", ikon: "data" },
 ];

@@ -30,6 +30,7 @@ import AksiPesertaUjian, { LABEL_STATUS_PESERTA, GAYA_STATUS_PESERTA, type Statu
 import { salinTeks } from "@/lib/salin-teks";
 import { useTokenLangsung } from "@/lib/use-token-langsung";
 import { usePantauLangsung } from "@/lib/use-pantau-langsung";
+import LayarProktorPanel from "@/components/ujian/LayarProktorPanel";
 import TurunanUjianPanel from "@/components/ujian/TurunanUjianPanel";
 import TombolKembali from "@/components/shared/TombolKembali";
 
@@ -70,7 +71,8 @@ interface HasilKemiripan {
 const LABEL_POSISI_DUDUK: Record<string, string> = { BERSEBELAHAN: "Bersebelahan", DEPAN_BELAKANG: "Depan-belakang", DIAGONAL: "Diagonal", SERUANG: "Satu ruang" };
 interface Hasil {
   exam: { title: string; kelas?: string };
-  statistik: { peserta: number; selesai: number; rerata: number | null; tertinggi: number | null; terendah: number | null; menungguKoreksi: number };
+  statistik: { peserta: number; selesai: number; rerata: number | null; tertinggi: number | null; terendah: number | null; menungguKoreksi: number;
+    reliabilitas?: { alpha: number; kategori: "Tinggi" | "Cukup" | "Rendah"; peserta: number; butir: number } | null; reliabilitasAlasan?: string | null };
   analisis: { questionId: string; nomor: number; tipe: string; kd: string | null; skor: number; kunci: string; peserta: number; benar: number; kesukaran: number | null; kategoriKesukaran: string; dayaBeda: number | null; kategoriDayaBeda: string;
     sebaran: { kode: string; teks: string; benar: boolean; dipilih: number; persen: number; berfungsi: boolean | null }[]; kosong: number; pengecohMati: number;
     rataWaktu: number | null; rataUbah: number | null; perluRevisi?: boolean; alasanRevisi?: string[] }[];
@@ -928,6 +930,7 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
             {id && (
               <PesanPesertaPanel examId={id} />
             )}
+            {id && <LayarProktorPanel examId={id} />}
             <div className="flex items-center justify-between mb-2 text-xs text-gray-400">
               <span>
                 {pantauLangsung.mode === "langsung" ? <><span className="live-dot text-emerald-500 mr-1" />Langsung</> : pantauLangsung.mode === "menyambung" ? "Menyambung…" : "Diperbarui tiap 5 detik"} · {new Date(pantau.diperbarui).toLocaleTimeString("id-ID")}
@@ -1114,13 +1117,21 @@ export default function UjianBuilderManager({ basePath }: { basePath: string }) 
       {tab === "hasil" && (
         !hasil ? <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
           <div className="space-y-5">
-            <div className="kisi-kartu kisi-kartu-5">
+            <div className="kisi-kartu kisi-kartu-6">
               <StatTile value={hasil.statistik.selesai} label={`Selesai dari ${hasil.statistik.peserta}`} icon={Users2} color="primary" size="md" />
               <StatTile value={hasil.statistik.rerata ?? "-"} label="Rerata" icon={BarChart3} color="blue" size="md" />
               <StatTile value={hasil.statistik.tertinggi ?? "-"} label="Tertinggi" icon={ChevronUp} color="emerald" size="md" />
               <StatTile value={hasil.statistik.terendah ?? "-"} label="Terendah" icon={ChevronDown} color="red" size="md" />
               <StatTile value={hasil.statistik.menungguKoreksi} label="Menunggu Koreksi" icon={ClipboardCheck} color="amber" size="md" />
+              <StatTile value={hasil.statistik.reliabilitas ? hasil.statistik.reliabilitas.alpha.toFixed(2) : "-"}
+                label={hasil.statistik.reliabilitas ? `Reliabilitas · ${hasil.statistik.reliabilitas.kategori}` : `Reliabilitas — ${hasil.statistik.reliabilitasAlasan ?? "belum bisa dihitung"}`}
+                icon={ShieldCheck} size="md"
+                color={!hasil.statistik.reliabilitas ? "gray" : hasil.statistik.reliabilitas.kategori === "Tinggi" ? "emerald" : hasil.statistik.reliabilitas.kategori === "Cukup" ? "amber" : "red"} />
             </div>
+            <p className="-mt-2 text-xs text-gray-400">
+              Reliabilitas = Cronbach alpha (KR-20 untuk soal benar/salah): seberapa konsisten paket soal ini mengukur. ≥ 0,70 tinggi (layak dipakai ulang),
+              0,50–0,69 cukup, &lt; 0,50 rendah — perbaiki butir bertanda &quot;perlu revisi&quot; dulu.
+            </p>
             <TurunanUjianPanel examId={id} basePath={basePath} bolehUbah={bolehUbahUjian} />
             <div className="baris-alat">
               <p className="alat-saring text-sm text-gray-600">
