@@ -9,7 +9,7 @@ import {
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, NotebookPen, FileQuestion, ArrowLeft, Trophy, Medal, IdCard,
   ChevronDown, Search, CheckSquare, MoreHorizontal, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, FileText, CalendarOff, HandCoins, ClipboardCheck, ScanSearch,
-  Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
+  Signature, Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
   Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid, 
 } from "lucide-react";
 import { FileUser } from "lucide-react";
@@ -86,6 +86,7 @@ export const menuGroupsTas = [
       { href: "/dashboard/admin/presensi-pegawai", label: "Presensi Pegawai", icon: UserCheck, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/kegiatan", label: "Presensi Kegiatan (QR)", icon: CalendarCheck, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/arsip-sk", label: "Arsip SK & Dokumen", icon: Archive, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/tanda-tangan", label: "Tanda Tangan Pegawai", icon: Signature, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/cuti", label: "Cuti Pegawai", icon: CalendarOff, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck,
         show: (j: string[]) => j.includes("Wakil Kepala Bidang Penjamin Mutu") || j.includes("Wakil Kepala Kurikulum") || j.includes("Guru Piket") },

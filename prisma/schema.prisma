@@ -39,6 +39,11 @@ model User {
   kpiSubmissions    KpiSubmission[]
   staffAttendance   StaffAttendance[]
   sessions          UserSession[]
+  passkeys          Passkey[]
+  /// TANDA TANGAN (5 Okt 2026, src/lib/ttd.ts): nama berkas PNG transparan di public/uploads/rahasia/ttd — dibuka
+  /// hanya lewat rute berizin / disisipkan server ke dokumen cetak. Kosong = belum punya TTD.
+  ttdBerkas         String?
+  ttdDiperbarui     DateTime?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   pushSubscriptions PushSubscription[]
@@ -1918,6 +1923,9 @@ model MeetingAttendee {
   meeting   MeetingMinutes @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   name      String
   order     Int            @default(0)
+  /// Akun pegawai yang cocok dengan nama peserta (diisi otomatis saat notulen disimpan) — dipakai untuk
+  /// menyisipkan TANDA TANGAN di daftar hadir. Kosong untuk pihak luar.
+  userId    String?
 }
 
 // Buku Tamu — log kunjungan tamu (Dinas, wali murid, vendor, umum) ke sekolah, diinput staf TU
@@ -3655,4 +3663,25 @@ model SpmbJejak {
 
   @@unique([sesi, tahap])
   @@index([tahap, createdAt])
+}
+
+/// PASSKEY (5 Oktober 2026) — masuk dengan sidik jari / wajah / PIN perangkat (WebAuthn). Hanya kunci PUBLIK yang
+/// disimpan; kunci rahasia tidak pernah meninggalkan perangkat pengguna. Lihat src/lib/passkey.ts.
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ID kredensial (base64url) — dipakai mencari pemilik saat masuk tanpa mengetik email.
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  /// Domain tempat passkey dibuat (rpID). Passkey hanya berlaku di domain itu.
+  rpId         String
+  /// Nama yang diberi pengguna, mis. "HP Samsung" — supaya bisa dibedakan saat menghapus.
+  nama         String
+  createdAt    DateTime  @default(now())
+  terakhirDipakai DateTime?
+
+  @@index([userId])
 }

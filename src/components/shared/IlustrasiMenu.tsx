@@ -209,6 +209,10 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   kartuCetak: p => <S {...p}><rect x="6" y="20" width="36" height="16" rx="4" fill={B} /><circle cx="36" cy="28" r="2.4" fill={N} /><rect x="12" y="4" width="24" height="18" rx="3" fill={W} /><circle cx="19" cy="11" r="3.4" fill={N2} /><rect x="25" y="9" width="8" height="2.6" rx="1.3" fill={N2} /><rect x="25" y="14" width="6" height="2.6" rx="1.3" fill={N2} /><rect x="12" y="33" width="24" height="12" rx="3" fill={W} /><rect x="17" y="38" width="14" height="2.6" rx="1.3" fill={N2} /></S>,
   /* Map + segel pita — arsip SK & dokumen kepegawaian */
   arsipSk: p => <S {...p}><path d="M4 11a4 4 0 014-4h10l4 5h14a4 4 0 014 4v20a4 4 0 01-4 4H8a4 4 0 01-4-4z" fill={W} /><rect x="10" y="20" width="16" height="2.8" rx="1.4" fill={N2} /><circle cx="36" cy="33" r="8" fill={B} /><path d="M32 39l-1 8 5-2.6 5 2.6-1-8z" fill={G} /><circle cx="36" cy="33" r="3.4" fill={N} /></S>,
+  /* Layar situs + kunci pas — mode pemeliharaan */
+  pemeliharaan: p => <S {...p}><rect x="4" y="7" width="34" height="25" rx="4" fill={W} /><rect x="4" y="7" width="34" height="6" rx="3" fill={N2} /><path d="M15 39h12" stroke={N2} strokeWidth="2.6" strokeLinecap="round" /><path d="M21 32v7" stroke={N2} strokeWidth="2.6" /><circle cx="35" cy="31" r="10" fill={B} /><path d="M31 35l6-6m0 0a3 3 0 104 -4l-2 2-2-2 2-2a3 3 0 00-4 4" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></S>,
+  /* Lembar + goresan tanda tangan + pena — tanda tangan pegawai */
+  tandaTangan: p => <S {...p}><rect x="4" y="8" width="32" height="30" rx="4" fill={W} /><rect x="10" y="14" width="14" height="3" rx="1.5" fill={N2} /><path d="M9 31c3-6 5-6 6-2s3 4 5-1 4-3 5 1" stroke={N} strokeWidth="2.6" strokeLinecap="round" fill="none" /><path d="M9 35h22" stroke={N2} strokeWidth="1.8" strokeLinecap="round" /><path d="M43 14l-14 14-5 2 2-5 14-14z" fill={B} /><path d="M40 8l3 3" stroke={G} strokeWidth="3" strokeLinecap="round" /></S>,
   /* Sapu + pengki — piket kebersihan kelas */
   piketKelas: p => <S {...p}><path d="M30 4l4 4-15 15-4-4z" fill={W} /><path d="M15 19l4 4-3 3a9 9 0 01-4-4z" fill={B} /><path d="M12 22l-8 14c4 4 10 5 14 3l-2-13z" fill={W} /><path d="M6 33l10 4" stroke={N2} strokeWidth="2" strokeLinecap="round" /><path d="M28 34h16l-3 10H31z" fill={B} /></S>,
   /* Koper + formulir — pendaftaran PKL */
@@ -424,6 +428,8 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/admin/performa-server": "server",
   // Kepegawaian & arsip
   "/dashboard/admin/arsip-sk": "arsipSk",
+  "/dashboard/admin/tanda-tangan": "tandaTangan",
+  "/dashboard/admin/pemeliharaan": "pemeliharaan",
   "/dashboard/teacher/arsip-sk": "arsipSk",
   "/dashboard/admin/arsip": "arsip",
   // PKL, alumni & BKK

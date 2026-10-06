@@ -3,7 +3,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Image, Newspaper, GalleryHorizontal,
+  Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, CalendarCheck, Database, CalendarDays,
   Archive, Repeat, Mail, BookMarked, Clock, Users2, ShieldCheck, Award, Building2, ListChecks, Boxes,
@@ -129,6 +129,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart, badge: 0 },
       { href: "/dashboard/admin/masukan-rekan-pantau", label: "Pantau Masukan Rekan", icon: ShieldCheck, badge: 0 },
       { href: "/dashboard/admin/arsip-sk", label: "Arsip SK & Dokumen", icon: Archive, badge: 0 },
+      { href: "/dashboard/admin/tanda-tangan", label: "Tanda Tangan Pegawai", icon: Signature, badge: 0 },
       { href: "/dashboard/admin/cuti", label: "Cuti Pegawai", icon: CalendarOff, badge: 0 },
       { href: "/dashboard/admin/jadwal-piket", label: "Jadwal Piket", icon: CalendarClock, badge: 0 },
       { href: "/dashboard/admin/kedisiplinan-guru", label: "Kedisiplinan Guru", icon: BadgeCheck, badge: 0 },
@@ -233,6 +234,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/parents", label: "Akun Orang Tua", icon: Heart, badge: 0 },
       { href: "/dashboard/admin/master-data", label: "Master Data", icon: Database, badge: 0 },
       { href: "/dashboard/admin/keamanan-sesi", label: "Keamanan & Sesi Login", icon: ShieldCheck, badge: 0 },
+      { href: "/dashboard/admin/pemeliharaan", label: "Mode Pemeliharaan", icon: Construction, badge: 0 },
       { href: "/dashboard/admin/notifikasi", label: "Notifikasi Push", icon: BellRing, badge: 0 },
       { href: "/dashboard/admin/log-aktivitas", label: "Log Aktivitas", icon: History, badge: 0 },
       { href: "/dashboard/admin/performa-server", label: "Performa Server", icon: Activity, badge: 0 },

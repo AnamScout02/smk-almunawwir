@@ -1689,3 +1689,112 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        melewati TV yang layarnya padam supaya tidak membangunkan yang baru ditidurkan.
      - Pesan "TV tidak terjangkau" (`PESAN_STATUS.TIDAK_TERJANGKAU`) & pemberitahuan di Papan & TV menyebut siaga
        dingin lebih dulu — itu penyebab tersering, bukan papan rusak.
+
+119. **Analisis butir soal = satu sumber `hitungAnalisisButir` (src/lib/analisis-butir.ts, 5 Oktober 2026).**
+     Dipindah dari rute `/api/teacher/exams/[id]/hasil` supaya tab Hasil, Excel, dan **Rekap Analisis Butir per
+     kegiatan** (`/pusat-ujian/analisis-butir`, `rekapAnalisisKegiatan` di analisis-butir-server.ts, cakupan =
+     `filterDaftarUjian`) selalu sama angkanya. Ditambah **reliabilitas** (Cronbach alpha / KR-20, ≥10 peserta & ≥3
+     butir, hanya bila semua peserta menerima butir yang sama) beserta ALASAN bila tak terhitung.
+     - **Butir yang BELUM DIKOREKSI tidak ikut dihitung** (`dinilai`: `skorButir[q] ` harus angka). Dulu nilai null
+       dihitung 0 — ujian uraian yang belum dikoreksi mendapat "terlalu sukar, perlu revisi" palsu (uji data nyata:
+       6 butir palsu pada ujian KK1 37 peserta → 0 setelah diperbaiki).
+     - Bank Soal belum bisa menampilkan statistik butir: soal ujian = SALINAN tanpa tautan ke `QuestionBankItem`.
+
+120. **Layar Proktor (5 Oktober 2026) — `src/lib/proktor-layar.ts`.** Padanan Proktor Browser ANBK: MyAlwis Ujian Windows
+     v1.1 memotret JENDELA UJIANNYA SENDIRI (`webContents.capturePage`, 640px JPEG) tiap 10 detik + seketika saat jendela
+     kehilangan fokus, selama mode ujian → `POST /api/student/exams/[id]/cuplikan` (hanya UA `MyAlwisUjianWin`, pengerjaan
+     milik sendiri & belum dikumpulkan, ≥4 dtk antar-kiriman, ≤250 KB, harus JPEG). Pengawas: panel **Layar Peserta**
+     (`LayarProktorPanel`) di tab Pantau → `/api/teacher/exams/[id]/proktor[/studentId]` (`ujianDalamCakupan`); yang tidak
+     fokus diberi tanda merah & didahulukan. **HANYA DI MEMORI** (satu potret terakhir per peserta, kedaluwarsa 2 menit) —
+     jangan ditulis ke disk/DB. Yang dipotret jendela ujian, bukan desktop (desktop justru hitam karena setContentProtection).
+     Peserta melihat tanda "● Layar dipantau pengawas" (preload.js) — jangan dihapus. Belum diuji di Windows sungguhan.
+
+121. **Login passkey (5 Oktober 2026) — `Passkey` + `src/lib/passkey.ts`, `@simplewebauthn/{server,browser}` v13.**
+     Daftar di Profil (`KelolaPasskey`: admin, guru, orang tua, bendahara — `PERAN_PASSKEY` tanpa STUDENT karena akun siswa
+     dipakai di komputer lab bersama), masuk lewat tombol di /login (`MasukPasskey`, discoverable credential — tanpa
+     mengetik email). Masuk memakai `masukkanSesi` + `resolveRedirectTarget`/`ambilLanjut` yang SAMA dengan login sandi
+     (dipindah ke `src/lib/tujuan-masuk.ts` karena ekspor dari berkas "use server" = server action yang bisa dipanggil luar).
+     - rpID/origin dari X-Forwarded-Proto + Host (bukan `req.url`, pelajaran #117); HANYA HTTPS — di `http://<ip>:3000`
+       tombol tidak muncul dan rute menolak. Passkey terikat domain pembuatnya (`Passkey.rpId`).
+     - `userVerification: "required"` → admin ber-2FA TIDAK diminta kode TOTP lagi (passkey = perangkat + biometrik/PIN).
+     - Tantangan sekali pakai di memori (kunci acak di cookie HttpOnly `passkey_tantangan`, path /api/passkey, 5 menit).
+       Masuk dibatasi 30 percobaan/IP/5 mnt. Ganti sandi TIDAK menghapus passkey; menghapus dilakukan pemilik di Profil.
+     - **Tombol di /login HANYA tampil di perangkat yang pernah mendaftar** (penanda localStorage `myalwis-passkey-hp`,
+       src/lib/passkey-klien.ts) dan langsung MEMINTA SIDIK JARI OTOMATIS saat halaman terbuka — kecuali tepat setelah
+       Keluar (`?keluar=1` / sessionStorage `barusKeluar`). Temuan user 5 Okt 2026: di HP yang belum mendaftar, tombol
+       yang selalu tampil hanya memunculkan lembar Android "Login dengan cara lain". Peramban sengaja tidak memberi tahu
+       situs apakah ada passkey, jadi situs mengingatnya sendiri; 401 dari server menghapus penanda.
+     - **Pendaftaran DITAWARKAN setelah login sandi** (`TawaranPasskey`, root layout, hanya /dashboard, sekali per sesi,
+       "Nanti" = 14 hari). Satu jalur pendaftaran untuk tawaran & Profil: `daftarkanPasskey` (passkey-klien.ts).
+
+122. **MyAlwis Mobile v2.4 = passkey di dalam aplikasi + pita pembaruan (5 Oktober 2026).** Permintaan user: passkey juga
+     di aplikasi, "tapi tinggal update aplikasi".
+     - Pustaka PERTAMA aplikasi: `androidx.webkit:webkit` (`android.useAndroidX=true`) hanya untuk
+       `WebSettingsCompat.setWebAuthenticationSupport(..., WEB_AUTHENTICATION_SUPPORT_FOR_APP)` bila
+       `WebViewFeature.WEB_AUTHENTICATION` didukung (WebView lama dilewati, login sandi tetap). APK naik ±140 KB → ±1 MB.
+     - Mode FOR_APP: Android memeriksa `public/.well-known/assetlinks.json` (paket `sch.almunawwir.ujian` + SHA-256
+       sertifikat rilis, relasi `get_login_creds`), dan WebAuthn mengirim origin `android:apk-key-hash:<b64url sha256>`
+       (`ORIGIN_APLIKASI`, src/lib/passkey.ts) yang diterima di samping origin situs. **Ganti kunci rilis = ganti
+       keduanya.** Belum diuji di HP sungguhan dari server ini.
+     - Pemasangan menimpa: sertifikat sama (diperiksa `apksigner`) & versionCode 5 → 6, jadi data & login tidak hilang.
+     - **`PitaPerbaruiAplikasi`** (root layout): hanya di aplikasi Android yang versinya < `VERSI_APLIKASI` (dibaca dari
+       UA `MyAlwisMobile/x.y`; penanda lama = pasti tua), tombol Perbarui mengunduh `BERKAS_APK`, bisa ditunda sehari,
+       tidak tampil di halaman pengerjaan ujian/layar dinding. Rilis berikutnya cukup menaikkan `VERSI_APLIKASI`
+       setelah APK baru terpasang di `public/unduh` — pita muncul sendiri di semua HP versi lama.
+     - **v2.5 — KUNCI SIDIK JARI saat aplikasi dibuka** (user: "seperti aplikasi bank", pilihan "Keduanya" = kunci +
+       passkey saat sesi habis). `BiometricPrompt` bawaan Android (BIOMETRIC_WEAK | DEVICE_CREDENTIAL; API 24–27 lewat
+       `KeyguardManager.createConfirmDeviceCredentialIntent`) — tanpa pustaka. Tirai navy menutupi WebView sampai lolos.
+       Syarat: sudah masuk (cookie `sesi_segar` via CookieManager), HP punya kunci layar, setelan menyala (bawaan NYALA,
+       disimpan di SharedPreferences HP), BUKAN mode ujian, dan cold start atau kembali dari latar > 2 menit.
+       **Waktu ke latar dicatat di `onStop`, bukan `onPause`** — dialog sidik jari memicu onPause/onResume → putaran
+       tanpa henti. Jalan keluar "Masuk dengan akun lain" menghapus cookie lalu ke /login?keluar=1. Sakelar ada di
+       Profil (`KunciAplikasi`, lewat jembatan `AplikasiSMK.kunciSidikJari/aturKunciSidikJari/bisaKunci` — hanya
+       tampil di aplikasi v2.5+, termasuk siswa).
+
+123. **Tanda tangan digital guru & staf (5 Oktober 2026) — `User.ttdBerkas`, src/lib/ttd.ts.** Permintaan user: TTD bisa
+     diunggah mandiri (Profil → "Tanda Tangan Saya": gambar di layar ATAU foto) atau oleh Admin/TU
+     (/dashboard/admin/tanda-tangan, `petugasTu`), lalu dipakai di dokumen cetak: "di notulen rapat ketika guru hadir bukan
+     lagi centang tapi TTD, begitupun berita acara ujian dan berkas lainnya".
+     - **Tiga hal berbeda, jangan disatukan:** (1) QR keaslian (#49) = bukti dokumen berasal dari sistem, bukan tanda
+       tangan; (2) `letterhead.ttdKepalaSekolah` = TTD JABATAN (biasanya + stempel) untuk dokumen atas nama sekolah — surat
+       keluar, surat keterangan, kartu tanda, rapor yang disahkan; (3) TTD PRIBADI tiap akun = kehadiran/peran orangnya
+       sendiri. Kepala Sekolah yang hadir rapat diparaf dengan TTD pribadinya; TTD jabatan TIDAK pernah disisipkan
+       otomatis ke dokumen selain yang sudah memakainya.
+     - Berkas di folder RAHASIA `public/uploads/rahasia/ttd` (diblokir proxy). Dokumen cetak menyisipkannya sebagai
+       DATA URL dari server lewat `petaTtd(userIds)` — jangan menautkan `/api/ttd/[userId]` dari dokumen (rute itu hanya
+       pemilik & TU, untuk pratinjau). Gambar diolah sekali saat unggah (`olahGambarTtd`: latar terang → transparan,
+       pangkas, ≤900×300).
+     - **TTD hanya disisipkan bila orangnya PASTI, tidak pernah menebak:** peserta rapat dicocokkan ke akun saat notulen
+       disimpan (`MeetingAttendee.userId`, cadangan `cocokkanNamaPegawai` saat cetak — nama yang dimiliki >1 pegawai tidak
+       dicocokkan; tamu luar tetap ✓). Pengawas ujian lewat `pengawasKelasUjian` (KELAS = `susunPengawasKelas`; RUANG = siswa
+       kelas itu di SATU ruang+sesi dan ruang itu SATU pengawas pada tanggalnya) — selain itu nama & TTD dibiarkan kosong
+       untuk ditulis tangan. Wali kelas di rapor & leger HANYA setelah nilai DIKUNCI (padanan TTD kepala setelah disahkan).
+     - Sudah dipasang: notulen rapat (daftar hadir "Paraf" + notulis), Berita Acara & Daftar Hadir ujian (pengawas),
+       Kisi-kisi (guru), rapor format sekolah & leger (wali kelas), Kalender Absensi & Absensi/Jurnal Kelas (wali kelas),
+       Jurnal Mengajar (guru, `/api/teacher/me?ttd=1`). Dokumen cetak baru yang memuat nama guru/staf di blok tanda tangan
+       memakai `petaTtd` + `<GambarTtd>` (ruang kosong setinggi sama bila belum ada TTD, tata letak tidak bergeser).
+     - **Kepala Sekolah di dokumen TU = TTD PRIBADI** lewat `ttdDariNama(principalName)` (permintaan user 5 Okt 2026: "atau
+       berkas lain yang membutuhkan TTD"): notulen, buku tamu, ekspedisi, legalisir, serah terima ijazah, disposisi (nama
+       pemberi disposisi bila diisi), surat tugas (penanda tangan), kalender pendidikan & matriks, rekap presensi pegawai,
+       profil sekolah, rekap surat tugas, rekap calon & rekap peserta didik nominatif, berita acara verval, rekap ruang ujian,
+       berita acara ujian, kisi-kisi, kartu soal (+ penyusun). Halaman KLIEN (Buku Induk Siswa, Buku Mutasi) memakai
+       `/api/ttd/kepala` (khusus Admin/TU) — JANGAN menaruh TTD di `/api/settings/school-info` yang terbuka umum.
+       Pengecualian yang disengaja: surat keluar/surat keterangan/kartu tanda/rapor tetap TTD JABATAN berstempel; Leger
+       memakai TTD jabatan setelah disahkan (sama dengan rapor); Form Katrol ber-TTD guru hanya setelah DIKIRIM; Tata Tertib
+       TIDAK ber-TTD (dibuka semua siswa — TTD mudah disalin); pejabat luar (Pengawas, Kacabdin) & "Operator Sekolah" tanpa
+       nama tidak punya akun pasti, jadi tetap kosong.
+     - **Notulen LAMA ikut ber-TTD saat dicetak ulang** (keputusan user 5 Okt 2026: "Semua notulen", untuk melengkapi arsip) —
+       jangan dibatasi ke notulen sejak fitur ini ada. Notulen sebelum 5 Okt 2026 dicocokkan lewat nama saat cetak.
+
+124. **Mode pemeliharaan (5 Oktober 2026) — `src/lib/pemeliharaan.ts`, halaman `/dashboard/admin/pemeliharaan` (khusus ADMIN).**
+     Permintaan user: "halaman maintenance, bisa dimatikan hidupkan, kecuali saat login dengan superadmin tidak ada dampak".
+     - Diperiksa di `proxy.ts` untuk SETIAP permintaan; status (SiteSetting `sistem.pemeliharaan*`) disinggahkan 10 detik di
+       memori dan dibuang saat disimpan. Gagal membaca DB = dianggap TIDAK pemeliharaan (jangan menutup sekolah karena DB tersendat).
+     - Bebas dampak: peran ADMIN dan admin yang sedang "Masuk Sebagai" (`session.imp.role === "ADMIN"`). Jalur yang tetap terbuka
+       (`jalurBebas`): `/login` (+2FA, satu jalur), `/api/passkey`, `/pemeliharaan`, berkas statis & `/uploads` (non-rahasia), dan papan
+       TV `/layar` + `/api/layar` — bel sekolah di TV tidak boleh ikut mati. Menambah jalur bebas baru = pikirkan dulu apakah jalur itu
+       bisa mengubah data.
+     - Halaman → DIALIHKAN (307) ke `/pemeliharaan?dari=<asal>`, BUKAN ditulis-ulang: dengan alamat asli, komponen layout akar (tombol
+       WhatsApp dsb.) mengira halamannya beranda. `dari` hanya diterima bila diawali satu "/" tanpa "/" atau "\" berikutnya
+       (`/\x.com` dibaca peramban sebagai `//x.com`). API → 503 JSON + `Retry-After`.
+     - Halaman pengaturan memperingatkan bila ada siswa SEDANG ujian (`pesertaSedangUjian`) — menyalakan pemeliharaan memutus ujian mereka.
