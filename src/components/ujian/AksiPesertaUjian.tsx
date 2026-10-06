@@ -38,6 +38,7 @@ const ARTI_JEJAK: Record<string, string> = {
   TAMBAH_WAKTU: "Tambah waktu", RESET_WAKTU: "Reset waktu ke durasi penuh", BUKA_SELESAI: "Status selesai dibuka kembali",
   LANJUTKAN: "Dilanjutkan", BUKA_TERPUTUS: "Dibuka setelah terputus", PUTAR_AUDIO: "Memutar audio listening",
   KUMPUL: "Mengumpulkan", KUMPUL_OTOMATIS: "Dikumpulkan otomatis (waktu habis)", KUMPUL_PAKSA: "Dikumpulkan paksa pengawas",
+  JAWABAN_SUSULAN: "Jawaban susulan (dibuat sebelum waktu habis, terkirim setelah tersambung)",
   PINDAH_TAB: "Pindah tab / aplikasi", KELUAR_LAYAR_PENUH: "Keluar dari layar penuh", SALIN: "Mencoba menyalin",
   KLIK_KANAN: "Klik kanan", PRINT_SCREEN: "Menekan Print Screen", PINTASAN: "Pintasan keyboard terlarang",
 };

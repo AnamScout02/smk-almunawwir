@@ -345,6 +345,11 @@ export async function tokenTampilUjian(
 
 /** Toleransi keterlambatan jaringan saat menyimpan/mengumpulkan setelah tenggat. */
 export const TOLERANSI_MS = 3 * 60_000;
+/** JAWABAN SUSULAN (6 Oktober 2026): jawaban yang DIBUAT sebelum tenggat tetapi baru TERKIRIM sesudahnya karena koneksi
+ *  putus (antrean luring di perangkat) tetap diterima, asal tiba paling lambat sekian lama setelah tenggat. Waktu pembuatan
+ *  dikirim perangkat dalam jam server (`dibuat`) — bisa dipalsukan siswa yang sangat paham teknis, jadi setiap jawaban
+ *  susulan dicatat di jejak (`JAWABAN_SUSULAN`) supaya terlihat pengawas, dan jendelanya dibatasi. */
+export const BATAS_SUSULAN_MS = 60 * 60_000;
 
 /* ------------------------------ pengacakan-sekali ------------------------------ */
 

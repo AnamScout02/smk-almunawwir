@@ -89,6 +89,7 @@ export default function StudentExamPage() {
   const aktifRef = useRef(false);
   const selisihRef = useRef(0);         // serverNow - clientNow (ms)
   const submittingRef = useRef(false);
+  const habisRef = useRef(false);
   const mengirimRef = useRef(false);
   const kirimTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const versiRef = useRef<string | null>(null);
@@ -220,7 +221,10 @@ export default function StudentExamPage() {
     mengirimRef.current = true;
     try {
       for (const [k, it] of Object.entries(bacaAntrean())) {
-        const body = "jawaban" in it ? { questionId: it.questionId, jawaban: it.jawaban } : { questionId: it.questionId, ragu: it.ragu };
+        // `dibuat` = saat jawaban dibuat, dalam JAM SERVER (selisih jam perangkat diukur tiap sinkron) — supaya jawaban yang
+        // tertahan karena putus koneksi tetap diterima walau baru terkirim setelah waktu habis (BATAS_SUSULAN_MS).
+        const dibuat = it.t + selisihRef.current;
+        const body = "jawaban" in it ? { questionId: it.questionId, jawaban: it.jawaban, dibuat } : { questionId: it.questionId, ragu: it.ragu, dibuat };
         const r = await fetchUjian(`/api/student/exams/${id}/jawab`, {
           method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
         }).catch(() => null);
@@ -228,8 +232,10 @@ export default function StudentExamPage() {
         setKoneksi("online");
         const d = await r.json().catch(() => null);
         if (r.status === 423) { tolak(d); return false; }
-        if (r.status === 403 && d?.habis) { kumpulkan.current(true); return false; }
-        if (r.ok || r.status === 400 || r.status === 404) {
+        if (r.ok || r.status === 400 || r.status === 404 || (r.status === 403 && d?.habis)) {
+          // 403 habis = jawaban ini memang dibuat setelah waktu habis (ditolak permanen). Dulu tetap tinggal di antrean,
+          // sehingga pengumpulan menunggu "koneksi" SELAMANYA walau sudah tersambung — sekarang dibuang & ujian dikumpulkan.
+          if (r.status === 403) habisRef.current = true;
           // Terkirim, atau ditolak permanen (sudah dikumpulkan / soal tak dikenal) — keluarkan dari
           // antrean. Kalau siswa mengubah jawabannya selagi terkirim, versi baru tetap tinggal.
           const kini = bacaAntrean();
@@ -243,7 +249,11 @@ export default function StudentExamPage() {
       }
       setTersimpan("ok");
       return true;
-    } finally { mengirimRef.current = false; }
+    } finally {
+      mengirimRef.current = false;
+      // Ada jawaban yang ditolak karena waktu habis → kumpulkan (di luar giliran ini, supaya tidak saling menunggu).
+      if (habisRef.current) { habisRef.current = false; setTimeout(() => kumpulkan.current(true), 0); }
+    }
   }, [id, bacaAntrean, tulisAntrean, perbaruiTenggat, muatUlangSoal, muat]);
 
   function antrekan(kunci: string, item: ItemAntrean) {

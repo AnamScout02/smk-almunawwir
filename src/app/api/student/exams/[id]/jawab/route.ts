@@ -3,13 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { rekamanMilikSendiri } from "@/lib/ujian-lisan";
 import { jendelaKelas } from "@/lib/jadwal-ujian-kelas";
 import { verifyRole } from "@/lib/dal";
-import { siswaDariSesi, tenggat, TOLERANSI_MS, versiSoal, jagaAttempt, HEADER_PERANGKAT, ujianUntukKelas } from "@/lib/ujian-server";
+import { siswaDariSesi, tenggat, TOLERANSI_MS, BATAS_SUSULAN_MS, versiSoal, jagaAttempt, tambahJejak, HEADER_PERANGKAT, ujianUntukKelas } from "@/lib/ujian-server";
 import { type Jawaban } from "@/lib/soal";
 import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-/** Simpan SATU jawaban (autosave) sekaligus denyut. Ditolak setelah tenggat + toleransi.
+/** Simpan SATU jawaban (autosave) sekaligus denyut. Ditolak setelah tenggat + toleransi, KECUALI jawaban susulan
+ * (`dibuat` sebelum tenggat, tertahan di perangkat karena koneksi putus — BATAS_SUSULAN_MS).
  * Body: { questionId, jawaban } — jawaban boleh null untuk menghapus.
  *   atau { questionId, ragu: true|false } — hanya menandai/melepas tanda ragu-ragu.
  * Klien mengirim ulang jawaban yang tertunda saat koneksi putus (antrean luring), jadi route ini
@@ -20,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const student = await siswaDariSesi(session);
     if (!student?.classId) return Response.json({ error: "Unauthorized" }, { status: 401 });
     const { id } = await params;
-    const body = await req.json() as { questionId: string; jawaban?: Jawaban; ragu?: boolean };
+    const body = await req.json() as { questionId: string; jawaban?: Jawaban; ragu?: boolean; dibuat?: number };
     const { questionId } = body;
 
     const [exam, attempt] = await Promise.all([
@@ -33,7 +34,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (jaga.tolak) return jaga.tolak;
 
     const batas = tenggat(attempt.startedAt, exam.duration, jendelaKelas(exam, student.classId).endTime, attempt.tambahanMenit).getTime();
-    if (Date.now() > batas + TOLERANSI_MS) return Response.json({ error: "Waktu ujian sudah habis.", habis: true }, { status: 403 });
+    // Lewat tenggat: hanya JAWABAN SUSULAN yang diterima — dibuat sebelum waktu habis, tertahan di perangkat karena
+    // koneksi putus (BATAS_SUSULAN_MS di ujian-server.ts). Selain itu ditolak permanen (`habis`): klien membuangnya dari
+    // antrean lalu mengumpulkan, bukan menunggu selamanya.
+    const sekarang = Date.now();
+    let susulan = false;
+    if (sekarang > batas + TOLERANSI_MS) {
+      const dibuat = Number(body.dibuat);
+      const sah = Number.isFinite(dibuat) && dibuat >= attempt.startedAt.getTime() && dibuat <= batas + TOLERANSI_MS
+        && sekarang <= batas + BATAS_SUSULAN_MS;
+      if (!sah) return Response.json({ error: "Waktu ujian sudah habis.", habis: true }, { status: 403 });
+      susulan = true;
+    }
+
+    const jamWib = (t: number) => new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" });
+    const catatSusulan = () => susulan
+      ? { jejak: tambahJejak(jaga.jejak, { jenis: "JAWABAN_SUSULAN", ket: `dibuat ${jamWib(Number(body.dibuat))}, tiba ${jamWib(sekarang)} (tertahan koneksi putus)` }) as object }
+      : {};
 
     // Hanya soal yang memang diterima siswa ini (menurut urutan) yang boleh dijawab.
     const urutan = ((attempt.urutan as { urutanSoal?: string[] })?.urutanSoal ?? []);
@@ -42,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (typeof body.ragu === "boolean") {
       const ragu = new Set(Array.isArray(attempt.ragu) ? (attempt.ragu as string[]) : []);
       if (body.ragu) ragu.add(questionId); else ragu.delete(questionId);
-      await prisma.examAttempt.update({ where: { id: attempt.id }, data: { ragu: [...ragu], lastSeenAt: new Date() } });
+      await prisma.examAttempt.update({ where: { id: attempt.id }, data: { ragu: [...ragu], lastSeenAt: new Date(), ...catatSusulan() } });
     } else {
       const answers = { ...((attempt.answers as Record<string, Jawaban>) ?? {}) };
       const sebelum = answers[questionId];
@@ -64,7 +81,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       if (berubah) ubahJawaban[questionId] = (ubahJawaban[questionId] ?? 0) + 1;
       await prisma.examAttempt.update({
         where: { id: attempt.id },
-        data: { answers: answers as object, lastSeenAt: new Date(), ...(berubah ? { ubahJawaban } : {}) },
+        data: { answers: answers as object, lastSeenAt: new Date(), ...(berubah ? { ubahJawaban } : {}), ...catatSusulan() },
       });
     }
     return Response.json({
