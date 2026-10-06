@@ -188,6 +188,11 @@ export async function POST(req: NextRequest) {
       lamaBelajar:      s(row["Lama Belajar (tahun)"]) || null,
       pindahanDari:     s(row["Pindahan Dari"]) || null,
       alasanPindahKe:   s(row["Alasan Pindah ke Sekolah Ini"]) || null,
+      // Tiga kolom ini SUDAH ADA di template sejak lama tetapi tidak pernah dibaca — isiannya terbuang diam-diam
+      // saat impor (temuan sapuan template vs formulir 6 Okt 2026). Kuncinya = kunci formulir Buku Induk.
+      asalNis:          s(row["NIS Asal (sebelum pindah)"]) || null,
+      masukSuratNo:     s(row["Nomor Surat Masuk"]) || null,
+      kelasAsal:        s(row["Kelas Asal (sebelum pindah)"]) || null,
       tingkatMasuk:     s(row["Diterima di Tingkat"]) || null,
       rombel:           rombel ?? null,
       bidangKeahlian:   keahlian?.bidang ?? null,
@@ -227,6 +232,14 @@ export async function POST(req: NextRequest) {
       guardianJob:      s(row["Pekerjaan Wali"]) || null,
       guardianIncome:   s(row["Penghasilan Wali"]) || null,
       guardianPhone:    s(row["No. HP Wali"]) || null,
+      // Alamat wali: di template sejak lama, dulu terbuang saat impor (lihat catatan asalNis di atas).
+      guardianDusun:    s(row["Dusun/Lingkungan Wali"]) || null,
+      guardianRt:       s(row["RT Wali"]) || null,
+      guardianRw:       s(row["RW Wali"]) || null,
+      guardianDesa:     s(row["Desa/Kelurahan Wali"]) || null,
+      guardianKecamatan: s(row["Kecamatan Wali"]) || null,
+      guardianKabupaten: s(row["Kabupaten/Kota Wali"]) || null,
+      guardianProvince: s(row["Provinsi Wali"]) || null,
       hobbyArt:         s(row["Kesenian"]) || null,
       hobbySport:       s(row["Olahraga"]) || null,
       hobbyOrg:         s(row["Organisasi"]) || null,
@@ -237,6 +250,8 @@ export async function POST(req: NextRequest) {
       pklEndDate:       dateStr(row["Tanggal Selesai PKL (DD/MM/YYYY)"]),
       pklSupervisor:    s(row["Pembimbing PKL"]) || null,
       pklScore:         s(row["Nilai PKL"]) || null,
+      pklLatitude:      s(row["Latitude PKL"]) || null,
+      pklLongitude:     s(row["Longitude PKL"]) || null,
       graduationDate:   dateStr(row["Tanggal Lulus (DD/MM/YYYY)"]),
       graduationIjazahNo: s(row["Nomor Ijazah Kelulusan"]) || null,
       skhunNo:          s(row["Nomor SKHUN Kelulusan"]) || null,
@@ -247,6 +262,7 @@ export async function POST(req: NextRequest) {
       pindahDate:       dateStr(row["Tanggal Pindah/Keluar (DD/MM/YYYY)"]),
       transferTo:       s(row["Pindah/Keluar Ke"]) || null,
       alasanPindah:     s(row["Alasan Pindah/Keluar"]) || null,
+      suratNo:          s(row["Nomor Surat Keluar/Pindah"]) || null,
     };
 
     const bukuIndukDataNorm = normalizeBukuIndukText(bukuIndukData) as Record<string, unknown>;
@@ -265,9 +281,19 @@ export async function POST(req: NextRequest) {
       }
 
       if (existing) {
+        // DIGABUNG, bukan diganti (6 Okt 2026): dulu bukuIndukData lama DITIMPA UTUH dengan isi Excel, sehingga setiap
+        // isian yang tidak ada / kosong di Excel ikut terhapus — Foto Kartu, isian yang hanya ada di formulir, dsb.
+        // Sekarang hanya sel yang TERISI yang menimpa; sel kosong mempertahankan data lama. Sama untuk kolom dasar.
+        const terisi = (v: unknown) => v !== null && v !== undefined && v !== "";
+        const lama = (existing.bukuIndukData as Record<string, unknown> | null) ?? {};
+        const gabung = { ...lama, ...Object.fromEntries(Object.entries(bukuIndukDataNorm).filter(([, v]) => terisi(v))) };
+        const dasar = Object.fromEntries(Object.entries(basicData).filter(([, v]) => terisi(v)));
+        // Status kosong di Excel = biarkan status lama (bawaan "AKTIF" hanya untuk siswa BARU) — kalau tidak, siswa yang
+        // sudah LULUS/PINDAH kembali AKTIF hanya karena diimpor ulang.
+        if (!s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"])) delete dasar.studentStatus;
         await prisma.student.update({
           where: { nis },
-          data: { ...basicData, majorId, bukuIndukData: bukuIndukDataNorm as Prisma.InputJsonValue, ...(classId ? { classId } : {}) },
+          data: { ...dasar, majorId, bukuIndukData: gabung as Prisma.InputJsonValue, ...(classId ? { classId } : {}) },
         });
         await syncParentAccountForStudent(existing.id, basicData.parentPhone, basicData.parentName).catch(() => {});
         results.updated++;

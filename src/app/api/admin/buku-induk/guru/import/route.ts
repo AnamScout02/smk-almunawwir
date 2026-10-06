@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
-import { toProperCaseName } from "@/lib/text";
+import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
+import { GURU_KOLOM_IMPOR } from "@/lib/buku-induk-guru-columns";
+import type { Prisma } from "@prisma/client";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 function parseDate(val: unknown): Date | null {
@@ -72,28 +74,39 @@ export async function POST(req: NextRequest) {
       teacherNotes:  s(row["Keterangan"]) || null,
     };
 
+    // Isian Buku Induk lain (bukuIndukData) — kolomnya dari GURU_KOLOM_IMPOR, sama persis dengan template & formulir.
+    const isiBuku: Record<string, string> = {};
+    for (const k of GURU_KOLOM_IMPOR) {
+      if (k.tanggal) { const d = parseDate(row[k.judul]); if (d) isiBuku[k.key] = d.toISOString().slice(0, 10); }
+      else { const v = s(row[k.judul]); if (v) isiBuku[k.key] = v; }
+    }
+    const bukuBaru = normalizeBukuIndukText(isiBuku) as Record<string, unknown>;
+
     try {
       const existing = await prisma.teacher.findUnique({ where: { nip } });
       if (existing) {
-        if (mapel) {
-          await prisma.teacher.update({
-            where: { nip },
-            data: { ...updateData, subject: mapel },
-          });
-        } else {
-          await prisma.teacher.update({ where: { nip }, data: updateData });
-        }
+        // DIGABUNG, bukan ditimpa (6 Okt 2026): sel kosong di Excel mempertahankan data lama. Dulu kolom kosong
+        // mengosongkan data, dan Status kosong mengembalikan guru PENSIUN/KELUAR menjadi AKTIF.
+        const dasar: Record<string, unknown> = Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== null && v !== ""));
+        if (!s(row["Status (AKTIF/PENSIUN/KELUAR)"])) delete dasar.teacherStatus;
+        const lama = (existing.bukuIndukData as Record<string, unknown> | null) ?? {};
+        await prisma.teacher.update({
+          where: { nip },
+          data: { ...dasar, ...(mapel ? { subject: mapel } : {}), bukuIndukData: { ...lama, ...bukuBaru } as Prisma.InputJsonValue },
+        });
         results.updated++;
       } else {
         const email = `${nip}@smkalmunawwir.sch.id`;
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           const bcrypt = await import("bcryptjs");
+          // Password awal = "Almunawwir1", SAMA dengan impor siswa & formulir (keputusan user 2026-08-09; diseragamkan
+          // 6 Okt 2026). Dulu NIP — tidak seragam, dan NIP mudah ditebak karena tercetak di kartu & dokumen sekolah.
           user = await prisma.user.create({
             data: {
               name: toProperCaseName(nama),
               email,
-              password: await bcrypt.hash(nip, 10),
+              password: await bcrypt.hash("Almunawwir1", 10),
               role: "TEACHER",
             },
           });
@@ -104,6 +117,7 @@ export async function POST(req: NextRequest) {
             userId: user.id,
             subject: mapel || "Belum diisi",
             ...updateData,
+            bukuIndukData: bukuBaru as Prisma.InputJsonValue,
           },
         });
         results.created++;

@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { GURU_COLUMNS } from "@/lib/buku-induk-guru-columns";
+import { GURU_COLUMNS, GURU_EKSTRA_BUKU } from "@/lib/buku-induk-guru-columns";
 import { normalizeBukuIndukText } from "@/lib/text";
 import type { Prisma } from "@prisma/client";
 
@@ -33,17 +33,8 @@ export const PEGAWAI_TOP_LABELS: Record<string, string> = {
   education: "Pendidikan Terakhir",
 };
 
-/** Kunci `bukuIndukData` yang tidak ditandai `isian` di GURU_COLUMNS tetapi tetap data pribadi
- *  (bukan administratif), jadi boleh diajukan sendiri. */
-const EKSTRA_BUKU: Record<string, string> = {
-  nik: "NIK",
-  maritalStatus: "Status Kawin",
-  spouseName: "Nama Pasangan",
-  desa: "Desa/Kelurahan",
-  kecamatan: "Kecamatan",
-  kabupaten: "Kabupaten/Kota",
-  province: "Provinsi",
-};
+/** Kunci pribadi tanpa tanda `isian` — satu sumber di buku-induk-guru-columns.ts. */
+const EKSTRA_BUKU = GURU_EKSTRA_BUKU;
 
 /** Grup GURU_COLUMNS yang TIDAK boleh diajukan pegawai (dicatat TU saat pegawai keluar). */
 const GRUP_TERLARANG = new Set(["Pindah / Keluar"]);

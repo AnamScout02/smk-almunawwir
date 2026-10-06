@@ -166,3 +166,26 @@ export const GURU_COLUMNS: ColDef[] = [
   { key: "pindahKe", label: "Pindah Ke", group: "Pindah / Keluar", get: t => b(t, "pindahKe"), isian: {} },
   { key: "pindahAlasan", label: "Alasan Pindah", group: "Pindah / Keluar", get: t => b(t, "pindahAlasan"), isian: { tipe: "textarea" } },
 ];
+
+/** Kunci `bukuIndukData` yang TIDAK bertanda `isian` di GURU_COLUMNS tetapi tetap diisi di formulir (data pribadi). Satu
+ *  sumber untuk biodata pegawai (src/lib/biodata-pegawai.ts) DAN template/impor Excel Buku Induk Guru. */
+export const GURU_EKSTRA_BUKU: Record<string, string> = {
+  nik: "NIK",
+  maritalStatus: "Status Kawin",
+  spouseName: "Nama Pasangan",
+  desa: "Desa/Kelurahan",
+  kecamatan: "Kecamatan",
+  kabupaten: "Kabupaten/Kota",
+  province: "Provinsi",
+};
+
+/** Kolom TEMPLATE & IMPOR Excel Buku Induk Guru yang tersimpan di `bukuIndukData` — DITURUNKAN dari isian formulir
+ *  (6 Okt 2026). Dulu template ditulis tangan dan hanya memuat 14 kolom dari 111, sehingga NIK, NUPTK, alamat, riwayat
+ *  pendidikan, keluarga, dan penghargaan tidak bisa diisi lewat Excel. Isian baru di formulir otomatis ikut ke sini.
+ *  `judul` = kepala kolom di Excel (tanggal diberi keterangan format). */
+export const GURU_KOLOM_IMPOR: { key: string; judul: string; tanggal: boolean }[] = [
+  ...Object.entries(GURU_EKSTRA_BUKU).map(([key, label]) => ({ key, judul: label, tanggal: false })),
+  ...GURU_COLUMNS.filter(c => c.isian && !(c.key in GURU_EKSTRA_BUKU)).map(c => ({
+    key: c.key, judul: c.isian?.tipe === "date" ? `${c.label} (DD/MM/YYYY)` : c.label, tanggal: c.isian?.tipe === "date",
+  })),
+];

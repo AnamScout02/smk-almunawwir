@@ -1798,3 +1798,26 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        WhatsApp dsb.) mengira halamannya beranda. `dari` hanya diterima bila diawali satu "/" tanpa "/" atau "\" berikutnya
        (`/\x.com` dibaca peramban sebagai `//x.com`). API → 503 JSON + `Retry-After`.
      - Halaman pengaturan memperingatkan bila ada siswa SEDANG ujian (`pesertaSedangUjian`) — menyalakan pemeliharaan memutus ujian mereka.
+
+125. **Jawaban ujian SUSULAN — antrean luring yang terkirim setelah waktu habis (6 Oktober 2026).** Layar ujian sudah offline-first
+     (jawaban masuk antrean localStorage lalu dikirim), tetapi dua celah membuat jawaban siswa yang terputus di menit-menit akhir HILANG:
+     (a) `/jawab` menolak semua jawaban yang TIBA setelah tenggat + `TOLERANSI_MS`, tanpa melihat kapan DIBUAT; (b) jawaban yang ditolak
+     403 `habis` tidak pernah keluar dari antrean, sehingga pengumpulan menunggu "koneksi" SELAMANYA walau sudah tersambung.
+     - Klien mengirim `dibuat` = waktu jawaban dibuat dalam JAM SERVER (`it.t + selisihRef`). Server menerima jawaban lewat tenggat bila
+       `dibuat` ≤ tenggat + toleransi, ≥ mulai, dan tiba ≤ tenggat + `BATAS_SUSULAN_MS` (60 mnt, src/lib/ujian-server.ts); tiap jawaban
+       susulan dicatat di jejak `JAWABAN_SUSULAN` ("dibuat … tiba …") supaya terlihat pengawas. Jam `dibuat` berasal dari perangkat —
+       batas 60 menit + jejak itulah pengamannya; jangan dilonggarkan tanpa alasan.
+     - 403 `habis` = ditolak permanen: item DIBUANG dari antrean lalu ujian dikumpulkan (`habisRef`), bukan dibiarkan menggantung.
+
+126. **Template & impor Excel Buku Induk = sama dengan formulir, dan impor ulang TIDAK menghapus data (6 Oktober 2026).**
+     Pertanyaan user: "form template excel buku induk guru dan siswa apakah sudah sesuai dengan form". Temuannya:
+     - **Guru: template hanya 14 dari 111 kolom.** Sekarang kolom di luar 14 kolom dasar DITURUNKAN dari formulir lewat
+       `GURU_KOLOM_IMPOR` (src/lib/buku-induk-guru-columns.ts = `GURU_EKSTRA_BUKU` + `GURU_COLUMNS` bertanda `isian`) — dipakai
+       template DAN impor, dan `GURU_EKSTRA_BUKU` juga dipakai biodata pegawai (#93). Isian baru di formulir guru otomatis ikut.
+     - **Siswa: 13 kolom template tidak pernah dibaca impor** (NIS asal, nomor surat masuk/keluar, kelas asal, 7 kolom alamat
+       wali, lintang/bujur PKL) — isian petugas terbuang diam-diam. Template siswa masih DITULIS TANGAN; menambah isian formulir
+       siswa = tambahkan juga ke template DAN impor (judul harus PERSIS sama — impor membaca `row["<judul>"]`).
+     - **Impor ulang DIGABUNG, bukan ditimpa** (siswa & guru): dulu `bukuIndukData` diganti utuh sehingga isian yang tidak ada /
+       kosong di Excel terhapus (termasuk Foto Kartu), dan Status kosong mengembalikan siswa LULUS/PINDAH & guru PENSIUN/KELUAR
+       menjadi AKTIF. Sekarang hanya sel TERISI yang menimpa; Status kosong = status lama. Bawaan "AKTIF" hanya untuk data baru.
+     - Password awal akun guru dari impor = `Almunawwir1` (dulu NIP — mudah ditebak & tidak seragam dengan siswa/formulir).

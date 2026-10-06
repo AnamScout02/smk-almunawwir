@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import * as XLSX from "xlsx";
+import { GURU_KOLOM_IMPOR } from "@/lib/buku-induk-guru-columns";
 
 export async function GET() {
   await verifyBukuIndukFullAccess();
@@ -20,6 +21,8 @@ export async function GET() {
     "Tanggal Mulai Mengajar (DD/MM/YYYY)",
     "Status (AKTIF/PENSIUN/KELUAR)",
     "Keterangan",
+    // Seluruh isian formulir Buku Induk Guru yang lain — DITURUNKAN dari GURU_COLUMNS, jadi tidak bisa berselisih lagi.
+    ...GURU_KOLOM_IMPOR.map(k => k.judul),
   ];
 
   const contoh = [
@@ -37,6 +40,7 @@ export async function GET() {
     "01/07/2000",
     "AKTIF",
     "",
+    ...GURU_KOLOM_IMPOR.map(() => ""),
   ];
 
   const wb = XLSX.utils.book_new();
@@ -62,11 +66,14 @@ export async function GET() {
     ["Tanggal Mulai Mengajar", "Format DD/MM/YYYY", "Opsional"],
     ["Status", "AKTIF / PENSIUN / KELUAR", "Opsional (default: AKTIF)"],
     ["Keterangan", "Catatan tambahan", "Opsional"],
+    ["Kolom lainnya", `${GURU_KOLOM_IMPOR.length} kolom sesuai isian formulir Buku Induk Guru (NIK, NUPTK, alamat, riwayat pendidikan, keluarga, penghargaan, dst.). Tanggal berformat DD/MM/YYYY.`, "Opsional"],
     [""],
     ["CATATAN:"],
     ["- Baris pertama adalah header, jangan dihapus"],
     ["- Baris kedua adalah contoh, hapus sebelum import"],
     ["- NIP yang sudah ada di sistem akan diperbarui (update), bukan duplikat"],
+    ["- Sel yang DIKOSONGKAN tidak menghapus data yang sudah ada — hanya sel yang terisi yang menimpa"],
+    ["- Guru baru dibuatkan akun: email <NIP>@smkalmunawwir.sch.id, password awal Almunawwir1"],
   ];
   const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
   wsPetunjuk["!cols"] = [{ wch: 30 }, { wch: 55 }, { wch: 15 }];
