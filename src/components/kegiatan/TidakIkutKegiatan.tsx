@@ -53,7 +53,7 @@ export default function TidakIkutKegiatan() {
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<CalendarX2 size={22} />} title={sendiri ? "Kegiatan yang Tidak Saya Ikuti" : "Tidak Ikut Kegiatan"}
-        description="Dihitung dari kegiatan yang HARINYA SUDAH LEWAT: terdaftar sebagai peserta, tetapi tidak ada catatan hadir" />
+        description="Dihitung dari hari kegiatan yang sudah lewat DAN presensinya dijalankan: terdaftar sebagai peserta, tetapi tidak tercatat hadir" />
 
       <div className="space-y-6">
         {!memuat && !galat && (

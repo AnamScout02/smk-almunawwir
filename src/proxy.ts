@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { COOKIE_AKSES, COOKIE_SEGAR, decrypt, opsiCookieAkses, opsiCookieSegar } from "@/lib/session";
 import { migrasiTokenLama, segarkanSesi, sesiMasihHidup } from "@/lib/sesi-server";
 import { getClientIpFromHeaders } from "@/lib/rate-limit";
+import { bacaPemeliharaan, jalurBebas } from "@/lib/pemeliharaan";
 import type { SessionPayload } from "@/types";
 
 const protectedRoutes = ["/dashboard", "/pusat-ujian", "/ujian-online"];
@@ -72,6 +73,23 @@ export default async function proxy(req: NextRequest) {
     }
   } catch {
     // Database sesaat tak terjangkau: jangan hapus cookie apa pun — verifySession yang memutuskan.
+  }
+
+  // MODE PEMELIHARAAN (src/lib/pemeliharaan.ts): semua orang dialihkan ke halaman pemeliharaan, KECUALI Superadmin —
+  // termasuk saat ia sedang "Masuk Sebagai" akun lain (imp) untuk memeriksa tampilan peran itu.
+  if (!jalurBebas(path) && session?.role !== "ADMIN" && session?.imp?.role !== "ADMIN" && (await bacaPemeliharaan()).aktif) {
+    if (path.startsWith("/api/")) {
+      return terapkan(NextResponse.json({ error: "Situs sedang dalam pemeliharaan. Silakan coba beberapa saat lagi." },
+        { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } }), ubah, req.headers);
+    }
+    // Dialihkan (bukan ditulis-ulang): dengan alamat asli, komponen layout akar (tombol WhatsApp dsb.) mengira halamannya
+    // beranda dan ikut tampil. `dari` dipakai tombol "Coba Lagi" untuk kembali ke halaman semula.
+    const tujuan = new URL("/pemeliharaan", req.nextUrl);
+    tujuan.search = "";
+    if (path !== "/") tujuan.searchParams.set("dari", path + req.nextUrl.search);
+    const res = NextResponse.redirect(tujuan, 307);
+    res.headers.set("Cache-Control", "no-store");
+    return terapkan(res, ubah, req.headers);
   }
 
   if (protectedRoutes.some((r) => path.startsWith(r)) && !session) {

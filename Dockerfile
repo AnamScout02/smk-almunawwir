@@ -20,7 +20,9 @@ RUN npx prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# Cache build Next disimpan di cache mount (5 Okt 2026): setelah cache Docker dipangkas, build dari nol makan ±56 menit.
+# Mount ini tidak ikut terhapus oleh pemangkasan lapisan biasa dan tidak ikut masuk image.
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # ===== STAGE 3: Runner (Production) =====
 FROM node:20-alpine AS runner

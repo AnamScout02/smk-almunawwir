@@ -4,11 +4,12 @@ import { hariKegiatan, isoWib, jendelaSekarang, kegiatanMilik, tengahMalamWib } 
 import { penerimaPengumuman } from "@/lib/pengumuman";
 import { balasanExcelBanyakSheet } from "@/lib/ekspor-excel";
 import { hadirkanAbsensiHarian } from "@/lib/absensi-otomatis";
+import { pesertaKegiatan } from "@/lib/kegiatan-tidak-hadir";
 
 export const dynamic = "force-dynamic";
 
-async function sasaranBernama(k: { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[] }) {
-  const s = await penerimaPengumuman(k);
+async function sasaranBernama(k: { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[]; targetUserIds?: string[] }) {
+  const s = await pesertaKegiatan(k);
   const u = await prisma.user.findMany({
     where: { id: { in: s.map(x => x.userId) } },
     select: { id: true, name: true, student: { select: { class: { select: { name: true } } } } },

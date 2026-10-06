@@ -22,7 +22,7 @@ const WA_MESSAGE_SPMB = "Assalamualaikum, saya ingin bertanya tentang pendaftara
 // + /login (23 Sep 2026): halaman masuk kini halaman penuh tanpa navbar — bubble hijau merusak tampilannya.
 const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei", "/login",
   // Papan informasi TV & layar kegiatan: layar publik yang dipajang di dinding — tidak boleh ada tombol apa pun.
-  "/layar", "/layar-kegiatan", "/hadir", "/seb-uji", "/seb-selesai"];
+  "/layar", "/layar-kegiatan", "/hadir", "/seb-uji", "/seb-selesai", "/pemeliharaan"];
 
 export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);

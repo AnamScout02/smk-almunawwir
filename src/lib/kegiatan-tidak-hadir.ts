@@ -16,6 +16,16 @@ import { hariKegiatan, isoWib } from "@/lib/kegiatan-qr";
  * kegiatan yang belum berlangsung jelas bukan ketidakhadiran.
  */
 
+/** PESERTA yang diharapkan hadir di sebuah kegiatan — dipakai daftar "Tidak Ikut Kegiatan" DAN tab "Belum Hadir"
+ *  rekap panitia, supaya keduanya tidak pernah berbeda. Berbeda dari sasaran PENGUMUMAN: orang tua hanya peserta
+ *  bila kegiatannya memang ditujukan ke orang tua (atau dipilih orang per orang), dan akun Admin tidak pernah —
+ *  sasaran "Semua" berarti warga sekolah, akun superadmin bukan peserta kegiatan. */
+export async function pesertaKegiatan(k: { targetRole: string; targetKelasIds: string[]; targetJurusanIds: string[]; targetJabatan: string[]; targetUserIds?: string[] }) {
+  const sebutNama = (k.targetUserIds?.length ?? 0) > 0;
+  const untukOrtu = sebutNama || k.targetRole === "PARENT" || k.targetRole === "STUDENT_PARENT";
+  return (await penerimaPengumuman(k)).filter(s => (sebutNama || s.peran !== "Admin") && (s.peran !== "Orang tua" || untukOrtu));
+}
+
 export interface BolosKegiatan {
   kegiatanId: string;
   judul: string;
@@ -55,15 +65,19 @@ export async function ketidakhadiranKegiatan(opsi: {
     select: { kegiatanId: true, userId: true, tanggal: true },
   });
   const hadir = new Set(presensi.map(p => `${p.kegiatanId}|${p.userId}|${isoWib(p.tanggal)}`));
+  // Hari yang punya SETIDAKNYA satu catatan hadir. Hari tanpa catatan sama sekali = presensinya memang tidak
+  // dijalankan (QR tidak dibuka, tidak dicatat manual) — bukan seluruh sasaran bolos. Temuan user 5 Okt 2026:
+  // kegiatan sasaran "Semua" tanpa satu pun catatan membuat ±1.800 akun × 3 hari tampil "tidak ikut".
+  const hariDipresensi = new Set(presensi.map(p => `${p.kegiatanId}|${isoWib(p.tanggal)}`));
 
   const batas = opsi.userIds?.length ? new Set(opsi.userIds) : null;
   const kumpul = new Map<string, BolosKegiatan[]>();
 
   for (const k of kegiatan) {
     // Hanya hari yang BENAR-BENAR sudah lewat.
-    const hari = hariKegiatan(k).filter(h => h < hariIni);
+    const hari = hariKegiatan(k).filter(h => h < hariIni && hariDipresensi.has(`${k.id}|${h}`));
     if (!hari.length) continue;
-    const sasaran = await penerimaPengumuman(k);
+    const sasaran = await pesertaKegiatan(k);
     for (const s of sasaran) {
       if (batas && !batas.has(s.userId)) continue;
       for (const h of hari) {
