@@ -102,7 +102,7 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
 
       {/* Pattern overlay */}
       <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
 
       {/* Animated gradient orbs */}

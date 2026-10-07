@@ -44,7 +44,7 @@ export default async function PemeliharaanPage({ searchParams }: { searchParams:
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div aria-hidden className="pointer-events-none absolute inset-0"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", filter: "invert(1)", opacity: 0.07 }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", filter: "invert(1)", opacity: 0.07 }} />
       <div className="relative w-full max-w-md text-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- logo dari pengaturan */}
         <img src={s["logo.emblem"] || "/images/logo-emblem.png"} alt="" className="mx-auto mb-6 h-20 w-20 rounded-full object-contain ring-4 ring-gold/60" />

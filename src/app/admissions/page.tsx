@@ -11,7 +11,7 @@ import StatCounter from "@/components/sections/StatCounter";
 import TeksGerak from "@/components/gerak/TeksGerak";
 import KuisJurusanSpmb from "@/components/spmb/KuisJurusanSpmb";
 import JejakKunjung from "@/components/spmb/JejakKunjung";
-import { susunKuis } from "@/lib/kuis-jurusan";
+import { bacaBankKuis, susunKuis } from "@/lib/kuis-jurusan";
 import { peringkatPerujuk, pendaftarSejak } from "@/lib/spmb-statistik";
 import { samarkanNama, LABEL_JENIS } from "@/lib/spmb-perujuk";
 import type { Metadata } from "next";
@@ -24,14 +24,15 @@ import TombolBagikan from "@/components/shared/TombolBagikan";
 import { getLang } from "@/lib/lang";
 import { getSettings } from "@/lib/site-settings";
 import { prisma } from "@/lib/prisma";
-import { bacaKontenSpmb, cocokJurusan, gayaTema, idYoutube, tema, KUNCI_KONTEN_SPMB } from "@/lib/spmb-konten";
-import { CheckCircle2, FileDown, MessageCircle, CalendarClock, CalendarCheck, Sparkles, HelpCircle, Wallet, Megaphone, Receipt, Route, Users2, ArrowRight, GraduationCap, MessagesSquare } from "lucide-react";
+import { bacaKontenSpmb, cocokJurusan, gayaTema, idYoutube, tema, KUNCI_KONTEN_SPMB, DOKUMEN_BAKU_SPMB } from "@/lib/spmb-konten";
+import { bacaMpls, susunJadwalWeb } from "@/lib/spmb-tahapan";
+import { CheckCircle2, PackageCheck, FileDown, MessageCircle, CalendarClock, CalendarCheck, Sparkles, HelpCircle, Wallet, Megaphone, Receipt, Route, ArrowRight, GraduationCap, MessagesSquare } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 // Judul & keterangan saat tautan dibagikan (WA/IG); gambarnya dari opengraph-image.tsx di folder ini.
 export const metadata: Metadata = {
-  title: "SPMB — Penerimaan Murid Baru",
+  title: "SPMB — Sistem Penerimaan Murid Baru",
   description: "Daftar online SMK Al Munawwir IIBS: jadwal gelombang, sisa kursi per jurusan, syarat, beasiswa, dan formulir pendaftaran.",
   openGraph: {
     title: "SPMB SMK Al Munawwir IIBS — Pendaftaran Online",
@@ -46,19 +47,24 @@ export const metadata: Metadata = {
  *  SELURUH isinya dari portal /pusat-spmb — tidak ada alur/syarat/beasiswa yang tertulis mati
  *  di berkas ini lagi (dulu panitia tidak bisa mengubah satu kata pun tanpa deploy). */
 
+const LABEL_JADWAL_EN: Record<string, string> = {
+  "Pendaftaran": "Registration", "Asesmen & cek kesehatan": "Assessment & health check", "Asesmen awal": "Initial assessment",
+  "Cek fisik & kesehatan": "Physical & health check", "Pengumuman hasil": "Results", "Daftar ulang": "Re-registration", "MPLS": "Orientation (MPLS)",
+};
+
 const TEKS = {
   id: {
     daftar: "Daftar Sekarang", status: "Cek Status", poster: "Lihat Poster", brosur: "Unduh Brosur",
     wa: "Tanya Panitia", gelombang: "Gelombang Pendaftaran", dibuka: "Dibuka", ditutup: "Ditutup",
     berjalan: "Sedang dibuka", terjadwal: "Akan dibuka", selesai: "Sudah ditutup",
-    biaya: "Biaya pendaftaran", gratis: "Gratis", kuota: "Kuota", sisa: "tersisa",
+    biaya: "Biaya daftar ulang", gratis: "Gratis", daftarGratis: "Pendaftaran gratis", kuota: "Kuota", sisa: "tersisa",
     alur: "Alur Pendaftaran", syarat: "Persyaratan", beasiswa: "Program Beasiswa",
+    syaratUnggah: "Diunggah saat mendaftar", syaratBawa: "Dibawa saat daftar ulang", opsional: "opsional",
     galeri: "Galeri Promosi", tanya: "Tanya Jawab", video: "Video Profil",
     tutupSemua: "Pendaftaran sedang tutup", tutupKet: "Pantau halaman ini — gelombang berikutnya akan tampil di sini.",
-    pengumuman: "Pengumuman hasil", biayaKet: "Biaya",
+    pengumuman: "Pengumuman hasil", biayaKet: "Daftar ulang",
     jadwal: "Jadwal Penting", menyusul: "Menyusul",
-    rincian: "Rincian Biaya", total: "Total", jalurJudul: "Jalur Pendaftaran",
-    grup: "Gabung Grup WhatsApp Pendaftar",
+    rincian: "Rincian Biaya Daftar Ulang", total: "Total", jalurJudul: "Jalur Pendaftaran",
     mundurTutup: "Pendaftaran ditutup dalam", mundurBuka: "Pendaftaran dibuka dalam",
     satuan: ["Hari", "Jam", "Menit", "Detik"],
     angkaSiswa: "Siswa aktif", angkaAlumni: "Alumni", angkaJurusan: "Konsentrasi keahlian", angkaKursi: "Kursi tersedia",
@@ -73,14 +79,14 @@ const TEKS = {
     daftar: "Register Now", status: "Check Status", poster: "View Poster", brosur: "Download Brochure",
     wa: "Ask the Committee", gelombang: "Registration Waves", dibuka: "Opens", ditutup: "Closes",
     berjalan: "Open now", terjadwal: "Upcoming", selesai: "Closed",
-    biaya: "Registration fee", gratis: "Free", kuota: "Quota", sisa: "left",
+    biaya: "Re-registration fee", gratis: "Free", daftarGratis: "Free registration", kuota: "Quota", sisa: "left",
     alur: "Registration Steps", syarat: "Requirements", beasiswa: "Scholarships",
+    syaratUnggah: "Uploaded when registering", syaratBawa: "Brought at re-registration", opsional: "optional",
     galeri: "Gallery", tanya: "FAQ", video: "Profile Video",
     tutupSemua: "Registration is currently closed", tutupKet: "Keep an eye on this page — the next wave will appear here.",
-    pengumuman: "Results announced", biayaKet: "Fees",
+    pengumuman: "Results announced", biayaKet: "Re-registration",
     jadwal: "Key Dates", menyusul: "To be announced",
-    rincian: "Fee Breakdown", total: "Total", jalurJudul: "Admission Tracks",
-    grup: "Join the Applicants' WhatsApp Group",
+    rincian: "Re-registration Fee Breakdown", total: "Total", jalurJudul: "Admission Tracks",
     mundurTutup: "Registration closes in", mundurBuka: "Registration opens in",
     satuan: ["Days", "Hours", "Min", "Sec"],
     angkaSiswa: "Active students", angkaAlumni: "Alumni", angkaJurusan: "Study programs", angkaKursi: "Seats available",
@@ -97,12 +103,12 @@ export default async function AdmissionsPage() {
   const lang = await getLang();
   const t = TEKS[lang];
 
-  const [s, gelombang, siswaAktif, alumni, jurusan, terbaru, duta] = await Promise.all([
-    getSettings([...KUNCI_KONTEN_SPMB, "school.name"]),
+  const [s, gelombang, siswaAktif, alumni, jurusan, terbaru, duta, dokTambahan] = await Promise.all([
+    getSettings([...KUNCI_KONTEN_SPMB, "school.name", "spmb.mpls", ...DOKUMEN_BAKU_SPMB.map(d => d.kunci)]),
     prisma.gelombangSpmb.findMany({
       where: { aktif: true },
       orderBy: { urutan: "asc" },
-      include: { kuota: true, _count: { select: { pendaftar: true } } },
+      include: { kuota: true, _count: { select: { pendaftar: true } }, sesi: { select: { tanggal: true } } },
     }).catch(() => []),
     prisma.student.count({ where: { studentStatus: "AKTIF" } }).catch(() => 0),
     prisma.student.count({ where: { studentStatus: "LULUS" } }).catch(() => 0),
@@ -114,8 +120,22 @@ export default async function AdmissionsPage() {
     }).catch(() => []),
     pendaftarSejak(7),
     peringkatPerujuk(10),
+    prisma.dokumenSyaratSpmb.findMany({ where: { aktif: true }, orderBy: { urutan: "asc" }, select: { nama: true, wajib: true } }).catch(() => []),
   ]);
+  // Persyaratan = berkas yang DIMINTA formulir (satu sumber dengan tab Dokumen & Berkas) + berkas yang dibawa saat daftar ulang.
+  const berkasUnggah = [
+    ...DOKUMEN_BAKU_SPMB.filter(d => (s[d.kunci] ?? "1") !== "off").map(d => ({ nama: d.label, wajib: s[d.kunci] !== "0" })),
+    ...dokTambahan.map(d => ({ nama: d.nama, wajib: d.wajib })),
+  ];
   const soalKuis = susunKuis(jurusan);
+  // Bank soal panitia (acak per kuis); kosong = soal otomatis dari data jurusan.
+  const bankKuis = bacaBankKuis(s["spmb.kuis"], jurusan.map(m => m.code));
+  const jumlahKuis = Math.max(3, Math.min(20, Number(s["spmb.kuisJumlah"]) || 8));
+  // Jadwal penting DISUSUN dari data gelombang/tahapan/MPLS (spmb-tahapan.ts) — gelombang yang sudah lewat tidak ditampilkan.
+  const jadwalWeb = susunJadwalWeb(gelombang.filter(g => g.tutup.getTime() >= Date.now()), {
+    pengumumanTanggal: s["spmb.pengumumanTanggal"] ?? "", mpls: bacaMpls(s["spmb.mpls"]),
+    seleksi: s["spmb.tahapSeleksi"] !== "0", daftarUlang: s["spmb.tahapDaftarUlang"] !== "0",
+  });
 
   const k = bacaKontenSpmb(s);
   // Story = galeri promosi yang sudah diunggah panitia (satu galeri satu lingkaran).
@@ -175,7 +195,7 @@ export default async function AdmissionsPage() {
           {/* Motif & cahaya bergerak lebih lambat dari isi saat digulir (parallax, layar lebar saja).
               Lapisan motif diperpanjang ke bawah supaya tidak tampak tepi saat bergeser. */}
           <div data-parallax="0.3" className="pointer-events-none absolute inset-x-0 top-0 -bottom-[40vh] opacity-[0.07]"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px",
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px",
               ...(w.polaInvert ? { filter: "invert(1)" } : {}) }} />
           <div data-parallax="0.5" className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-30 blur-3xl"
             style={{ background: "radial-gradient(circle, currentColor 0%, transparent 70%)" }} />
@@ -218,6 +238,7 @@ export default async function AdmissionsPage() {
                       <span className="live-dot inline-block h-2 w-2 rounded-full bg-emerald-400" /> {dibuka.nama}
                     </span>
                     <span className={w.lembut}>{t.ditutup} <span className={`font-semibold ${w.teks}`}>{tgl(dibuka.tutup)}</span></span>
+                    <span className={`font-semibold ${w.teks}`}>{t.daftarGratis}</span>
                     <span className={w.lembut}>{t.biayaKet}: <span className={`font-semibold ${w.teks}`}>{dibuka.biayaDaftar ? "Rp " + dibuka.biayaDaftar.toLocaleString("id-ID") : t.gratis}</span></span>
                   </div>
                 ) : (
@@ -318,24 +339,31 @@ export default async function AdmissionsPage() {
               </div>
             )}
 
-            {/* Jadwal penting */}
-            {k.jadwal.length > 0 && (
+            {/* Jadwal penting — otomatis per gelombang */}
+            {jadwalWeb.length > 0 && (
               <div className="mt-14">
                 <h2 className={`font-heading text-sm font-semibold uppercase tracking-widest ${w.aksen}`}>{t.jadwal}</h2>
-                <ol className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {k.jadwal.map((a, i) => (
-                    <li key={i} style={{ animationDelay: `${i * 70}ms` }}
-                      className={`spmb-muncul flex items-center gap-3 rounded-2xl border px-4 py-3 ${w.kaca}`}>
-                      <span className={`angka flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${w.aksenBg} ${w.aksenTeks}`}>{i + 1}</span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{a.label}</span>
-                        <span className={`angka block text-sm ${w.lembut}`}>
-                          {a.tanggal ? tgl(new Date(a.tanggal + "T00:00:00+07:00")) : t.menyusul}
-                        </span>
-                      </span>
-                    </li>
+                <div className="mt-4 space-y-6">
+                  {jadwalWeb.map(jg => (
+                    <div key={jg.nama}>
+                      {jadwalWeb.length > 1 && <p className="mb-2 text-sm font-semibold">{jg.nama}</p>}
+                      <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {jg.titik.map((a, i) => (
+                          <li key={i} style={{ animationDelay: `${i * 70}ms` }}
+                            className={`spmb-muncul flex items-center gap-3 rounded-2xl border px-4 py-3 ${w.kaca}`}>
+                            <span className={`angka flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${w.aksenBg} ${w.aksenTeks}`}>{i + 1}</span>
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold">{lang === "en" ? (LABEL_JADWAL_EN[a.label] ?? a.label) : a.label}</span>
+                              <span className={`angka block text-sm ${w.lembut}`}>
+                                {a.dari ? tgl(new Date(a.dari + "T00:00:00+07:00")) + (a.sampai && a.sampai !== a.dari ? ` – ${tgl(new Date(a.sampai + "T00:00:00+07:00"))}` : "") : t.menyusul}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
                   ))}
-                </ol>
+                </div>
               </div>
             )}
 
@@ -438,7 +466,7 @@ export default async function AdmissionsPage() {
 
               {soalKuis.length >= 2 && (
                 <div className="mt-12">
-                  <KuisJurusanSpmb lang={lang} soal={soalKuis} formTerbuka={!!dibuka}
+                  <KuisJurusanSpmb lang={lang} soal={soalKuis} bank={bankKuis} jumlah={jumlahKuis} formTerbuka={!!dibuka}
                     jurusan={jurusan.map(m => ({ code: m.code, name: m.name, tagline: m.tagline, career: m.career, themeColor: m.themeColor }))} />
                 </div>
               )}
@@ -538,23 +566,41 @@ export default async function AdmissionsPage() {
           <div className="container-custom">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               <div className="min-w-0">
-                {k.syarat.length > 0 && (
+                {(berkasUnggah.length > 0 || k.syarat.length > 0) && (
                   <>
                     <h2 className="font-heading mb-6 text-2xl font-bold text-navy">{t.syarat}</h2>
-                    <ul className="mb-8 space-y-3">
-                      {k.syarat.map(r => (
-                        <li key={r} className="flex items-start gap-3 text-sm text-gray-600">
-                          <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-primary-700" /> {r}
-                        </li>
-                      ))}
-                    </ul>
+                    {berkasUnggah.length > 0 && (
+                      <>
+                        <p className="label-kecil mb-3 text-primary-700">{t.syaratUnggah}</p>
+                        <ul className="mb-6 space-y-3">
+                          {berkasUnggah.map(r => (
+                            <li key={r.nama} className="flex items-start gap-3 text-sm text-gray-600">
+                              <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-primary-700" />
+                              <span>{r.nama}{!r.wajib && <span className="text-gray-400"> ({t.opsional})</span>}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {k.syarat.length > 0 && (
+                      <>
+                        <p className="label-kecil mb-3 text-primary-700">{t.syaratBawa}</p>
+                        <ul className="mb-8 space-y-3">
+                          {k.syarat.map(r => (
+                            <li key={r} className="flex items-start gap-3 text-sm text-gray-600">
+                              <PackageCheck size={18} className="mt-0.5 shrink-0 text-primary-700" /> {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </>
                 )}
 
                 {k.beasiswa.length > 0 && (
                   <div className={`relative overflow-hidden rounded-2xl border border-gray-100 bg-gradient-to-br p-6 ${w.teks} ${w.latar}`}>
                     <div className="pointer-events-none absolute inset-0 opacity-[0.07]"
-                      style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px",
+                      style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "141.42px 141.42px",
                         ...(w.polaInvert ? { filter: "invert(1)" } : {}) }} />
                     <div className="relative">
                       <h3 className={`font-heading mb-4 text-lg font-bold ${w.aksen}`}>{t.beasiswa}</h3>
@@ -597,7 +643,7 @@ export default async function AdmissionsPage() {
                   </div>
                 )}
 
-                {(k.biaya || k.pengumumanTanggal || k.kontakWa || k.tautanGrup) && (
+                {(k.biaya || k.pengumumanTanggal || k.kontakWa) && (
                   <div className="mt-6 space-y-3">
                     {k.pengumumanTanggal && (
                       <p className="flex items-start gap-2 text-sm text-gray-600">
@@ -613,11 +659,6 @@ export default async function AdmissionsPage() {
                     {k.kontakWa && (
                       <a href={`https://wa.me/${k.kontakWa}`} target="_blank" rel="noopener" className="btn-modal-cancel">
                         <MessageCircle size={16} /> {t.wa} — {k.kontakNama}
-                      </a>
-                    )}
-                    {k.tautanGrup && (
-                      <a href={k.tautanGrup} target="_blank" rel="noopener" className="btn-modal-cancel">
-                        <Users2 size={16} /> {t.grup}
                       </a>
                     )}
                   </div>

@@ -32,7 +32,8 @@ export default function FormulirSpmbSheet({ d, sekolah, logoUrl, tahun }: {
     ["Konsentrasi Keahlian", d.chosenMajor || "—"],
     ["Jalur Pendaftaran", (d.jalur || "—").replace(/_/g, " ")],
     ["Gelombang", d.gelombang?.nama ?? "—"],
-    ["Biaya Pendaftaran", d.gelombang?.biayaDaftar ? `Rp ${d.gelombang.biayaDaftar.toLocaleString("id-ID")}` : "—"],
+    ["Biaya Pendaftaran", "Gratis"],
+    ["Biaya Daftar Ulang", d.gelombang?.biayaDaftar ? `Rp ${d.gelombang.biayaDaftar.toLocaleString("id-ID")}` : "—"],
     ["Tanggal Mendaftar", tgl(d.createdAt)],
     ["Status Saat Dicetak", LABEL_STATUS[d.status] ?? d.status],
   ];

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { verifySpmbAccess } from "@/lib/spmb";
+import { verifySpmbAccess, STATUS_SPMB } from "@/lib/spmb";
 import { logActivity } from "@/lib/activity-log";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
@@ -8,6 +8,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const session = await verifySpmbAccess();
     const { id } = await params;
     const body = await req.json();
+    // Status hanya dari daftar resmi; skor & pembayaran TIDAK lagi lewat sini — skor satu pintu di Seleksi & Nilai,
+    // pembayaran bercicil di Tahapan Calon (6 Okt 2026, data dobel yang saling menimpa).
+    if (body.status !== undefined && !(STATUS_SPMB as readonly string[]).includes(body.status)) {
+      return Response.json({ error: "Status tidak dikenal" }, { status: 400 });
+    }
     const before = await prisma.admission.findUnique({ where: { id }, select: { status: true, fullName: true } });
     const item = await prisma.admission.update({
       where: { id },
@@ -15,10 +20,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         ...(body.status !== undefined ? { status: body.status } : {}),
         ...(body.notes !== undefined ? { notes: body.notes || null } : {}),
         ...(body.jalur !== undefined ? { jalur: body.jalur } : {}),
-        ...(body.nilaiRapor !== undefined ? { nilaiRapor: body.nilaiRapor === "" ? null : Number(body.nilaiRapor) } : {}),
-        ...(body.nilaiTes !== undefined ? { nilaiTes: body.nilaiTes === "" ? null : Number(body.nilaiTes) } : {}),
-        ...(body.skorAkhir !== undefined ? { skorAkhir: body.skorAkhir === "" ? null : Number(body.skorAkhir) } : {}),
-        ...(body.paymentVerified !== undefined ? { paymentVerified: !!body.paymentVerified } : {}),
       },
     });
 

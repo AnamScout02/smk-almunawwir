@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition, useEffect, useRef } from "react";
-import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon, Loader2, Copy, ChevronLeft, ChevronRight } from "lucide-react";
+import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon, Loader2, Copy, ChevronLeft, ChevronRight, ListChecks, MessageCircle } from "lucide-react";
 import { salinTeks } from "@/lib/salin-teks";
 import { periksaFormulirSpmb, type IsianSpmb, type KunciIsian } from "@/lib/spmb-form";
 import type { Jalur } from "@/lib/spmb-konten";
@@ -10,6 +10,7 @@ import type { Lang } from "@/lib/lang";
 import { catatJejak } from "@/lib/spmb-jejak";
 import { bacaBerkas, BISA_DIBACA } from "@/lib/ocr-berkas";
 import PeriksaBerkasOcr, { type KeadaanOcr } from "@/components/spmb/PeriksaBerkasOcr";
+import IsianSekolahAsal from "@/components/spmb/IsianSekolahAsal";
 
 const inputClass =
   "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition bg-white placeholder:text-gray-400";
@@ -65,10 +66,13 @@ const ui = {
     nomorLabel: "Nomor pendaftaran Anda",
     nomorKet: "Simpan atau foto nomor ini. Status pendaftaran dibuka dengan nomor ini dan tanggal lahir Anda.",
     salin: "Salin nomor",
+    lihatTahapan: "Lihat Tahapan Pendaftaran",
+    gabungGrup: "Gabung Grup WhatsApp Gelombang",
+    grupKet: "Informasi jadwal dan pengumuman dibagikan panitia di grup ini.",
     tersalin: "Nomor tersalin",
     gagalSalin: "Nomor belum tersalin — catat manual",
     successTitle: "Pendaftaran Terkirim!",
-    successDesc: (name: string) => <>Terima kasih, <strong>{name}</strong>. Tim kami akan menghubungi Anda melalui WhatsApp dalam 3 hari kerja.</>,
+    successDesc: (name: string) => <>Terima kasih, <strong>{name}</strong>. Pantau setiap tahap di halaman Tahapan Pendaftaran dan aktifkan pemberitahuan di sana — kabar dari panitia langsung masuk ke HP Anda.</>,
     registerAgain: "Daftar lagi",
     formTitle: "Formulir Pendaftaran Online",
     formDesc: "Isi dengan lengkap dan benar. Tanda",
@@ -123,10 +127,13 @@ const ui = {
     nomorLabel: "Your registration number",
     nomorKet: "Save or photograph this number. Your status is opened with this number and your date of birth.",
     salin: "Copy number",
+    lihatTahapan: "View Registration Progress",
+    gabungGrup: "Join the Wave WhatsApp Group",
+    grupKet: "The committee shares schedules and announcements in this group.",
     tersalin: "Number copied",
     gagalSalin: "Not copied — please write it down",
     successTitle: "Registration Submitted!",
-    successDesc: (name: string) => <>Thank you, <strong>{name}</strong>. Our team will contact you via WhatsApp within 3 working days.</>,
+    successDesc: (name: string) => <>Thank you, <strong>{name}</strong>. Track every step on the Registration Progress page and turn on notifications there — updates from the committee go straight to your phone.</>,
     registerAgain: "Register again",
     formTitle: "Online Registration Form",
     formDesc: "Fill in completely and accurately. Fields marked",
@@ -285,6 +292,9 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   const [success, setSuccess] = useState(false);
   const [nomor, setNomor] = useState("");
   const [pesanSalin, setPesanSalin] = useState("");
+  // Kunci halaman tahapan & tautan grup WA gelombang — tampil TEPAT setelah daftar (user 6 Okt 2026).
+  const [tanda, setTanda] = useState("");
+  const [tautanGrup, setTautanGrup] = useState("");
   const [error, setError] = useState("");
   /** Pesan per isian. Kuncinya sama dengan nama isian supaya bisa ditempel di bawah kotaknya. */
   const [galat, setGalat] = useState<Partial<Record<KunciIsian | "dokumen", string>>>({});
@@ -297,6 +307,10 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   const [refStatus, setRefStatus] = useState<{ keadaan: "diam" | "cek" | "ada" | "kosong"; nama?: string; label?: string }>({ keadaan: "diam" });
   const [refDariTautan, setRefDariTautan] = useState(false);
   const ringkasRef = useRef<HTMLDivElement | null>(null);
+  // Lanjut/Kembali menggulir ke AWAL KARTU FORMULIR, bukan ke puncak halaman (laporan user 6 Okt 2026: "klik lanjut malah
+  // gulir ke halaman paling atas" — dulu window.scrollTo({ top: 0 })). scroll-mt memberi ruang untuk navbar yang menempel.
+  const kartuRef = useRef<HTMLDivElement>(null);
+  const keAwalKartu = () => requestAnimationFrame(() => kartuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   const [majors, setMajors] = useState<{ code: string; name: string }[]>([]);
   const [ocr, setOcr] = useState<Record<string, KeadaanOcr>>({});
   const [kabupatenList, setKabupatenList] = useState<{ k: string; n: string; p: string }[]>([]);
@@ -480,6 +494,8 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
         const data = await res.json();
         if (res.ok) {
           setNomor(typeof data?.nomor === "string" ? data.nomor : "");
+          setTanda(typeof data?.tanda === "string" ? data.tanda : "");
+          setTautanGrup(typeof data?.tautanGrup === "string" ? data.tautanGrup : "");
           try { localStorage.removeItem(KUNCI_DRAF); } catch { /* abaikan */ }
           setSuccess(true);
         } else {
@@ -558,8 +574,25 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
             {pesanSalin && <p className="mt-2 text-xs font-medium text-primary-700">{pesanSalin}</p>}
           </div>
         )}
+        {nomor && tanda && (
+          <div className="mb-6 flex w-full max-w-sm flex-col gap-2">
+            {tautanGrup && (
+              <>
+                <a href={tautanGrup} target="_blank" rel="noopener noreferrer"
+                  onClick={() => {
+                    fetch("/api/spmb/calon", { method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ aksi: "grup-klik", nomor, t: tanda }) }).catch(() => {});
+                  }}
+                  className="btn-modal-save w-full"><MessageCircle size={16} /> {t.gabungGrup}</a>
+                <p className="text-xs text-gray-500">{t.grupKet}</p>
+              </>
+            )}
+            <a href={`/spmb/tahapan?nomor=${encodeURIComponent(nomor)}&t=${encodeURIComponent(tanda)}`}
+              className={`${tautanGrup ? "btn-modal-cancel" : "btn-modal-save"} w-full`}><ListChecks size={16} /> {t.lihatTahapan}</a>
+          </div>
+        )}
         <p className="font-arabic text-primary-700 text-xl mb-6">جَزَاكُمُ اللَّهُ خَيْرًا</p>
-        <button onClick={() => { setForm(EMPTY); setDocUrls({}); setSuccess(false); setNomor(""); setPesanSalin(""); setLangkah(0); }}
+        <button onClick={() => { setForm(EMPTY); setDocUrls({}); setSuccess(false); setNomor(""); setTanda(""); setTautanGrup(""); setPesanSalin(""); setLangkah(0); }}
           className="text-sm text-primary-700 hover:text-primary-900 underline underline-offset-2 transition-colors">
           {t.registerAgain}
         </button>
@@ -568,7 +601,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+    <div ref={kartuRef} className="scroll-mt-24 bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
       <h2 className="font-heading text-2xl font-bold text-navy mb-1">{t.formTitle}</h2>
       <p className="text-gray-500 text-sm mb-7">{t.formDesc} {req} {t.formDescSuffix}</p>
 
@@ -724,9 +757,9 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
           {/* Asal Sekolah */}
           <div>
             <label className={labelClass}>{t.prevSchool} {req}</label>
-            <input value={form.previousSchool} onChange={e => setField("previousSchool", e.target.value)} type="text"
-              maxLength={120} placeholder={t.prevSchoolPh}
-              aria-invalid={!!galat.previousSchool} className={inputClass + (galat.previousSchool ? kelasSalah : "")} />
+            <IsianSekolahAsal value={form.previousSchool} onChange={v => setField("previousSchool", v)} placeholder={t.prevSchoolPh}
+              invalid={!!galat.previousSchool} className={inputClass + (galat.previousSchool ? kelasSalah : "")}
+              judulSaran={lang === "en" ? "Pick your school if it's listed:" : "Pilih bila sekolahmu ada di daftar:"} />
             <Galat pesan={galat.previousSchool} />
           </div>
           {/* Konsentrasi Keahlian */}
@@ -837,7 +870,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
 
         <div className="flex gap-3">
           {langkah > 0 && (
-            <button type="button" onClick={() => { setLangkah(langkah - 1); setError(""); setGalat({}); }}
+            <button type="button" onClick={() => { setLangkah(langkah - 1); setError(""); setGalat({}); keAwalKartu(); }}
               className="btn-modal-cancel shrink-0 !py-4">
               <ChevronLeft size={18} /> {t.kembali}
             </button>
@@ -845,7 +878,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
           {langkah < TERAKHIR ? (
             /* type="button" — menekan Enter di isian tidak boleh mengirim formulir dari langkah 1. */
             <button type="button"
-              onClick={() => { if (periksaLangkah(langkah)) { setLangkah(langkah + 1); window.scrollTo({ top: 0, behavior: "smooth" }); } }}
+              onClick={() => { if (periksaLangkah(langkah)) { setLangkah(langkah + 1); keAwalKartu(); } }}
               className="btn-gold flex w-full !items-center !justify-center gap-2 !rounded-xl text-base !py-4">
               {t.lanjut} <ChevronRight size={18} />
             </button>

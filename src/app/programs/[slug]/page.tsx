@@ -116,7 +116,7 @@ export default async function ProgramDetailPage({ params }: Props) {
           style={heroStyle}>
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
           <div className="container-custom relative">
@@ -215,7 +215,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                               className={`aspect-video ${customColor ? "" : `bg-gradient-to-br ${fallbackClass}`} rounded-xl flex items-center justify-center overflow-hidden relative`}
                               style={heroStyle}>
                               <div className="absolute inset-0 opacity-[0.1] pointer-events-none"
-                                style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "60px 60px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                                style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "84.85px 84.85px", backgroundRepeat: "repeat", filter: "invert(1)" }}
                               />
                               <Image src={logoUrl} alt={name} fill sizes="120px" className="object-contain p-6" />
                             </div>
@@ -268,7 +268,7 @@ export default async function ProgramDetailPage({ params }: Props) {
                   <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
                   <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-                    style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+                    style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "141.42px 141.42px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
                   <div className="relative">
                     <p className="font-arabic text-gold text-xl mb-3">مَنْ طَلَبَ الْعِلْمَ</p>
                     <h3 className="font-heading font-bold mb-2">{c.islamicTitle}</h3>

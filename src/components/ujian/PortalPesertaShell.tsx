@@ -56,7 +56,7 @@ export default function PortalPesertaShell({
       <div className="min-h-dvh flex flex-col bg-cream">
         <header className="relative overflow-hidden print:hidden" style={{ background: NAVY }}>
           <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", filter: "invert(1)" }} />
           <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-3">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -80,7 +80,7 @@ export default function PortalPesertaShell({
     <div className="min-h-dvh flex flex-col bg-cream">
       <header className="relative overflow-hidden text-center px-5 pt-8 pb-20" style={{ background: NAVY }}>
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", filter: "invert(1)" }} />
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", filter: "invert(1)" }} />
         <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />
         <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"

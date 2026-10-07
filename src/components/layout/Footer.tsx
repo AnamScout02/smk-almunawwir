@@ -20,7 +20,7 @@ export default async function Footer() {
   return (
     <footer className="bg-primary-900 text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "200px 200px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "282.84px 282.84px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
       <div className="h-1 bg-gradient-to-r from-primary-700 via-gold to-primary-700 relative" />
 

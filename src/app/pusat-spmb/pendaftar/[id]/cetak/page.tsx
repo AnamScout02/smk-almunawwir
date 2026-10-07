@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="py-6 print:py-0">
       <div className="mx-auto mb-4 flex max-w-[21cm] flex-wrap justify-end gap-2 px-4 print:hidden">
-        <Link href="/pusat-spmb/pendaftar" className="btn-modal-cancel"><ArrowLeft size={16} /> Kembali</Link>
+        <Link href="/pusat-spmb/tahapan" className="btn-modal-cancel"><ArrowLeft size={16} /> Kembali</Link>
         <PrintButton />
       </div>
       <FormulirSpmbSheet d={d} sekolah={s["school.name"] || "SMK Al-Munawwir IIBS"}

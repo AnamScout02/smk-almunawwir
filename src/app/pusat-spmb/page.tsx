@@ -29,26 +29,28 @@ export default async function PusatSpmbPage() {
     prisma.admission.findMany({
       select: {
         id: true, nomor: true, fullName: true, chosenMajor: true, jalur: true, gender: true,
-        status: true, createdAt: true, paymentVerified: true, studentId: true,
+        status: true, createdAt: true, daftarUlangConfirmedAt: true, studentId: true, verifikasiStatus: true,
         gelombang: { select: { nama: true } },
       },
       orderBy: { createdAt: "desc" },
     }).catch(() => []),
     prisma.major.findMany({ select: { id: true, name: true, code: true, themeColor: true }, orderBy: { name: "asc" } }).catch(() => []),
-    getSettings(["spmb.tahun", "spmb.hasilDibuka", "spmb.poster"]).catch(() => ({} as Record<string, string>)),
+    getSettings(["spmb.tahun", "spmb.hasilDibuka", "spmb.poster", "spmb.infoBayar", "spmb.mpls"]).catch(() => ({} as Record<string, string>)),
     gelombangDibuka().catch(() => null),
     prisma.gelombangSpmb.findMany({
       where: { aktif: true }, orderBy: { urutan: "asc" },
-      include: { kuota: { include: { major: { select: { id: true, name: true, code: true, themeColor: true } } } } },
+      include: { kuota: { include: { major: { select: { id: true, name: true, code: true, themeColor: true } } } }, _count: { select: { sesi: true } } },
     }).catch(() => []),
     prisma.komponenNilaiSpmb.count({ where: { aktif: true } }).catch(() => 0),
     prisma.dokumenSyaratSpmb.count({ where: { aktif: true } }).catch(() => 0),
   ]);
 
   const total = pendaftar.length;
-  const menunggu = pendaftar.filter(p => ["PENDING", "VERIFIKASI"].includes(p.status)).length;
+  // Yang perlu ditindak panitia = BERKAS belum diperiksa (tahap Verifikasi), bukan status seleksi lama.
+  const menunggu = pendaftar.filter(p => p.verifikasiStatus === "BELUM" && !["DITOLAK", "REJECTED"].includes(p.status)).length;
   const diterima = pendaftar.filter(p => ["DITERIMA", "ACCEPTED"].includes(p.status)).length;
-  const lunas = pendaftar.filter(p => p.paymentVerified).length;
+  // Daftar ulang = konfirmasi bersedia bersekolah (pembayaran bercicil terpisah, CLAUDE.md #129).
+  const lunas = pendaftar.filter(p => p.daftarUlangConfirmedAt).length;
   const jadiSiswa = pendaftar.filter(p => p.studentId).length;
   const hasilDibuka = s["spmb.hasilDibuka"] === "1";
 
@@ -81,9 +83,21 @@ export default async function PusatSpmbPage() {
   const tgl = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
 
   const perluDisiapkan: { teks: string; href: string }[] = [];
-  if (!gelombangBuka) perluDisiapkan.push({ teks: "Belum ada gelombang yang sedang dibuka — pendaftaran di situs tertutup.", href: "/pusat-spmb/pengaturan" });
-  if (komponen === 0) perluDisiapkan.push({ teks: "Belum ada komponen penilaian aktif — seleksi belum bisa dinilai.", href: "/pusat-spmb/pengaturan" });
-  if (syarat === 0) perluDisiapkan.push({ teks: "Belum ada dokumen syarat — pendaftar belum diminta mengunggah apa pun.", href: "/pusat-spmb/pengaturan" });
+  if (!gelombangBuka) perluDisiapkan.push({ teks: "Belum ada gelombang yang sedang dibuka — pendaftaran di situs tertutup.", href: "/pusat-spmb/pengaturan?tab=gelombang" });
+  if (komponen === 0) perluDisiapkan.push({ teks: "Belum ada komponen penilaian aktif — seleksi belum bisa dinilai.", href: "/pusat-spmb/pengaturan?tab=komponen" });
+  void syarat; // dokumen baku (ijazah, KK, dst.) selalu ada — dokumen tambahan memang opsional, jadi tidak diperingatkan.
+  // Persiapan tahapan calon (6 Okt 2026).
+  const mpls = (() => { try { return JSON.parse(s["spmb.mpls"] || "{}") as { mulai?: string }; } catch { return {}; } })();
+  for (const g of semuaGelombang) {
+    if (!g.tautanGrup) perluDisiapkan.push({ teks: `${g.nama}: tautan grup WhatsApp belum diisi.`, href: "/pusat-spmb/pengaturan?tab=gelombang" });
+    if (!g.biayaDaftar) perluDisiapkan.push({ teks: `${g.nama}: biaya daftar ulang belum diisi.`, href: "/pusat-spmb/pengaturan?tab=gelombang" });
+    const jt = (g.jadwalTahap ?? {}) as Record<string, { tanggal?: string }>;
+    if (!g._count.sesi && !jt.ASESMEN?.tanggal && !jt.PEMERIKSAAN?.tanggal) {
+      perluDisiapkan.push({ teks: `${g.nama}: belum ada sesi kedatangan maupun jadwal asesmen & cek kesehatan.`, href: "/pusat-spmb/pengaturan?tab=tahapan&bagian=sesi" });
+    }
+  }
+  if (!s["spmb.infoBayar"]) perluDisiapkan.push({ teks: "Cara bayar / nomor rekening daftar ulang belum diisi.", href: "/pusat-spmb/pengaturan?tab=tahapan&bagian=umum" });
+  if (!mpls.mulai) perluDisiapkan.push({ teks: "Tanggal MPLS belum diisi — tampil ke calon yang sudah tuntas.", href: "/pusat-spmb/pengaturan?tab=tahapan&bagian=umum" });
   if (!s["spmb.poster"]) perluDisiapkan.push({ teks: "Belum ada poster SPMB di halaman situs.", href: "/pusat-spmb/promosi" });
 
   return (
@@ -94,10 +108,10 @@ export default async function PusatSpmbPage() {
 
         <div className="space-y-6">
           <div className="kisi-kartu kisi-kartu-5">
-            <StatTile value={total} label="Total pendaftar" ikon="akun" color="primary" href="/pusat-spmb/pendaftar" />
-            <StatTile value={menunggu} label="Menunggu diperiksa" ikon="menunggu" color="amber" href="/pusat-spmb/pendaftar" sorot={menunggu > 0} />
+            <StatTile value={total} label="Total pendaftar" ikon="akun" color="primary" href="/pusat-spmb/tahapan" />
+            <StatTile value={menunggu} label="Berkas menunggu diperiksa" ikon="menunggu" color="amber" href="/pusat-spmb/tahapan?saring=VERIFIKASI" sorot={menunggu > 0} />
             <StatTile value={diterima} label="Diterima" ikon="hadir" color="emerald" href="/pusat-spmb/pengumuman" />
-            <StatTile value={lunas} label="Sudah daftar ulang" ikon="lunas" color="blue" href="/pusat-spmb/daftar-ulang" />
+            <StatTile value={lunas} label="Sudah daftar ulang" ikon="lunas" color="blue" href="/pusat-spmb/tahapan" />
             <StatTile value={jadiSiswa} label="Sudah jadi siswa" ikon="siswa" color="purple" href="/pusat-spmb/konversi" />
           </div>
 
@@ -153,7 +167,7 @@ export default async function PusatSpmbPage() {
                   </div>
                 </Panel>
 
-                <Panel judul="Pendaftar terbaru" tautan={{ label: "Lihat semua", href: "/pusat-spmb/pendaftar" }} isi={false}>
+                <Panel judul="Pendaftar terbaru" tautan={{ label: "Lihat semua", href: "/pusat-spmb/tahapan" }} isi={false}>
                   <ul className="divide-y divide-gray-100">
                     {terbaru.map(p => (
                       <li key={p.id} className="flex items-center justify-between gap-3 px-5 py-3">

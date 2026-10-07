@@ -34,7 +34,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
     <div className="min-h-dvh flex items-center justify-center p-6"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
 
       <div className="relative w-full max-w-md">
         <div className="flex justify-center mb-6">

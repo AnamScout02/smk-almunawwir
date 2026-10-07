@@ -26,7 +26,7 @@ export default function PrintKop({
     <div className={`print-doc relative ${edgeClassName} ${spacingClassName} overflow-hidden flex items-center justify-between gap-4`}
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "127.28px 127.28px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
       <div className="absolute -top-10 -right-6 w-44 h-44 rounded-full opacity-25 blur-2xl pointer-events-none"
         style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />

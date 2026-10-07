@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { assertSpmb } from "@/lib/spmb";
 import { logActivity } from "@/lib/activity-log";
+import { bacaJadwal } from "@/lib/spmb-tahapan";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (b?.tahunAjaranId !== undefined) data.tahunAjaranId = String(b.tahunAjaranId ?? "").trim() || null;
     if (typeof b?.aktif === "boolean") data.aktif = b.aktif;
     if (typeof b?.urutan === "number") data.urutan = Math.max(1, Math.round(b.urutan));
+    // Tautan grup WA per gelombang (6 Okt 2026) — hanya alamat https, supaya tidak bisa diisi javascript: dsb.
+    if (b?.tautanGrup !== undefined) {
+      const t = String(b.tautanGrup ?? "").trim();
+      if (t && !/^https:\/\/[^\s]+$/i.test(t)) return NextResponse.json({ error: "Tautan grup harus diawali https://" }, { status: 400 });
+      data.tautanGrup = t || null;
+    }
+    if (b?.jadwalTahap !== undefined) data.jadwalTahap = bacaJadwal(b.jadwalTahap);
 
     // Kuota per jurusan dikirim sekaligus: { kuota: { "<majorId>": <angka> } }.
     const kuota = b?.kuota && typeof b.kuota === "object" ? (b.kuota as Record<string, unknown>) : null;

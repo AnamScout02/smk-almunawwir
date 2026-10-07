@@ -86,7 +86,13 @@ pakai gradient 3-stop ini, jangan bikin gradient navy baru yang beda:
 ```css
 linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)
 ```
-Ditambah watermark opsional: `background-image: url('/images/pattern-smk.png')`, `background-size: 140px 140px`, `filter: invert(1)`, `opacity: 0.06` (di dalam header/modal) — `opacity: 0.07`, `background-size: 180px 180px` (di section hero publik `.from-primary-900`).
+Ditambah watermark opsional: `background-image: url('/images/pattern-smk-miring.png')`, `background-size: 197.99px 197.99px`, `filter: invert(1)`, `opacity: 0.06` (di dalam header/modal) — `opacity: 0.07`, `background-size: 254.56px 254.56px` (di section hero publik `.from-primary-900`).
+
+**Motif SMK = MIRING −45° (keputusan user 6 Okt 2026: "pattern fix pakai −45", jarak motif tidak berubah, di SEMUA tempat).**
+`pattern-smk-miring.png` adalah ubin 849×849 yang dihitung ulang per piksel dari `pattern-smk.png` (600×600) dengan putaran −45°
+dan menyambung mulus. Kisi yang diputar 45° baru berulang tiap **jarak motif × √2**, jadi `background-size` ubin miring = ukuran
+lama × 1,4142 (140 → 197.99px, 180 → 254.56px, 90 → 127.28px, 18mm → 25.46mm). Memakai ukuran lama apa adanya membuat motif
+jadi lebih kecil & rapat. `pattern-smk.png` lurus tetap disimpan sebagai sumber (dan masih dipakai modul Bendahara yang tidak disentuh).
 
 **Warna status kehadiran** (HADIR/IZIN/SAKIT/ALPHA) — konvensi tetap dipakai di semua halaman
 absensi (`teacher/attendance/[classId]/page.tsx` dan turunannya):

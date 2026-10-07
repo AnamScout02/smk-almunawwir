@@ -53,7 +53,7 @@ export default function Modal({
         <div className="relative overflow-hidden flex items-center justify-between px-6 py-4 rounded-t-2xl shrink-0"
           style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
           <div className="relative min-w-0">
             <h2 className="font-heading font-semibold text-white truncate">{title}</h2>
             {description && <p className="text-xs text-white/50 mt-0.5 truncate">{description}</p>}

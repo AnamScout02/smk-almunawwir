@@ -73,7 +73,7 @@ export default async function Page() {
       <main className="min-h-dvh">
         <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 to-primary-700 pt-28 pb-16 text-white">
           <div className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
           <div className="container-custom relative text-center">
             <span className="text-sm font-semibold uppercase tracking-widest text-gold">{c.label}</span>
             <h1 className="font-heading mt-2 mb-4 text-4xl font-bold md:text-5xl">{c.judul}</h1>

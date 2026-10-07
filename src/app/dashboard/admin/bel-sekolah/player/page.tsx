@@ -104,7 +104,7 @@ export default function BelSekolahPlayerPage() {
     <div className="min-h-dvh flex flex-col items-center justify-center p-8 relative"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
 
       <div className="relative flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-6 bg-emerald-500/10 border border-emerald-400/20 px-4 py-2 rounded-full">
         <CheckCircle2 size={14} /> Bel Aktif — jangan tutup halaman ini

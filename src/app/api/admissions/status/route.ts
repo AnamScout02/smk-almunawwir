@@ -44,8 +44,9 @@ export async function GET(req: NextRequest) {
       if (tersimpan !== lahir) return Response.json({ found: false });
     }
 
-    const s = await getSettings(["spmb.hasilDibuka"]);
-    const hasilDibuka = s["spmb.hasilDibuka"] === "1";
+    const s = await getSettings(["spmb.hasilDibuka", "spmb.tahapSeleksi"]);
+    // Tanpa tahap seleksi, keputusan diterima tidak menunggu tombol Buka Hasil (spmb-tahapan.ts).
+    const hasilDibuka = s["spmb.hasilDibuka"] === "1" || s["spmb.tahapSeleksi"] === "0";
     const keputusan = ["DITERIMA", "CADANGAN", "DITOLAK", "ACCEPTED", "REJECTED"].includes(admission.status);
 
     const parts = admission.fullName.trim().split(" ");

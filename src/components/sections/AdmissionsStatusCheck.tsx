@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
-import { Search, CheckCircle2, Clock, XCircle, CalendarCheck, MessageSquare, Loader2, AlertCircle, Printer } from "lucide-react";
+import { Search, CheckCircle2, Clock, XCircle, CalendarCheck, MessageSquare, Loader2, AlertCircle, Printer, ListChecks } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import Link from "next/link";
 import type { Lang } from "@/lib/lang";
@@ -31,21 +31,21 @@ const statusConfig: Record<Lang, Record<string, {
   id: {
     PENDING: { label: "Menunggu Verifikasi", icon: Clock, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "Berkas Anda sedang dalam proses verifikasi oleh panitia. Harap tunggu 3 hari kerja." },
     WAWANCARA: { label: "Tahap Wawancara", icon: CalendarCheck, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Selamat! Anda lolos seleksi administrasi. Panitia akan menghubungi Anda untuk jadwal wawancara." },
-    ACCEPTED: { label: "Diterima", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Segera lakukan daftar ulang." },
+    ACCEPTED: { label: "Diterima", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Lanjutkan daftar ulang lewat halaman Tahapan Pendaftaran." },
     REJECTED: { label: "Tidak Diterima", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "Mohon maaf, pendaftaran Anda belum bisa kami terima saat ini. Silakan hubungi panitia untuk informasi lebih lanjut." },
     // Status baru sejak SPMB bergelombang (1 Oktober 2026)
     VERIFIKASI: { label: "Berkas Diperiksa", icon: Clock, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Berkas Anda sudah masuk dan sedang diperiksa panitia. Hasil seleksi diumumkan sesuai jadwal di halaman SPMB." },
-    DITERIMA: { label: "Diterima", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Segera lakukan daftar ulang." },
+    DITERIMA: { label: "Diterima", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! Anda dinyatakan DITERIMA di SMK Al Munawwir IIBS. Lanjutkan daftar ulang lewat halaman Tahapan Pendaftaran." },
     CADANGAN: { label: "Cadangan", icon: CalendarCheck, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "Anda masuk daftar cadangan. Bila ada kursi yang tidak terisi setelah daftar ulang, panitia akan menghubungi Anda." },
     DITOLAK: { label: "Belum Diterima", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "Mohon maaf, pendaftaran Anda belum bisa kami terima saat ini. Silakan hubungi panitia untuk informasi lebih lanjut." },
   },
   en: {
     PENDING: { label: "Awaiting Verification", icon: Clock, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "Your documents are being verified by the committee. Please wait 3 working days." },
     WAWANCARA: { label: "Interview Stage", icon: CalendarCheck, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Congratulations! You passed the administrative selection. The committee will contact you for an interview schedule." },
-    ACCEPTED: { label: "Accepted", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! You have been ACCEPTED at SMK Al Munawwir IIBS. Please complete re-registration soon." },
+    ACCEPTED: { label: "Accepted", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! You have been ACCEPTED at SMK Al Munawwir IIBS. Continue re-registration on the Registration Progress page." },
     REJECTED: { label: "Not Accepted", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "We're sorry, we are unable to accept your registration at this time. Please contact the committee for more information." },
     VERIFIKASI: { label: "Under Review", icon: Clock, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", desc: "Your documents have been received and are being reviewed. Results will be announced on the schedule shown on the admissions page." },
-    DITERIMA: { label: "Accepted", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! You have been ACCEPTED at SMK Al Munawwir IIBS. Please complete re-registration soon." },
+    DITERIMA: { label: "Accepted", icon: CheckCircle2, bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", desc: "Alhamdulillah! You have been ACCEPTED at SMK Al Munawwir IIBS. Continue re-registration on the Registration Progress page." },
     CADANGAN: { label: "Waiting List", icon: CalendarCheck, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", desc: "You are on the waiting list. If any seat remains after re-registration, the committee will contact you." },
     DITOLAK: { label: "Not Accepted", icon: XCircle, bg: "bg-red-50", text: "text-red-600", border: "border-red-200", desc: "We're sorry, we are unable to accept your registration at this time. Please contact the committee for more information." },
   },
@@ -54,7 +54,7 @@ const statusConfig: Record<Lang, Record<string, {
 const ui = {
   id: {
     title: "Cek Status Pendaftaran",
-    desc: "Masukkan nomor pendaftaran dan tanggal lahir Anda. Bila nomornya hilang, nomor WhatsApp atau email yang dipakai saat mendaftar juga bisa.",
+    desc: "Masukkan nomor pendaftaran dan tanggal lahir untuk membuka tahapan pendaftaran lengkap. Bila nomornya hilang, nomor WhatsApp atau email yang dipakai saat mendaftar bisa menampilkan status singkat.",
     placeholder: "Contoh: 08387820xxxx atau nama@email.com",
     labelNomor: "Nomor pendaftaran",
     labelLahir: "Tanggal lahir",
@@ -74,13 +74,14 @@ const ui = {
     committeeNote: "Pesan dari Panitia",
     checkOther: "Cek nomor / email lain",
     cetakFormulir: "Cetak Formulir Pendaftaran",
+    lihatTahapan: "Lihat Tahapan Pendaftaran",
     tipsTitle: "Tips:",
     tipsBody: "Jika data tidak ditemukan, pastikan format nomor WA benar (boleh diawali 08 atau 628). Proses verifikasi berlangsung maksimal 3 hari kerja setelah pendaftaran.",
     locale: "id-ID",
   },
   en: {
     title: "Check Registration Status",
-    desc: "Enter your registration number and date of birth. If you lost the number, the WhatsApp number or email you registered with also works.",
+    desc: "Enter your registration number and date of birth to open your full registration progress. If you lost the number, your WhatsApp number or email shows a short status.",
     placeholder: "Example: 08387820xxxx or name@email.com",
     labelNomor: "Registration number",
     labelLahir: "Date of birth",
@@ -100,6 +101,7 @@ const ui = {
     committeeNote: "Note from Committee",
     checkOther: "Check another number / email",
     cetakFormulir: "Print Registration Form",
+    lihatTahapan: "View Registration Progress",
     tipsTitle: "Tips:",
     tipsBody: "If your data isn't found, make sure the WhatsApp number format is correct (may start with 08 or 628). Verification takes up to 3 working days after registration.",
     locale: "en-US",
@@ -131,6 +133,11 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
       const data = await res.json();
       if (!res.ok) {
         setResult({ found: null, error: data.error || t.genericError });
+      } else if (data?.found && data.data?.nomor && data.data?.tandaCetak) {
+        // Cek Status & halaman Tahapan DISATUKAN (6 Okt 2026): nomor + tanggal lahir cocok → langsung ke halaman Tahapan
+        // yang memuat semuanya (status, jadwal, seragam, pembayaran, kabar). Jalur WA/e-mail tetap ringkas di sini.
+        window.location.href = `/spmb/tahapan?nomor=${encodeURIComponent(data.data.nomor)}&t=${encodeURIComponent(data.data.tandaCetak)}`;
+        return;
       } else {
         setResult(data);
       }
@@ -275,9 +282,16 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
               {/* Cetak formulir yang sudah diisi — hanya muncul bila dibuka lewat nomor
                   pendaftaran + tanggal lahir, karena jalur WA/e-mail tidak menerbitkan tandanya. */}
               {result.data.nomor && result.data.tandaCetak && (
+                <a
+                  href={`/spmb/tahapan?nomor=${encodeURIComponent(result.data.nomor)}&t=${encodeURIComponent(result.data.tandaCetak)}`}
+                  className="btn-modal-save mt-5 w-full">
+                  <ListChecks size={16} /> {t.lihatTahapan}
+                </a>
+              )}
+              {result.data.nomor && result.data.tandaCetak && (
                 <Link
                   href={`/spmb/formulir?nomor=${encodeURIComponent(result.data.nomor)}&t=${encodeURIComponent(result.data.tandaCetak)}`}
-                  className="btn-modal-save mt-5 w-full">
+                  className="btn-modal-cancel mt-2 w-full">
                   <Printer size={16} /> {t.cetakFormulir}
                 </Link>
               )}

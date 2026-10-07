@@ -1,9 +1,10 @@
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess, assertBukuIndukSiswaScope } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import { jsonBesar } from "@/lib/json-besar";
 import bcrypt from "bcryptjs";
-import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 
 export const dynamic = "force-dynamic";
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       notifyEmail: typeof notifyEmail === "boolean" ? notifyEmail : true,
       notifyWhatsapp: typeof notifyWhatsapp === "boolean" ? notifyWhatsapp : true,
       parentJob: parentJob || null,
-      previousSchool: previousSchool ? toProperCaseSchoolName(previousSchool) : null,
+      previousSchool: previousSchool ? bakuNamaSekolah(previousSchool) : null,
       studentStatus: studentStatus || "AKTIF",
       studentNotes: studentNotes || null,
       bukuIndukData: bukuIndukData ? normalizeBukuIndukText(bukuIndukData) : undefined,

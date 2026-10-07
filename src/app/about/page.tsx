@@ -198,7 +198,7 @@ export default async function AboutPage() {
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.heroLabel}</span>
@@ -289,7 +289,7 @@ export default async function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
               <div className="relative rounded-3xl p-8 text-white overflow-hidden bg-primary-700">
                 <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                  style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                  style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", backgroundRepeat: "repeat", filter: "invert(1)" }}
                 />
                 <div className="relative">
                   <div className="flex items-center gap-3 mb-4">
@@ -321,7 +321,7 @@ export default async function AboutPage() {
             {/* Tujuan */}
             <div className="relative rounded-3xl p-8 text-white text-center max-w-3xl mx-auto overflow-hidden bg-primary-900">
               <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", backgroundRepeat: "repeat", filter: "invert(1)" }}
               />
               <div className="relative">
                 <BookOpen size={32} className="text-gold mx-auto mb-4" />

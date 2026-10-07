@@ -236,7 +236,7 @@ export default function StudentSidebar({ logoEmblem = "/images/logo-emblem.png",
     <>
       <aside className="hidden lg:flex flex-col w-56 bg-primary-900 h-screen sticky top-0 shrink-0 overflow-hidden print:hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
         <SidebarContent
           logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}

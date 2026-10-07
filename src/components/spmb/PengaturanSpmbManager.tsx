@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import {
-  CalendarRange, ClipboardList, FileText, Globe, Loader2, Plus, Save, Settings2, Trash2, Edit2, GripVertical, FormInput,
+  CalendarRange, ClipboardList, FileText, Globe, Loader2, Plus, Save, Settings2, Trash2, Edit2, GripVertical, FormInput, ListTodo, Sparkles,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Modal from "@/components/admin/Modal";
@@ -10,9 +10,13 @@ import DatePicker from "@/components/shared/DatePicker";
 import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import ImageUpload from "@/components/admin/ImageUpload";
+import TimePicker from "@/components/shared/TimePicker";
+import PengaturanTahapanSpmb from "@/components/spmb/PengaturanTahapanSpmb";
+import EditorKuisSpmb from "@/components/spmb/EditorKuisSpmb";
+import { ALUR_WEB_BAWAAN, INFO_TAHAP, TAHAP_BERJADWAL, type JadwalTahap, type LangkahAlur, type PetaJadwal } from "@/lib/spmb-tahapan";
 import {
   bacaKontenSpmb, DOKUMEN_BAKU_SPMB, ISIAN_DATA_SPMB, LABEL_TINGKAT, PERINGKAT_PRESTASI, TINGKAT_PRESTASI,
-  type AgendaSpmb, type BarisBiaya, type BobotPrestasi, type Jalur, type Langkah, type Tanya,
+  type BarisBiaya, type BobotPrestasi, type Jalur, type Langkah, type Tanya,
 } from "@/lib/spmb-konten";
 
 type Jurusan = { id: string; name: string; code: string };
@@ -20,6 +24,7 @@ type Kuota = { id: string; majorId: string; kuota: number; major: Jurusan };
 type Gelombang = {
   id: string; nama: string; urutan: number; buka: string; tutup: string; biayaDaftar: number;
   catatan: string | null; aktif: boolean; tahunAjaranId: string | null;
+  tautanGrup: string | null; jadwalTahap: PetaJadwal | null;
   kuota: Kuota[]; _count: { pendaftar: number };
 };
 type Komponen = { id: string; nama: string; jenis: string; bobot: number; nilaiMaks: number; urutan: number; aktif: boolean; _count: { nilai: number } };
@@ -32,6 +37,8 @@ const TAB = [
   { id: "komponen", label: "Komponen Nilai", ikon: ClipboardList },
   { id: "formulir", label: "Isian Data", ikon: FormInput },
   { id: "syarat", label: "Dokumen & Berkas", ikon: FileText },
+  { id: "tahapan", label: "Tahapan Calon", ikon: ListTodo },
+  { id: "kuis", label: "Kuis Jurusan", ikon: Sparkles },
   { id: "web", label: "Isi Halaman Web", ikon: Globe },
 ] as const;
 
@@ -42,6 +49,11 @@ export default function PengaturanSpmbManager() {
   const toast = useToast();
   const confirm = useConfirm();
   const [tab, setTab] = useState<(typeof TAB)[number]["id"]>("gelombang");
+  // Tautan "Buka" dari beranda Pusat SPMB menunjuk tab yang tepat lewat ?tab=… (6 Okt 2026).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && TAB.some(x => x.id === t)) queueMicrotask(() => setTab(t as (typeof TAB)[number]["id"]));
+  }, []);
   const [memuat, setMemuat] = useState(true);
   const [sibuk, setSibuk] = useState(false);
 
@@ -111,6 +123,8 @@ export default function PengaturanSpmbManager() {
         {tab === "syarat" && <TabSyarat daftar={syarat} setelan={setelan} sibuk={sibuk} kirim={kirim} confirm={confirm} toast={toast} />}
         {tab === "web" && <TabWeb setelan={setelan} syarat={syarat} sibuk={sibuk} kirim={kirim} toast={toast} />}
         {tab === "formulir" && <TabFormulir setelan={setelan} sibuk={sibuk} kirim={kirim} toast={toast} />}
+        {tab === "kuis" && <EditorKuisSpmb setelan={setelan} jurusan={jurusan} sibuk={sibuk} kirim={kirim} toast={toast} />}
+        {tab === "tahapan" && <PengaturanTahapanSpmb setelan={setelan} sibuk={sibuk} kirim={kirim} toast={toast} />}
       </div>
     </div>
   );
@@ -143,6 +157,7 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
     const ok = await kirim(`/api/spmb/gelombang/${ubah.id}`, "PUT", {
       nama: ubah.nama, buka: iso(ubah.buka), tutup: iso(ubah.tutup), biayaDaftar: ubah.biayaDaftar,
       catatan: ubah.catatan ?? "", tahunAjaranId: ubah.tahunAjaranId ?? "", aktif: ubah.aktif, kuota,
+      tautanGrup: ubah.tautanGrup ?? "", jadwalTahap: ubah.jadwalTahap ?? {},
     });
     if (ok) { setUbah(null); toast.success("Gelombang disimpan"); }
   }
@@ -178,7 +193,7 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
                   <th>Gelombang</th>
                   <th>Dibuka</th>
                   <th>Ditutup</th>
-                  <th className="text-right">Biaya</th>
+                  <th className="text-right">Biaya Daftar Ulang</th>
                   <th className="text-right">Kuota</th>
                   <th className="text-right">Pendaftar</th>
                   <th>Status</th>
@@ -248,7 +263,7 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
               <div><label className="label-field">Ditutup</label><DatePicker value={form.tutup} onChange={v => setForm({ ...form, tutup: v })} /></div>
             </div>
             <div>
-              <label className="label-field">Biaya pendaftaran</label>
+              <label className="label-field">Biaya daftar ulang</label>
               <input className="input-field" type="number" min={0} value={form.biayaDaftar}
                 onChange={e => setForm({ ...form, biayaDaftar: Number(e.target.value) || 0 })} />
               <p className="mt-1 text-xs text-gray-500">
@@ -284,9 +299,10 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
               <div><label className="label-field">Ditutup</label><DatePicker value={iso(ubah.tutup)} onChange={v => setUbah({ ...ubah, tutup: v })} /></div>
             </div>
             <div>
-              <label className="label-field">Biaya pendaftaran</label>
+              <label className="label-field">Biaya daftar ulang</label>
               <input className="input-field" type="number" min={0} value={ubah.biayaDaftar}
                 onChange={e => setUbah({ ...ubah, biayaDaftar: Number(e.target.value) || 0 })} />
+              <p className="mt-1 text-xs text-gray-500">Pendaftaran gratis. Angka ini tagihan daftar ulang calon di gelombang ini (boleh dicicil), dikurangi potongan per calon.</p>
             </div>
             <div>
               <label className="label-field">Catatan (tampil di situs)</label>
@@ -296,6 +312,37 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
               <input type="checkbox" checked={ubah.aktif} onChange={e => setUbah({ ...ubah, aktif: e.target.checked })} />
               Gelombang aktif (pendaftaran dibuka sesuai tanggal di atas)
             </label>
+
+            <div>
+              <label className="label-field">Tautan grup WhatsApp gelombang ini</label>
+              <input className="input-field" value={ubah.tautanGrup ?? ""} placeholder="https://chat.whatsapp.com/..."
+                onChange={e => setUbah({ ...ubah, tautanGrup: e.target.value })} />
+              <p className="mt-1 text-xs text-gray-500">Tampil kepada calon gelombang ini tepat setelah mendaftar — sengaja tidak ditampilkan di halaman umum supaya yang masuk grup hanya pendaftar.</p>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4">
+              <p className="font-heading font-semibold text-navy text-sm">Jadwal tahapan di sekolah</p>
+              <p className="mb-3 text-xs text-gray-500">Tampil di halaman tahapan calon pada tahap yang mengharuskan datang ke sekolah. Kosongkan bila belum ditentukan.</p>
+              <div className="space-y-4">
+                {TAHAP_BERJADWAL.map(k => {
+                  const j: JadwalTahap = ubah.jadwalTahap?.[k] ?? {};
+                  const setJ = (isi: Partial<JadwalTahap>) => setUbah({ ...ubah, jadwalTahap: { ...(ubah.jadwalTahap ?? {}), [k]: { ...j, ...isi } } });
+                  return (
+                    <div key={k} className="space-y-3 rounded-xl border border-gray-100 p-3">
+                      <p className="text-sm font-semibold text-primary-900">{INFO_TAHAP[k].judul}</p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div><label className="label-field">Tanggal</label><DatePicker value={j.tanggal ?? ""} onChange={v => setJ({ tanggal: v })} /></div>
+                        <div><label className="label-field">Sampai tanggal (opsional)</label><DatePicker value={j.tanggalSampai ?? ""} onChange={v => setJ({ tanggalSampai: v })} /></div>
+                        <div><label className="label-field">Jam mulai</label><TimePicker value={j.jamMulai ?? ""} onChange={v => setJ({ jamMulai: v })} /></div>
+                        <div><label className="label-field">Jam selesai</label><TimePicker value={j.jamSelesai ?? ""} onChange={v => setJ({ jamSelesai: v })} /></div>
+                      </div>
+                      <div><label className="label-field">Tempat</label><input className="input-field" value={j.tempat ?? ""} onChange={e => setJ({ tempat: e.target.value })} placeholder="Aula SMK Al-Munawwir" /></div>
+                      <div><label className="label-field">Catatan</label><input className="input-field" value={j.catatan ?? ""} onChange={e => setJ({ catatan: e.target.value })} placeholder="Diantar orang tua, membawa berkas asli" /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="border-t border-gray-100 pt-4">
               <p className="font-heading font-semibold text-navy text-sm">Kuota per jurusan</p>
@@ -413,7 +460,7 @@ function TabKomponen({ daftar, sibuk, kirim, confirm }: { daftar: Komponen[]; si
             <div>
               <label className="label-field">Nama komponen</label>
               <input className="input-field" value={form.nama} onChange={e => setForm({ ...form, nama: e.target.value })}
-                placeholder="Tes Tulis / Baca Al-Qur'an / Wawancara" />
+                placeholder="Tes Tulis / Baca Al-Qur'an / Nilai Rapor" />
             </div>
             <div>
               <label className="label-field">Jenis</label>
@@ -584,28 +631,26 @@ function TabWeb({ setelan, syarat, sibuk, kirim, toast }: {
   const awal = bacaKontenSpmb(setelan);
   const [k, setK] = useState(awal);
 
-  /** Dokumen yang BENAR-BENAR diminta diunggah di formulir — dokumen baku yang tidak disembunyikan
-   *  + dokumen tambahan yang aktif. Dipakai menandai Persyaratan yang belum menyebutkannya. */
+  /** Dokumen yang diunggah di formulir — ditampilkan OTOMATIS di Persyaratan halaman SPMB (6 Okt 2026: Persyaratan &
+   *  Dokumen & Berkas disatukan). Di sini hanya pratinjau; mengubahnya di tab Dokumen & Berkas. */
   const dokumenDiminta = [
-    ...DOKUMEN_BAKU_SPMB.filter(d => (setelan[d.kunci] ?? "1") !== "off").map(d => d.label),
-    ...syarat.filter(x => x.aktif).map(x => x.nama),
+    ...DOKUMEN_BAKU_SPMB.filter(d => (setelan[d.kunci] ?? "1") !== "off").map(d => `${d.label}${setelan[d.kunci] === "0" ? " (opsional)" : ""}`),
+    ...syarat.filter(x => x.aktif).map(x => `${x.nama}${x.wajib ? "" : " (opsional)"}`),
   ];
-  // Pencocokan longgar: "Kartu Keluarga (KK)" dianggap sudah disebut oleh "Kartu Keluarga (fotokopi)".
-  const inti = (t: string) => t.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-  const belumDisebut = dokumenDiminta.filter(d => {
-    const kunciDok = inti(d);
-    return !k.syarat.some(b => { const x = inti(b); return x.includes(kunciDok) || kunciDok.includes(x); });
-  });
 
   async function simpan() {
     const ok = await kirim("/api/spmb/pengaturan", "PUT", {
       "spmb.tahun": k.tahun, "spmb.judul": k.judul, "spmb.subjudul": k.subjudul, "spmb.deskripsi": k.deskripsi,
       "spmb.kontakNama": k.kontakNama, "spmb.kontakWa": k.kontakWa, "spmb.biaya": k.biaya,
       "spmb.pengumumanTanggal": k.pengumumanTanggal,
-      "spmb.alur": JSON.stringify(k.alur), "spmb.syarat": JSON.stringify(k.syarat),
+      // Hanya penjelasan & gambar per tahap yang disimpan — judul & urutan ikut tahapan (spmb-tahapan.ts).
+      "spmb.alurTahap": JSON.stringify(Object.fromEntries(k.alur.map(l => [l.kode, {
+        isi: l.isi.trim() === ALUR_WEB_BAWAAN[l.kode].isi ? "" : l.isi.trim(), gambar: l.gambar ?? "",
+      }]))),
+      "spmb.syarat": JSON.stringify(k.syarat),
       "spmb.beasiswa": JSON.stringify(k.beasiswa), "spmb.tanyaJawab": JSON.stringify(k.tanyaJawab),
-      "spmb.catatan": k.catatan, "spmb.tautanGrup": k.tautanGrup,
-      "spmb.jalur": JSON.stringify(k.jalur), "spmb.jadwal": JSON.stringify(k.jadwal),
+      "spmb.catatan": k.catatan,
+      "spmb.jalur": JSON.stringify(k.jalur),
       "spmb.rincianBiaya": JSON.stringify(k.rincianBiaya),
       "spmb.bobotPrestasi": JSON.stringify(k.bobotPrestasi),
     });
@@ -643,47 +688,29 @@ function TabWeb({ setelan, syarat, sibuk, kirim, toast }: {
             placeholder="Mis. Gelombang 1 tinggal 5 hari — kosongkan bila tidak perlu" />
           <p className="mt-1 text-xs text-gray-500">Tampil sebagai pita menonjol di atas halaman SPMB. Kosong = tidak tampil.</p>
         </div>
-        <div>
-          <label className="label-field">Tautan grup WhatsApp pendaftar</label>
-          <input className="input-field" value={k.tautanGrup} onChange={e => setK({ ...k, tautanGrup: e.target.value })}
-            placeholder="https://chat.whatsapp.com/..." />
-        </div>
       </div>
 
       <DaftarJalur items={k.jalur} onChange={v => setK({ ...k, jalur: v })} />
-      <DaftarJadwal items={k.jadwal} onChange={v => setK({ ...k, jadwal: v })} />
+      <div className="panel p-5">
+        <h2 className="font-heading font-semibold text-navy text-sm">Jadwal penting</h2>
+        <p className="text-xs text-gray-500">
+          Disusun OTOMATIS per gelombang di halaman SPMB: tanggal Gelombang (dibuka–ditutup), jadwal tahap / sesi kedatangan
+          (Edit gelombang & Tahapan Calon), Tanggal pengumuman di atas, dan Informasi MPLS (Tahapan Calon). Tidak perlu diisi dua kali.
+        </p>
+      </div>
       <DaftarBiaya items={k.rincianBiaya} onChange={v => setK({ ...k, rincianBiaya: v })} />
       <TabelBobot bobot={k.bobotPrestasi} onChange={v => setK({ ...k, bobotPrestasi: v })} />
 
-      <DaftarLangkah judul="Alur pendaftaran"
-        keterangan="Langkah yang dilalui calon pendaftar, tampil berurutan di halaman SPMB. Gambar OPSIONAL — kosongkan bila tidak perlu."
-        items={k.alur} onChange={v => setK({ ...k, alur: v })} labelJudul="Nama langkah" labelIsi="Penjelasan" gambar />
+      <AlurDariTahapan items={k.alur} onChange={v => setK({ ...k, alur: v })} />
 
-      <div>
-        {belumDisebut.length > 0 && (
-          <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="font-heading text-sm font-semibold text-amber-800">
-              {belumDisebut.length} dokumen diminta diunggah tetapi tidak disebut di Persyaratan
-            </p>
-            <ul className="mt-1.5 space-y-0.5">
-              {belumDisebut.map(d => <li key={d} className="text-sm text-amber-700">• {d}</li>)}
-            </ul>
-            <p className="mt-2 text-xs leading-relaxed text-amber-700">
-              Calon membaca Persyaratan untuk menyiapkan berkas, lalu diminta mengunggah yang tidak pernah disebut.
-              Daftar ini juga boleh memuat syarat yang TIDAK diunggah (mis. berkas asli yang dibawa ke sekolah) —
-              jadi tidak semua perbedaan itu salah.
-            </p>
-            <button type="button"
-              onClick={() => setK({ ...k, syarat: [...k.syarat, ...belumDisebut] })}
-              className="btn-modal-cancel btn-teks mt-3">
-              <Plus size={16} /> Tambahkan {belumDisebut.length} dokumen ke Persyaratan
-            </button>
-          </div>
-        )}
-        <DaftarTeks judul="Persyaratan"
-          keterangan="Yang perlu disiapkan calon, tampil di halaman SPMB. Boleh memuat berkas asli yang dibawa ke sekolah — tidak harus sama persis dengan daftar unggahan."
-          items={k.syarat} onChange={v => setK({ ...k, syarat: v })} />
+      <div className="panel p-5">
+        <h2 className="font-heading font-semibold text-navy text-sm">Persyaratan — berkas yang diunggah</h2>
+        <p className="mb-3 text-xs text-gray-500">Tampil OTOMATIS di halaman SPMB, sama persis dengan yang diminta formulir. Diubah di tab Dokumen &amp; Berkas.</p>
+        <ul className="space-y-1 text-sm text-gray-600">{dokumenDiminta.map(d => <li key={d}>• {d}</li>)}</ul>
       </div>
+      <DaftarTeks judul="Persyaratan — berkas yang dibawa saat daftar ulang"
+        keterangan="Berkas asli / fotokopi / map yang dibawa ke sekolah. Tampil di bawah daftar berkas unggahan di halaman SPMB. Jangan ulangi berkas yang sudah diunggah."
+        items={k.syarat} onChange={v => setK({ ...k, syarat: v })} />
 
       <DaftarLangkah judul="Program beasiswa" keterangan="Kosongkan bila sekolah tidak membuka beasiswa pada tahun ini."
         items={k.beasiswa} onChange={v => setK({ ...k, beasiswa: v })} labelJudul="Nama beasiswa" labelIsi="Ketentuan" gambar />
@@ -717,6 +744,35 @@ function TabWeb({ setelan, syarat, sibuk, kirim, toast }: {
         </button>
       </div>
     </>
+  );
+}
+
+/** Alur Pendaftaran di web = tahapan calon (6 Okt 2026). Judul & urutan TERKUNCI — diatur di tab Tahapan Calon. */
+function AlurDariTahapan({ items, onChange }: { items: LangkahAlur[]; onChange: (v: LangkahAlur[]) => void }) {
+  const ubah = (i: number, isi: Partial<LangkahAlur>) => onChange(items.map((x, j) => (j === i ? { ...x, ...isi } : x)));
+  return (
+    <div className="panel p-5">
+      <h2 className="font-heading font-semibold text-navy text-sm">Alur pendaftaran</h2>
+      <p className="mb-4 text-xs text-gray-500">
+        Langkahnya SAMA dengan tahapan calon (tab Tahapan Calon), jadi alur di web dan halaman tahapan calon tidak pernah berbeda.
+        Judul & urutan mengikuti tahapan — yang bisa diubah di sini hanya penjelasan dan gambar (opsional) tiap langkah.
+      </p>
+      <div className="space-y-3">
+        {items.map((it, i) => (
+          <div key={it.kode} className="flex items-start gap-2">
+            <span className="angka mt-0.5 w-5 shrink-0 text-xs font-semibold text-gray-400">{i + 1}</span>
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="text-sm font-semibold text-primary-900">{it.judul}</p>
+              <textarea className="input-field" rows={2} value={it.isi} onChange={e => ubah(i, { isi: e.target.value })} />
+              <div className="max-w-xs">
+                <ImageUpload value={it.gambar ?? ""} folder="spmb" label="Gambar (opsional)" hint="JPG/PNG/WEBP — maks. 5MB"
+                  onChange={url => ubah(i, { gambar: url || undefined })} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -819,30 +875,6 @@ function DaftarJalur({ items, onChange }: { items: Jalur[]; onChange: (v: Jalur[
       </div>
       <button type="button" onClick={() => onChange([...items, { kode: "", nama: "" }])} className="btn-modal-cancel mt-4">
         <Plus size={16} /> Tambah Jalur
-      </button>
-    </div>
-  );
-}
-
-function DaftarJadwal({ items, onChange }: { items: AgendaSpmb[]; onChange: (v: AgendaSpmb[]) => void }) {
-  return (
-    <div className="panel p-5">
-      <h2 className="font-heading font-semibold text-navy text-sm">Jadwal penting</h2>
-      <p className="mb-4 text-xs text-gray-500">Tampil sebagai garis waktu di halaman SPMB. Tanggal yang dibiarkan kosong ditulis &ldquo;menyusul&rdquo;.</p>
-      {items.length === 0 && <p className="py-10 text-center text-sm text-gray-400">Belum ada jadwal.</p>}
-      <div className="space-y-2">
-        {items.map((a, i) => (
-          <div key={i} className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_12rem_auto]">
-            <input className="input-field" value={a.label} placeholder="Nama tahapan"
-              onChange={e => { const b = [...items]; b[i] = { ...a, label: e.target.value }; onChange(b); }} />
-            <DatePicker value={a.tanggal} onChange={v => { const b = [...items]; b[i] = { ...a, tanggal: v }; onChange(b); }} />
-            <button type="button" title="Hapus" onClick={() => onChange(items.filter((_, x) => x !== i))}
-              className="justify-self-end rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
-          </div>
-        ))}
-      </div>
-      <button type="button" onClick={() => onChange([...items, { label: "", tanggal: "" }])} className="btn-modal-cancel mt-4">
-        <Plus size={16} /> Tambah Tahapan
       </button>
     </div>
   );

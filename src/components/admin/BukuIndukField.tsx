@@ -1,7 +1,8 @@
 "use client";
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import DatePicker from "@/components/shared/DatePicker";
 import Select from "@/components/admin/Select";
-import { toProperCase, toProperCaseSchoolName } from "@/lib/text";
+import { toProperCase } from "@/lib/text";
 
 interface FieldProps {
   label: string;
@@ -38,7 +39,7 @@ export default function Field({
   options, min, max, maxLen, readOnly, placeholder, list, hint, kapital = "proper",
 }: FieldProps) {
   const rapikan = (v: string) =>
-    kapital === "asli" ? v : kapital === "sekolah" ? toProperCaseSchoolName(v) : toProperCase(v);
+    kapital === "asli" ? v : kapital === "sekolah" ? bakuNamaSekolah(v) : toProperCase(v);
   const cls = `input-field ${readOnly ? "bg-gray-50 text-gray-500 cursor-default" : ""}`;
   return (
     <div className={wide ? "col-span-2" : ""}>

@@ -96,7 +96,7 @@ export async function GET(req: Request) {
     const [siswa, pegawai, pendingAdmissions, pendingProfileEdits, pasangan] = await Promise.all([
       prisma.student.findMany({ where: { studentStatus: "AKTIF" }, select: PILIH_SISWA }),
       prisma.teacher.findMany({ where: { OR: [{ teacherStatus: "AKTIF" }, { teacherStatus: null }] }, select: PILIH_GURU }),
-      guru ? Promise.resolve(0) : prisma.admission.count({ where: { status: "PENDING" } }),
+      guru ? Promise.resolve(0) : prisma.admission.count({ where: { verifikasiStatus: "BELUM", status: { notIn: ["DITOLAK", "REJECTED"] } } }),
       guru ? Promise.resolve(0) : hitungPengajuanBiodata(),
       prisma.dapodikPasangan.count(),
     ]);
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
     ].map(k => ({ ...k, butir: k.butir.filter(b => b.count > 0) }));
 
     const lainnya = guru ? [] : [
-      { label: "Pendaftaran (SPMB) menunggu diproses", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
+      { label: "Pendaftaran (SPMB) menunggu diproses", count: pendingAdmissions, href: "/pusat-spmb/tahapan?saring=VERIFIKASI" },
       { label: "Pengajuan perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
     ].filter(c => c.count > 0);
 

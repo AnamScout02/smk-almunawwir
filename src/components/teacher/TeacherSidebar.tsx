@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal
 } from "lucide-react";
 import { JABATAN_EVENT } from "@/lib/event-label";
-import { Siren } from "lucide-react";
+import { Siren, Calculator } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
 import { FileUser } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -206,7 +206,7 @@ export function grupMenuGuru({
         ...(isOperatorSekolah || isWakasekKesiswaan || isWakasekHumas || isKepalaSekolah || isKoordinatorBranding
           ? [{ href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList }] : []),
         ...(isKepalaUks ? [{ href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse }] : []),
-        ...(isBendahara ? [{ href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet }] : []),
+        ...(isBendahara ? [{ href: "/dashboard/teacher/alokasi-dana", label: "Alokasi Dana", icon: Calculator }, { href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet }] : []),
       ],
     },
     // Grup disusun menurut ALUR KERJA guru (keputusan user 15 Sep 2026): mengajar → kelas wali → kesiswaan →
@@ -454,7 +454,7 @@ export default function TeacherSidebar(props: TeacherSidebarProps) {
     <>
       <aside className="hidden lg:flex flex-col w-60 bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden print:hidden">
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
         <SidebarContent
           logoEmblem={logoEmblem} logoFullWhite={logoFullWhite}

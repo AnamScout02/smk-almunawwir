@@ -20,7 +20,7 @@ const WA_MESSAGE_SPMB = "Assalamualaikum, saya ingin bertanya tentang pendaftara
  * /dashboard tapi tetap UI internal — jangan sampai bubble WA nongol saat siswa mengerjakan ujian. */
 // + portal perpustakaan (petugas & anggota) — temuan user 15 Sep 2026: bubble WA menutupi bottom navbar di HP.
 // + /login (23 Sep 2026): halaman masuk kini halaman penuh tanpa navbar — bubble hijau merusak tampilannya.
-const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei", "/login",
+const HIDDEN_PREFIXES = ["/dashboard", "/pusat-ujian", "/pusat-spmb", "/ujian-online", "/perpustakaan", "/pusat-perpustakaan", "/notifikasi", "/kartu-identitas", "/layanan-sarpras", "/pengumuman", "/survei", "/login",
   // Papan informasi TV & layar kegiatan: layar publik yang dipajang di dinding — tidak boleh ada tombol apa pun.
   "/layar", "/layar-kegiatan", "/hadir", "/seb-uji", "/seb-selesai", "/pemeliharaan"];
 
@@ -42,7 +42,7 @@ export default function WhatsAppButton() {
 
   // Di halaman SPMB, nomor PANITIA dipakai bila diisi — penanya di situ bertanya soal pendaftaran,
   // bukan soal sekolah secara umum.
-  const diSpmb = !!pathname?.startsWith("/admissions");
+  const diSpmb = !!pathname?.startsWith("/admissions") || !!pathname?.startsWith("/spmb");
   const tujuan = (diSpmb && nomor.spmb) || nomor.umum || WA_CADANGAN;
   const pesan = diSpmb ? WA_MESSAGE_SPMB : WA_MESSAGE;
   const href = `https://wa.me/${tujuan}?text=${encodeURIComponent(pesan)}`;

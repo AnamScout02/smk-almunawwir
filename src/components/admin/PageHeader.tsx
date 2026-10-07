@@ -43,7 +43,7 @@ export default function PageHeader({ icon, title, description, printHidden }: Pa
     >
       {/* Pattern overlay */}
       <div className="ph-pola absolute inset-0 opacity-[0.05] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
       {/* Gold bottom border line */}
       <div className="ph-garis absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />

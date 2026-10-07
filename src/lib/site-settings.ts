@@ -109,14 +109,12 @@ export const DEFAULTS: Record<string, string> = {
   "school.kode": "026", // kode sekolah, dipakai di format nomor surat otomatis
 
   // SPMB — bobot skor lama (dipakai halaman konversi; penilaian baru memakai KomponenNilaiSpmb)
-  "spmb.bobotRapor": "60",
-  "spmb.bobotTes": "40",
   // SPMB — isi halaman publik & poster promosi. SEMUANYA diatur dari portal /pusat-spmb
   // (keputusan user 1 Oktober 2026: "portal untuk mensetting semua kebutuhan spmb baik yang
   // muncul di web juga"). Sebelum ini alur/syarat/beasiswa tertulis mati di
   // src/app/admissions/page.tsx sehingga panitia tidak bisa mengubah apa pun sendiri.
   "spmb.tahun": "2026/2027",
-  "spmb.judul": "Penerimaan Murid Baru",
+  "spmb.judul": "Sistem Penerimaan Murid Baru", // nama resmi Permendikdasmen No. 3 Tahun 2025
   "spmb.subjudul": "Satu langkah menuju sekolah kejuruan berbasis pesantren",
   "spmb.deskripsi": "Pendaftaran dibuka bergelombang. Isi formulir, unggah berkas, dan pantau hasil seleksi dengan nomor pendaftaran.",
   "spmb.tema": "malam", // malam | fajar | zamrud — tampilan halaman SPMB publik
@@ -144,12 +142,11 @@ export const DEFAULTS: Record<string, string> = {
   "spmb.video": "",             // tautan video profil (YouTube)
   "spmb.kontakNama": "Panitia SPMB",
   "spmb.kontakWa": "",          // nomor WhatsApp panitia, format 62xxx
-  "spmb.biaya": "Rincian biaya pendaftaran dan daftar ulang disampaikan panitia setelah berkas diverifikasi.",
+  "spmb.biaya": "Pendaftaran gratis. Biaya daftar ulang sesuai gelombang dan boleh dicicil — rinciannya di bawah.",
   "spmb.pengumumanTanggal": "", // kosong = belum ditentukan
   // Gerbang hasil seleksi: "0" = pendaftar hanya melihat tahap berkasnya, keputusan DITERIMA/TIDAK
   // belum dibuka. Dinyalakan panitia di /pusat-spmb/pengumuman saat hari pengumuman.
   "spmb.hasilDibuka": "0",
-  "spmb.alur": "[{\"judul\": \"Isi Formulir Online\", \"isi\": \"Lengkapi formulir pendaftaran dengan data yang benar. Nomor pendaftaran langsung terbit.\"}, {\"judul\": \"Unggah Berkas\", \"isi\": \"Unggah kartu keluarga, akta, rapor, dan foto sesuai daftar syarat.\"}, {\"judul\": \"Verifikasi Panitia\", \"isi\": \"Panitia memeriksa kelengkapan berkas dalam 3 hari kerja.\"}, {\"judul\": \"Tes & Wawancara\", \"isi\": \"Tes akademik, baca Al-Qur'an, dan wawancara motivasi bersama orang tua.\"}, {\"judul\": \"Pengumuman\", \"isi\": \"Hasil seleksi dibuka lewat nomor pendaftaran dan tanggal lahir.\"}, {\"judul\": \"Daftar Ulang\", \"isi\": \"Calon yang diterima melakukan daftar ulang dan masuk data sekolah.\"}]",
   "spmb.syarat": "[\"Ijazah / Surat Keterangan Lulus SMP/MTs (asli & fotokopi)\", \"Rapor semester 1–5 (fotokopi, dilegalisir)\", \"Akta Kelahiran (fotokopi)\", \"Kartu Keluarga (fotokopi)\", \"Foto 3×4 & 4×6 masing-masing 4 lembar (latar merah)\", \"Surat Keterangan Sehat dari dokter\", \"Sertifikat/piagam prestasi (jika ada)\"]",
   "spmb.beasiswa": "[{\"judul\": \"Beasiswa Tahfidz\", \"isi\": \"Hafal minimal 10 Juz — bebas SPP & asrama.\"}, {\"judul\": \"Beasiswa Prestasi\", \"isi\": \"Peringkat 1–3 di sekolah asal — potongan 50% SPP.\"}, {\"judul\": \"Beasiswa Yatim/Dhuafa\", \"isi\": \"Berdasarkan seleksi dan kunjungan panitia.\"}, {\"judul\": \"Beasiswa Kakak-Adik\", \"isi\": \"Keduanya bersekolah di sini — potongan 30%.\"}]",
   "spmb.tanyaJawab": "[{\"tanya\": \"Apakah harus mondok?\", \"jawab\": \"SMK Al-Munawwir IIBS adalah sekolah berbasis pesantren — seluruh siswa tinggal di asrama.\"}, {\"tanya\": \"Kalau nomor pendaftaran saya hilang?\", \"jawab\": \"Hubungi panitia lewat WhatsApp dengan menyebut nama lengkap dan tanggal lahir.\"}, {\"tanya\": \"Boleh pindah pilihan jurusan?\", \"jawab\": \"Boleh selama berkas belum diverifikasi panitia. Setelah itu lewat persetujuan panitia.\"}]",
@@ -159,10 +156,21 @@ export const DEFAULTS: Record<string, string> = {
   // prestasi. KODE jalur yang sudah dipakai pendaftar lama JANGAN diganti (tersimpan di
   // Admission.jalur); namanya boleh.
   "spmb.jalur": "[{\"kode\": \"REGULER\", \"nama\": \"Reguler\", \"keterangan\": \"Seleksi nilai rapor SMP/MTs semester 1–5 dan Tes Kemampuan Akademik.\"}, {\"kode\": \"PRESTASI_AKADEMIK\", \"nama\": \"Prestasi Akademik\", \"keterangan\": \"Peringkat kelas atau juara lomba bidang sains, teknologi, riset, dan akademik lain.\"}, {\"kode\": \"PRESTASI_NON_AKADEMIK\", \"nama\": \"Prestasi Non-Akademik\", \"keterangan\": \"Juara bidang seni, budaya, bahasa, dan olahraga.\"}, {\"kode\": \"TAHFIDZ\", \"nama\": \"Tahfidz Al-Qur'an\", \"keterangan\": \"Hafalan Al-Qur'an, diuji langsung oleh panitia.\"}, {\"kode\": \"AFIRMASI\", \"nama\": \"Afirmasi\", \"keterangan\": \"Keluarga ekonomi tidak mampu dan penyandang disabilitas — tidak memakai nilai akademik sebagai dasar seleksi.\"}]",
-  "spmb.jadwal": "[{\"label\": \"Pendaftaran dibuka\", \"tanggal\": \"\"}, {\"label\": \"Berkas diverifikasi\", \"tanggal\": \"\"}, {\"label\": \"Tes & wawancara\", \"tanggal\": \"\"}, {\"label\": \"Pengumuman hasil\", \"tanggal\": \"\"}, {\"label\": \"Daftar ulang\", \"tanggal\": \"\"}]",          // JSON [{label, tanggal}] — jadwal penting di halaman SPMB
   "spmb.rincianBiaya": "[]",  // JSON [{nama, jumlah}] — rincian biaya; kosong = hanya teks keterangan
   "spmb.catatan": "",         // pemberitahuan menonjol di atas halaman SPMB (kosong = tidak tampil)
-  "spmb.tautanGrup": "",      // tautan grup WhatsApp pendaftar
+  // Tahapan calon siswa (6 Okt 2026, src/lib/spmb-tahapan.ts) — JSON kosong = isian bawaan di kode.
+  "spmb.tahapSeleksi": "1",     // 1 = ada tahap "Pengumuman Hasil" (Diterima) di daftar centang calon
+  "spmb.tahapDaftarUlang": "1", // 1 = ada tahap "Daftar Ulang & Pembayaran"
+  "spmb.seragam": "",           // JSON SetelanSeragam {item:[{nama, ukuran:[{label, keterangan}]}], catatan, gambar}
+  "spmb.asesmen": "",           // JSON IsianTahap[] — pertanyaan asesmen awal
+  "spmb.pemeriksaan": "",       // JSON IsianTahap[] — isian cek fisik & kesehatan
+  "spmb.mpls": "",
+  "spmb.alurTahap": "",
+  "spmb.kuis": "",              // JSON SoalBank[] — bank soal Kuis Minat Jurusan (src/lib/kuis-jurusan.ts)
+  "spmb.kuisJumlah": "8",       // jumlah soal acak yang tampil per kuis
+  "spmb.syaratBayar": "TIDAK",   // TIDAK | UANG_MUKA | LUNAS — syarat bayar untuk menuntaskan Daftar Ulang (ikut MPLS)
+  "spmb.uangMuka": "0",         // rupiah, dipakai bila syaratBayar = UANG_MUKA
+  "spmb.infoBayar": "",         // cara bayar / nomor rekening, tampil di kartu Pembayaran calon         // JSON {kode tahap: {isi, gambar}} — penjelasan langkah Alur Pendaftaran di web              // JSON InfoMpls — tampil saat seluruh tahapan selesai
   // Pembobotan sertifikat prestasi: tingkat × peringkat (pola juknis SPMB daerah).
   "spmb.bobotPrestasi": "{\"KABUPATEN\": {\"1\": 16, \"2\": 8, \"3\": 4}, \"PROVINSI\": {\"1\": 32, \"2\": 16, \"3\": 8}, \"NASIONAL\": {\"1\": 64, \"2\": 32, \"3\": 16}, \"INTERNASIONAL\": {\"1\": 128, \"2\": 64, \"3\": 32}}",
   // DIGANTIKAN `GelombangSpmb` (1 Oktober 2026): tanggal buka/tutup & kuota sekarang melekat pada
@@ -219,6 +227,7 @@ export const DEFAULTS: Record<string, string> = {
   "libur.nasional": "", // salinan tanggal merah nasional (JSON) — diperbarui otomatis tiap minggu
   "notifikasi.jamPeringatanDini": "07:15", // hanya hari Senin
   "notifikasi.jamPerpustakaan": "06:45", // jatuh tempo besok & terlambat 1/3/7 hari
+  "notifikasi.jamSpmb": "16:00", // pengingat calon SPMB (H-1 jadwal & tahap tertahan) — hanya calon yang mengaktifkan pemberitahuan
   "notifikasi.jamRekapKelas": "10:00", // rekap kehadiran harian ke wali kelas (17 Sep 2026)
   "notifikasi.jamRingkasanOrtu": "16:00", // ringkasan mingguan ke orang tua tiap Sabtu (17 Sep 2026)
   // Cek Kelulusan — jadwal buka/tutup halaman publik, kosong = selalu buka

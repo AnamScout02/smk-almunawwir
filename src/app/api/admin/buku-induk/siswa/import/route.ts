@@ -1,8 +1,9 @@
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 import * as XLSX from "xlsx";
 import { writeFile, mkdir } from "fs/promises";
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
       parentName:     s(row["Nama Ayah"]) ? toProperCaseName(s(row["Nama Ayah"])) : null,
       parentPhone:    s(row["No. HP Orang Tua"]) || null,
       parentJob:      s(row["Pekerjaan Ayah"]) || null,
-      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) ? toProperCaseSchoolName(s(row["Asal Sekolah (SMP/MTs)"])) : null,
+      previousSchool: s(row["Asal Sekolah (SMP/MTs)"]) ? bakuNamaSekolah(s(row["Asal Sekolah (SMP/MTs)"])) : null,
       enrollYear:     enrollYear && !isNaN(enrollYear) ? enrollYear : null,
       studentStatus:  s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"]).toUpperCase() || "AKTIF",
       // Kolom exitDate WAJIB ikut diisi saat impor — Buku Mutasi & laporan lain membacanya dari

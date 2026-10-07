@@ -146,7 +146,9 @@ function fmtLongId(d: Date): string {
 }
 
 const PAGE_HEIGHT_PX = 1123; // tinggi penuh kertas A4 @96dpi (297mm)
-const PATTERN_TILE_PX = 90; // samakan dengan background-size:90px 90px di .a4-page::before (globals.css)
+// Motif MIRING −45° (6 Okt 2026): ubin miring berperiode jarak motif × √2, jadi 90 → 127 px supaya jarak motif tetap sama
+// dengan background-size:127.28px di .a4-page::before (globals.css). Bilangan bulat: sharp hanya mengubin piksel utuh.
+const PATTERN_TILE_PX = 127;
 const PATTERN_OPACITY = 0.04; // samakan dengan opacity:0.04 di .a4-page::before
 
 /** Bikin satu gambar setinggi-lebar kertas A4 penuh, berisi pattern-smk.png yang diubin
@@ -155,7 +157,7 @@ const PATTERN_OPACITY = 0.04; // samakan dengan opacity:0.04 di .a4-page::before
  * di footer supaya otomatis muncul di SETIAP halaman, sama seperti versi HTML. */
 async function createTiledPatternImage(): Promise<Buffer | null> {
   try {
-    const patternPath = join(process.cwd(), "public", "images", "pattern-smk.png");
+    const patternPath = join(process.cwd(), "public", "images", "pattern-smk-miring.png");
     const raw = await readFile(patternPath);
     const { data, info } = await sharp(raw)
       .resize(PATTERN_TILE_PX, PATTERN_TILE_PX)

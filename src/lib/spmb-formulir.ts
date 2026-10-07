@@ -1,25 +1,14 @@
 import "server-only";
-import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes } from "crypto";
+// Tanda & tanggal lahir dipisah ke spmb-tanda.ts supaya modul yang ikut instrumentation (pengingat) tidak
+// menarik qrcode.ts (fs/path) ke runtime Edge. Diekspor ulang di sini untuk pemanggil lama.
+export { tandaFormulir, tandaCocok, lahirIso } from "@/lib/spmb-tanda";
 import { prisma } from "@/lib/prisma";
 import { generateQrDataUrl } from "@/lib/qrcode";
 import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 
 /** Cetak formulir pendaftaran yang SUDAH DIISI — untuk pendaftar sendiri maupun panitia
  *  (permintaan user 2 Oktober 2026). Satu sumber data & satu lembar cetak untuk keduanya. */
-
-/** Tanda tangan ringkas pengganti tanggal lahir di alamat halaman cetak. Nilainya tetap (bukan
- *  kedaluwarsa) dan setara kuncinya dengan "nomor + tanggal lahir", tetapi TANGGAL LAHIR tidak ikut
- *  tertulis di URL — jadi tidak tertinggal di riwayat peramban komputer warnet/sekolah. */
-export function tandaFormulir(nomor: string, lahirIso: string): string {
-  const rahasia = process.env.SESSION_SECRET ?? "";
-  return createHmac("sha256", rahasia).update(`formulir-spmb|${nomor.toUpperCase()}|${lahirIso}`).digest("base64url").slice(0, 32);
-}
-
-export function tandaCocok(nomor: string, lahirIso: string, tanda: string): boolean {
-  const benar = Buffer.from(tandaFormulir(nomor, lahirIso));
-  const diberi = Buffer.from(tanda ?? "");
-  return benar.length === diberi.length && timingSafeEqual(benar, diberi);
-}
 
 const PILIH = {
   id: true, nomor: true, fullName: true, birthPlace: true, birthDate: true, gender: true,
@@ -52,7 +41,3 @@ export async function ambilFormulir(where: { id: string } | { nomor: string }) {
 
 export type DataFormulir = NonNullable<Awaited<ReturnType<typeof ambilFormulir>>>;
 
-/** Tanggal lahir baris Admission dalam bentuk "YYYY-MM-DD" WIB — dipakai memeriksa tanda. */
-export function lahirIso(d: Date): string {
-  return new Date(d.getTime() + 7 * 3600_000).toISOString().slice(0, 10);
-}

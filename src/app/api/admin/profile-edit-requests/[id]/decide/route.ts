@@ -1,7 +1,8 @@
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { ChangeMap, statusKeputusan } from "@/lib/profile-edit-fields";
-import { normalizeBukuIndukText, toProperCaseName, toProperCaseSchoolName } from "@/lib/text";
+import { normalizeBukuIndukText, toProperCaseName } from "@/lib/text";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 import type { Prisma } from "@prisma/client";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
@@ -54,7 +55,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         let v = field === "birthDate" && entry.new ? new Date(entry.new as string) : (entry.new || null);
         if (typeof v === "string" && v.trim()) {
           if (field === "parentName") v = toProperCaseName(v);
-          else if (field === "previousSchool") v = toProperCaseSchoolName(v);
+          else if (field === "previousSchool") v = bakuNamaSekolah(v);
         }
         topData[field] = v;
       } else if (scope === "buku") {

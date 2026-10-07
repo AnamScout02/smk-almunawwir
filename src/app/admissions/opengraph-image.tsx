@@ -82,7 +82,7 @@ export default async function Image() {
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.05 }}>{k.judul || "Penerimaan Murid Baru"}</span>
+            <span style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.05 }}>{k.judul || "Sistem Penerimaan Murid Baru"}</span>
             {k.subjudul && <span style={{ fontSize: 28, color: "#F5C842", marginTop: 14 }}>{k.subjudul}</span>}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

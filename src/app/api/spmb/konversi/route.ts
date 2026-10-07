@@ -4,6 +4,8 @@ import { getJabatanNames } from "@/lib/jabatan-guard";
 import { BUKU_INDUK_FULL_JABATAN } from "@/lib/buku-induk-access";
 import { cocokJurusan, dataSiswaDariPendaftar, emailDariNis, hashSandiBawaan, penghitungNis } from "@/lib/spmb-konversi";
 import { logActivity } from "@/lib/activity-log";
+import { ringkasBayar, setelanBayar } from "@/lib/spmb-tahapan-server";
+import { hitungBayar } from "@/lib/spmb-tahapan";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +24,12 @@ async function boleh() {
 export async function GET() {
   if (!(await boleh())) return Response.json({ error: "Khusus TU & Operator Sekolah." }, { status: 403 });
   const [pendaftar, jurusan, kelas, sudah] = await Promise.all([
-    prisma.admission.findMany({ where: { status: "ACCEPTED", studentId: null }, orderBy: [{ chosenMajor: "asc" }, { fullName: "asc" }] }),
+    prisma.admission.findMany({ where: { status: { in: ["DITERIMA", "ACCEPTED"] }, studentId: null }, orderBy: [{ chosenMajor: "asc" }, { fullName: "asc" }] }),
     prisma.major.findMany({ select: { id: true, code: true, name: true, nisCode: true } }),
     prisma.class.findMany({ where: { grade: 10 }, select: { id: true, name: true, majorId: true }, orderBy: { name: "asc" } }),
     prisma.admission.count({ where: { studentId: { not: null } } }),
   ]);
+  const [setBayar, petaBayar] = await Promise.all([setelanBayar(), ringkasBayar(pendaftar.map(a => a.id))]);
   return Response.json({
     sudahDikonversi: sudah,
     kelas,
@@ -34,7 +37,7 @@ export async function GET() {
       const j = cocokJurusan(a.chosenMajor, jurusan);
       return {
         id: a.id, nama: a.fullName, jurusanPilihan: a.chosenMajor, majorId: j?.id ?? null, jurusanKode: j?.code ?? null,
-        siapNis: !!j?.nisCode, nisn: a.nisn, sekolahAsal: a.previousSchool, daftarUlang: !!a.daftarUlangConfirmedAt, bayarTerverifikasi: a.paymentVerified,
+        siapNis: !!j?.nisCode, nisn: a.nisn, sekolahAsal: a.previousSchool, daftarUlang: !!a.daftarUlangConfirmedAt, bayarTerverifikasi: hitungBayar(setBayar, a.potonganBiaya, petaBayar.get(a.id)?.sah ?? 0, 0, a.gelombangId).lunas || a.paymentVerified,
       };
     }),
   });
@@ -51,7 +54,7 @@ export async function POST(req: Request) {
   const kelasPer = (b.kelasPerJurusan ?? {}) as Record<string, string>;
   if (!ids.length) return Response.json({ error: "Pilih pendaftar." }, { status: 400 });
   const [pendaftar, jurusan, kelas] = await Promise.all([
-    prisma.admission.findMany({ where: { id: { in: ids }, status: "ACCEPTED", studentId: null } }),
+    prisma.admission.findMany({ where: { id: { in: ids }, status: { in: ["DITERIMA", "ACCEPTED"] }, studentId: null } }),
     prisma.major.findMany({ select: { id: true, code: true, name: true, nisCode: true } }),
     prisma.class.findMany({ where: { grade: 10 }, select: { id: true, name: true, majorId: true } }),
   ]);

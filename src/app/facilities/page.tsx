@@ -100,7 +100,7 @@ export default async function FacilitiesPage() {
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.heroLabel}</span>
@@ -183,7 +183,7 @@ export default async function FacilitiesPage() {
         {/* CTA */}
         <section className="py-16 bg-primary-900 text-white text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom relative">
             <p className="font-arabic text-gold text-2xl mb-4">فَإِنَّ مَعَ الْعُسْرِ يُسْرًا</p>

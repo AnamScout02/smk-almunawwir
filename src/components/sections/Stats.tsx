@@ -37,7 +37,7 @@ export default async function Stats() {
       <div className="latar-aurora" aria-hidden />
       {/* Decorative pattern */}
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
       {/* Gold accent line top */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
       {/* Glow orbs */}

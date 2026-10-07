@@ -181,7 +181,7 @@ export default function CetakRapor({ data, jenis, hrefJenis, kembaliHref, siswaA
 function PolaNavy() {
   return (
     <span aria-hidden style={{
-      position: "absolute", inset: 0, backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "18mm 18mm",
+      position: "absolute", inset: 0, backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "25.46mm 25.46mm",
       backgroundRepeat: "repeat", filter: "invert(1)", opacity: 0.12, pointerEvents: "none",
     }} />
   );

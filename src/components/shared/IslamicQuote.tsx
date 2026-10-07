@@ -26,7 +26,7 @@ export default async function IslamicQuote({ index = 0 }: { index?: number }) {
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
       {/* Subtle pattern */}
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "141.42px 141.42px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
       {/* Decorative gold glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 rounded-full blur-3xl pointer-events-none opacity-20"
         style={{ background: "radial-gradient(circle, rgba(232,160,32,0.6) 0%, transparent 70%)" }} />

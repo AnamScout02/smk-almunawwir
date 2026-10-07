@@ -39,3 +39,31 @@ export function hitungKuis(soal: SoalKuis[], jawaban: number[]): { kode: string;
   jawaban.forEach((j, i) => { const k = soal[i]?.pilihan[j]?.kode; if (k) skor.set(k, (skor.get(k) ?? 0) + 1); });
   return [...skor].map(([kode, s]) => ({ kode, skor: s })).sort((a, b) => b.skor - a.skor);
 }
+
+/* ───────────── Bank soal kuis (6 Oktober 2026) ─────────────
+ * Permintaan user: "diperkaya pertanyaannya … bersifat global tapi tetap menjurus … soal yang banyak, yang tampil acak".
+ * Bank disusun PANITIA (SiteSetting `spmb.kuis`, Pengaturan SPMB → Kuis Jurusan): tiap soal = situasi umum, tiap pilihan
+ * mengarah ke SATU kode jurusan. Pilihan untuk jurusan yang tidak ada lagi dibuang; soal dengan <2 pilihan dilewati.
+ * Bank kosong → kembali ke `susunKuis` dari data jurusan. Daftar jurusan tidak pernah ditulis di kode (#11). */
+
+export type SoalBank = { id: string; tanya: string; pilihan: { kode: string; teks: string }[] };
+
+export function bacaBankKuis(teks: string | undefined, kodeAda: string[]): SoalKuis[] {
+  let mentah: unknown;
+  try { mentah = JSON.parse(teks || "[]"); } catch { return []; }
+  if (!Array.isArray(mentah)) return [];
+  const ada = new Set(kodeAda);
+  return (mentah as SoalBank[]).map(s => ({
+    tanya: { id: String(s?.tanya ?? "").trim(), en: String(s?.tanya ?? "").trim() },
+    pilihan: (Array.isArray(s?.pilihan) ? s.pilihan : [])
+      .map(p => ({ kode: String(p?.kode ?? ""), teks: String(p?.teks ?? "").trim() }))
+      .filter(p => p.teks && ada.has(p.kode)),
+  })).filter(s => s.tanya.id && s.pilihan.length >= 2);
+}
+
+/** Ambil `n` soal acak dari bank + acak urutan pilihannya. Dipanggil di KLIK (bukan saat render) supaya tidak
+ *  berbeda antara server & browser (#15). */
+export function acakKuis(bank: SoalKuis[], n: number, acak: () => number = Math.random): SoalKuis[] {
+  const kocok = <T,>(a: T[]) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(acak() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  return kocok(bank).slice(0, Math.max(2, Math.min(n, bank.length))).map(s => ({ ...s, pilihan: kocok(s.pilihan) }));
+}

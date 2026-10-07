@@ -151,7 +151,7 @@ function PageFooter({ nis, name, pageNum }: { nis: string; name: string; pageNum
     <div className="relative flex items-center justify-between px-6 py-2 mt-auto overflow-hidden shrink-0"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "127.28px 127.28px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
       <span className="relative text-[9px] font-bold uppercase tracking-wide text-white">Buku Induk Siswa</span>
       <span className="relative text-[9px] font-semibold text-white/80">{nis} — {name}</span>
@@ -167,7 +167,7 @@ function PrintPage({ pageNum, first, last, nis, name, children }: {
   return (
     <div data-print-page={pageNum} className={`print-doc relative w-full min-h-[297mm] flex flex-col bg-white overflow-hidden ${last ? "" : "break-after-page"}`}>
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "127.28px 127.28px", backgroundRepeat: "repeat" }}
       />
       <div className={`relative flex-1 pl-16 pr-8 ${first ? "pt-0" : "pt-6"} pb-2 [&>*:last-child]:mb-0`}>
         {children}

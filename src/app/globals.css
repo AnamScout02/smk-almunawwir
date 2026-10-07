@@ -315,8 +315,8 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('/images/pattern-smk.png');
-  background-size: 90px 90px;
+  background-image: url('/images/pattern-smk-miring.png');
+  background-size: 127.28px 127.28px;
   background-repeat: repeat;
   opacity: 0.045;
   pointer-events: none;
@@ -358,8 +358,8 @@
     background-color: #ffffff !important;
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)),
-      url('/images/pattern-smk.png') !important;
-    background-size: auto, 90px 90px !important;
+      url('/images/pattern-smk-miring.png') !important;
+    background-size: auto, 127.28px 127.28px !important;
     background-repeat: repeat, repeat !important;
     background-position: center, center !important;
   }
@@ -449,8 +449,8 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('/images/pattern-smk.png');
-  background-size: 90px 90px;
+  background-image: url('/images/pattern-smk-miring.png');
+  background-size: 127.28px 127.28px;
   background-repeat: repeat;
   opacity: 0.04;
   pointer-events: none;
@@ -678,8 +678,8 @@ section.from-primary-900::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url('/images/pattern-smk.png');
-  background-size: 180px 180px;
+  background-image: url('/images/pattern-smk-miring.png');
+  background-size: 254.56px 254.56px;
   background-repeat: repeat;
   filter: invert(1);
   opacity: 0.07;
@@ -1314,7 +1314,7 @@ section.from-primary-900 > * {
   }
   .pita-pintasan::before {
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.06;
-    background-image: url('/images/pattern-smk.png'); background-size: 120px 120px; filter: invert(1);
+    background-image: url('/images/pattern-smk-miring.png'); background-size: 169.71px 169.71px; filter: invert(1);
   }
   .pintasan-item {
     position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
@@ -1379,8 +1379,8 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .papan-motif {
   position: absolute;
   inset: -10%;
-  background-image: url('/images/pattern-smk.png');
-  background-size: 180px 180px;
+  background-image: url('/images/pattern-smk-miring.png');
+  background-size: 254.56px 254.56px;
   opacity: 0.06;
   filter: invert(1);
   /* MOTIF DIAM (permintaan user 25 Sep 2026: "patternnya jangan dibuat bergerak"). Geseran pelan tadinya untuk

@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan, getJabatanNames } from "@/lib/jabatan-guard";
 
-/** SPMB — Seleksi Penerimaan Murid Baru (portal /pusat-spmb, 1 Oktober 2026).
+/** SPMB — Sistem Penerimaan Murid Baru (portal /pusat-spmb, 1 Oktober 2026).
  *
  *  Tiga keputusan user yang membentuk modul ini:
  *  1. Pendaftaran BERGELOMBANG — tanggal, biaya, dan kuota per jurusan melekat pada gelombang.

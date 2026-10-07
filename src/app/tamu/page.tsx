@@ -22,7 +22,7 @@ export default async function Page() {
       {/* Kepala navy — gaya yang sama dengan kop dokumen & header dashboard */}
       <header className="relative overflow-hidden text-center px-5 pt-9 pb-16" style={{ background: NAVY_GRADIENT }}>
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", filter: "invert(1)" }} />
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", filter: "invert(1)" }} />
         <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />
         <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"

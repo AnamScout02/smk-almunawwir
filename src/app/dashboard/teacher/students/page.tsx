@@ -6,6 +6,7 @@ import { Users, GraduationCap } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
+import Link from "next/link";
 
 export default async function TeacherStudentsPage() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -56,6 +57,7 @@ export default async function TeacherStudentsPage() {
                         <th>Nama Siswa</th>
                         <th className="hidden md:table-cell">NISN</th>
                         <th className="hidden lg:table-cell">Email</th>
+                        <th className="text-right">Catatan SPMB</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -66,6 +68,9 @@ export default async function TeacherStudentsPage() {
                           <td className="font-semibold text-primary-900">{s.user.name}</td>
                           <td className="font-mono text-xs text-gray-400 hidden md:table-cell">{s.nisn ?? "—"}</td>
                           <td className="text-gray-400 text-xs hidden lg:table-cell">{s.user.email}</td>
+                          <td className="text-right">
+                            <Link href={`/dashboard/teacher/students/${s.id}/spmb`} className="text-sm font-medium text-primary-700 hover:underline">Lihat</Link>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

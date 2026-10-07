@@ -49,12 +49,12 @@ model User {
   pushSubscriptions PushSubscription[]
   notifikasiMasuk   NotifikasiPengguna[]
   menuFavorit       MenuFavorit?
-  masukanDikirim   MasukanRekan[] @relation("MasukanDikirim")
-  masukanDiterima  MasukanRekan[] @relation("MasukanDiterima")
-  jadwalImam       JadwalImam[]
-  presensiImam     PresensiImam[]
-  pengajuanBiodata PegawaiEditRequest[]
-  biodataPegawai   BiodataPegawai?
+  masukanDikirim    MasukanRekan[]       @relation("MasukanDikirim")
+  masukanDiterima   MasukanRekan[]       @relation("MasukanDiterima")
+  jadwalImam        JadwalImam[]
+  presensiImam      PresensiImam[]
+  pengajuanBiodata  PegawaiEditRequest[]
+  biodataPegawai    BiodataPegawai?
   perujukSpmb       PerujukSpmb[]
 }
 
@@ -261,25 +261,25 @@ model KpiSubmission {
 
 // Inventaris barang/perlengkapan sekolah — dikelola Wakil Kepala Sarana Prasarana + Admin/TAS.
 model Asset {
-  id             String              @id @default(cuid())
-  name           String
-  category       String
-  quantity       Int                 @default(1)
-  condition      String              @default("BAIK") // BAIK | RUSAK_RINGAN | RUSAK_BERAT
-  location       String?
-  acquiredDate   DateTime?
-  fundingSource  String?
-  notes          String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  damageReports  AssetDamageReport[]
+  id                String              @id @default(cuid())
+  name              String
+  category          String
+  quantity          Int                 @default(1)
+  condition         String              @default("BAIK") // BAIK | RUSAK_RINGAN | RUSAK_BERAT
+  location          String?
+  acquiredDate      DateTime?
+  fundingSource     String?
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  damageReports     AssetDamageReport[]
   // Sarpras & Lab (17 Sep 2026)
-  kodeInventaris String?
-  mutasi         MutasiAset[]
-  peminjaman     PeminjamanSarpras[]
-  perawatan      JadwalPerawatan[]
-  opnameItem     StokOpnameItem[]
-  layar          Layar[] // TV sekolah yang terhubung ke aset ini (24 Sep 2026)
+  kodeInventaris    String?
+  mutasi            MutasiAset[]
+  peminjaman        PeminjamanSarpras[]
+  perawatan         JadwalPerawatan[]
+  opnameItem        StokOpnameItem[]
+  layar             Layar[] // TV sekolah yang terhubung ke aset ini (24 Sep 2026)
   perangkatJaringan PerangkatJaringan[] // AP/router/switch yang terhubung ke aset ini (24 Sep 2026)
 }
 
@@ -613,7 +613,7 @@ model Class {
   exams               Exam[]
   pengawasKelasUjian  PengawasKelasUjian[]
   billingSchedules    BillingSchedule[]
-  layar         Layar[] // papan informasi TV yang menampilkan jadwal kelas ini (24 Sep 2026)
+  layar               Layar[] // papan informasi TV yang menampilkan jadwal kelas ini (24 Sep 2026)
 }
 
 // Pengesahan rapor per kelas+semester oleh Kepala Sekolah — siswa baru bisa lihat/cetak rapor
@@ -1437,42 +1437,42 @@ model BiodataPegawai {
 ///    akun, seperti formulir SPMB — karena itu `PendaftaranEvent.studentId` boleh kosong.
 /// Karya & bukti bayar masuk folder RAHASIA (CLAUDE.md #44/#50), poster & panduan tidak.
 model Event {
-  id             String             @id @default(cuid())
-  judul          String
-  slug           String             @unique
+  id            String             @id @default(cuid())
+  judul         String
+  slug          String             @unique
   /// Nama penyelenggara apa adanya ("Kemendikbud", "Universitas X"); untuk event milik sekolah
   /// diisi nama sekolah.
-  penyelenggara  String
-  milikSekolah   Boolean            @default(false)
-  jenis          String             @default("LOMBA") // LOMBA | SEMINAR | PELATIHAN | FESTIVAL | LAINNYA
-  tingkat        String             @default("SEKOLAH") // SEKOLAH | KECAMATAN | KABUPATEN | PROVINSI | NASIONAL | INTERNASIONAL
-  deskripsi      String
-  syarat         String?
+  penyelenggara String
+  milikSekolah  Boolean            @default(false)
+  jenis         String             @default("LOMBA") // LOMBA | SEMINAR | PELATIHAN | FESTIVAL | LAINNYA
+  tingkat       String             @default("SEKOLAH") // SEKOLAH | KECAMATAN | KABUPATEN | PROVINSI | NASIONAL | INTERNASIONAL
+  deskripsi     String
+  syarat        String?
   /// Fasilitas & benefit peserta: e-sertifikat, coaching clinic, trophy, dsb.
-  fasilitas      String?
-  berbayar       Boolean            @default(false)
-  biaya          Int? // rupiah
+  fasilitas     String?
+  berbayar      Boolean            @default(false)
+  biaya         Int? // rupiah
   /// Keterangan biaya bebas (mis. "atau USD 10", "per tim") + tujuan transfer.
-  biayaCatatan   String?
-  rekening       String?
-  mulai          DateTime?
-  selesai        DateTime?
+  biayaCatatan  String?
+  rekening      String?
+  mulai         DateTime?
+  selesai       DateTime?
   /// Batas akhir pendaftaran / pengumpulan karya.
-  tutupDaftar    DateTime?
-  posterUrl      String?
-  panduanUrl     String?
+  tutupDaftar   DateTime?
+  posterUrl     String?
+  panduanUrl    String?
   /// Kalau pendaftaran dilakukan di situs penyelenggara, isi tautannya — tombol daftar internal
   /// diganti tautan itu.
-  tautanLuar     String?
-  kontak         String?
-  jurusanIds     String[]           @default([]) // kosong = semua jurusan
-  aktif          Boolean            @default(true)
-  tampilPublik   Boolean            @default(true)
-  pembuatId      String
-  pembuatNama    String
-  pendaftaran    PendaftaranEvent[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  tautanLuar    String?
+  kontak        String?
+  jurusanIds    String[]           @default([]) // kosong = semua jurusan
+  aktif         Boolean            @default(true)
+  tampilPublik  Boolean            @default(true)
+  pembuatId     String
+  pembuatNama   String
+  pendaftaran   PendaftaranEvent[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([aktif, tutupDaftar])
 }
@@ -1536,20 +1536,26 @@ model News {
 /// Satu gelombang pendaftaran: punya tanggal, biaya, dan kuota per jurusan sendiri. Sekolah swasta
 /// lazim membuka beberapa gelombang dengan biaya berbeda (gelombang awal lebih murah).
 model GelombangSpmb {
-  id             String        @id @default(cuid())
-  tahunAjaranId  String?
-  tahunAjaran    AcademicYear? @relation(fields: [tahunAjaranId], references: [id])
-  nama           String // "Gelombang 1"
-  urutan         Int           @default(1)
-  buka           DateTime
-  tutup          DateTime
-  biayaDaftar    Int           @default(0)
-  catatan        String?
-  aktif          Boolean       @default(true)
-  kuota          KuotaSpmb[]
-  pendaftar      Admission[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  tahunAjaranId String?
+  tahunAjaran   AcademicYear? @relation(fields: [tahunAjaranId], references: [id])
+  nama          String // "Gelombang 1"
+  urutan        Int           @default(1)
+  buka          DateTime
+  tutup         DateTime
+  biayaDaftar   Int           @default(0)
+  catatan       String?
+  aktif         Boolean       @default(true)
+  /// Tautan grup WhatsApp KHUSUS gelombang ini — tampil ke calon tepat setelah mendaftar (6 Okt 2026).
+  tautanGrup    String?
+  /// Jadwal tahap yang mengharuskan calon datang ke sekolah, per gelombang (src/lib/spmb-tahapan.ts):
+  /// { "ASESMEN": { tanggal, jamMulai, jamSelesai, tempat, catatan }, "PEMERIKSAAN": {…}, … }
+  jadwalTahap   Json?
+  kuota         KuotaSpmb[]
+  pendaftar     Admission[]
+  sesi          SesiSpmb[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([aktif, buka])
 }
@@ -1606,14 +1612,14 @@ model NilaiSpmb {
 /// Dokumen yang diminta ke pendaftar — daftarnya diatur panitia, jadi formulir publik ikut berubah
 /// tanpa menyentuh kode. Pola sama dengan PklDocumentRequirement.
 model DokumenSyaratSpmb {
-  id        String       @id @default(cuid())
-  nama      String // "Ijazah/SKL", "Kartu Keluarga", "Akta Kelahiran"
+  id         String       @id @default(cuid())
+  nama       String // "Ijazah/SKL", "Kartu Keluarga", "Akta Kelahiran"
   keterangan String?
-  wajib     Boolean      @default(true)
-  urutan    Int          @default(0)
-  aktif     Boolean      @default(true)
-  berkas    BerkasSpmb[]
-  createdAt DateTime     @default(now())
+  wajib      Boolean      @default(true)
+  urutan     Int          @default(0)
+  aktif      Boolean      @default(true)
+  berkas     BerkasSpmb[]
+  createdAt  DateTime     @default(now())
 }
 
 /// Unggahan pendaftar. Berkas masuk FOLDER RAHASIA (KK, akta, KTP = data pribadi keluarga).
@@ -1632,10 +1638,10 @@ model BerkasSpmb {
 }
 
 model Admission {
-  id                     String    @id @default(cuid())
+  id                     String         @id @default(cuid())
   /// Nomor pendaftaran yang dibawa calon (mis. "SPMB-2627-0001"). Dipakai bersama TANGGAL LAHIR
   /// untuk membuka status tanpa akun — nomor saja mudah ditebak orang lain.
-  nomor                  String?   @unique
+  nomor                  String?        @unique
   gelombangId            String?
   gelombang              GelombangSpmb? @relation(fields: [gelombangId], references: [id])
   fullName               String
@@ -1656,14 +1662,14 @@ model Admission {
   email                  String
   guardianName           String?
   chosenMajor            String
-  jalur                  String    @default("REGULER") // REGULER | PRESTASI_AKADEMIK | PRESTASI_NON_AKADEMIK | TAHFIDZ | AFIRMASI
+  jalur                  String         @default("REGULER") // REGULER | PRESTASI_AKADEMIK | PRESTASI_NON_AKADEMIK | TAHFIDZ | AFIRMASI
   // Dokumen pendukung
   ijazahUrl              String?
   kkUrl                  String?
   ktpWaliUrl             String?
   fotoUrl                String?
   dokumenLainUrl         String?
-  status                 String    @default("PENDING")
+  status                 String         @default("PENDING")
   notes                  String?
   // Scoring otomatis — skorAkhir dihitung dari nilaiRapor & nilaiTes memakai bobot di SiteSetting
   // ("spmb.bobotRapor"/"spmb.bobotTes"), dipakai untuk meranking pendaftar per jurusan.
@@ -1674,22 +1680,57 @@ model Admission {
   // setelah status ACCEPTED, admin verifikasi manual lewat paymentVerified.
   buktiPembayaranUrl     String?
   daftarUlangConfirmedAt DateTime?
-  paymentVerified        Boolean   @default(false)
-  createdAt              DateTime  @default(now())
+  paymentVerified        Boolean        @default(false)
+  createdAt              DateTime       @default(now())
   /// Token keaslian cetakan formulir pendaftaran (pola CLAUDE.md #49) — dibuat SEKALI saat
   /// formulir pertama dicetak, jadi cetak ulang memakai token yang sama.
-  cetakToken             String?   @unique
+  cetakToken             String?        @unique
   /// Kode referral PERSIS seperti yang diketik pendaftar — disimpan apa adanya supaya jejaknya
   /// tetap ada walau baris perujuknya kelak dihapus/dinonaktifkan.
   perujukKode            String?
   perujukId              String?
-  perujuk                PerujukSpmb? @relation(fields: [perujukId], references: [id], onDelete: SetNull)
+  perujuk                PerujukSpmb?   @relation(fields: [perujukId], references: [id], onDelete: SetNull)
   // Konversi ke Buku Induk (17 Sep 2026)
-  studentId              String?   @unique
+  studentId              String?        @unique
   dikonversiPada         DateTime?
   dikonversiOleh         String?
   nilaiSpmb              NilaiSpmb[]
   berkasSpmb             BerkasSpmb[]
+  // ── Tahapan calon siswa (6 Okt 2026, src/lib/spmb-tahapan.ts) ──────────────────────────────
+  /// BELUM | PERBAIKAN | TERVERIFIKASI — pemeriksaan berkas oleh panitia.
+  verifikasiStatus       String         @default("BELUM")
+  /// Pesan panitia untuk calon bila berkas perlu diperbaiki (tampil di halaman tahapan calon).
+  verifikasiPesan        String?
+  /// Kunci dokumen yang harus diunggah ulang: "ijazah" | "kk" | "ktp_wali" | "foto" | "dokumen_lain" | "syarat:<id>".
+  verifikasiDokumen      String[]       @default([])
+  verifikasiAt           DateTime?
+  verifikasiOleh         String?
+  /// Calon terakhir mengirim perbaikan berkas — penanda "sudah diperbaiki, periksa lagi".
+  perbaikanAt            DateTime?
+  /// Pilihan ukuran seragam calon: { pilihan: [{ item, ukuran }], catatan }.
+  seragam                Json?
+  seragamAt              DateTime?
+  /// Asesmen awal (wawancara panitia) — SALINAN pertanyaan + jawaban, supaya tetap terbaca walau
+  /// daftar pertanyaan diubah kemudian. DATA SENSITIF: tidak pernah dikirim ke halaman publik.
+  asesmen                Json?
+  asesmenAt              DateTime?
+  asesmenOleh            String?
+  /// Cek fisik & kesehatan — pola sama dengan asesmen. DATA SENSITIF.
+  pemeriksaan            Json?
+  pemeriksaanAt          DateTime?
+  pemeriksaanOleh        String?
+  /// Calon menekan tombol grup WA gelombangnya / menyatakan sudah bergabung (perkiraan anggota grup).
+  grupDiklikAt           DateTime?
+  grupBergabungAt        DateTime?
+  /// Potongan biaya daftar ulang untuk calon ini (beasiswa dsb.), rupiah.
+  potonganBiaya          Int            @default(0)
+  keteranganPotongan     String?
+  pembayaranSpmb         PembayaranSpmb[]
+  /// Sesi kedatangan hari tes (asesmen + cek kesehatan) yang dipilih calon — kuota per sesi.
+  sesiId                 String?
+  sesi                   SesiSpmb?      @relation(fields: [sesiId], references: [id], onDelete: SetNull)
+  langgananSpmb          LanggananSpmb[]
+  kabarSpmb              KabarSpmb[]
 
   @@index([status, chosenMajor])
 }
@@ -2688,26 +2729,26 @@ model PiketKelas {
 
 /// Izin keluar lingkungan sekolah pada jam pelajaran, dicatat Guru Piket (17 Sep 2026). Saat kembali, kartu siswa dipindai.
 model IzinKeluarSiswa {
-  id             String    @id @default(cuid())
-  studentId      String
-  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  alasan         String
-  keluarPada     DateTime  @default(now())
-  kembaliRencana String? // "HH:MM" WIB
-  kembaliPada    DateTime?
-  dicatatOleh    String
-  dicatatId      String?
+  id              String    @id @default(cuid())
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  alasan          String
+  keluarPada      DateTime  @default(now())
+  kembaliRencana  String? // "HH:MM" WIB
+  kembaliPada     DateTime?
+  dicatatOleh     String
+  dicatatId       String?
   /// Guru Piket memutuskan saat mencatat: siswa WAJIB mengunggah bukti foto dari tempat tujuan
   /// (mis. izin ke klinik). Kalau false, di portal siswa izin ini cuma jadi SURAT IZIN KELUAR
   /// yang bisa ditunjukkan ke security / tempat tujuan (30 Sep 2026).
-  perluFoto      Boolean   @default(false)
+  perluFoto       Boolean   @default(false)
   /// Nama berkas di public/uploads/rahasia/izin-keluar — folder rahasia (CLAUDE.md #44/#50),
   /// dibuka hanya lewat /api/izin-keluar/[id]/bukti.
-  buktiFoto      String?
-  buktiPada      DateTime?
+  buktiFoto       String?
+  buktiPada       DateTime?
   /// QR keaslian surat izin keluar (pola CLAUDE.md #49) — dibuat sekali saat surat pertama dibuka.
-  verifikasiToken String?  @unique
-  createdAt      DateTime  @default(now())
+  verifikasiToken String?   @unique
+  createdAt       DateTime  @default(now())
 
   @@index([studentId, keluarPada])
   @@index([keluarPada])
@@ -3445,31 +3486,31 @@ model RaporVerifikasi {
 /// router (atau dari kode pendaftaran yang muncul di layar TV), dan TV yang dilepas cukup ditandai `aktif = false`
 /// supaya riwayat & rekap bulan sebelumnya tidak ikut berubah.
 model Layar {
-  id        String  @id @default(cuid())
-  nama      String // "TV Lab TKJ"
-  ruang     String // dari daftar ruang yang sudah ada (jadwal, ruang ujian, ruang tambahan Sarpras)
-  mac       String  @unique // MAC ASLI perangkat (bukan MAC acak WiFi) — kunci pencocokan dengan router
-  ipTetap   String? // IP hasil sewa statis di router, bila sudah diberikan
-  jaringan  String? // nama VLAN/WiFi terakhir yang terdeteksi (mis. "vlan30_SISWA")
-  aktif     Boolean @default(true) // false = TV dilepas/rusak; alarm berhenti, riwayat tetap tersimpan
+  id              String    @id @default(cuid())
+  nama            String // "TV Lab TKJ"
+  ruang           String // dari daftar ruang yang sudah ada (jadwal, ruang ujian, ruang tambahan Sarpras)
+  mac             String    @unique // MAC ASLI perangkat (bukan MAC acak WiFi) — kunci pencocokan dengan router
+  ipTetap         String? // IP hasil sewa statis di router, bila sudah diberikan
+  jaringan        String? // nama VLAN/WiFi terakhir yang terdeteksi (mis. "vlan30_SISWA")
+  aktif           Boolean   @default(true) // false = TV dilepas/rusak; alarm berhenti, riwayat tetap tersimpan
   /// Tautan papan informasi: TV membuka /layar/<token>. Dibuat saat petugas menekan "Buat tautan papan",
   /// bukan otomatis — layar yang tidak dipakai sebagai papan tidak perlu punya alamat yang bisa dibuka siapa pun.
-  token      String? @unique
+  token           String?   @unique
   /// QR presensi mandiri di papan: MATI | JAM_PRESENSI | SELALU.
   /// JAM_PRESENSI untuk TV siswa (muncul & hilang sendiri mengikuti jam buka–tutup absen, sehingga jendela
   /// risikonya sempit bila tautan layar bocor). SELALU untuk TV ruang guru — jadwal guru tidak semuanya pagi,
   /// jadi QR-nya harus tersedia sepanjang hari (keputusan user 25 Sep 2026).
-  papanQr         String  @default("MATI")
+  papanQr         String    @default("MATI")
   /// Jenis papan: UMUM (TV kelas/koridor — jadwal, pengumuman, agenda, bel) atau GURU (TV ruang guru &
   /// ruang rapat). Ruang rapat adalah tempat guru berkumpul dan TIDAK punya jadwal pelajaran, jadi papannya
   /// menampilkan panel yang BERGILIR: presensi pegawai hari ini, jurnal & absensi yang belum diisi, buku
   /// piket, dan rekap kehadiran siswa (permintaan user 25 Sep 2026: "gimana kalo bisa bergeser geser setiap
   /// 2 menit atau berapa"). QR presensi tetap di tempatnya, tidak ikut bergilir.
-  papanJenis      String  @default("UMUM")
+  papanJenis      String    @default("UMUM")
   /// Lama tiap panel tampil sebelum berganti, dalam detik. Hanya berlaku untuk papanJenis GURU.
   /// Bawaan 60 detik (keputusan user 25 Sep 2026, sebelumnya 120): dengan sembilan panel, dua menit per panel
   /// berarti satu putaran penuh 18 menit — terlalu lama untuk orang yang lewat sebentar di ruang guru.
-  papanGiliran    Int     @default(60)
+  papanGiliran    Int       @default(60)
   /// Volume TV (0–100) yang dipakai SELAMA bel berbunyi; kosong = volume TV tidak pernah disentuh.
   /// Volume sebelumnya dibaca lewat ADB tepat sebelum bel dan dikembalikan persis setelah bel selesai —
   /// bel sekolah harus terdengar walau TV sedang dikecilkan, tetapi tidak boleh meninggalkan TV keras
@@ -3477,7 +3518,7 @@ model Layar {
   volumeBel       Int?
   /// Sistem membuka papan sendiri saat TV menyala dan SEDANG MENGANGGUR (beranda TV). Tidak pernah merebut
   /// layar yang sedang dipakai guru — itu syarat mutlak, TV tetap alat mengajar.
-  papanOtomatis   Boolean @default(true)
+  papanOtomatis   Boolean   @default(true)
   /// Isi papan yang DIKETIK SENDIRI petugas (permintaan user 24 Sep 2026: "bisa manual saja untuk yang
   /// ditampilkan"). TV lobi/ruang rapat sering perlu tulisan khusus, bukan jadwal pelajaran. Bila
   /// `papanManualSaja` menyala, papan HANYA menampilkan tulisan ini + jam; bila tidak, tulisan tampil
@@ -3487,40 +3528,40 @@ model Layar {
   /// Cara pengumuman disampaikan (25 September 2026): TEKS_SUARA (bawaan — papan diambil alih tulisan besar lalu
   /// dibacakan), TEKS (tampil saja, tidak dibacakan — untuk yang tidak mendesak), atau SUARA (dibacakan sekali,
   /// papan TETAP menampilkan panel biasa — untuk panggilan singkat yang tidak perlu menutup seluruh layar).
-  papanCara       String  @default("TEKS_SUARA")
+  papanCara       String    @default("TEKS_SUARA")
   /// MODE BEL per TV (4 Okt 2026, untuk ruang ANBK/TKA): NORMAL | HENING (bel diam, pengumuman tampil sebagai
   /// teks tanpa nada/suara) | UJIAN (selalu memakai jadwal bel profil UJIAN). Berlaku sampai `belModeSampai`
   /// (null = sampai diubah lagi); lewat dari itu dianggap NORMAL tanpa perlu ada yang mengembalikannya.
-  belMode         String  @default("NORMAL")
+  belMode         String    @default("NORMAL")
   belModeSampai   DateTime?
-  papanManualSaja Boolean @default(false)
+  papanManualSaja Boolean   @default(false)
   /// Kelas yang jadwalnya ditampilkan di papan (TV depan kelas). Kosong = papan umum (agenda & pengumuman saja).
-  kelasId    String?
-  kelas      Class?  @relation(fields: [kelasId], references: [id], onDelete: SetNull)
+  kelasId         String?
+  kelas           Class?    @relation(fields: [kelasId], references: [id], onDelete: SetNull)
   /// Jam NYALA otomatis "HH:MM" (WIB), kosong = tidak dijadwalkan. Hanya berlaku bila TV disetel mode
   /// "Tanpa layar" (sistem tetap hidup saat layar gelap) — dibuktikan 24 Sep 2026 di TCL Lab TKJ: layar
   /// dimatikan lewat ADB, ADB tetap menjawab, lalu dibangunkan lagi dari jauh. Pada mode Doze, TV benar-benar
   /// tidur dan tidak ada perintah apa pun yang sampai.
-  jadwalNyala String?
+  jadwalNyala     String?
   /// Jam mati otomatis "HH:MM" (WIB), kosong = tidak dijadwalkan. Penjadwal menekan tombol daya lewat ADB →
   /// TV masuk standby. MENYALAKAN kembali TIDAK bisa lewat WiFi (Wake-on-LAN terbukti gagal 24 Sep 2026),
   /// jadi jadwal ini sengaja hanya satu arah: mati.
-  jadwalMati String?
-  catatan   String?
-  assetId   String? // sambungan ke Inventaris (label QR aset, garansi, mutasi ruang)
-  asset     Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  jadwalMati      String?
+  catatan         String?
+  assetId         String? // sambungan ke Inventaris (label QR aset, garansi, mutasi ruang)
+  asset           Asset?    @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   // Tahap berikutnya — diisi aplikasi pemantau di TV
-  kodeDaftar       String?   @unique // kode 6 angka yang tampil di layar TV sebelum diklaim petugas
-  kodeKedaluwarsa  DateTime?
-  perangkatModel   String?
-  perangkatVersi   String? // versi Android / versi aplikasi pemantau
-  terakhirDenyut   DateTime?
-  aplikasiDepan    String? // aplikasi yang sedang dibuka saat denyut terakhir
-  ipTerakhir       String?
+  kodeDaftar      String?   @unique // kode 6 angka yang tampil di layar TV sebelum diklaim petugas
+  kodeKedaluwarsa DateTime?
+  perangkatModel  String?
+  perangkatVersi  String? // versi Android / versi aplikasi pemantau
+  terakhirDenyut  DateTime?
+  aplikasiDepan   String? // aplikasi yang sedang dibuka saat denyut terakhir
+  ipTerakhir      String?
 
-  dibuatAt   DateTime @default(now())
-  diubahAt   DateTime @updatedAt
+  dibuatAt DateTime @default(now())
+  diubahAt DateTime @updatedAt
 
   @@index([aktif])
 }
@@ -3534,14 +3575,14 @@ model Layar {
 /// ulang dan susunan kalimatnya seragam. Dipilih saat mengirim pengumuman, lalu MASIH BOLEH disunting sebelum
 /// dikirim: template adalah titik awal, bukan kunci mati.
 model TemplatePengumuman {
-  id        String   @id @default(cuid())
-  judul     String
-  isi       String?
+  id       String   @id @default(cuid())
+  judul    String
+  isi      String?
   /// Cara bawaan saat template ini dipakai — petugas tetap bisa mengubahnya di formulir.
-  cara      String   @default("TEKS_SUARA")
-  urutan    Int      @default(0)
-  dibuatAt  DateTime @default(now())
-  diubahAt  DateTime @updatedAt
+  cara     String   @default("TEKS_SUARA")
+  urutan   Int      @default(0)
+  dibuatAt DateTime @default(now())
+  diubahAt DateTime @updatedAt
 
   @@index([urutan])
 }
@@ -3609,16 +3650,16 @@ model JadwalImam {
 /// (userId, date) sehingga satu orang yang hari itu piket pagi SEKALIGUS jadi imam tidak akan
 /// muat. Di sini kuncinya (userId, date, sesi) supaya Duha & Dzuhur bisa dicatat sendiri-sendiri.
 model PresensiImam {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime
-  sesi      String // DUHA | DZUHUR
-  status    String // HADIR | IZIN | SAKIT | ALPHA
-  catatan   String?
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  sesi        String // DUHA | DZUHUR
+  status      String // HADIR | IZIN | SAKIT | ALPHA
+  catatan     String?
   dicatatOleh String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([userId, date, sesi])
   @@index([date])
@@ -3632,21 +3673,21 @@ model PresensiImam {
 /// bisa saja bertabrakan — `kode` unik di sini membuat tabrakan mustahil, (3) perujuk LUAR
 /// (alumni, wali murid, tokoh masyarakat) tidak punya baris di tabel mana pun.
 model PerujukSpmb {
-  id         String   @id @default(cuid())
-  kode       String   @unique
+  id         String      @id @default(cuid())
+  kode       String      @unique
   nama       String
   /// SISWA | PEGAWAI | LUAR
-  jenis      String   @default("LUAR")
+  jenis      String      @default("LUAR")
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   studentId  String?
-  student    Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  student    Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
   /// Nomor WhatsApp perujuk luar — untuk panitia menghubungi, tidak pernah ditampilkan publik.
   kontak     String?
   keterangan String?
-  aktif      Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  aktif      Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   pendaftar  Admission[]
 
   @@index([jenis, aktif])
@@ -3668,20 +3709,150 @@ model SpmbJejak {
 /// PASSKEY (5 Oktober 2026) — masuk dengan sidik jari / wajah / PIN perangkat (WebAuthn). Hanya kunci PUBLIK yang
 /// disimpan; kunci rahasia tidak pernah meninggalkan perangkat pengguna. Lihat src/lib/passkey.ts.
 model Passkey {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// ID kredensial (base64url) — dipakai mencari pemilik saat masuk tanpa mengetik email.
-  credentialId String    @unique
-  publicKey    Bytes
-  counter      BigInt    @default(0)
-  transports   String[]  @default([])
+  credentialId    String    @unique
+  publicKey       Bytes
+  counter         BigInt    @default(0)
+  transports      String[]  @default([])
   /// Domain tempat passkey dibuat (rpID). Passkey hanya berlaku di domain itu.
-  rpId         String
+  rpId            String
   /// Nama yang diberi pengguna, mis. "HP Samsung" — supaya bisa dibedakan saat menghapus.
-  nama         String
-  createdAt    DateTime  @default(now())
+  nama            String
+  createdAt       DateTime  @default(now())
   terakhirDipakai DateTime?
 
   @@index([userId])
+}
+
+// ============================================================================
+// ALOKASI DANA IURAN (6 Oktober 2026) — src/lib/alokasi-dana.ts
+// Perhitungan pembagian dana iuran per angkatan ke pos-pos anggaran (persen / nominal per siswa), plus REALISASI
+// (uang masuk dibagi ke pos sesuai rencana, pengeluaran per pos → saldo). Keputusan user: "ini hanya untuk
+// perhitungan" — tanpa tahap pengesahan/penguncian. TERPISAH dari modul Bendahara lama (FeeType/Invoice) yang
+// sengaja tidak disentuh.
+// ============================================================================
+model AlokasiRencana {
+  id           String             @id @default(cuid())
+  nama         String
+  tahunAjaran  String?
+  /// Berapa bulan iuran dipungut dalam setahun (bawaan 12).
+  bulan        Int                @default(12)
+  /// Nama pos yang menampung sisa pembulatan rupiah (kosong = pos pertama tiap angkatan).
+  posPenampung String?
+  catatan      String?
+  dibuatOleh   String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  angkatan     AlokasiAngkatan[]
+  transaksi    AlokasiTransaksi[]
+}
+
+model AlokasiAngkatan {
+  id          String             @id @default(cuid())
+  rencanaId   String
+  rencana     AlokasiRencana     @relation(fields: [rencanaId], references: [id], onDelete: Cascade)
+  nama        String // "Kelas X"
+  /// Tingkat kelas (10/11/12) untuk mengisi jumlah siswa dari data; null = angkatan bebas.
+  tingkat     Int?
+  jumlahSiswa Int                @default(0)
+  /// Iuran per siswa per bulan (Rupiah).
+  iuran       Int                @default(0)
+  /// Siswa dengan iuran berbeda (beasiswa/keringanan): [{ label, jumlah, iuran }].
+  keringanan  Json               @default("[]")
+  /// Pos alokasi: [{ nama, jenis: "PERSEN" | "NOMINAL", nilai }] — NOMINAL = rupiah per siswa per bulan.
+  pos         Json               @default("[]")
+  urutan      Int                @default(0)
+  transaksi   AlokasiTransaksi[]
+}
+
+model AlokasiTransaksi {
+  id          String           @id @default(cuid())
+  rencanaId   String
+  rencana     AlokasiRencana   @relation(fields: [rencanaId], references: [id], onDelete: Cascade)
+  angkatanId  String?
+  angkatan    AlokasiAngkatan? @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
+  /// MASUK = iuran terkumpul (dibagi ke pos angkatan itu sesuai rencana) | KELUAR = belanja dari satu pos.
+  jenis       String
+  /// Nama pos (wajib untuk KELUAR).
+  pos         String?
+  tanggal     DateTime
+  jumlah      Int
+  keterangan  String?
+  dicatatOleh String
+  createdAt   DateTime         @default(now())
+
+  @@index([rencanaId, tanggal])
+}
+
+/// Pembayaran daftar ulang SPMB — BOLEH DICICIL dan boleh setelah MPLS (keputusan user 6 Okt 2026).
+/// Calon mengirim bukti (MENUNGGU) atau panitia mencatat tunai (langsung SAH). Yang mengesahkan:
+/// panitia SPMB / superadmin. Modul Bendahara SENGAJA tidak disentuh — rekap lewat Excel.
+model PembayaranSpmb {
+  id           String    @id @default(cuid())
+  admissionId  String
+  admission    Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  jumlah       Int
+  tanggal      DateTime
+  metode       String    @default("TRANSFER") // TRANSFER | TUNAI
+  bukti        String?
+  catatan      String?
+  status       String    @default("MENUNGGU") // MENUNGGU | SAH | DITOLAK
+  alasanTolak  String?
+  /// null = dikirim calon sendiri dari halaman tahapan.
+  dicatatOleh  String?
+  disahkanOleh String?
+  disahkanAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([admissionId, status])
+}
+
+/// Sesi kedatangan hari tes per gelombang (6 Okt 2026): calon memilih sendiri, kuota dibatasi — supaya
+/// asesmen & cek kesehatan tidak menumpuk di pagi hari.
+model SesiSpmb {
+  id          String        @id @default(cuid())
+  gelombangId String
+  gelombang   GelombangSpmb @relation(fields: [gelombangId], references: [id], onDelete: Cascade)
+  /// Tanggal WIB "YYYY-MM-DD".
+  tanggal     String
+  jamMulai    String
+  jamSelesai  String
+  tempat      String?
+  kuota       Int           @default(30)
+  catatan     String?
+  pendaftar   Admission[]
+  createdAt   DateTime      @default(now())
+
+  @@index([gelombangId, tanggal])
+}
+
+/// Langganan push PERANGKAT CALON SISWA (tanpa akun) — terpisah dari PushSubscription yang terikat User.
+model LanggananSpmb {
+  id          String    @id @default(cuid())
+  admissionId String
+  admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  endpoint    String
+  p256dh      String
+  auth        String
+  createdAt   DateTime  @default(now())
+
+  @@unique([admissionId, endpoint])
+}
+
+/// Kabar yang sudah dikirim ke calon — `kunci` unik = satu kejadian hanya dikabarkan sekali (pola #31);
+/// juga tampil sebagai "Kabar terbaru" di halaman tahapan calon.
+model KabarSpmb {
+  id          String    @id @default(cuid())
+  admissionId String
+  admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  kunci       String    @unique
+  judul       String
+  isi         String
+  perangkat   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([admissionId, createdAt])
 }

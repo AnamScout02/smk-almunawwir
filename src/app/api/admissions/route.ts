@@ -1,13 +1,14 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/session";
 import { gelombangDibuka, nomorPendaftaranBaru } from "@/lib/spmb";
 import { bacaKontenSpmb, cocokJurusan } from "@/lib/spmb-konten";
 import { periksaFormulirSpmb, rapikanNomorWa, type IsianSpmb } from "@/lib/spmb-form";
 import { cocokkanPerujuk } from "@/lib/spmb-perujuk";
 import { rapikanWilayah } from "@/lib/spmb-wilayah";
 import { getSettings } from "@/lib/site-settings";
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
+import { lahirIso, tandaFormulir } from "@/lib/spmb-formulir";
 
 export const dynamic = "force-dynamic";
 
@@ -149,7 +150,8 @@ export async function POST(req: NextRequest) {
         phone: rapikanNomorWa(d.phone),
         nisn: d.nisn ?? null,
         address: d.address ?? null,
-        previousSchool: d.previousSchool,
+        // Penulisan baku ("SMPN 1 songgon" → "SMP Negeri 1 Songgon") — src/lib/nama-sekolah.ts.
+        previousSchool: bakuNamaSekolah(d.previousSchool),
         email: d.email,
         guardianName: d.guardianName ?? null,
         chosenMajor: d.chosenMajor ?? "",
@@ -174,6 +176,10 @@ export async function POST(req: NextRequest) {
       success: true, id: admission.id,
       nomor: admission.nomor,
       gelombang: gelombang.nama,
+      // Tanda halaman tahapan (nomor + tanggal lahir, HMAC) — calon langsung bisa membuka tahapannya
+      // tanpa mengetik ulang, dan tautan grup WA gelombangnya tampil tepat setelah daftar (user 6 Okt 2026).
+      tanda: admission.nomor ? tandaFormulir(admission.nomor, lahirIso(admission.birthDate)) : null,
+      tautanGrup: gelombang.tautanGrup || null,
       // Nomor pendaftaran + tanggal lahir adalah kunci calon membuka statusnya nanti.
       pesan: `Simpan nomor pendaftaran Anda: ${admission.nomor}. Status pendaftaran dibuka dengan nomor itu dan tanggal lahir.`,
     }, { status: 201 });
@@ -182,18 +188,3 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const admissions = await prisma.admission.findMany({
-      orderBy: { createdAt: "desc" },
-    });
-    return Response.json({ admissions });
-  } catch {
-    return Response.json({ error: "Gagal mengambil data" }, { status: 500 });
-  }
-}

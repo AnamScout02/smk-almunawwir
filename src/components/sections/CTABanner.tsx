@@ -20,7 +20,7 @@ export default async function CTABanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-primary-900 via-primary-700 to-primary-500" />
       <div className="latar-aurora" aria-hidden />
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
       <div className="absolute top-0 right-0 w-96 h-96 bg-gold/10 rounded-full translate-x-1/3 -translate-y-1/3" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full -translate-x-1/3 translate-y-1/3" />

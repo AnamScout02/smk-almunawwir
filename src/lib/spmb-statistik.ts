@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { TAHAP_JEJAK } from "@/lib/spmb-jejak";
+import { bakuNamaSekolah, kunciSekolah } from "@/lib/nama-sekolah";
 
 /** Statistik SPMB — SATU sumber untuk halaman SPMB publik (peringkat perujuk tersamar, pendaftar
  *  terbaru) dan halaman Statistik panitia (corong, sebaran wilayah, asal sekolah, peringkat utuh).
@@ -46,19 +47,17 @@ export async function sebaranWilayah() {
 
 /** Asal sekolah diketik bebas — diseragamkan (huruf besar, spasi & tanda baca dirapikan, "SMPN" =
  *  "SMP NEGERI") supaya "SMPN 1 Songgon" dan "smp negeri 1 songgon" terhitung satu sekolah. */
-function rapikanSekolah(s: string) {
-  return s.toUpperCase().replace(/[.,]/g, " ")
-    .replace(/\bSMPN\b/g, "SMP NEGERI").replace(/\bMTSN\b/g, "MTS NEGERI").replace(/\bSMPS\b/g, "SMP SWASTA")
-    .replace(/\s+/g, " ").trim();
-}
+// Kunci & penulisan baku satu sumber: src/lib/nama-sekolah.ts (tanda hubung, singkatan, apostrof diabaikan).
 export async function sebaranSekolah(batas = 30) {
   const semua = await prisma.admission.findMany({ where: BUKAN_DITOLAK, select: { previousSchool: true } }).catch(() => []);
-  const peta = new Map<string, number>();
+  const peta = new Map<string, { nama: string; jumlah: number }>();
   for (const a of semua) {
-    const k = rapikanSekolah(a.previousSchool ?? "");
-    if (k) peta.set(k, (peta.get(k) ?? 0) + 1);
+    const k = kunciSekolah(a.previousSchool ?? "");
+    if (!k) continue;
+    const ada = peta.get(k);
+    if (ada) ada.jumlah++; else peta.set(k, { nama: bakuNamaSekolah(a.previousSchool), jumlah: 1 });
   }
-  return [...peta].map(([nama, jumlah]) => ({ nama, jumlah })).sort((a, b) => b.jumlah - a.jumlah).slice(0, batas);
+  return [...peta.values()].sort((a, b) => b.jumlah - a.jumlah).slice(0, batas);
 }
 
 /** Corong: jumlah peramban UNIK yang mencapai tiap tahap sejak tanggal tertentu. */

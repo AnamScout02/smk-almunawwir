@@ -26,7 +26,7 @@ export default function Testimonials({ lang = "id", data = [] }: { lang?: Lang; 
   return (
     <section className="section-padding bg-primary-900 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
       />
 
       <div className="container-custom relative">

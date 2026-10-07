@@ -79,7 +79,7 @@ function FrontCard({ p, type, logoEmblem }: { p: CardPerson; type: CardType; log
     <div className={`rounded-2xl overflow-hidden shadow-sm break-inside-avoid relative text-white ${CARD_PRINT_SIZE}`}
       style={{ aspectRatio: CARD_RATIO, background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 45%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "50px 50px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "70.71px 70.71px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
       <div className="relative h-full flex flex-col p-3">
         <div className="flex items-center gap-1.5 mb-2">
           {logoEmblem && (

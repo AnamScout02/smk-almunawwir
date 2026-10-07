@@ -511,7 +511,7 @@ export default function PengaturanUjianManager({ basePath }: { basePath: string 
             <div>
               <p className="label-field">Pratinjau di layar peserta</p>
               <div className="relative overflow-hidden rounded-xl text-center px-4 py-5" style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
-                <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", filter: "invert(1)" }} />
+                <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", filter: "invert(1)" }} />
                 <p className="relative font-heading font-bold text-white text-base uppercase tracking-[0.12em] leading-snug">{form.nama || "Nama Kegiatan"}</p>
                 <div className="relative mx-auto mt-1.5 h-[3px] w-16 rounded-full" style={{ background: "linear-gradient(90deg, transparent 0%, #F5C842 50%, transparent 100%)" }} />
                 <p className="relative text-gold text-xs font-heading font-semibold uppercase tracking-[0.1em] mt-1.5">

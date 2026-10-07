@@ -106,7 +106,7 @@ export default async function Programs() {
               </>
             ) : (
               <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "141.42px 141.42px", backgroundRepeat: "repeat", filter: "invert(1)" }}
               />
             )}
             <div className="relative">

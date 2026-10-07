@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Sparkles, RotateCcw, ArrowRight, ChevronLeft } from "lucide-react";
 import TombolBagikan from "@/components/shared/TombolBagikan";
-import { hitungKuis, type SoalKuis } from "@/lib/kuis-jurusan";
+import { acakKuis, hitungKuis, type SoalKuis } from "@/lib/kuis-jurusan";
 import { catatJejak } from "@/lib/spmb-jejak";
 import { themeGradient } from "@/lib/color";
 import type { Lang } from "@/lib/lang";
@@ -31,14 +31,18 @@ const T = {
 /** Kuis minat jurusan (CLAUDE.md #11 — pertanyaan dari data jurusan, lihat src/lib/kuis-jurusan.ts).
  *  "Daftar ke jurusan ini" mengisi pilihan jurusan di formulir lewat peristiwa `spmb-pilih-jurusan`
  *  lalu menggulir ke formulir; hasil yang DIBAGIKAN memakai `?jurusan=KODE` yang dibaca formulir. */
-export default function KuisJurusanSpmb({ soal, jurusan, lang, formTerbuka }: {
-  soal: SoalKuis[]; jurusan: Jurusan[]; lang: Lang; formTerbuka: boolean;
+export default function KuisJurusanSpmb({ soal: soalTetap, bank = [], jumlah = 8, jurusan, lang, formTerbuka }: {
+  soal: SoalKuis[]; bank?: SoalKuis[]; jumlah?: number; jurusan: Jurusan[]; lang: Lang; formTerbuka: boolean;
 }) {
   const t = T[lang];
   const [mulai, setMulai] = useState(false);
   const [jawaban, setJawaban] = useState<number[]>([]);
   const [pesan, setPesan] = useState("");
-  if (soal.length < 2) return null;
+  // Bank panitia → soal ACAK tiap kali kuis dimulai/diulang; tanpa bank → soal tetap dari data jurusan.
+  const pakaiBank = bank.length >= 2;
+  const [soal, setSoal] = useState<SoalKuis[]>(soalTetap);
+  const kocok = () => { if (pakaiBank) setSoal(acakKuis(bank, jumlah)); };
+  if ((pakaiBank ? bank : soalTetap).length < 2) return null;
 
   const selesai = jawaban.length >= soal.length;
   const ke = jawaban.length;
@@ -58,7 +62,7 @@ export default function KuisJurusanSpmb({ soal, jurusan, lang, formTerbuka }: {
         <h3 className="font-heading mt-2 text-2xl font-bold">{t.judul}</h3>
         <p className="mt-1 text-sm text-white/70">{t.ket}</p>
       </div>
-      <button type="button" onClick={() => setMulai(true)}
+      <button type="button" onClick={() => { kocok(); setMulai(true); }}
         className="spmb-kilau sentuh shrink-0 rounded-full bg-gold px-6 py-3 text-sm font-bold text-primary-900 transition hover:brightness-110">
         {t.mulai}
       </button>
@@ -138,7 +142,7 @@ export default function KuisJurusanSpmb({ soal, jurusan, lang, formTerbuka }: {
         )}
         <TombolBagikan judul={t.pesan(atas.name, "")} teks={t.pesan(atas.name, "").trim()} url={tautan} label={t.bagikan}
           className="sentuh inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold transition hover:bg-white/10" />
-        <button type="button" onClick={() => { setJawaban([]); setPesan(""); }}
+        <button type="button" onClick={() => { kocok(); setJawaban([]); setPesan(""); }}
           className="sentuh inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold transition hover:bg-white/10">
           <RotateCcw size={16} /> {t.ulangi}
         </button>

@@ -1821,3 +1821,111 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        kosong di Excel terhapus (termasuk Foto Kartu), dan Status kosong mengembalikan siswa LULUS/PINDAH & guru PENSIUN/KELUAR
        menjadi AKTIF. Sekarang hanya sel TERISI yang menimpa; Status kosong = status lama. Bawaan "AKTIF" hanya untuk data baru.
      - Password awal akun guru dari impor = `Almunawwir1` (dulu NIP — mudah ditebak & tidak seragam dengan siswa/formulir).
+
+127. **Alokasi Dana iuran (6 Oktober 2026) — `AlokasiRencana`/`AlokasiAngkatan`/`AlokasiTransaksi`, src/lib/alokasi-dana.ts.**
+     Permintaan user: iuran per angkatan (mis. X 120 siswa × Rp200.000/bulan) dibagi ke pos anggaran (Kesiswaan sekian %, Kegiatan
+     Umum sekian %, …) dengan rincian lengkap. Keputusan user: menu baru di grup **Keuangan** (bukan di portal Bendahara lama, yang
+     tetap tidak disentuh), cakupan **rencana + realisasi**, pos **boleh beda per angkatan**, dan **"hanya untuk perhitungan"** —
+     TANPA tahap pengesahan/penguncian & tanpa blok tanda tangan di cetakan. Halaman `/dashboard/{admin,teacher}/alokasi-dana`
+     (`AlokasiDanaManager`), cetak `…/alokasi-dana/cetak?id=`, Excel `/api/alokasi-dana/[id]/ekspor`. Akses = Admin + jabatan
+     Bendahara Sekolah/BOS/BPOPP lewat `assertBendahara` (dipakai ulang dari bendahara-guard; modulnya sendiri tidak diubah).
+     - **Satu sumber hitung** (`hitungRencana`, `hitungRealisasi`) dipakai layar, cetak, DAN Excel — jangan menghitung ulang di tempat lain.
+     - Aturan hitung: pemasukan = (siswa − keringanan) × iuran + Σ keringanan × iuran khususnya; pos NOMINAL (Rp/siswa/bulan, untuk
+       SEMUA siswa) diambil dulu, sisanya dibagi pos PERSEN; tiap pos dibulatkan ke bawah lalu SISA PEMBULATAN masuk pos penampung
+       (`posPenampung`, kosong = pos persen pertama) sehingga Σ pos = pemasukan PERSIS. Total persen ≠ 100 TIDAK disebar diam-diam —
+       tampil "Belum dialokasikan" + peringatan.
+     - Rekap per pos menjumlahkan pos BERNAMA SAMA lintas angkatan (huruf besar/kecil & spasi diabaikan) — nama pos adalah kuncinya.
+     - Realisasi: uang MASUK satu angkatan dibagi ke pos angkatan itu SESUAI PORSI RENCANANYA (pos nominal ikut), porsi belum
+       dialokasikan tetap di "Belum dialokasikan"; KELUAR mengurangi satu pos → saldo per pos. Menghapus angkatan TIDAK menghapus
+       transaksinya (`onDelete: SetNull`, uangnya pindah ke "Belum dialokasikan").
+
+128. **Motif SMK miring −45° di SEMUA tempat (6 Oktober 2026) — `public/images/pattern-smk-miring.png`.** Keputusan user: "pattern
+     fix pakai −45", jarak motif tetap. Ubin 849×849 dihitung per piksel dari motif lurus (bukan diputar sebagai gambar biasa) supaya
+     menyambung mulus; DIPERIKSA sejajar dengan putaran CSS sungguhan & tanpa garis sambungan di perbesaran 2×. Kisi miring berulang
+     tiap jarak × √2, jadi **`background-size` baru = ukuran lama × 1,4142** (DESIGN_SYSTEM §2) — 78 pemakaian + watermark ONLYOFFICE
+     (`PATTERN_TILE_PX` 90 → 127) diganti sekaligus. Pemakaian pola baru WAJIB memakai berkas miring dengan ukuran yang sudah dikali √2.
+     `BendaharaSidebar` sengaja tetap lurus (modul Bendahara tidak disentuh). Gambar baru bernama baru, jadi `CACHE_NAME` sw.js tidak perlu naik.
+
+129. **Tahapan calon siswa SPMB (6 Oktober 2026) — `src/lib/spmb-tahapan.ts` (netral) + `spmb-tahapan-server.ts`.**
+     Keputusan rapat: calon punya daftar tahapan seperti "pencapaian", BERURUTAN, sama untuk semua gelombang:
+     Pendaftaran → Verifikasi Berkas → **Ukuran Seragam (sengaja nomor 3, supaya pesanan terlihat — user)** → Asesmen Awal →
+     Cek Fisik & Kesehatan → Pengumuman Hasil → Daftar Ulang & Pembayaran → "Resmi peserta MPLS" + info MPLS.
+     - Satu sumber centang: `susunTahapan`/`tahapSelesai`/`tahapTerbuka` — dipakai halaman calon `/spmb/tahapan`, portal panitia
+       `/pusat-spmb/tahapan` (`TahapanSpmbManager`), dan API. Tahap Pengumuman & Daftar Ulang bisa dimatikan
+       (`spmb.tahapSeleksi`/`spmb.tahapDaftarUlang`); tanpa seleksi, menuntaskan cek kesehatan otomatis menyetel status DITERIMA
+       supaya daftar ulang & konversi (yang menyaring DITERIMA) tetap jalan.
+     - Calon TANPA akun: kunci = nomor + `tandaFormulir` (HMAC nomor|tanggal lahir) — `calonDariTanda`. Diterbitkan POST
+       /api/admissions (layar sukses) & Cek Status jalur nomor+tanggal lahir; disimpan di localStorage perangkat calon.
+     - **Asesmen & cek kesehatan = DATA SENSITIF**: tidak pernah ikut `/api/spmb/calon` maupun `/api/spmb/tahapan` (daftar).
+       Dibaca hanya panitia (`/api/spmb/tahapan/[id]`) dan, setelah jadi siswa, halaman `/dashboard/teacher/students/[id]/spmb`
+       (wali kelas siswa itu, Guru BK, Wakasek Kesiswaan, admin). Isian disimpan sebagai SALINAN label+nilai supaya tetap terbaca
+       walau pertanyaan diubah. Isian bertanda `bukuInduk` (height/weight/bloodType/diseases) mengisi Buku Induk saat konversi.
+     - Isian asesmen/pemeriksaan, ukuran seragam, dan info MPLS DISUSUN PANITIA (Pengaturan SPMB → Tahapan Calon); daftar di kode
+       hanya bawaan. Tautan grup WA & jadwal tahap di sekolah melekat pada GELOMBANG (`tautanGrup`, `jadwalTahap`); tautan grup tampil
+       tepat setelah daftar. Jumlah anggota grup hanya PERKIRAAN (calon menekan tombol / menyatakan bergabung) — WhatsApp tidak
+       bisa dibaca situs.
+     - Kabar ke calon = tombol WA/e-mail berisi pesan siap kirim (`pesanKabar`) dari layar panitia — tanpa layanan berbayar.
+     - **Alur Pendaftaran di web = tahapan yang sama** (`susunAlurWeb`): judul & urutan dari `INFO_TAHAP`, ikut sakelar tahap;
+       panitia hanya mengubah penjelasan/gambar per tahap (`spmb.alurTahap`). `spmb.alur` lama TIDAK dibaca lagi — jangan
+       hidupkan editor langkah bebas, itu yang dulu membuat alur web & tahapan calon berbeda (user: "harusnya sama satu").
+     - **Daftar ulang ≠ pembayaran.** Tahap Daftar Ulang = konfirmasi bersedia bersekolah (`daftarUlangConfirmedAt`, oleh calon
+       atau panitia) + syarat bayar yang DIATUR panitia (`spmb.syaratBayar` TIDAK | UANG_MUKA [`spmb.uangMuka`] | LUNAS).
+       Pembayaran = tabel `PembayaranSpmb`, BOLEH DICICIL dan boleh setelah MPLS / setelah jadi siswa: calon kirim bukti
+       (MENUNGGU) → panitia SPMB/superadmin sahkan/tolak; panitia bisa mencatat tunai (langsung SAH). Total = Σ Rincian Biaya
+       dikurangi `Admission.potonganBiaya`. Hitungan satu sumber `hitungBayar`/`denganBayar`. Menu lama Pusat SPMB "Daftar
+       Ulang" & halaman publik `/daftar-ulang` kini PENGALIHAN ke Tahapan; `paymentVerified`/`buktiPembayaranUrl` hanya data
+       lama (0 baris saat diganti). Modul Bendahara tidak disentuh — rekap lewat Excel `/api/spmb/tahapan/pembayaran`.
+     - **Pendaftaran GRATIS; `GelombangSpmb.biayaDaftar` = BIAYA DAFTAR ULANG gelombang itu** (user 6 Okt 2026) dan itulah
+       tagihan calon (`SetelanBayar.perGelombang`); Rincian Biaya hanya cadangan/rincian. Label di web, formulir cetak, dan
+       pengaturan sudah "Biaya daftar ulang" — jangan dikembalikan ke "biaya pendaftaran".
+     - **Kabar ke HP calon tanpa akun** (`src/lib/spmb-kabar.ts`): langganan push per pendaftar `LanggananSpmb` (bukan
+       PushSubscription/User), log berkunci `KabarSpmb` (sekali per kejadian, tampil "Kabar terbaru" di halaman calon).
+       Dipicu tindakan panitia di `/api/spmb/tahapan/[id]` (verifikasi, perbaikan, asesmen/kesehatan selesai, bayar
+       sah/tolak/catat, daftar ulang, sesi) + "Buka Hasil" (`/api/spmb/pengaturan`), lewat `kirimLatar`. Pengingat
+       `pengingatSpmb` (src/lib/pengingat-spmb.ts) jam `notifikasi.jamSpmb`: H-1 jadwal ke sekolah + tiap 3 hari bila
+       tertahan (perbaikan/seragam/sesi/daftar ulang), hanya calon berlangganan, diam di hari libur, ikut Pratinjau.
+     - **Sesi kedatangan** (`SesiSpmb`, per gelombang, berkuota; `Admission.sesiId`): dipilih calon setelah seragam, bisa
+       diganti sampai asesmen dilakukan; kuota diperiksa dalam transaksi Serializable. Sesi MENGGANTIKAN jadwal umum gelombang
+       untuk asesmen & cek kesehatan (`jadwalDenganSesi`). Sesi berpeserta tidak bisa dihapus.
+     - **Data dobel yang DIHAPUS 6 Okt 2026 (user: "cari data yang double") — jangan dihidupkan lagi:** tautan grup WA umum
+       `spmb.tautanGrup` (sekarang HANYA per gelombang, dan tidak tampil di halaman umum supaya grup berisi pendaftar saja);
+       Jadwal Penting manual `spmb.jadwal` (diganti `susunJadwalWeb`: per gelombang dari tanggal gelombang, jadwal tahap/sesi,
+       tanggal pengumuman, MPLS); isian skor lama "Nilai Rapor + Nilai Tes" bobot 60/40 di Pendaftar + `/api/admin/spmb-settings`
+       (menimpa `skorAkhir` yang juga ditulis Seleksi & Nilai); tombol status lama WAWANCARA/ACCEPTED/REJECTED di Pendaftar
+       (kini DITERIMA/CADANGAN/DITOLAK; `PUT /api/admin/admissions/[id]` menolak status di luar `STATUS_SPMB` dan tidak lagi
+       menerima skor/pembayaran).
+     - **Sapuan sampah 6 Okt 2026:** alur daftar ulang publik lama DIHAPUS (`DaftarUlangForm`, `/api/public/daftar-ulang/{verify,
+       submit}` — siapa pun dengan nama+WA bisa menempel "bukti bayar" di luar pengesahan — `admission-token.ts`,
+       `DaftarUlangSpmbManager`, `/api/spmb/daftar-ulang`), juga `GET /api/admissions` tanpa pemakai. Badge "pendaftar menunggu"
+       (layout & dashboard admin, antrean portal, operator) = BERKAS belum diverifikasi, bukan status PENDING lama.
+       Beranda Pusat SPMB memperingatkan persiapan tahapan yang belum diisi (grup WA & biaya per gelombang, sesi/jadwal, cara
+       bayar, tanggal MPLS). Nama resmi: **Sistem** Penerimaan Murid Baru (Permendikdasmen 3/2025), bukan "Seleksi".
+     - **Kuis Minat Jurusan = BANK SOAL panitia** (`spmb.kuis`, Pengaturan SPMB → Kuis Jurusan; `spmb.kuisJumlah` soal acak
+       per kuis): tiap soal situasi umum, tiap pilihan → satu kode jurusan; diacak saat KLIK Mulai/Ulangi (`acakKuis`, bukan
+       saat render — #15). Bank awal 20 soal DIISI KE DATABASE (bukan ditulis di kode, #11). Bank kosong = `susunKuis` lama.
+     - **Disatukan 6 Okt 2026 (user setuju "satukan semua"):** (1) Persyaratan di web = berkas yang DIMINTA formulir
+       (dokumen baku yang tidak disembunyikan + `DokumenSyaratSpmb` aktif, otomatis) + `spmb.syarat` khusus "dibawa saat
+       daftar ulang"; (2) Cek Status jalur nomor+tanggal lahir langsung MENGALIHKAN ke /spmb/tahapan (jalur WA/e-mail tetap
+       status ringkas); (3) menu Pendaftar DILEBUR ke Tahapan Calon — keputusan Terima/Cadangan/Tolak, cetak formulir, hapus,
+       ekspor Data Pendaftar, NIK/NISN/jalur/perujuk/wilayah ada di jendela calon (`BarisKeputusan`); `/pusat-spmb/pendaftar`
+       & `/dashboard/admin/admissions` = pengalihan, `PendaftarManager` & `GET /api/admin/admissions` dihapus; (4) "Pesan dari
+       Panitia" (`Admission.notes`) tidak lagi diisi — pesan ke calon lewat perbaikan berkas & Kabari Calon. Tautan
+       ringkasan Operator Sekolah (guru) dulu menunjuk `/dashboard/admin/admissions` yang tidak bisa dibuka guru (#45).
+     - Ikut diperbaiki: konversi "Jadi Siswa" dulu hanya mengambil status `ACCEPTED` lama, padahal Pengumuman sejak 1 Okt menulis
+       `DITERIMA` — pendaftar yang diterima lewat sistem baru tidak pernah muncul di sana.
+
+130. **Nama sekolah asal = penulisan BAKU + satu kunci pembanding (6 Oktober 2026) — `src/lib/nama-sekolah.ts` (netral).**
+     Permintaan user: nama sekolah sama tapi beda kapital/singkatan/tanda hubung/salah ketik harus bisa disatukan dan ditulis
+     rapi ("SMP Negeri 1 Songgon", "MTs Negeri", "MTs Al Fatah" — singkatan SMPN/MTsN/SMPS DIBENTANGKAN, beda dari aturan lama
+     `toProperCaseSchoolName` yang mempertahankan "SMPN").
+     - `bakuNamaSekolah` = merapikan TULISAN saja (aman otomatis) — dipakai SEMUA jalur simpan sekolah asal: formulir SPMB,
+       Buku Induk manual/impor/[id], persetujuan biodata siswa, kolom `kapital="sekolah"` di BukuIndukField, konversi SPMB.
+       Jalur baru yang menyimpan nama sekolah WAJIB lewat fungsi ini, jangan `toProperCaseSchoolName` langsung.
+     - `kunciSekolah` (tanpa apostrof/tanda baca: "Manba'ul" = "Manbaul") dipakai statistik asal sekolah & saran formulir.
+     - `miripSekolah` = DUGAAN (salah ketik ≤1–2 huruf, berekor nama tempat ≥3 kata, angka sekolah harus sama) — HANYA saran;
+       penggabungan selalu keputusan petugas di **Pusat SPMB → Rapikan Nama Sekolah** (`RapikanSekolahManager`,
+       `/api/spmb/sekolah-asal`): tab Pendaftar SPMB (panitia) & Buku Induk Siswa (Admin + `BUKU_INDUK_FULL_JABATAN` saja).
+       Kelompok "Pasti sama" boleh dirapikan sekaligus; "Mirip" dicentang satu per satu. Tiap penggabungan tercatat logActivity.
+     - Formulir SPMB: `IsianSekolahAsal` menyarankan nama yang sudah dikenal (Buku Induk + pendaftar) lewat
+       `/api/public/sekolah-asal` (hanya nama sekolah, disinggahkan 10 mnt, dibatasi per IP). Calon tetap boleh mengetik nama baru.
+     - Data nyata saat dibuat: 213 penulisan di Buku Induk → 64 kelompok (mis. SMPN/SMP Negeri/Manbaul Manba'ul Falah = 424 siswa).

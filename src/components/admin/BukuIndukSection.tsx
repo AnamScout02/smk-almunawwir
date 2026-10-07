@@ -20,7 +20,7 @@ export default function Section({ title, icon: Icon, open, onToggle, children, a
         onClick={onToggle}>
         {open && (
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         )}
         <span className={`relative flex items-center gap-2 font-semibold text-sm ${open ? "text-white" : "text-primary-900"}`}>
           <Icon size={15} className={open ? "text-gold" : (accent ?? "text-primary-700")} />{title}

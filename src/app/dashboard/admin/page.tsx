@@ -75,7 +75,7 @@ export default async function AdminDashboard() {
     prisma.student.count({ where: { studentStatus: "AKTIF" } }),
     prisma.teacher.count(),
     prisma.class.count(),
-    prisma.admission.count({ where: { status: "PENDING" } }),
+    prisma.admission.count({ where: { verifikasiStatus: "BELUM", status: { notIn: ["DITOLAK", "REJECTED"] } } }),
     prisma.contactMessage.count({ where: { isRead: false } }),
     prisma.news.count({ where: { published: true } }),
   ]);
@@ -139,10 +139,15 @@ export default async function AdminDashboard() {
   ]);
 
   const statusConfig: Record<string, { label: string; kelas: string; dot: string }> = {
-    PENDING:   { label: "Menunggu",  kelas: "bg-amber-50 border-amber-200 text-amber-700",       dot: "bg-amber-500" },
-    WAWANCARA: { label: "Wawancara", kelas: "bg-blue-50 border-blue-200 text-blue-700",          dot: "bg-blue-500" },
-    ACCEPTED:  { label: "Diterima",  kelas: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" },
-    REJECTED:  { label: "Ditolak",   kelas: "bg-red-50 border-red-200 text-red-600",             dot: "bg-red-500" },
+    // Status SPMB baru (DITERIMA/CADANGAN/DITOLAK) + padanan lama supaya baris lama tetap terbaca.
+    PENDING:    { label: "Menunggu",  kelas: "bg-amber-50 border-amber-200 text-amber-700",       dot: "bg-amber-500" },
+    VERIFIKASI: { label: "Menunggu",  kelas: "bg-amber-50 border-amber-200 text-amber-700",       dot: "bg-amber-500" },
+    WAWANCARA:  { label: "Menunggu",  kelas: "bg-amber-50 border-amber-200 text-amber-700",       dot: "bg-amber-500" },
+    DITERIMA:   { label: "Diterima",  kelas: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" },
+    ACCEPTED:   { label: "Diterima",  kelas: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" },
+    CADANGAN:   { label: "Cadangan",  kelas: "bg-blue-50 border-blue-200 text-blue-700",          dot: "bg-blue-500" },
+    DITOLAK:    { label: "Tidak diterima", kelas: "bg-red-50 border-red-200 text-red-600",        dot: "bg-red-500" },
+    REJECTED:   { label: "Tidak diterima", kelas: "bg-red-50 border-red-200 text-red-600",        dot: "bg-red-500" },
   };
 
   const dateStr = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
@@ -194,7 +199,7 @@ export default async function AdminDashboard() {
           <StatTile tampilan="lembut" href="/dashboard/admin/teachers" ikon="guru" label="Tenaga Pendidik" value={teacherCount} color="emerald" />
           <StatTile tampilan="lembut" href="/dashboard/admin/classes" ikon="kelas" label="Kelas" value={classCount} color="purple" />
           <StatTile tampilan="lembut" href="/dashboard/admin/users" ikon="akun" label="Akun Pengguna" value={userCount} color="primary" />
-          <StatTile tampilan="lembut" href="/dashboard/admin/admissions" ikon="menunggu" label="Pendaftar Menunggu" value={admissionPending} color="amber" sorot={admissionPending > 0} />
+          <StatTile tampilan="lembut" href="/pusat-spmb/tahapan?saring=VERIFIKASI" ikon="menunggu" label="Pendaftar Menunggu" value={admissionPending} color="amber" sorot={admissionPending > 0} />
           <StatTile tampilan="lembut" href="/dashboard/admin/messages" ikon="pesan" label="Pesan Belum Dibaca" value={messageUnread} color="red" sorot={messageUnread > 0} />
         </div>
 
@@ -234,7 +239,7 @@ export default async function AdminDashboard() {
 
             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
               <Panel judul="Pendaftaran Terbaru" ikon={<ClipboardList />} isi={false}
-                tautan={{ label: "Lihat semua", href: "/dashboard/admin/admissions" }}>
+                tautan={{ label: "Lihat semua", href: "/pusat-spmb/tahapan?saring=VERIFIKASI" }}>
                 {recentAdmissions.length ? (
                   <ul className="divide-y divide-gray-100">
                     {recentAdmissions.map(a => {

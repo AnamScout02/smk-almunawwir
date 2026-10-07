@@ -112,7 +112,7 @@ export default function KonfirmasiUjianPage() {
             <div className="rounded-2xl border border-primary-100 bg-white shadow-lg overflow-hidden">
               <div className="relative px-5 py-4" style={{ background: "linear-gradient(135deg, #0F1A45 0%, #1B2B6B 100%)" }}>
                 <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                  style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", filter: "invert(1)" }} />
+                  style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", filter: "invert(1)" }} />
                 <div className="relative">
                   {info.kegiatan && (
                     <p className="text-white/60 text-xs font-heading font-semibold uppercase tracking-[0.12em] mb-1">

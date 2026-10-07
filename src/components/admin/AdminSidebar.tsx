@@ -3,7 +3,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
+  Calculator, Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
   Settings, FileText, School, UserCog, BookOpen, Globe, Briefcase, UserCircle, BarChart2, Bell, Calendar, CalendarCheck, Database, CalendarDays,
   Archive, Repeat, Mail, BookMarked, Clock, Users2, ShieldCheck, Award, Building2, ListChecks, Boxes,
@@ -208,6 +208,7 @@ export const menuGroups = [
   {
     label: "Keuangan",
     items: [
+      { href: "/dashboard/admin/alokasi-dana", label: "Alokasi Dana", icon: Calculator, badge: 0 },
       { href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet, badge: 0 },
     ],
   },
@@ -486,7 +487,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
   const badges: Record<BadgeKey, number> = { unreadMessages, pendingAdmissions, pendingProfileEdits, overdueBooks, permintaanSurat, belumDisposisi };
   const notifications = [
     { label: "Pesan masuk belum dibaca", count: unreadMessages, href: "/dashboard/admin/messages" },
-    { label: "Pendaftar SPMB baru", count: pendingAdmissions, href: "/dashboard/admin/admissions" },
+    { label: "Pendaftar SPMB baru", count: pendingAdmissions, href: "/pusat-spmb/tahapan?saring=VERIFIKASI" },
     { label: "Perubahan data menunggu verifikasi", count: pendingProfileEdits, href: "/dashboard/admin/verifikasi-data" },
     { label: "Buku terlambat dikembalikan", count: overdueBooks, href: "/dashboard/admin/buku-saya" },
     { label: "Kelas belum absen hari ini", count: missingAttendanceClasses, href: "/dashboard/admin/absensi-siswa" },
@@ -517,7 +518,7 @@ export default function AdminSidebar({ unreadMessages = 0, pendingAdmissions = 0
       {/* Desktop sidebar */}
       <aside className={`hidden lg:flex flex-col ${collapsed ? "w-[76px]" : "w-60"} bg-primary-900 h-screen sticky top-0 shrink-0 relative overflow-hidden print:hidden transition-[width] duration-200`}>
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }}
         />
         <SidebarContent
           collapsed={collapsed} onToggle={toggleCollapsed}

@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { verifyRole } from "@/lib/dal";
+import { getJabatanNames } from "@/lib/jabatan-guard";
+import { BUKU_INDUK_FULL_JABATAN } from "@/lib/buku-induk-access";
+import { bolehSpmb } from "@/lib/spmb";
+import { logActivity } from "@/lib/activity-log";
+import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { bakuNamaSekolah, kelompokkanSekolah } from "@/lib/nama-sekolah";
+
+export const dynamic = "force-dynamic";
+
+/** RAPIKAN NAMA SEKOLAH ASAL (6 Okt 2026) — sistem MENYARANKAN kelompok penulisan yang sama/mirip, panitia yang
+ *  memutuskan & menggabungkan. Dua sumber: pendaftar SPMB (panitia SPMB) dan Buku Induk siswa (Admin & jabatan
+ *  Buku Induk penuh — data resmi sekolah, jadi tidak dibuka untuk seluruh panitia). */
+async function hak() {
+  const s = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
+  const spmb = await bolehSpmb(s);
+  const induk = s.role === "ADMIN" || (await getJabatanNames(s.email).catch(() => [] as string[])).some(j => BUKU_INDUK_FULL_JABATAN.includes(j));
+  return { s, spmb, induk };
+}
+
+async function daftarNama(sumber: string) {
+  const g = sumber === "induk"
+    ? await prisma.student.groupBy({ by: ["previousSchool"], where: { previousSchool: { not: null } }, _count: { _all: true } })
+    : await prisma.admission.groupBy({ by: ["previousSchool"], where: { previousSchool: { not: null } }, _count: { _all: true } });
+  return g.filter(x => x.previousSchool?.trim()).map(x => ({ nama: x.previousSchool!, jumlah: x._count._all }));
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { spmb, induk } = await hak();
+    const sumber = req.nextUrl.searchParams.get("sumber") === "induk" ? "induk" : "spmb";
+    if (sumber === "spmb" ? !spmb : !induk) return NextResponse.json({ error: "Tidak berwenang", hak: { spmb, induk } }, { status: 403 });
+    const nama = await daftarNama(sumber);
+    return NextResponse.json({ hak: { spmb, induk }, totalNama: nama.length, kelompok: kelompokkanSekolah(nama) });
+  } catch (e) {
+    lemparBilaPengalihan(e);
+    return NextResponse.json({ error: "Tidak berwenang" }, { status: 403 });
+  }
+}
+
+/** Gabungkan: { sumber, target, varian: string[] } → semua baris bernama salah satu `varian` diganti `target`. */
+export async function POST(req: NextRequest) {
+  try {
+    const { s, spmb, induk } = await hak();
+    const b = await req.json().catch(() => ({}));
+    const sumber = b?.sumber === "induk" ? "induk" : "spmb";
+    if (sumber === "spmb" ? !spmb : !induk) return NextResponse.json({ error: "Tidak berwenang" }, { status: 403 });
+    const target = bakuNamaSekolah(String(b?.target ?? "")).slice(0, 150);
+    const varian = (Array.isArray(b?.varian) ? b.varian : []).map(String).filter(Boolean).slice(0, 50);
+    if (!target) return NextResponse.json({ error: "Tulis nama sekolah yang benar." }, { status: 400 });
+    if (!varian.length) return NextResponse.json({ error: "Pilih penulisan yang digabung." }, { status: 400 });
+    const r = sumber === "induk"
+      ? await prisma.student.updateMany({ where: { previousSchool: { in: varian } }, data: { previousSchool: target } })
+      : await prisma.admission.updateMany({ where: { previousSchool: { in: varian } }, data: { previousSchool: target } });
+    await logActivity(s, {
+      action: "UPDATE", entity: sumber === "induk" ? "Student" : "Admission",
+      description: `Merapikan nama sekolah asal (${sumber === "induk" ? "Buku Induk" : "SPMB"}): ${varian.join(" | ")} → ${target} (${r.count} data)`,
+    }).catch(() => null);
+    return NextResponse.json({ ok: true, jumlah: r.count });
+  } catch (e) {
+    lemparBilaPengalihan(e);
+    return NextResponse.json({ error: "Gagal menggabungkan" }, { status: 500 });
+  }
+}

@@ -1,4 +1,4 @@
-import { BarChart3, Filter, MapPin, School, Award } from "lucide-react";
+import { BarChart3, Filter, MapPin, School, Award, ListChecks, Wallet, CalendarClock, Shirt, HeartPulse } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import Panel from "@/components/shared/Panel";
@@ -7,6 +7,8 @@ import { assertSpmb } from "@/lib/spmb";
 import { jabatanAtauAlihkan } from "@/lib/jabatan-guard";
 import { corongPendaftaran, peringkatPerujuk, sebaranSekolah, sebaranWilayah } from "@/lib/spmb-statistik";
 import { LABEL_JENIS } from "@/lib/spmb-perujuk";
+import { statistikTahapan } from "@/lib/spmb-statistik-tahapan";
+import { INFO_TAHAP, rupiah, type KodeTahap } from "@/lib/spmb-tahapan";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +28,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   const { rentang } = await searchParams;
   const r = RENTANG.find(x => x.kode === rentang) ?? RENTANG[1];
 
-  const [corong, wilayah, sekolah, perujuk] = await Promise.all([
+  const [corong, wilayah, sekolah, perujuk, th] = await Promise.all([
     corongPendaftaran(new Date(Date.now() - r.hari * 86_400_000)),
     sebaranWilayah(),
     sebaranSekolah(30),
     peringkatPerujuk(20),
+    statistikTahapan(),
   ]);
+  const barisTahap = [...th.perGelombang, ...(th.perGelombang.length > 1 ? [th.semua] : [])];
   const t = corong.tahap;
   const kunjung = t[0].jumlah;
   const kirim = t[t.length - 1].jumlah;
@@ -42,7 +46,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<BarChart3 size={22} />} title="Statistik & Sebaran"
-        description="Corong pendaftaran, asal daerah & sekolah pendaftar, dan peringkat perujuk" />
+        description="Corong pendaftaran, kemajuan tahapan & pembayaran, asal daerah & sekolah pendaftar, dan peringkat perujuk" />
 
       <div className="space-y-6">
         <div className="kisi-kartu kisi-kartu-5">
@@ -147,6 +151,104 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
                   </li>
                 ))}
               </ul>
+            )}
+          </Panel>
+        </div>
+
+        {/* Tahapan calon (6 Okt 2026) — angka gabungan, hitungan sama dengan halaman Tahapan Calon. */}
+        <Panel judul="Kemajuan tahapan per gelombang" ikon={<ListChecks size={16} />} isi={false}
+          keterangan="Jumlah calon yang sudah menuntaskan tiap tahap">
+          {th.semua.total === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada pendaftar.</p> : (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead><tr><th>Gelombang</th><th className="text-right">Pendaftar</th>
+                  {th.kode.filter(k => k !== "DAFTAR").map(k => <th key={k} className="text-right">{INFO_TAHAP[k as KodeTahap].judul}</th>)}
+                  <th className="text-right">Resmi MPLS</th></tr></thead>
+                <tbody>
+                  {barisTahap.map(r => (
+                    <tr key={r.nama} className={r === th.semua ? "font-semibold" : ""}>
+                      <td className="text-navy">{r.nama}</td>
+                      <td className="angka text-right">{r.total}</td>
+                      {th.kode.filter(k => k !== "DAFTAR").map(k => <td key={k} className="angka text-right">{r.tahap[k]}</td>)}
+                      <td className="angka text-right">{r.tuntas}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+
+        <Panel judul="Pembayaran daftar ulang per gelombang" ikon={<Wallet size={16} />} isi={false}
+          keterangan="Hanya pembayaran yang sudah disahkan dihitung terkumpul; calon yang tidak diterima tidak dihitung">
+          {th.semua.total === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada pendaftar.</p> : (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead><tr><th>Gelombang</th><th className="text-right">Terkumpul</th><th className="text-right">Lunas</th>
+                  <th className="text-right">Mencicil</th><th className="text-right">Belum bayar</th><th className="text-right">Bukti menunggu</th></tr></thead>
+                <tbody>
+                  {barisTahap.map(r => (
+                    <tr key={r.nama} className={r === th.semua ? "font-semibold" : ""}>
+                      <td className="text-navy">{r.nama}</td>
+                      <td className="angka text-right">{rupiah(r.bayar.terkumpul)}</td>
+                      <td className="angka text-right">{r.bayar.lunas}</td>
+                      <td className="angka text-right">{r.bayar.mencicil}</td>
+                      <td className="angka text-right">{r.bayar.belum}</td>
+                      <td className="angka text-right">{r.bayar.menunggu}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 items-start">
+          <Panel judul="Sesi kedatangan" ikon={<CalendarClock size={16} />} isi={false}>
+            {th.sesi.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada sesi.</p> : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead><tr><th>Sesi</th><th className="text-right">Terisi</th></tr></thead>
+                  <tbody>
+                    {th.sesi.map(x => (
+                      <tr key={x.gelombang + x.label}>
+                        <td><span className="angka">{x.label}</span><span className="block text-xs text-gray-400">{x.gelombang}{x.tempat ? ` · ${x.tempat}` : ""}</span></td>
+                        <td className="angka text-right">{x.terisi} / {x.kuota}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Panel>
+
+          <Panel judul="Pesanan seragam" ikon={<Shirt size={16} />}>
+            {Object.keys(th.seragam).length === 0 ? <p className="text-sm text-gray-400">Belum ada pilihan ukuran.</p> : (
+              <div className="space-y-4">
+                {Object.entries(th.seragam).map(([item, ukuran]) => (
+                  <div key={item}>
+                    <p className="label-kecil mb-2 text-primary-700">{item}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(ukuran).map(([u, n]) => (
+                        <span key={u} className="rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-sm"><span className="font-semibold text-navy">{u}</span> <span className="angka text-gray-500">{n}</span></span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel judul="Ringkasan kesehatan" ikon={<HeartPulse size={16} />} keterangan="Angka gabungan — rincian per calon hanya di Tahapan Calon">
+            {th.kesehatan.diperiksa === 0 ? <p className="text-sm text-gray-400">Belum ada calon yang diperiksa.</p> : (
+              <div className="space-y-2 text-sm">
+                <p className="text-gray-600"><span className="angka font-semibold text-navy">{th.kesehatan.diperiksa}</span> calon sudah diperiksa</p>
+                {["Kurus berat", "Kurus", "Normal", "Gemuk", "Obesitas"].filter(k => th.kesehatan.imt[k]).map(k => (
+                  <div key={k} className="flex justify-between"><span className="text-gray-500">IMT {k}</span><span className="angka font-medium">{th.kesehatan.imt[k]}</span></div>
+                ))}
+                <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-500">Tes buta warna tidak normal</span>
+                  <span className={`angka font-medium ${th.kesehatan.butaWarna ? "text-amber-700" : ""}`}>{th.kesehatan.butaWarna}</span></div>
+              </div>
             )}
           </Panel>
         </div>

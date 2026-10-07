@@ -1,7 +1,7 @@
 import {
   BarChart3, BookMarked, BookOpen, ClipboardList, DatabaseBackup, DoorOpen, FileQuestion, IdCard, LayoutDashboard, Library,
   Radio, ScanLine, Search, Settings2, Trophy, Lightbulb, ClipboardCheck, FileSpreadsheet,
-  Users, ListChecks, Megaphone, UserCheck, ArrowRightLeft, Images, UsersRound, Activity, type LucideIcon,
+  Users, ListChecks, Megaphone, UserCheck, ArrowRightLeft, Images, UsersRound, Activity, ListTodo, School, type LucideIcon,
 } from "lucide-react";
 
 /** Ikon & jenis item menu PORTAL (Pusat Ujian, Pusat Perpustakaan, Perpustakaan Digital) — dipakai bottom navbar HP
@@ -14,6 +14,8 @@ export const IKON = {
   // Pusat SPMB (1 Oktober 2026)
   pendaftar: Users, seleksi: ListChecks, pengumuman: Megaphone, "daftar-ulang": UserCheck,
   konversi: ArrowRightLeft, promosi: Images, perujuk: UsersRound,
+  // Tahapan calon siswa (6 Oktober 2026)
+  tahapan: ListTodo, sekolah: School,
 } satisfies Record<string, LucideIcon>;
 
 /** Padanan Material Symbols tiap ikon portal — dipakai bottom navbar HP supaya menu terpilih tampil
@@ -24,7 +26,7 @@ export const SIMBOL: Record<keyof typeof IKON, string> = {
   ujian: "quiz", kendali: "podcasts", administrasi: "assignment", panduan: "menu_book", pengaturan: "settings", data: "database",
   rekap: "table_chart", analisis: "analytics",
   pendaftar: "group", seleksi: "checklist_rtl", pengumuman: "campaign", "daftar-ulang": "how_to_reg",
-  konversi: "sync_alt", promosi: "photo_library", perujuk: "group_add",
+  konversi: "sync_alt", promosi: "photo_library", perujuk: "group_add", tahapan: "task_alt", sekolah: "school",
 };
 
 /** `singkat` = label di bottom navbar HP (tempatnya sempit); `persis` = aktif hanya di alamat itu sendiri. Tanpa `persis`, menu

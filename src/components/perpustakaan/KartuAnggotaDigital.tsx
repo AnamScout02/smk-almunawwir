@@ -45,7 +45,7 @@ export default function KartuAnggotaDigital({ mode = "perpustakaan" }: { mode?: 
     <div className="max-w-md mx-auto p-4 sm:p-6 space-y-4">
       <div className="rounded-3xl overflow-hidden shadow-xl" style={{ background: NAVY }}>
         <div className="relative p-5">
-          <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "110px 110px", filter: "invert(1)" }} />
+          <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "155.56px 155.56px", filter: "invert(1)" }} />
           <div className="relative flex items-center gap-3">
             {data.anggota.foto ? (
               <Image src={data.anggota.foto} alt="" width={56} height={56} className="w-14 h-14 rounded-2xl object-cover border-2 border-gold/60" />

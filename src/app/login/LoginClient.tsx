@@ -193,7 +193,7 @@ function TampilanMasuk({ logo, ayat, keteranganAyat, t, lang, aplikasi, children
     <main className="relative flex min-h-dvh flex-col overflow-hidden text-white sm:justify-center lg:flex-row lg:justify-start"
       style={{ background: "linear-gradient(160deg, #0A1030 0%, #0F1A45 45%, #1B2B6B 100%)" }} lang={lang}>
       <div className="pointer-events-none absolute inset-0 opacity-[0.07] lg:opacity-[0.05]"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "150px 150px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "212.13px 212.13px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
       <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full opacity-30 blur-3xl"
         style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />
       <div className="pointer-events-none absolute -left-28 top-44 h-72 w-72 rounded-full opacity-20 blur-3xl"

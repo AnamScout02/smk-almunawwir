@@ -68,7 +68,7 @@ export default async function ContactPage() {
       <main className="min-h-dvh">
         <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white pt-28 pb-16 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "180px 180px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "254.56px 254.56px", backgroundRepeat: "repeat", filter: "invert(1)" }}
           />
           <div className="container-custom text-center relative">
             <span className="text-gold text-sm font-semibold uppercase tracking-widest">{c.heroLabel}</span>
@@ -125,7 +125,7 @@ export default async function ContactPage() {
                 {/* Waktu sholat */}
                 <div className="relative rounded-2xl p-5 text-white overflow-hidden bg-primary-900">
                   <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                    style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "100px 100px", backgroundRepeat: "repeat", filter: "invert(1)" }}
+                    style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "141.42px 141.42px", backgroundRepeat: "repeat", filter: "invert(1)" }}
                   />
                   <div className="relative">
                     <p className="font-arabic text-gold text-xl mb-2">الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ</p>

@@ -120,7 +120,7 @@ export default async function KalenderAbsensiCetak({ searchParams, basePath, kem
         <div className="relative overflow-hidden text-white px-6 py-4 flex items-center flex-wrap justify-between gap-3"
           style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
           <div className="relative flex items-center gap-3 min-w-0">
             <Link href={kembaliHref} className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">
               <ArrowLeft size={16} /> Kembali

@@ -8,6 +8,7 @@ import { kirimNotifikasi, type IsiNotifikasi } from "@/lib/push-server";
 import { hitungRisikoSiswa, userKesiswaanBk } from "@/lib/peringatan-dini";
 import { pengingatPerpustakaan } from "@/lib/notifikasi-perpustakaan";
 import { cekLibur, perbaruiLiburNasional } from "@/lib/hari-libur";
+import { pengingatSpmb } from "@/lib/pengingat-spmb";
 
 /** PENGINGAT TERJADWAL — dijalankan src/instrumentation.ts tiap 5 menit. Jam pengingat diatur admin di
  * Notifikasi Push (SiteSetting `notifikasi.*`). Sebuah jam "jatuh tempo" selama 60 menit sejak jam itu;
@@ -31,6 +32,7 @@ export const PENGATURAN_NOTIFIKASI = {
   jamPerpustakaan: "notifikasi.jamPerpustakaan",
   jamRekapKelas: "notifikasi.jamRekapKelas",
   jamRingkasanOrtu: "notifikasi.jamRingkasanOrtu",
+  jamSpmb: "notifikasi.jamSpmb",
 } as const;
 
 const HARI = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
@@ -85,6 +87,7 @@ export async function jalankanPengingat(now = new Date(), opsi: OpsiPengingat = 
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamJurnal], w.menit)) await jalan(() => pengingatJurnal(w, slot, kirim));
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamPerpustakaan], w.menit)) { void slot; await jalan(() => pengingatPerpustakaan(w.tanggal, kirim)); }
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRekapKelas], w.menit)) await jalan(() => rekapHarianKelas(w, slot, kirim));
+  for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamSpmb], w.menit)) { void slot; await jalan(() => pengingatSpmb(w, { kirim, kering: opsi.kering })); }
   if (w.hari === "SABTU") {
     for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRingkasanOrtu], w.menit)) await jalan(() => ringkasanMingguanOrtu(w, slot, kirim));
   }

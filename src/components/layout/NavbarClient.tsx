@@ -20,7 +20,7 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Lomba & Event", href: "/lomba" }, { name: "Galeri", href: "/gallery" },
     ] },
     { key: "layanan", name: "Layanan", items: [
-      { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Daftar Ulang SPMB", href: "/daftar-ulang" },
+      { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Tahapan Pendaftaran SPMB", href: "/spmb/tahapan" },
       { name: "Tracer Study Alumni", href: "/tracer-study" }, { name: "Aplikasi MyAlwis Mobile", href: "/pasang-aplikasi" },
     ] },
     { key: "kontak", name: "Kontak", href: "/contact" },
@@ -35,7 +35,7 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Competitions & Events", href: "/lomba" }, { name: "Gallery", href: "/gallery" },
     ] },
     { key: "layanan", name: "Services", items: [
-      { name: "Graduation Status", href: "/cek-kelulusan" }, { name: "Re-registration", href: "/daftar-ulang" },
+      { name: "Graduation Status", href: "/cek-kelulusan" }, { name: "Registration Progress", href: "/spmb/tahapan" },
       { name: "Alumni Tracer Study", href: "/tracer-study" }, { name: "MyAlwis Mobile App", href: "/pasang-aplikasi" },
     ] },
     { key: "kontak", name: "Contact", href: "/contact" },
@@ -127,7 +127,7 @@ export default function NavbarClient({
       {/* Pattern Islami tipis agar tidak polos */}
       {(scrolled || !transparent) && (
         <div className="absolute inset-0 opacity-[0.035] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat" }}
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat" }}
         />
       )}
       <nav className="container-custom relative flex items-center justify-between">

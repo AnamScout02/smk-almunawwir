@@ -41,7 +41,7 @@ export default function PortalShell({
       <div id="kepala-portal" className="sticky top-0 z-40 print:hidden">
       <header className="relative overflow-hidden" style={{ background: NAVY }}>
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "120px 120px", filter: "invert(1)" }} />
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "169.71px 169.71px", filter: "invert(1)" }} />
         <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 70%)" }} />
 

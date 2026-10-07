@@ -1,3 +1,4 @@
+import { susunAlurWeb } from "@/lib/spmb-tahapan";
 import type React from "react";
 
 /** Isi halaman SPMB publik — SENGAJA netral (bukan `server-only`): dipakai halaman server yang
@@ -9,8 +10,8 @@ export const KUNCI_KONTEN_SPMB = [
   "spmb.posterRasio", "spmb.posterIsi", "spmb.fotoRasio", "spmb.fotoIsi", "spmb.galeriLain",
   "spmb.logoMitra", "spmb.judulLogo", "spmb.sebelumSesudah", "spmb.brosur", "spmb.video",
   "spmb.kontakNama", "spmb.kontakWa", "spmb.biaya", "spmb.pengumumanTanggal", "spmb.hasilDibuka",
-  "spmb.alur", "spmb.syarat", "spmb.beasiswa", "spmb.tanyaJawab",
-  "spmb.jalur", "spmb.jadwal", "spmb.rincianBiaya", "spmb.catatan", "spmb.tautanGrup",
+  "spmb.alurTahap", "spmb.tahapSeleksi", "spmb.tahapDaftarUlang", "spmb.syarat", "spmb.beasiswa", "spmb.tanyaJawab",
+  "spmb.jalur", "spmb.rincianBiaya", "spmb.catatan", "spmb.kuis", "spmb.kuisJumlah",
   "spmb.bobotPrestasi",
 ] as const;
 
@@ -112,7 +113,6 @@ export const KUNCI_FORM_SPMB = ISIAN_FORM_SPMB.map(x => x.kunci);
 export type Langkah = { judul: string; isi: string; gambar?: string };
 export type Tanya = { tanya: string; jawab: string };
 export type Jalur = { kode: string; nama: string; keterangan?: string };
-export type AgendaSpmb = { label: string; tanggal: string };
 export type BarisBiaya = { nama: string; jumlah: number };
 export type BobotPrestasi = Record<string, Record<string, number>>;
 
@@ -251,7 +251,7 @@ const teks = (x: unknown) => (typeof x === "string" ? x.trim() : "");
 export function bacaKontenSpmb(s: Record<string, string>) {
   return {
     tahun: s["spmb.tahun"] ?? "",
-    judul: s["spmb.judul"] ?? "Penerimaan Murid Baru",
+    judul: s["spmb.judul"] ?? "Sistem Penerimaan Murid Baru",
     subjudul: s["spmb.subjudul"] ?? "",
     deskripsi: s["spmb.deskripsi"] ?? "",
     tema: (s["spmb.tema"] as NamaTema) ?? "malam",
@@ -283,10 +283,8 @@ export function bacaKontenSpmb(s: Record<string, string>) {
     biaya: s["spmb.biaya"] ?? "",
     pengumumanTanggal: teks(s["spmb.pengumumanTanggal"]),
     hasilDibuka: s["spmb.hasilDibuka"] === "1",
-    alur: daftar<Langkah>(s["spmb.alur"], x => {
-      const o = x as Langkah; const judul = teks(o?.judul);
-      return judul ? { judul, isi: teks(o?.isi), gambar: teks(o?.gambar) || undefined } : null;
-    }),
+    // Alur = tahapan calon (satu sumber, spmb-tahapan.ts) — `spmb.alur` lama tidak dibaca lagi.
+    alur: susunAlurWeb({ seleksi: s["spmb.tahapSeleksi"] !== "0", daftarUlang: s["spmb.tahapDaftarUlang"] !== "0" }, s["spmb.alurTahap"]),
     syarat: daftar<string>(s["spmb.syarat"], x => (teks(x) ? teks(x) : null)),
     beasiswa: daftar<Langkah>(s["spmb.beasiswa"], x => {
       const o = x as Langkah; const judul = teks(o?.judul);
@@ -297,15 +295,10 @@ export function bacaKontenSpmb(s: Record<string, string>) {
       return tanya ? { tanya, jawab: teks(o?.jawab) } : null;
     }),
     catatan: s["spmb.catatan"] ?? "",
-    tautanGrup: teks(s["spmb.tautanGrup"]),
     jalur: daftar<Jalur>(s["spmb.jalur"], x => {
       const o = x as Jalur; const kode = teks(o?.kode).toUpperCase().replace(/[^A-Z0-9_]/g, "");
       const nama = teks(o?.nama);
       return kode && nama ? { kode, nama, keterangan: teks(o?.keterangan) || undefined } : null;
-    }),
-    jadwal: daftar<AgendaSpmb>(s["spmb.jadwal"], x => {
-      const o = x as AgendaSpmb; const label = teks(o?.label);
-      return label ? { label, tanggal: teks(o?.tanggal) } : null;
     }),
     rincianBiaya: daftar<BarisBiaya>(s["spmb.rincianBiaya"], x => {
       const o = x as BarisBiaya; const nama = teks(o?.nama);

@@ -57,7 +57,7 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
   const tengahMalamUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const [pesan, pendaftar, verifikasi, bukuTerlambat, kelasBelumAbsen, surat, legalisir, suratMasuk, sudahDisposisi] = await Promise.all([
     prisma.contactMessage.count({ where: { isRead: false } }).catch(() => 0),
-    prisma.admission.count({ where: { status: "PENDING" } }).catch(() => 0),
+    prisma.admission.count({ where: { verifikasiStatus: "BELUM", status: { notIn: ["DITOLAK", "REJECTED"] } } }).catch(() => 0),
     hitungPengajuanBiodata().catch(() => 0),
     getOverdueLoanCount(session.userId).catch(() => 0),
     getClassesMissingAttendance(tengahMalamUtc).then((k: unknown[]) => k.length).catch(() => 0),
@@ -71,7 +71,7 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
   const belumDisposisi = suratMasuk.filter((x: { id: string }) => !sudah.has(x.id)).length;
   return pakai([
     { label: "Pesan masuk belum dibaca", count: pesan, href: "/dashboard/admin/messages" },
-    { label: "Pendaftaran SPMB baru", count: pendaftar, href: "/dashboard/admin/admissions" },
+    { label: "Pendaftaran SPMB baru", count: pendaftar, href: "/pusat-spmb/tahapan?saring=VERIFIKASI" },
     { label: "Perubahan data menunggu verifikasi", count: verifikasi, href: "/dashboard/admin/verifikasi-data" },
     { label: "Kelas belum absen hari ini", count: kelasBelumAbsen, href: "/dashboard/admin/absensi-siswa" },
     { label: "Permintaan surat menunggu diproses", count: surat + legalisir, href: "/dashboard/admin/permintaan-surat" },

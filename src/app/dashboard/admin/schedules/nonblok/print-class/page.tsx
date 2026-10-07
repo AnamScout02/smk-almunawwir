@@ -36,7 +36,7 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
         <div className="print:hidden sticky top-0 z-30 relative overflow-hidden text-white px-6 py-4 flex items-center gap-3 -mx-8 -mt-8 mb-6"
           style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+            style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
           <TautanIkon href="/dashboard/admin/schedules/nonblok" ikon="kembali" ukuran={16} className="relative flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">Kembali</TautanIkon>
           <h1 className="relative font-heading font-bold">Cetak Jadwal Non-Blok per Kelas</h1>
         </div>
@@ -83,7 +83,7 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
       <div className="print:hidden sticky top-0 z-30 relative overflow-hidden text-white px-6 py-4 flex items-center justify-between"
         style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "140px 140px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "197.99px 197.99px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
         <div className="relative flex items-center gap-3">
           <TautanIkon href="/dashboard/admin/schedules/nonblok" ikon="kembali" ukuran={16} className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition shrink-0">Kembali</TautanIkon>
           <div>
@@ -99,7 +99,7 @@ export default async function NonBlokClassPrintPage({ searchParams }: { searchPa
 
       <div className="print-doc bg-white relative p-6 print:p-2">
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none -z-10"
-          style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "90px 90px", backgroundRepeat: "repeat" }} />
+          style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "127.28px 127.28px", backgroundRepeat: "repeat" }} />
         <PrintKop title={`Jadwal Pelajaran (Non-Blok) — ${activeClass.name}`} subtitle="SMK Al Munawwir IIBS" logoUrl={logoUrl} />
         <div className="text-center mb-4 print:mb-3">
           <p className="text-xs text-gray-500">

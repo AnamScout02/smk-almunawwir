@@ -136,7 +136,7 @@ export default function AbsensiScanStation({ backHref }: { backHref: string }) {
     <div className="min-h-dvh flex flex-col items-center justify-center p-8 relative"
       style={{ background: "linear-gradient(135deg, #0A1030 0%, #0F1A45 40%, #1B2B6B 100%)" }}>
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-        style={{ backgroundImage: "url('/images/pattern-smk.png')", backgroundSize: "160px 160px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
+        style={{ backgroundImage: "url('/images/pattern-smk-miring.png')", backgroundSize: "226.27px 226.27px", backgroundRepeat: "repeat", filter: "invert(1)" }} />
 
       <TombolKembali href={backHref} className="absolute top-6 left-6 flex items-center gap-1.5 text-white/40 hover:text-white/70 text-xs transition print:hidden" />
 

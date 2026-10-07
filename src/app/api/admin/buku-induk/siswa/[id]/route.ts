@@ -1,3 +1,4 @@
+import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { NextRequest, NextResponse } from "next/server";
 import { cabutSemuaSesiPengguna } from "@/lib/sesi-server";
 import { assertBukuIndukSiswaScope } from "@/lib/buku-induk-access";
@@ -6,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-log";
 import { diffBukuIndukRaw, DIFF_SELECT } from "@/lib/buku-induk-diff";
 import bcrypt from "bcryptjs";
-import { toProperCaseName, toProperCaseSchoolName, normalizeBukuIndukText } from "@/lib/text";
+import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import { keUks } from "@/lib/tinggi-berat";
 import { syncParentAccountForStudent } from "@/lib/parent-account";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
@@ -125,7 +126,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         notifyEmail:    typeof notifyEmail === "boolean" ? notifyEmail : true,
         notifyWhatsapp: typeof notifyWhatsapp === "boolean" ? notifyWhatsapp : true,
         parentJob:      parentJob || null,
-        previousSchool: previousSchool ? toProperCaseSchoolName(previousSchool) : null,
+        previousSchool: previousSchool ? bakuNamaSekolah(previousSchool) : null,
         enrollYear:     enrollYear ? parseInt(enrollYear) : null,
         studentStatus:  studentStatus || "AKTIF",
         // exitDate DISINKRONKAN dari bukuIndukData: form Buku Induk menulis tanggal keluar ke
