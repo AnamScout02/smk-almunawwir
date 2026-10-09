@@ -5,7 +5,13 @@ import { Eraser, Loader2, PenLine, Upload } from "lucide-react";
 /** Penyunting TTD: GAMBAR langsung di layar (jari / pena / tetikus) atau UNGGAH foto/scan TTD di kertas putih.
  *  Mengirim ke `endpoint` (PUT) — server yang menjadikan latarnya transparan & merapikan (src/lib/ttd.ts).
  *  Dipakai kartu Profil (TTD sendiri) dan halaman Tanda Tangan Pegawai (TU untuk pegawai lain). */
-export default function PenyuntingTtd({ endpoint, onSelesai, onBatal }: { endpoint: string; onSelesai: () => void; onBatal?: () => void }) {
+export default function PenyuntingTtd({ endpoint, onSelesai, onBatal, ekstra, labelSimpan = "Simpan Tanda Tangan", siap = true }: {
+  endpoint: string; onSelesai: () => void; onBatal?: () => void;
+  /** Isian tambahan yang ikut terkirim (mis. nama & hubungan penanda tangan pakta SPMB). */
+  ekstra?: Record<string, string>; labelSimpan?: string;
+  /** false = tombol simpan/unggah dinonaktifkan (mis. isian ekstra belum lengkap). */
+  siap?: boolean;
+}) {
   const [mode, setMode] = useState<"gambar" | "unggah">("gambar");
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
@@ -52,17 +58,18 @@ export default function PenyuntingTtd({ endpoint, onSelesai, onBatal }: { endpoi
 
   function simpanGambar() {
     if (!adaGoresan) { setGalat("Goreskan tanda tangan dulu di kotak putih."); return; }
-    kirim(JSON.stringify({ gambar: kanvas.current!.toDataURL("image/png") }), true);
+    kirim(JSON.stringify({ ...ekstra, gambar: kanvas.current!.toDataURL("image/png") }), true);
   }
   function unggah(f: File | undefined) {
     if (!f) return;
     const fd = new FormData(); fd.append("file", f);
+    for (const [k, v] of Object.entries(ekstra ?? {})) fd.append(k, v);
     kirim(fd, false);
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex w-fit gap-1 rounded-xl border border-gray-100 bg-white p-1">
+      <div className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl border border-gray-100 bg-white p-1">
         {([["gambar", "Gambar di layar", PenLine], ["unggah", "Unggah foto", Upload]] as const).map(([k, l, I]) => (
           <button key={k} type="button" onClick={() => { setMode(k); setGalat(""); }}
             className={`sentuh flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${mode === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
@@ -82,7 +89,7 @@ export default function PenyuntingTtd({ endpoint, onSelesai, onBatal }: { endpoi
           <Upload size={22} className="text-gray-400" />
           <span className="text-sm font-semibold text-primary-900">Pilih foto / scan tanda tangan</span>
           <span className="text-xs text-gray-500">Tanda tangan dengan tinta gelap di kertas putih polos, lalu foto lurus dari atas. Latar putih otomatis dihapus.</span>
-          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => unggah(e.target.files?.[0])} disabled={sibuk} />
+          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => unggah(e.target.files?.[0])} disabled={sibuk || !siap} />
         </label>
       )}
 
@@ -93,8 +100,8 @@ export default function PenyuntingTtd({ endpoint, onSelesai, onBatal }: { endpoi
         {mode === "gambar" && (
           <>
             <button type="button" onClick={bersihkan} className="btn-modal-cancel"><Eraser /> Ulangi</button>
-            <button type="button" onClick={simpanGambar} disabled={sibuk} className="btn-modal-save">
-              {sibuk ? <Loader2 className="animate-spin" /> : <PenLine />} Simpan Tanda Tangan
+            <button type="button" onClick={simpanGambar} disabled={sibuk || !siap} className="btn-modal-save">
+              {sibuk ? <Loader2 className="animate-spin" /> : <PenLine />} {labelSimpan}
             </button>
           </>
         )}

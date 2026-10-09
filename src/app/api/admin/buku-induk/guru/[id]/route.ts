@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-log";
 import bcrypt from "bcryptjs";
 import { normalizeBukuIndukText } from "@/lib/text";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { potretGuru, catatRiwayatGuru } from "@/lib/riwayat-induk";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await verifyBukuIndukFullAccess();
@@ -23,6 +24,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   } = body;
 
   try {
+    const sebelum = await potretGuru(id);
     // Jika ada password baru, update password user
     if (password && typeof password === "string" && password.trim().length >= 1) {
       const hashed = await bcrypt.hash(password, 12);
@@ -86,6 +88,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         homeroomOf: { select: { name: true } },
       },
     });
+    // Riwayat per isian + nilai asli untuk dikembalikan (9 Okt 2026) — padanan Buku Induk Siswa.
+    await catatRiwayatGuru(session, id, sebelum).catch(e => { console.error("[buku-induk guru PUT] gagal catat riwayat", e); return 0; });
     if (berubah.length > 0) {
       await logActivity(session, {
         action: "UPDATE", entity: "Teacher", entityId: id,

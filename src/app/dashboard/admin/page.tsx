@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { verifyRole } from "@/lib/dal";
+import { jabatanUntukMenu } from "@/lib/spmb";
 import { getJabatanNames } from "@/lib/jabatan-guard";
 import { isFullTasJabatan } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +38,7 @@ export default async function AdminDashboard() {
   // sekali, termasuk Security/Kebersihan. Sekarang staf TAS non-TU melihat halaman ringkas berisi
   // KISI MENU yang sudah discoped jabatan (bukan statistik sekolah) — lihat perbaikan 28 Sep 2026 di bawah.
   if (session.role === "TAS") {
-    const jabatanNames = await getJabatanNames(session.email);
+    const jabatanNames = await jabatanUntukMenu(await getJabatanNames(session.email), session.userId);
     if (!isFullTasJabatan(jabatanNames)) {
       /* PERBAIKAN 28 September 2026 (laporan user: "ketika masuk akun tampilannya seperti itu dan
          tidak ada fitur2 lainnya" — Kepala UKS & Tim Perpustakaan). Halaman ini dulu hanya kartu

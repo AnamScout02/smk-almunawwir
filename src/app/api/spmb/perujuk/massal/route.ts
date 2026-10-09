@@ -44,14 +44,19 @@ export async function POST(req: NextRequest) {
       calon = siswa.filter(x => x.nis.trim() && !sudah.has(`s:${x.id}`))
         .map(x => ({ dasar: x.nis.trim(), nama: x.user.name, studentId: x.id }));
     } else {
-      // Pegawai: NIP dari baris Teacher. Staf TAS tidak punya baris Teacher (CLAUDE.md #93), jadi
-      // mereka ditambahkan manual sebagai perujuk — bukan dibuatkan baris Teacher palsu.
+      // Pegawai: NIP dari baris Teacher. Staf TAS tidak punya baris Teacher maupun NIP (CLAUDE.md #93) — dulu
+      // mereka TERLEWAT sehingga kartu referralnya tidak pernah muncul (laporan user 8 Okt 2026: Lutfiatul Amila
+      // dkk.). Sekarang ikut dibuatkan dengan kode 6 angka acak (`dasar` kosong), tanpa membuat baris Teacher palsu.
       const guru = await prisma.teacher.findMany({
         where: { nip: { not: "" } },
         select: { nip: true, userId: true, user: { select: { name: true } } },
       });
       calon = guru.filter(x => x.nip.trim() && !sudah.has(`u:${x.userId}`))
         .map(x => ({ dasar: x.nip.trim(), nama: x.user.name, userId: x.userId }));
+      const staf = await prisma.user.findMany({
+        where: { role: "TAS", teacher: null }, select: { id: true, name: true },
+      });
+      calon.push(...staf.filter(x => !sudah.has(`u:${x.id}`)).map(x => ({ dasar: "", nama: x.name, userId: x.id })));
     }
 
     const akhiran = () => Array.from({ length: 4 }, () => HURUF[randomInt(HURUF.length)]).join("");
@@ -59,10 +64,11 @@ export async function POST(req: NextRequest) {
     const dipakai = new Set(sudah);
 
     for (const c of calon) {
-      const dasar = kodeDariNomor(c.dasar);
-      let kode = rapikanKode(bentuk === "angka" ? dasar : `${dasar}-${akhiran()}`);
+      const acak6 = () => String(randomInt(100000, 1000000));
+      const dasar = c.dasar ? kodeDariNomor(c.dasar) : "";
+      let kode = !dasar ? acak6() : rapikanKode(bentuk === "angka" ? dasar : `${dasar}-${akhiran()}`);
       let coba = 0;
-      while (dipakai.has(kode) && coba < 20) { kode = rapikanKode(`${dasar}-${akhiran()}`); coba++; }
+      while (dipakai.has(kode) && coba < 20) { kode = !dasar ? acak6() : rapikanKode(`${dasar}-${akhiran()}`); coba++; }
       if (dipakai.has(kode)) continue;   // menyerah: kode itu memang sudah dipakai orang lain
       dipakai.add(kode);
       baris.push({ kode, nama: c.nama, jenis, studentId: c.studentId, userId: c.userId });

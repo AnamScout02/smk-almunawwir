@@ -110,6 +110,7 @@ export default function PerpustakaanManager() {
   usePrintTitle(barcodeBook ? buildPrintFilename("Barcode", barcodeBook.title) : null);
   const [scanInput, setScanInput] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+  const [bookSearch, setBookSearch] = useState("");
   const [dendaPerHari, setDendaPerHari] = useState(0);
   const [dendaInput, setDendaInput] = useState("");
   const [savingDenda, setSavingDenda] = useState(false);
@@ -312,7 +313,12 @@ export default function PerpustakaanManager() {
     !qAktif || l.book.barcode === activeSearch.trim() || l.book.title.toLowerCase().includes(qAktif) ||
     l.borrower.name.toLowerCase().includes(qAktif) || l.borrower.identifier.toLowerCase().includes(qAktif)
   );
-  const halBuku = usePaginasi(books, 25);
+  // Cari buku di katalog (permintaan user 8 Okt 2026) — judul, penulis, penerbit, kategori, lokasi rak, atau barcode
+  // (pemindai barcode mengetik kodenya lalu Enter, jadi kode persis ikut dicocokkan).
+  const qBuku = bookSearch.trim().toLowerCase();
+  const filteredBooks = !qBuku ? books : books.filter(b =>
+    [b.title, b.author, b.publisher, b.category, b.location, b.barcode].some(x => (x ?? "").toLowerCase().includes(qBuku)));
+  const halBuku = usePaginasi(filteredBooks, 25, bookSearch);
   const halAktif = usePaginasi(filteredActive, 25, activeSearch);
   const halReservasi = usePaginasi(reservations, 25);
   const halRiwayat = usePaginasi(allLoans, 25);
@@ -401,6 +407,19 @@ export default function PerpustakaanManager() {
           {books.length === 0 ? (
             <EmptyState icon={Library} title="Belum Ada Buku" description="Tambahkan buku ke katalog perpustakaan." />
           ) : (
+            <>
+            <div className="baris-alat mb-5">
+              <div className="alat-cari">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={bookSearch} onChange={e => setBookSearch(e.target.value)}
+                  placeholder="Cari judul, penulis, kategori, lokasi, atau pindai barcode..."
+                  className="input-field pl-10" />
+              </div>
+              {qBuku && <p className="alat-saring text-sm text-gray-500"><span className="angka">{filteredBooks.length}</span> dari <span className="angka">{books.length}</span> judul</p>}
+            </div>
+            {filteredBooks.length === 0 ? (
+              <p className="py-10 text-center text-sm text-gray-400">Tidak ada buku yang cocok dengan &ldquo;{bookSearch.trim()}&rdquo;.</p>
+            ) : (
             <div className="panel overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="data-table">
@@ -460,6 +479,8 @@ export default function PerpustakaanManager() {
               </div>
               <Paginasi hal={halBuku} satuan="judul buku" className="border-t border-gray-100" />
             </div>
+            )}
+            </>
           )}
         </>
       ) : tab === "peminjaman" ? (

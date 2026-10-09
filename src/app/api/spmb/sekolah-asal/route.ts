@@ -1,3 +1,4 @@
+import { catatRiwayatSatuKolom } from "@/lib/riwayat-induk";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
@@ -51,9 +52,15 @@ export async function POST(req: NextRequest) {
     const varian = (Array.isArray(b?.varian) ? b.varian : []).map(String).filter(Boolean).slice(0, 50);
     if (!target) return NextResponse.json({ error: "Tulis nama sekolah yang benar." }, { status: 400 });
     if (!varian.length) return NextResponse.json({ error: "Pilih penulisan yang digabung." }, { status: 400 });
+    // Riwayat per siswa (bisa dikembalikan) — diambil SEBELUM diganti; hanya yang penulisannya memang berubah.
+    const terkena = sumber === "induk"
+      ? await prisma.student.findMany({ where: { previousSchool: { in: varian, not: target } }, select: { id: true, nis: true, previousSchool: true, user: { select: { name: true } } } })
+      : [];
     const r = sumber === "induk"
       ? await prisma.student.updateMany({ where: { previousSchool: { in: varian } }, data: { previousSchool: target } })
       : await prisma.admission.updateMany({ where: { previousSchool: { in: varian } }, data: { previousSchool: target } });
+    await catatRiwayatSatuKolom(s, terkena.map(x => ({ id: x.id, nama: x.user.name, nomor: x.nis, lama: x.previousSchool })),
+      { kunci: "previousSchool", label: "Asal Sekolah (SMP/MTs)", grup: "D. Pendidikan Sebelumnya", baru: target, sumber: "Rapikan Nama Sekolah" }).catch(() => 0);
     await logActivity(s, {
       action: "UPDATE", entity: sumber === "induk" ? "Student" : "Admission",
       description: `Merapikan nama sekolah asal (${sumber === "induk" ? "Buku Induk" : "SPMB"}): ${varian.join(" | ")} → ${target} (${r.count} data)`,

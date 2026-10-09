@@ -4,7 +4,7 @@ import { TAHAP_JEJAK } from "@/lib/spmb-jejak";
 import { bakuNamaSekolah, kunciSekolah } from "@/lib/nama-sekolah";
 
 /** Statistik SPMB — SATU sumber untuk halaman SPMB publik (peringkat perujuk tersamar, pendaftar
- *  terbaru) dan halaman Statistik panitia (corong, sebaran wilayah, asal sekolah, peringkat utuh).
+ *  terbaru) dan halaman Statistik panitia (corong, asal sekolah, peringkat utuh; peta sebaran wilayah di peta-sebaran.ts).
  *  Semua kueri dibungkus .catch supaya halaman publik tidak pernah gagal karena statistik. */
 
 /** Pendaftar yang statusnya ditolak tetap dihitung di peringkat perujuk (perujuk sudah membawa
@@ -26,23 +26,6 @@ export async function peringkatPerujuk(batas = 10) {
 
 export async function pendaftarSejak(hari: number) {
   return prisma.admission.count({ where: { createdAt: { gte: new Date(Date.now() - hari * 86_400_000) } } }).catch(() => 0);
-}
-
-export async function sebaranWilayah() {
-  const baris = await prisma.admission.groupBy({
-    by: ["kabupatenKode", "kabupaten", "kecamatan"], where: BUKAN_DITOLAK, _count: { _all: true },
-  }).catch(() => []);
-  const kab = new Map<string, { nama: string; jumlah: number; kecamatan: { nama: string; jumlah: number }[] }>();
-  for (const b of baris) {
-    const kunci = b.kabupatenKode ?? "-";
-    const k = kab.get(kunci) ?? { nama: b.kabupaten ?? "Belum memilih wilayah", jumlah: 0, kecamatan: [] };
-    k.jumlah += b._count._all;
-    if (b.kecamatan) k.kecamatan.push({ nama: b.kecamatan, jumlah: b._count._all });
-    kab.set(kunci, k);
-  }
-  return [...kab.values()]
-    .map(k => ({ ...k, kecamatan: k.kecamatan.sort((a, b) => b.jumlah - a.jumlah) }))
-    .sort((a, b) => b.jumlah - a.jumlah);
 }
 
 /** Asal sekolah diketik bebas — diseragamkan (huruf besar, spasi & tanda baca dirapikan, "SMPN" =

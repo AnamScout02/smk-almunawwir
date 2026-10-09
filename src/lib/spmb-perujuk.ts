@@ -16,9 +16,9 @@ import { prisma } from "@/lib/prisma";
  *     kelak dihapus.
  */
 
-export const JENIS_PERUJUK = ["SISWA", "PEGAWAI", "LUAR"] as const;
+export const JENIS_PERUJUK = ["SISWA", "PEGAWAI", "ALUMNI", "LUAR"] as const;
 export const LABEL_JENIS: Record<string, string> = {
-  SISWA: "Siswa", PEGAWAI: "Guru / Pegawai", LUAR: "Perujuk Luar",
+  SISWA: "Siswa", PEGAWAI: "Guru / Pegawai", ALUMNI: "Alumni", LUAR: "Perujuk Luar",
 };
 
 /** Kode diseragamkan: huruf besar, spasi dibuang. Tanda baca DIBIARKAN karena NIS sekolah ini
@@ -115,4 +115,66 @@ export function bolehCariKode(penanda: string): boolean {
   j.n++;
   if (jejak.size > 5000) for (const [k, v] of jejak) if (kini - v.sejak > JENDELA) jejak.delete(k);
   return j.n <= BATAS;
+}
+
+/** Kode referral milik satu akun, DIBUAT SENDIRI bila belum ada (8 Oktober 2026). Laporan user: "beberapa kartu identitas
+ *  tidak muncul referral" — kode massal hanya mencakup yang ada saat tombolnya ditekan, jadi staf TAS (tanpa baris Teacher)
+ *  dan siswa/guru yang masuk belakangan tidak pernah punya kartu. Aturannya:
+ *  - hanya GURU, STAF (TAS), dan SISWA AKTIF — orang tua & admin tidak dibuatkan;
+ *  - baris yang sudah ada tetapi DINONAKTIFKAN panitia tidak dihidupkan/dibuat ulang (mengembalikan null);
+ *  - bentuk kode sama dengan kode massal bawaan: nomor induk + 4 karakter acak; tanpa nomor induk = 6 angka acak. */
+const HURUF_KODE = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export async function pastikanPerujukAkun(session: { userId: string; role: string; name: string }) {
+  const pilih = { kode: true, nama: true, jenis: true, aktif: true, _count: { select: { pendaftar: true } } } as const;
+  const siswa = session.role === "STUDENT"
+    ? await prisma.student.findFirst({ where: { userId: session.userId }, select: { id: true, nis: true, studentStatus: true } })
+    : null;
+  const ada = await prisma.perujukSpmb.findFirst({
+    where: { OR: [{ userId: session.userId }, ...(siswa ? [{ studentId: siswa.id }] : [])] }, select: pilih,
+  });
+  if (ada) return ada.aktif ? ada : null;
+
+  let nomor = "";
+  if (session.role === "STUDENT") {
+    if (!siswa || siswa.studentStatus !== "AKTIF") return null;
+    nomor = siswa.nis ?? "";
+  } else if (session.role === "TEACHER") {
+    nomor = (await prisma.teacher.findFirst({ where: { userId: session.userId }, select: { nip: true } }))?.nip ?? "";
+  } else if (session.role !== "TAS") return null;
+
+  const akhiran = () => Array.from({ length: 4 }, () => HURUF_KODE[randomInt(HURUF_KODE.length)]).join("");
+  for (let i = 0; i < 8; i++) {
+    const kode = nomor.trim() ? rapikanKode(`${nomor.trim()}-${akhiran()}`) : await kodeAngkaBaru();
+    try {
+      return await prisma.perujukSpmb.create({
+        data: { kode, nama: session.name, jenis: siswa ? "SISWA" : "PEGAWAI", ...(siswa ? { studentId: siswa.id } : { userId: session.userId }) },
+        select: pilih,
+      });
+    } catch { /* kode kebetulan sudah dipakai → coba lagi */ }
+  }
+  return null;
+}
+
+/** Kode referral ALUMNI (8 Oktober 2026) — dibuat saat alumni mengisi Tracer Study (`/tracer-study`), jadi satu formulir
+ *  menghasilkan dua hal: kabar lulusan untuk sekolah, dan tautan ajakan mendaftar untuk alumninya.
+ *  - Kode 6 ANGKA ACAK, bukan turunan NIS/NISN: NISN adalah kunci masuk formulir tracer, tidak boleh ikut tersebar.
+ *  - Alumni yang semasa siswa sudah punya kode tetap memakai kode itu (jenisnya saja yang menjadi ALUMNI), supaya
+ *    tautan yang pernah ia bagikan tidak mati.
+ *  - Baris yang DINONAKTIFKAN panitia tidak dihidupkan lagi (mengembalikan null), sama dengan `pastikanPerujukAkun`. */
+export async function pastikanPerujukAlumni(studentId: string, nama: string, kontak?: string | null) {
+  const ada = await prisma.perujukSpmb.findFirst({ where: { studentId }, select: { id: true, kode: true, aktif: true, jenis: true } });
+  if (ada) {
+    if (!ada.aktif) return null;
+    if (ada.jenis !== "ALUMNI") await prisma.perujukSpmb.update({ where: { id: ada.id }, data: { jenis: "ALUMNI" } }).catch(() => {});
+    return { kode: ada.kode };
+  }
+  for (let i = 0; i < 5; i++) {
+    try {
+      return await prisma.perujukSpmb.create({
+        data: { kode: await kodeAngkaBaru(), nama, jenis: "ALUMNI", studentId, kontak: kontak || null, keterangan: "Dari Tracer Study" },
+        select: { kode: true },
+      });
+    } catch { /* kode kebetulan terpakai → coba lagi */ }
+  }
+  return null;
 }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { hapusTtdPakta } from "@/lib/spmb-dokumen";
 import { verifySpmbAccess, STATUS_SPMB } from "@/lib/spmb";
 import { logActivity } from "@/lib/activity-log";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
@@ -40,6 +41,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const session = await verifySpmbAccess();
     const { id } = await params;
     const admission = await prisma.admission.delete({ where: { id } });
+    // TTD pakta orang tua ada di folder rahasia — ikut dibuang bersama datanya.
+    await hapusTtdPakta(admission.paktaTtd);
     await logActivity(session, {
       action: "DELETE_ADMISSION", entity: "Admission", entityId: id,
       description: `${session.name} menghapus data pendaftar "${admission.fullName}"`,

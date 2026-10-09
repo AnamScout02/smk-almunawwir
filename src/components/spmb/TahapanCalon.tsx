@@ -4,12 +4,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Check, Clock, AlertTriangle, XCircle, Loader2, CalendarDays, MapPin, MessageCircle, Users, Printer, LogOut,
-  Shirt, Upload, PartyPopper, Search, FileText, ClipboardCheck, Wallet, Bell, BellRing,
+  Shirt, Upload, PartyPopper, Search, FileText, ClipboardCheck, Wallet, Bell, BellRing, IdCard, ReceiptText, Signature,
 } from "lucide-react";
+import PenyuntingTtd from "@/components/shared/PenyuntingTtd";
 import { statusPush, type StatusPush } from "@/lib/push-client";
 import DatePicker from "@/components/shared/DatePicker";
 import type { Lang } from "@/lib/lang";
-import { rupiah, type InfoBayar, type InfoMpls, type JadwalTahap, type SetelanSeragam, type TahapCalon, type IsiSeragam } from "@/lib/spmb-tahapan";
+import { HUBUNGAN_WALI, rupiah, type InfoBayar, type InfoMpls, type JadwalTahap, type SetelanSeragam, type TahapCalon, type IsiSeragam } from "@/lib/spmb-tahapan";
+import { kecilkanFoto, periksaMutu } from "@/lib/olah-foto";
+import { deteksiDokumen, kanvasKeFile, type Sudut } from "@/lib/pindai-dokumen";
+import PemindaiDokumen from "@/components/spmb/PemindaiDokumen";
 
 type Data = {
   nama: string; nomor: string; jurusan: string; gelombang: string | null; tahun: string; sekolah: string;
@@ -22,6 +26,11 @@ type Data = {
   sesi: { pilihan: { id: string; tanggal: string; jamMulai: string; jamSelesai: string; tempat: string | null; catatan: string | null; kuota: number; sisa: number }[]; dipilih: string | null; terbuka: boolean };
   kabar: { id: string; judul: string; isi: string; createdAt: string }[];
   push: { publicKey: string | null; tersedia: boolean };
+  kartuPeserta: boolean;
+  pakta: {
+    judul: string; wajib: boolean; isi: string; terbuka: boolean; walinya: string;
+    sudah: { nama: string | null; hubungan: string | null; at: string } | null;
+  } | null;
   bayar: InfoBayar & {
     info: string; keteranganPotongan: string | null; sudahKonfirmasi: boolean;
     riwayat: { id: string; jumlah: number; tanggal: string; metode: string; status: string; alasanTolak: string | null }[];
@@ -61,6 +70,12 @@ const TEKS = {
     kabarJudul: "Kabar terbaru",
     sesiJudul: "Pilih sesi kedatangan", sesiKet: "Pilih jadwal datang ke sekolah untuk asesmen dan cek kesehatan. Bisa diganti sampai asesmen dilakukan.",
     sesiPenuh: "Penuh", sesiSisa: (n: number) => `sisa ${n} kursi`, sesiDipilih: "Dipilih", sesiPilih: "Pilih",
+    kartuPeserta: "Kartu Peserta Tes", kuitansi: "Kuitansi",
+    paktaKet: "Dibaca dan ditandatangani orang tua / wali langsung di HP ini.", paktaWajib: "Wajib ditandatangani sebelum konfirmasi daftar ulang.",
+    paktaNama: "Nama lengkap orang tua / wali", paktaHubungan: "Hubungan dengan calon murid", paktaSetuju: "Saya telah membaca dan menyetujui seluruh isi surat pernyataan di atas.",
+    paktaTtd: "Tanda tangan", paktaSimpan: "Tanda Tangani", paktaSudah: (n: string, h: string, w: string) => `Ditandatangani ${n} (${h}) — ${w}.`,
+    paktaCetak: "Cetak Surat Pernyataan", paktaDulu: "Tanda tangani Surat Pernyataan orang tua dulu (kartu di atas).",
+    paktaBelum: "Isi nama, pilih hubungan, dan centang persetujuan sebelum menandatangani.",
   },
   en: {
     masukJudul: "Open Registration Progress", masukKet: "Enter the registration number and the applicant's date of birth.",
@@ -92,6 +107,12 @@ const TEKS = {
     kabarJudul: "Latest updates",
     sesiJudul: "Choose an arrival session", sesiKet: "Choose when to come to school for the assessment and health check. You can change it until the assessment.",
     sesiPenuh: "Full", sesiSisa: (n: number) => `${n} seats left`, sesiDipilih: "Selected", sesiPilih: "Choose",
+    kartuPeserta: "Test Participant Card", kuitansi: "Receipt",
+    paktaKet: "Read and signed by the parent / guardian directly on this phone.", paktaWajib: "Must be signed before confirming re-registration.",
+    paktaNama: "Parent / guardian full name", paktaHubungan: "Relationship to the applicant", paktaSetuju: "I have read and agree to the entire statement above.",
+    paktaTtd: "Signature", paktaSimpan: "Sign", paktaSudah: (n: string, h: string, w: string) => `Signed by ${n} (${h}) — ${w}.`,
+    paktaCetak: "Print Statement", paktaDulu: "Please have the parent sign the Statement first (card above).",
+    paktaBelum: "Fill in the name, choose the relationship, and tick the agreement before signing.",
   },
 };
 
@@ -123,7 +144,9 @@ function KotakJadwal({ j, lang }: { j: JadwalTahap; lang: Lang }) {
   );
 }
 
-export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = "" }: { lang?: Lang; nomorAwal?: string; tandaAwal?: string }) {
+/** `onKeluar` = dipasang di dalam halaman lain (Cek Status di /admissions, 7 Okt 2026): tombol Keluar & tautan yang
+ *  tidak sah menyerahkan kembali ke induknya, bukan berpindah ke /spmb/tahapan. */
+export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = "", onKeluar }: { lang?: Lang; nomorAwal?: string; tandaAwal?: string; onKeluar?: () => void }) {
   const t = TEKS[lang];
   const router = useRouter();
   const [kunci, setKunci] = useState<{ nomor: string; t: string } | null>(nomorAwal && tandaAwal ? { nomor: nomorAwal, t: tandaAwal } : null);
@@ -167,7 +190,7 @@ export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = 
     try { localStorage.removeItem(KUNCI_SIMPAN); } catch { /* abaikan */ }
     setKunci(null);
     setData(null);
-    router.replace("/spmb/tahapan");
+    if (onKeluar) onKeluar(); else router.replace("/spmb/tahapan");
   }
 
   async function aksi(body: Record<string, unknown>) {
@@ -182,6 +205,7 @@ export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = 
   }
 
   if (!siapKunci) return <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>;
+  if (!kunci && onKeluar) return null;
   if (!kunci) return <FormMasuk lang={lang} galatAwal={galat} onMasuk={k => { setKunci(k); router.replace(`/spmb/tahapan?nomor=${encodeURIComponent(k.nomor)}&t=${encodeURIComponent(k.t)}`); }} />;
   if (memuat && !data) return <div className="flex justify-center py-16 text-gray-400"><Loader2 size={24} className="animate-spin" /></div>;
   if (!data) return <p className="py-10 text-center text-sm text-gray-400">{galat || t.galat}</p>;
@@ -206,6 +230,11 @@ export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = 
             <Link href={`/spmb/formulir?nomor=${encodeURIComponent(kunci.nomor)}&t=${encodeURIComponent(kunci.t)}`} className="btn-modal-cancel">
               <Printer size={16} /> {t.cetak}
             </Link>
+            {data.kartuPeserta && (
+              <Link href={`/spmb/kartu?nomor=${encodeURIComponent(kunci.nomor)}&t=${encodeURIComponent(kunci.t)}`} className="btn-modal-cancel">
+                <IdCard size={16} /> {t.kartuPeserta}
+              </Link>
+            )}
             <button type="button" onClick={keluar} className="btn-modal-cancel"><LogOut size={16} /> {t.keluar}</button>
           </div>
         </div>
@@ -272,7 +301,8 @@ export default function TahapanCalon({ lang = "id", nomorAwal = "", tandaAwal = 
           </ul>
         </div>
       )}
-      {!data.ditolak && <KartuBayar data={data} lang={lang} aksi={aksi} />}
+      {!data.ditolak && <KartuBayar data={data} lang={lang} aksi={aksi} kunci={kunci} />}
+      {data.pakta && (data.pakta.terbuka || data.pakta.sudah) && !data.ditolak && <KartuPakta data={data} lang={lang} kunci={kunci} onSelesai={() => muat(kunci)} />}
 
       {/* Daftar tahapan */}
       <ol className="panel divide-y divide-gray-100">
@@ -369,7 +399,7 @@ function BarisTahap({ no, x, data, lang, aksi }: { no: number; x: TahapCalon; da
   const label = { SELESAI: t.selesai, BERJALAN: t.berjalan, PERBAIKAN: t.perbaikan, BERHENTI: t.berhenti, MENUNGGU: t.menunggu }[x.status];
   const aktif = x.status === "BERJALAN" || x.status === "PERBAIKAN";
   return (
-    <li className={`flex gap-4 p-5 ${x.status === "MENUNGGU" ? "opacity-70" : ""}`}>
+    <li className={`flex gap-3 p-4 sm:gap-4 sm:p-5 ${x.status === "MENUNGGU" ? "opacity-70" : ""}`}>
       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${g.lingkar}`}>
         {x.status === "MENUNGGU" ? <span className="angka">{no}</span> : <g.ikon size={17} />}
       </span>
@@ -426,7 +456,7 @@ function FormPerbaikan({ data, lang, aksi }: { data: Data; lang: Lang; aksi: Aks
           <p className="text-sm font-semibold text-amber-800">{t.unggahUlang}</p>
           <div className="space-y-2">
             {p.dokumen.map(d => (
-              <PengunggahBerkas key={d.kunci} label={d.label} lang={lang} url={berkas[d.kunci]}
+              <PengunggahBerkas key={d.kunci} label={d.label} lang={lang} url={berkas[d.kunci]} dokumen={d.kunci !== "foto"}
                 onSelesai={u => setBerkas(b => ({ ...b, [d.kunci]: u }))} />
             ))}
           </div>
@@ -440,25 +470,53 @@ function FormPerbaikan({ data, lang, aksi }: { data: Data; lang: Lang; aksi: Aks
   );
 }
 
-function PengunggahBerkas({ label, lang, url, onSelesai, jenis = "perbaikan" }: { label: string; lang: Lang; url?: string; onSelesai: (u: string) => void; jenis?: string }) {
+function PengunggahBerkas({ label, lang, url, onSelesai, jenis = "perbaikan", dokumen = false }: { label: string; lang: Lang; url?: string; onSelesai: (u: string) => void; jenis?: string; dokumen?: boolean }) {
   const t = TEKS[lang];
   const ref = useRef<HTMLInputElement>(null);
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
+  const [saran, setSaran] = useState<string[]>([]);
+  // Foto DOKUMEN (bukan pas foto / bukti bayar) yang tepi kertasnya terduga dirapikan dulu di pemindai.
+  const [pindai, setPindai] = useState<{ file: File; kanvas: HTMLCanvasElement; sudut: Sudut } | null>(null);
 
-  async function pilih(f: File) {
+  async function pilih(asli: File) {
     setGalat("");
-    if (f.size > 5 * 1024 * 1024) { setGalat(lang === "en" ? "Max 5 MB" : "Maksimal 5 MB"); return; }
     setSibuk(true);
+    // Foto HP dikecilkan dulu (olah-foto.ts), batas 5 MB diperiksa SETELAHNYA — foto kamera 7 MB jadi ±400 KB.
+    const olah = await kecilkanFoto(asli).catch(() => null);
+    const f = olah?.file ?? asli;
+    const sudut = dokumen && olah?.kanvas ? deteksiDokumen(olah.kanvas) : null;
+    if (sudut && olah?.kanvas) { setPindai({ file: f, kanvas: olah.kanvas, sudut }); return; }
+    kirim(f, olah?.kanvas ?? null);
+  }
+
+  async function kirim(f: File, kanvas: HTMLCanvasElement | null) {
+    setSibuk(true);
+    const saran = kanvas ? periksaMutu(kanvas, lang === "en" ? "en" : "id") : [];
+    if (f.size > 5 * 1024 * 1024) { setGalat(lang === "en" ? "Max 5 MB" : "Maksimal 5 MB"); setSibuk(false); return; }
     try {
       const fd = new FormData();
       fd.append("file", f);
       fd.append("type", jenis);
       const r = await fetch("/api/admissions/upload", { method: "POST", body: fd });
       const d = await r.json();
-      if (r.ok && d.url) onSelesai(d.url); else setGalat(d?.error || t.galat);
+      if (r.ok && d.url) { onSelesai(d.url); setSaran(saran); } else setGalat(d?.error || t.galat);
     } catch { setGalat(t.galat); }
     finally { setSibuk(false); }
+  }
+
+  async function pakaiHasil(hasil: HTMLCanvasElement) {
+    const p = pindai;
+    setPindai(null);
+    if (!p) return;
+    const f = await kanvasKeFile(hasil, p.file.name).catch(() => null);
+    if (f) kirim(f, hasil); else kirim(p.file, p.kanvas);
+  }
+  /** Ditutup tanpa memilih = lanjut dengan foto asli, supaya unggahan tidak menggantung. */
+  function pakaiAsli() {
+    const p = pindai;
+    setPindai(null);
+    if (p) kirim(p.file, p.kanvas);
   }
 
   return (
@@ -472,6 +530,13 @@ function PengunggahBerkas({ label, lang, url, onSelesai, jenis = "perbaikan" }: 
         {sibuk ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} {sibuk ? t.mengunggah : t.unggah}
       </button>
       {galat && <p className="w-full text-xs text-red-600">{galat}</p>}
+      {saran.length > 0 && !galat && (
+        <div role="status" className="w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="font-semibold">{lang === "en" ? "Consider uploading again:" : "Sebaiknya unggah ulang:"}</p>
+          <ul className="mt-0.5 list-disc pl-4">{saran.map(x => <li key={x}>{x}</li>)}</ul>
+        </div>
+      )}
+      {pindai && <PemindaiDokumen kanvas={pindai.kanvas} sudutAwal={pindai.sudut} lang={lang} onPakai={pakaiHasil} onAsli={pakaiAsli} onTutup={pakaiAsli} />}
     </div>
   );
 }
@@ -509,7 +574,9 @@ function FormSeragam({ data, lang, aksi, selesai }: { data: Data; lang: Lang; ak
   }
 
   return (
-    <div className="mt-3 space-y-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+    // Di HP kartu ini melebar ke kiri sejajar lingkaran tahap (-ml-12 = lingkaran 36px + jarak 12px) — di kolom
+    // yang menjorok, kotak ukuran terlalu sempit dan keterangannya terlipat 5 baris (temuan user 7 Okt 2026).
+    <div className="-ml-12 mt-3 space-y-4 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:ml-0 sm:p-4">
       <p className="text-sm text-gray-500">{t.seragamKet}</p>
       {setelan.catatan && <p className="whitespace-pre-line rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">{setelan.catatan}</p>}
       {setelan.gambar && (
@@ -519,15 +586,20 @@ function FormSeragam({ data, lang, aksi, selesai }: { data: Data; lang: Lang; ak
       {setelan.item.map(item => (
         <div key={item.nama}>
           <p className="label-field">{item.nama}</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {/* Kisi kotak ringkas (7 Okt 2026, temuan user "di mobile kurang rapi"): ukuran besar di atas, keterangan kecil
+              di bawah — dulu satu baris penuh per ukuran dengan keterangan terlipat 3–4 baris di kolom sempit. */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {item.ukuran.map(u => {
               const dipilih = pilihan[item.nama] === u.label;
               return (
-                <button key={u.label} type="button" onClick={() => setPilihan(p => ({ ...p, [item.nama]: u.label }))}
-                  className={`sentuh flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${dipilih ? "border-primary-700 bg-primary-50 ring-2 ring-primary-100" : "border-gray-200 bg-white hover:border-primary-300"}`}>
-                  <span className="font-heading w-12 shrink-0 text-base font-semibold text-navy">{u.label}</span>
-                  {u.keterangan && <span className="min-w-0 text-sm text-gray-500">{u.keterangan}</span>}
-                  {dipilih && <Check size={16} className="ml-auto shrink-0 text-primary-700" />}
+                <button key={u.label} type="button" onClick={() => setPilihan(p => ({ ...p, [item.nama]: u.label }))} aria-pressed={dipilih}
+                  className={`sentuh relative flex flex-col items-start rounded-xl border px-3 py-2 text-left transition ${dipilih ? "border-primary-700 bg-primary-50 ring-2 ring-primary-100" : "border-gray-200 bg-white hover:border-primary-300"}`}>
+                  <span className="font-heading text-lg font-semibold leading-tight text-navy">{u.label}</span>
+                  {u.keterangan && u.keterangan.split(/\s*·\s*/).map((k, n) => (
+                    // Angka & satuannya diikat spasi tak-putus ("48 cm") — tanpa itu "cm" sering jatuh sendirian ke baris berikut.
+                    <span key={n} className={`${n === 0 ? "mt-0.5" : ""} text-xs leading-snug text-gray-500`}>{k.replace(/(\d)\s+(cm|mm|kg)\b/gi, "$1\u00a0$2")}</span>
+                  ))}
+                  {dipilih && <Check size={15} className="absolute right-2 top-2 text-primary-700" />}
                 </button>
               );
             })}
@@ -559,12 +631,14 @@ function KonfirmasiDaftarUlang({ data, lang, aksi }: { data: Data; lang: Lang; a
       </div>
     );
   }
+  const tungguPakta = !!data.pakta?.wajib && !data.pakta.sudah;
   return (
     <div className="mt-3 space-y-2">
       <p className="text-sm text-gray-500">{t.konfirmasiKet}</p>
       {b.wajib > 0 && <p className="text-sm text-amber-700">{b.syarat === "LUNAS" ? t.syaratLunas : t.syaratDp(rupiah(b.wajib))}</p>}
+      {tungguPakta && <p className="text-sm text-amber-700"><Signature size={14} className="mr-1 inline" />{t.paktaDulu}</p>}
       {galat && <p className="error-msg">{galat}</p>}
-      <button type="button" disabled={sibuk} className="btn-modal-save btn-teks"
+      <button type="button" disabled={sibuk || tungguPakta} className="btn-modal-save btn-teks"
         onClick={async () => { setSibuk(true); setGalat(""); const h = await aksi({ aksi: "daftar-ulang" }); if (!h.ok) setGalat(h.error || t.galat); setSibuk(false); }}>
         {sibuk ? <Loader2 size={16} className="animate-spin" /> : <ClipboardCheck size={16} />} {t.konfirmasi}
       </button>
@@ -572,7 +646,7 @@ function KonfirmasiDaftarUlang({ data, lang, aksi }: { data: Data; lang: Lang; a
   );
 }
 
-function KartuBayar({ data, lang, aksi }: { data: Data; lang: Lang; aksi: Aksi }) {
+function KartuBayar({ data, lang, aksi, kunci }: { data: Data; lang: Lang; aksi: Aksi; kunci: { nomor: string; t: string } }) {
   const t = TEKS[lang];
   const b = data.bayar;
   const [buka, setBuka] = useState(false);
@@ -630,6 +704,10 @@ function KartuBayar({ data, lang, aksi }: { data: Data; lang: Lang; aksi: Aksi }
                 <span className="angka font-semibold text-navy">{rupiah(r.jumlah)}</span>
                 <span className="text-gray-400">{new Date(r.tanggal).toLocaleDateString(lang === "en" ? "en-GB" : "id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}</span>
                 <span className={`status-badge ml-auto ${LABEL[r.status]?.kelas ?? ""}`}>{LABEL[r.status]?.teks ?? r.status}</span>
+                {r.status === "SAH" && (
+                  <Link href={`/spmb/kuitansi?nomor=${encodeURIComponent(kunci.nomor)}&t=${encodeURIComponent(kunci.t)}&p=${r.id}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:underline"><ReceiptText size={13} /> {t.kuitansi}</Link>
+                )}
                 {r.alasanTolak && <p className="w-full text-xs text-red-600">{r.alasanTolak}</p>}
               </li>
             ))}
@@ -739,6 +817,61 @@ function PilihSesi({ data, lang, aksi }: { data: Data; lang: Lang; aksi: Aksi })
         })}
       </div>
       {galat && <p className="error-msg">{galat}</p>}
+    </div>
+  );
+}
+
+function KartuPakta({ data, lang, kunci, onSelesai }: { data: Data; lang: Lang; kunci: { nomor: string; t: string }; onSelesai: () => void }) {
+  const t = TEKS[lang];
+  const p = data.pakta!;
+  const [nama, setNama] = useState(p.walinya);
+  const [hubungan, setHubungan] = useState("");
+  const [setuju, setSetuju] = useState(false);
+  const siap = nama.trim().length >= 3 && !!hubungan && setuju;
+  const q = `nomor=${encodeURIComponent(kunci.nomor)}&t=${encodeURIComponent(kunci.t)}`;
+  return (
+    <div className="panel p-5">
+      <div className="flex flex-wrap items-start gap-4">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${p.sudah ? "bg-emerald-600" : "bg-primary-700"}`}><Signature size={20} /></span>
+        <div className="min-w-0 flex-1">
+          <p className="font-heading text-sm font-semibold text-navy">{p.judul}</p>
+          <p className="text-sm text-gray-500">{t.paktaKet}{p.wajib && !p.sudah ? ` ${t.paktaWajib}` : ""}</p>
+        </div>
+      </div>
+      {p.sudah ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <p className="flex-1 text-sm text-emerald-700"><Check size={14} className="mr-1 inline" />
+            {t.paktaSudah(p.sudah.nama ?? "", p.sudah.hubungan ?? "", new Date(p.sudah.at).toLocaleString(lang === "en" ? "en-GB" : "id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }))}</p>
+          <Link href={`/spmb/pakta?${q}`} className="btn-modal-cancel btn-teks"><Printer size={16} /> {t.paktaCetak}</Link>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-4">
+          <div className="max-h-72 overflow-y-auto whitespace-pre-line rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-sm leading-relaxed text-gray-700">{p.isi}</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label className="label-field">{t.paktaNama}</label><input className="input-field" value={nama} maxLength={100} onChange={e => setNama(e.target.value)} /></div>
+            <div>
+              <label className="label-field">{t.paktaHubungan}</label>
+              <div className="flex flex-wrap gap-1.5">
+                {HUBUNGAN_WALI.map(h => (
+                  <button key={h} type="button" onClick={() => setHubungan(h)}
+                    className={`sentuh rounded-lg border px-4 py-2 text-sm transition ${hubungan === h ? "border-primary-700 bg-primary-900 text-white" : "border-gray-200 bg-white text-gray-600 hover:border-primary-300"}`}>
+                    {lang === "en" ? ({ Ayah: "Father", Ibu: "Mother", Wali: "Guardian" } as Record<string, string>)[h] : h}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input type="checkbox" className="mt-1" checked={setuju} onChange={e => setSetuju(e.target.checked)} /> {t.paktaSetuju}
+          </label>
+          <div>
+            <p className="label-field">{t.paktaTtd}</p>
+            {!siap && <p className="mb-2 text-xs text-amber-700">{t.paktaBelum}</p>}
+            <PenyuntingTtd endpoint={`/api/spmb/calon/pakta?${q}`} onSelesai={onSelesai} siap={siap} labelSimpan={t.paktaSimpan}
+              ekstra={{ nama: nama.trim(), hubungan, setuju: setuju ? "1" : "0" }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

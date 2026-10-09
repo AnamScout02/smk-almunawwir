@@ -159,6 +159,7 @@ export const SISWA_COLUMNS: ColDef[] = [
   { key: "pklAddress", label: "Alamat PKL", group: "J. PKL", get: s => b(s, "pklAddress") },
   { key: "pklStartDate", label: "Tanggal Mulai PKL", group: "J. PKL", get: s => tgl(b(s, "pklStartDate")) },
   { key: "pklEndDate", label: "Tanggal Selesai PKL", group: "J. PKL", get: s => tgl(b(s, "pklEndDate")) },
+  { key: "pklLama", label: "Lama PKL", group: "J. PKL", get: s => b(s, "pklLama") },
   { key: "pklLatitude", label: "Lintang (LS)", group: "J. PKL", get: s => b(s, "pklLatitude") },
   { key: "pklLongitude", label: "Bujur (BT)", group: "J. PKL", get: s => b(s, "pklLongitude") },
   { key: "pklSupervisor", label: "Guru Pembimbing PKL", group: "J. PKL", get: s => b(s, "pklSupervisor") },

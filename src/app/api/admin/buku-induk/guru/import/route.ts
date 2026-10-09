@@ -1,3 +1,4 @@
+import { potretGuru, catatRiwayatGuru } from "@/lib/riwayat-induk";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +33,7 @@ function s(val: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyBukuIndukFullAccess();
+  const sesiImpor = await verifyBukuIndukFullAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -90,10 +91,12 @@ export async function POST(req: NextRequest) {
         const dasar: Record<string, unknown> = Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== null && v !== ""));
         if (!s(row["Status (AKTIF/PENSIUN/KELUAR)"])) delete dasar.teacherStatus;
         const lama = (existing.bukuIndukData as Record<string, unknown> | null) ?? {};
+        const sebelumRiwayat = await potretGuru(existing.id);
         await prisma.teacher.update({
           where: { nip },
           data: { ...dasar, ...(mapel ? { subject: mapel } : {}), bukuIndukData: { ...lama, ...bukuBaru } as Prisma.InputJsonValue },
         });
+        await catatRiwayatGuru(sesiImpor, existing.id, sebelumRiwayat, "impor Excel").catch(() => 0);
         results.updated++;
       } else {
         const email = `${nip}@smkalmunawwir.sch.id`;

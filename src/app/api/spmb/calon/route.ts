@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/site-settings";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { aturanTahapan, calonDariTanda, daftarSesi, denganBayar, PILIH_TAHAPAN, ringkasBayar, setelanBayar, tahapanDari } from "@/lib/spmb-tahapan-server";
 import { kunciPublikVapid, pushTersedia } from "@/lib/push-server";
-import { BERKAS_BAKU, bacaMpls, bacaSetelanSeragam, tahapTerbuka, type PilihanSeragam } from "@/lib/spmb-tahapan";
+import { BERKAS_BAKU, bacaMpls, bacaPakta, bacaSetelanSeragam, isiPakta, itemSeragamUntuk, paktaTerbuka, tahapTerbuka, type PilihanSeragam } from "@/lib/spmb-tahapan";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
       where: { id },
       select: {
         ...PILIH_TAHAPAN, id: true, nomor: true, keteranganPotongan: true, fullName: true, chosenMajor: true, verifikasiDokumen: true, perbaikanAt: true,
-        seragam: true, grupDiklikAt: true, grupBergabungAt: true, sesi: true,
+        seragam: true, gender: true, grupDiklikAt: true, grupBergabungAt: true, sesi: true, paktaNama: true, paktaHubungan: true, guardianName: true,
         gelombang: { select: { nama: true, tautanGrup: true, jadwalTahap: true } },
       },
     }),
     aturanTahapan(),
-    getSettings(["spmb.seragam", "spmb.mpls", "spmb.tautanGrup", "spmb.kontakWa", "spmb.kontakNama", "spmb.tahun", "school.name"]),
+    getSettings(["spmb.seragam", "spmb.mpls", "spmb.tautanGrup", "spmb.kontakWa", "spmb.kontakNama", "spmb.tahun", "school.name", "spmb.pakta"]),
     prisma.dokumenSyaratSpmb.findMany({ select: { id: true, nama: true } }),
     setelanBayar(),
     ringkasBayar([id]),
@@ -64,11 +64,23 @@ export async function GET(req: NextRequest) {
       terbuka: tahapTerbuka("ASESMEN", a, aturan) && !a.asesmenAt,
     },
     kabar,
+    // Kartu peserta tes bisa dicetak begitu berkas diverifikasi (sebelum datang ke sekolah).
+    kartuPeserta: a.verifikasiStatus === "TERVERIFIKASI" && !ditolak,
+    pakta: (() => {
+      const p = bacaPakta(s["spmb.pakta"]);
+      if (!p.aktif) return null;
+      return {
+        judul: p.judul, wajib: p.wajib, isi: isiPakta(p, s["school.name"] || "SMK Al-Munawwir IIBS"),
+        terbuka: paktaTerbuka(a, aturan), walinya: a.guardianName ?? "",
+        sudah: a.paktaAt ? { nama: a.paktaNama, hubungan: a.paktaHubungan, at: a.paktaAt } : null,
+      };
+    })(),
     push: { publicKey: kunciPublikVapid(), tersedia: pushTersedia() },
     // Tautan grup tampil TEPAT SETELAH DAFTAR (keputusan user) — gelombang dulu, cadangan tautan umum.
     grup: { tautan: a.gelombang?.tautanGrup || "", diklik: !!a.grupDiklikAt, bergabung: !!a.grupBergabungAt },
     seragam: {
-      setelan: bacaSetelanSeragam(s["spmb.seragam"]),
+      // Hanya item untuk jenis kelamin calon (Celana untuk putra, Rok untuk putri).
+      setelan: (() => { const st = bacaSetelanSeragam(s["spmb.seragam"]); return { ...st, item: itemSeragamUntuk(st, a.gender) }; })(),
       isi: a.seragam ?? null,
       terbuka: tahapTerbuka("SERAGAM", a, aturan),
       // Ukuran boleh diubah calon sampai panitia menyelesaikan asesmen (pesanan mulai direkap).
@@ -125,7 +137,7 @@ export async function POST(req: NextRequest) {
   }
 
   const [a, aturan] = await Promise.all([
-    prisma.admission.findUnique({ where: { id }, select: { ...PILIH_TAHAPAN, verifikasiDokumen: true, sesiId: true } }),
+    prisma.admission.findUnique({ where: { id }, select: { ...PILIH_TAHAPAN, verifikasiDokumen: true, sesiId: true, gender: true } }),
     aturanTahapan(),
   ]);
   if (!a) return Response.json({ error: "Pendaftar tidak ditemukan" }, { status: 404 });
@@ -166,6 +178,8 @@ export async function POST(req: NextRequest) {
 
   if (aksi === "daftar-ulang") {
     if (!tahapTerbuka("DAFTAR_ULANG", a, aturan)) return Response.json({ error: "Daftar ulang dibuka setelah tahap sebelumnya selesai." }, { status: 409 });
+    const pakta = bacaPakta((await getSettings(["spmb.pakta"]))["spmb.pakta"]);
+    if (pakta.aktif && pakta.wajib && !a.paktaAt) return Response.json({ error: "Surat pernyataan orang tua belum ditandatangani. Tanda tangani dulu di kartu Surat Pernyataan." }, { status: 409 });
     await prisma.admission.updateMany({ where: { id, daftarUlangConfirmedAt: null }, data: { daftarUlangConfirmedAt: new Date() } });
     return Response.json({ ok: true });
   }
@@ -176,7 +190,7 @@ export async function POST(req: NextRequest) {
     const setelan = bacaSetelanSeragam((await getSettings(["spmb.seragam"]))["spmb.seragam"]);
     const masuk = (Array.isArray(b?.pilihan) ? b.pilihan : []) as PilihanSeragam[];
     const pilihan: PilihanSeragam[] = [];
-    for (const item of setelan.item) {
+    for (const item of itemSeragamUntuk(setelan, a.gender)) {
       const p = masuk.find(x => x?.item === item.nama);
       if (!p || !item.ukuran.some(u => u.label === p.ukuran)) {
         return Response.json({ error: `Pilih ukuran ${item.nama}.` }, { status: 400 });

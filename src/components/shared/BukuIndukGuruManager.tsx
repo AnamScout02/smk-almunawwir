@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Download, Upload, Save, Loader2,
-  User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog, Users, Table2,
+  User, Home, GraduationCap, Briefcase, Plus, KeyRound, UserCog, Users, Table2, History,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
@@ -319,12 +319,12 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
         <div className="space-y-6">
           {waliKelas.length > 0 && (
             <GroupedSection title="Wali Kelas" count={waliKelas.length} icon={GraduationCap}>
-              <TeacherTable items={waliKelas} onEdit={openEdit} />
+              <TeacherTable items={waliKelas} onEdit={openEdit} riwayatBase={basePath} />
             </GroupedSection>
           )}
           {bukanWali.length > 0 && (
             <GroupedSection title="Bukan Wali Kelas" count={bukanWali.length} icon={Users}>
-              <TeacherTable items={bukanWali} onEdit={openEdit} />
+              <TeacherTable items={bukanWali} onEdit={openEdit} riwayatBase={basePath} />
             </GroupedSection>
           )}
           <p className="text-xs text-gray-400">Menampilkan {filtered.length} dari {teachers.length} guru</p>
@@ -561,7 +561,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
   );
 }
 
-function TeacherTable({ items, onEdit }: { items: Teacher[]; onEdit: (t: Teacher) => void }) {
+function TeacherTable({ items, onEdit, riwayatBase }: { items: Teacher[]; onEdit: (t: Teacher) => void; riwayatBase: string }) {
   return (
     <div className="overflow-x-auto">
       <table className="data-table">
@@ -587,7 +587,11 @@ function TeacherTable({ items, onEdit }: { items: Teacher[]; onEdit: (t: Teacher
                   {t.teacherStatus ?? "AKTIF"}
                 </span>
               </td>
-              <td className="text-right">
+              <td className="text-right whitespace-nowrap">
+                <a href={`${riwayatBase}/${t.id}/riwayat`} title="Riwayat perubahan data pegawai ini"
+                  className="mr-1 inline-flex p-1.5 align-middle text-gray-400 hover:text-primary-700 rounded-lg hover:bg-primary-50 transition">
+                  <History size={14} />
+                </a>
                 <button onClick={() => onEdit(t)}
                   className="px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 border border-primary-100 font-semibold transition-colors">
                   Lihat/Edit

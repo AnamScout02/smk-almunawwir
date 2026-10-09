@@ -1,4 +1,5 @@
 import { writeFile, mkdir } from "fs/promises";
+import { aksesPusatPkl } from "@/lib/pkl-humas";
 import { join } from "path";
 import { NextRequest } from "next/server";
 import { verifySession } from "@/lib/dal";
@@ -30,8 +31,10 @@ export async function POST(req: NextRequest) {
     const folderBukuInduk = folder === "buku-induk/masuk" || folder === "buku-induk/keluar" || folder === "buku-induk/kartu";
     const bolehBukuInduk = folderBukuInduk && (session.role === "TAS"
       || (session.role === "TEACHER" && (await getJabatanNames(session.email)).some(n => TAS_JABATAN.includes(n))));
+    // Dokumen MoU DUDI — Pusat PKL dibuka Wakil Kepala Humas (guru) & staf TU; dulu hanya Admin yang lolos di sini.
+    const bolehMitra = folder === "mitra-industri" && (session.role === "TEACHER" || session.role === "TAS") && (await aksesPusatPkl(session));
     const allowed_ =
-      session.role === "ADMIN" || bolehBukuInduk ||
+      session.role === "ADMIN" || bolehBukuInduk || bolehMitra ||
       (session.role === "STUDENT" && isStudentAllowedFolder) ||
       (session.role === "TEACHER" && (isTeacherAllowedFolder || isTasAllowedFolder)) ||
       (session.role === "TAS" && (isTasAllowedFolder || folder === "soal"));
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isIdPhotoFolder = folderBukuInduk;
-    const isDocFolder = folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban" || folder === "event";
+    const isDocFolder = folder === "mitra-industri" || folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban" || folder === "event";
     const isAudioFolder = folder === "bel-sekolah";
     const isSoalFolder = folder === "soal";
     const allowed = isIdPhotoFolder

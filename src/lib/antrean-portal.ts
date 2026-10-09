@@ -8,6 +8,7 @@ import { jumlahBelumKonfirmasi } from "@/lib/pengumuman";
 import { jumlahSurveiBelumDiisi } from "@/lib/survei";
 import { antreanGuru } from "@/lib/antrean-kerja";
 import { konteksMenuGuru } from "@/lib/menu-konteks";
+import { alamatKurang } from "@/lib/analisis-sebaran";
 import type { SessionPayload } from "@/types";
 
 export interface ButirAntrean { label: string; count: number; href: string }
@@ -20,7 +21,7 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
 
   if (session.role === "STUDENT" || session.role === "PARENT") {
     const basis = session.role === "STUDENT" ? "/dashboard/student" : "/dashboard/parent";
-    const [belumBaca, belumSurvei, buktiIzinKeluar] = await Promise.all([
+    const [belumBaca, belumSurvei, buktiIzinKeluar, alamat] = await Promise.all([
       jumlahBelumKonfirmasi(session).catch(() => 0),
       jumlahSurveiBelumDiisi(session).catch(() => 0),
       // Bukti foto izin keluar hanya kewajiban SISWA yang keluar, bukan orang tuanya.
@@ -32,11 +33,20 @@ export async function antreanPortal(session: SessionPayload): Promise<ButirAntre
             },
           }).catch(() => 0)
         : Promise.resolve(0),
+      // Alamat rumah belum terpetakan sampai kecamatan (8 Okt 2026) — siswa AKTIF saja, dan tidak ditagih lagi selama
+      // pengajuan perubahan biodatanya masih menunggu Tata Usaha.
+      session.role === "STUDENT"
+        ? prisma.student.findFirst({
+            where: { user: { email: session.email }, studentStatus: "AKTIF" },
+            select: { bukuIndukData: true, _count: { select: { profileEditRequests: { where: { status: "PENDING" } } } } },
+          }).then(async s => (s && s._count.profileEditRequests === 0 && (await alamatKurang(s.bukuIndukData)) ? 1 : 0)).catch(() => 0)
+        : Promise.resolve(0),
     ]);
     return pakai([
       { label: "Bukti foto izin keluar belum diunggah", count: buktiIzinKeluar, href: `${basis}/izin-keluar` },
       { label: "Pengumuman perlu dikonfirmasi dibaca", count: belumBaca, href: `${basis}/pengumuman` },
       { label: "Survei belum diisi", count: belumSurvei, href: `${basis}/survei` },
+      { label: "Alamat rumah belum lengkap — lengkapi di Biodata", count: alamat, href: `${basis}/biodata` },
     ]);
   }
 

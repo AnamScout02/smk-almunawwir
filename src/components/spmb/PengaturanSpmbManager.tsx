@@ -24,8 +24,8 @@ type Kuota = { id: string; majorId: string; kuota: number; major: Jurusan };
 type Gelombang = {
   id: string; nama: string; urutan: number; buka: string; tutup: string; biayaDaftar: number;
   catatan: string | null; aktif: boolean; tahunAjaranId: string | null;
-  tautanGrup: string | null; jadwalTahap: PetaJadwal | null;
-  kuota: Kuota[]; _count: { pendaftar: number };
+  tautanGrup: string | null; jadwalTahap: PetaJadwal | null; target: number;
+  kuota: Kuota[]; _count: { pendaftar: number; sesi?: number };
 };
 type Komponen = { id: string; nama: string; jenis: string; bobot: number; nilaiMaks: number; urutan: number; aktif: boolean; _count: { nilai: number } };
 type Syarat = { id: string; nama: string; keterangan: string | null; wajib: boolean; urutan: number; aktif: boolean; _count: { berkas: number } };
@@ -157,7 +157,7 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
     const ok = await kirim(`/api/spmb/gelombang/${ubah.id}`, "PUT", {
       nama: ubah.nama, buka: iso(ubah.buka), tutup: iso(ubah.tutup), biayaDaftar: ubah.biayaDaftar,
       catatan: ubah.catatan ?? "", tahunAjaranId: ubah.tahunAjaranId ?? "", aktif: ubah.aktif, kuota,
-      tautanGrup: ubah.tautanGrup ?? "", jadwalTahap: ubah.jadwalTahap ?? {},
+      tautanGrup: ubah.tautanGrup ?? "", jadwalTahap: ubah.jadwalTahap ?? {}, target: ubah.target ?? 0,
     });
     if (ok) { setUbah(null); toast.success("Gelombang disimpan"); }
   }
@@ -305,6 +305,12 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
               <p className="mt-1 text-xs text-gray-500">Pendaftaran gratis. Angka ini tagihan daftar ulang calon di gelombang ini (boleh dicicil), dikurangi potongan per calon.</p>
             </div>
             <div>
+              <label className="label-field">Target jumlah pendaftar</label>
+              <input className="input-field angka" inputMode="numeric" value={ubah.target ? String(ubah.target) : ""} placeholder="Kosong = jumlah kuota jurusan"
+                onChange={e => setUbah({ ...ubah, target: Number(e.target.value.replace(/\D/g, "")) || 0 })} />
+              <p className="mt-1 text-xs text-gray-500">Dipakai grafik Target vs Capaian di Statistik & Sebaran. Kosongkan untuk memakai jumlah kuota jurusan di bawah.</p>
+            </div>
+            <div>
               <label className="label-field">Catatan (tampil di situs)</label>
               <input className="input-field" value={ubah.catatan ?? ""} onChange={e => setUbah({ ...ubah, catatan: e.target.value })} />
             </div>
@@ -323,13 +329,32 @@ function TabGelombang({ daftar, jurusan, sibuk, kirim, confirm, toast }: {
             <div className="border-t border-gray-100 pt-4">
               <p className="font-heading font-semibold text-navy text-sm">Jadwal tahapan di sekolah</p>
               <p className="mb-3 text-xs text-gray-500">Tampil di halaman tahapan calon pada tahap yang mengharuskan datang ke sekolah. Kosongkan bila belum ditentukan.</p>
+              {/* Jadwal ini vs Sesi Kedatangan (7 Okt 2026, pertanyaan user "apa bedanya jadwal ini"): cukup isi SALAH SATU untuk
+                  asesmen & cek kesehatan. Bila gelombang punya sesi, sesi yang dipakai (jadwalDenganSesi) — jadwal di bawah diabaikan. */}
+              {(ubah._count.sesi ?? 0) > 0 ? (
+                <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                  Gelombang ini punya <span className="font-semibold">{ubah._count.sesi} sesi kedatangan</span> — calon memilih sesinya sendiri, jadi jadwal
+                  <span className="font-semibold"> Asesmen Awal & Cek Fisik/Kesehatan</span> di bawah <span className="font-semibold">tidak dipakai</span>.
+                  Jadwal Daftar Ulang tetap dipakai. Sesi diatur di tab Tahapan Calon → Sesi Kedatangan.
+                </p>
+              ) : (
+                <p className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                  Untuk asesmen & cek kesehatan, pilih <span className="font-semibold">salah satu</span>: isi jadwal di sini (satu jadwal untuk semua calon
+                  gelombang ini), <span className="font-semibold">atau</span> buat Sesi Kedatangan berkuota di tab Tahapan Calon → Sesi Kedatangan supaya calon
+                  memilih jamnya sendiri. Bila sesi dibuat, sesi yang dipakai.
+                </p>
+              )}
               <div className="space-y-4">
                 {TAHAP_BERJADWAL.map(k => {
                   const j: JadwalTahap = ubah.jadwalTahap?.[k] ?? {};
                   const setJ = (isi: Partial<JadwalTahap>) => setUbah({ ...ubah, jadwalTahap: { ...(ubah.jadwalTahap ?? {}), [k]: { ...j, ...isi } } });
+                  const diganti = (ubah._count.sesi ?? 0) > 0 && (k === "ASESMEN" || k === "PEMERIKSAAN");
                   return (
-                    <div key={k} className="space-y-3 rounded-xl border border-gray-100 p-3">
-                      <p className="text-sm font-semibold text-primary-900">{INFO_TAHAP[k].judul}</p>
+                    <div key={k} className={`space-y-3 rounded-xl border border-gray-100 p-3 ${diganti ? "opacity-60" : ""}`}>
+                      <p className="text-sm font-semibold text-primary-900">
+                        {INFO_TAHAP[k].judul}
+                        {diganti && <span className="status-badge ml-2 bg-amber-50 text-amber-700 border-amber-200">Tidak dipakai — diganti sesi</span>}
+                      </p>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div><label className="label-field">Tanggal</label><DatePicker value={j.tanggal ?? ""} onChange={v => setJ({ tanggal: v })} /></div>
                         <div><label className="label-field">Sampai tanggal (opsional)</label><DatePicker value={j.tanggalSampai ?? ""} onChange={v => setJ({ tanggalSampai: v })} /></div>

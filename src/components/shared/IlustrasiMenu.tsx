@@ -227,6 +227,16 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   permintaanSurat: p => <S {...p}><rect x="4" y="10" width="32" height="23" rx="4" fill={W} /><path d="M5 13l15 10 15-10" stroke={N} strokeWidth="2.4" strokeLinecap="round" fill="none" /><circle cx="36" cy="33" r="10" fill={B} /><path d="M36 28v10M31 33h10" stroke={N} strokeWidth="3.2" strokeLinecap="round" /></S>,
   /* Amplop + panah bercabang — disposisi surat masuk */
   disposisi: p => <S {...p}><rect x="4" y="8" width="30" height="21" rx="4" fill={W} /><path d="M5 11l14 9 14-9" stroke={N} strokeWidth="2.4" strokeLinecap="round" fill="none" /><path d="M19 33v4a4 4 0 004 4h5M19 33v4a4 4 0 01-4 4h-5" stroke={B} strokeWidth="3.2" strokeLinecap="round" fill="none" /><circle cx="19" cy="31" r="3.4" fill={N} /><circle cx="30" cy="41" r="4" fill={G} /><circle cx="8" cy="41" r="4" fill={G} /></S>,
+  /* Toga + gulungan surat — paket kelulusan */
+  paketLulus: p => <S {...p}><path d="M24 7l19 8-19 8-19-8z" fill={W} /><path d="M12 19v8c0 3 5.5 5.5 12 5.5S36 30 36 27v-8" fill={G} /><rect x="14" y="31" width="20" height="11" rx="3" fill={W} /><rect x="18" y="35" width="12" height="2.6" rx="1.3" fill={N} /><path d="M41 16v9" stroke={W} strokeWidth="2.6" strokeLinecap="round" /><circle cx="41" cy="27" r="2.4" fill={W} /></S>,
+  /* Lembar kalender + batang rekap — laporan bulanan TU */
+  laporanBulanan: p => <S {...p}><rect x="7" y="9" width="34" height="32" rx="5" fill={W} /><rect x="7" y="9" width="34" height="9" rx="4" fill={G} /><rect x="14" y="5" width="3.5" height="8" rx="1.7" fill={N} /><rect x="30.5" y="5" width="3.5" height="8" rx="1.7" fill={N} /><rect x="13" y="29" width="5" height="7" rx="1.5" fill={N} /><rect x="21.5" y="24" width="5" height="12" rx="1.5" fill={N} /><rect x="30" y="27" width="5" height="9" rx="1.5" fill={G} /></S>,
+  /* Dua siswa bertukar arah — mutasi siswa */
+  mutasiSiswa: p => <S {...p}><circle cx="14" cy="14" r="6" fill={W} /><path d="M5 31c0-5 4-8 9-8s9 3 9 8" fill={W} /><circle cx="34" cy="20" r="5" fill={G} /><path d="M27 35c0-4 3-7 7-7s7 3 7 7" fill={G} /><path d="M16 40h18m0 0l-4-3.5m4 3.5l-4 3.5" stroke={W} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /></S>,
+  /* Baki surat bertumpuk + centang — meja kerja TU */
+  mejaKerja: p => <S {...p}><rect x="6" y="26" width="36" height="14" rx="4" fill={W} /><path d="M6 31h10l2 4h12l2-4h10" stroke={N} strokeWidth="2.4" fill="none" strokeLinejoin="round" /><rect x="11" y="13" width="26" height="12" rx="3" fill={G} /><rect x="14" y="6" width="20" height="12" rx="3" fill={W} /><path d="M19 12l3.2 3.2 6-6.2" stroke={N} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /></S>,
+  /* HP + amplop + coretan tanda tangan — disposisi surat dari HP */
+  disposisiHp: p => <S {...p}><rect x="13" y="4" width="22" height="40" rx="5" fill={W} /><rect x="17" y="10" width="14" height="10" rx="2" fill={N} /><path d="M17.5 11l6.5 4.5 6.5-4.5" stroke={W} strokeWidth="1.8" strokeLinecap="round" fill="none" /><path d="M17 30c2-4 4 3 6-1s3-3 4 0 3 1 4-1" stroke={N} strokeWidth="2.4" strokeLinecap="round" fill="none" /><rect x="21" y="38" width="6" height="2.4" rx="1.2" fill={N} /></S>,
   /* Lembar hasil + centang besar — cek kelulusan */
   kelulusan: p => <S {...p}><rect x="7" y="5" width="27" height="34" rx="4" fill={W} /><rect x="12" y="12" width="16" height="3" rx="1.5" fill={N} /><rect x="12" y="19" width="11" height="3" rx="1.5" fill={N2} /><path d="M24 6l14 6-14 6-14-6z" fill={B} /><circle cx="35" cy="33" r="10" fill={B} /><path d="M30.5 33l3.2 3.2 6.2-6.4" stroke={N} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></S>,
   /* Orang berdiri di samping lembar ujian — jadwal pengawas ujian */
@@ -302,6 +312,10 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   /* Map dokumen bertumpuk + lencana centang — kelengkapan perangkat ajar */
   kelengkapan: p => <S {...p}><rect x="4" y="10" width="24" height="32" rx="3.5" fill={G} /><rect x="9" y="5" width="24" height="32" rx="3.5" fill={W} /><path d="M13.5 13l2 2 3.5-3.6" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /><rect x="21" y="12.5" width="8" height="2.4" rx="1.2" fill={N2} /><path d="M13.5 21l2 2 3.5-3.6" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /><rect x="21" y="20.5" width="8" height="2.4" rx="1.2" fill={N2} /><rect x="13.5" y="28" width="15" height="2.4" rx="1.2" fill={N2} /><circle cx="36" cy="34" r="9" fill={B} /><path d="M32 34l2.8 2.8 5.2-5.4" stroke={N} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></S>,
   /* Papan tulis + guru */
+  /* Dua label nama menyatu jadi satu — Rapikan Nama Sekolah (8 Okt 2026) */
+  rapikanSekolah: p => <S {...p}><rect x="4" y="7" width="20" height="9" rx="3" fill={B} /><rect x="4" y="32" width="20" height="9" rx="3" fill={B} /><path d="M24 11.5h5a6 6 0 016 6V24M24 36.5h5a6 6 0 006-6V24" stroke={W} strokeWidth="3" fill="none" strokeLinecap="round" /><rect x="27" y="18.5" width="18" height="11" rx="3.5" fill={W} /><rect x="31" y="22.6" width="10" height="2.8" rx="1.4" fill={N} /></S>,
+  /* Peta lipat dengan wilayah berwarna bertingkat + penanda — Peta Sebaran (8 Okt 2026); BEDA dari "peta" (Tracer Study) */
+  petaSebaran: p => <S {...p}><path d="M5 13l12-5 13 5 13-5v28l-13 5-13-5-12 5z" fill={W} /><path d="M5 13l12-5v28l-12 5z" fill={N2} /><path d="M17 8l13 5v28l-13-5z" fill={G} /><path d="M30 13l13-5v28l-13 5z" fill={B} /><circle cx="33" cy="22" r="7" fill={N} /><circle cx="33" cy="22" r="2.6" fill={W} /><path d="M28.6 26.5L33 33l4.4-6.5" fill={N} /></S>,
 };
 
 /** Alamat menu → nama ilustrasi. Menu di luar daftar ini tetap memakai ikon lucide biasa. */
@@ -318,6 +332,11 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
      tetap terdaftar karena masih hidup sebagai pengalihan. */
   "/dashboard/admin/jaringan": "jaringan",
   "/dashboard/teacher/jaringan": "jaringan",
+  /* Peta Sebaran (8 Okt 2026) — satu fitur di dua portal, gambar sendiri (bukan "peta" milik Tracer Study). */
+  "/dashboard/admin/peta-sebaran": "petaSebaran",
+  "/dashboard/teacher/peta-sebaran": "petaSebaran",
+  "/dashboard/admin/rapikan-sekolah": "rapikanSekolah",
+  "/dashboard/teacher/rapikan-sekolah": "rapikanSekolah",
   "/dashboard/admin/cctv": "cctv",
   "/dashboard/teacher/cctv": "cctv",
   // Siswa
@@ -328,6 +347,7 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/admin/form-nilai-rapor": "formNilai",
   "/dashboard/student/poin-saya": "poin",
   "/dashboard/student/pkl": "pkl",
+  "/dashboard/parent/pkl": "pkl",
   "/dashboard/student/pengumuman": "pengumuman",
   // Guru
   "/dashboard/teacher/journal": "jurnal",
@@ -439,6 +459,7 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   // PKL, alumni & BKK
   "/dashboard/admin/pkl-pendaftaran": "pklDaftar",
   "/dashboard/admin/industry-partners": "industri",
+  "/pusat-pkl": "industri",
   "/dashboard/admin/lowongan": "lowongan",
   "/dashboard/admin/tracer-study": "peta",
   // Persuratan
@@ -446,8 +467,14 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/student/permintaan-surat": "permintaanSurat",
   "/dashboard/parent/permintaan-surat": "permintaanSurat",
   "/dashboard/admin/disposisi": "disposisi",
+  "/dashboard/admin/meja-kerja": "mejaKerja",
+  "/dashboard/teacher/disposisi-surat": "disposisiHp",
+  "/dashboard/admin/disposisi-surat": "disposisiHp",
   "/dashboard/admin/ekspedisi": "pesawat",
   "/dashboard/admin/ijazah-serah": "ijazah",
+  "/dashboard/admin/paket-kelulusan": "paketLulus",
+  "/dashboard/admin/mutasi-siswa": "mutasiSiswa",
+  "/dashboard/admin/laporan-bulanan": "laporanBulanan",
   "/dashboard/admin/legalisir": "stempel",
   // Sarana, lab & perpustakaan
   "/dashboard/admin/layanan-sarpras": "layananSarpras",

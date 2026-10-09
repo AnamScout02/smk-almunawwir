@@ -34,7 +34,8 @@ export default function PortalShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "#f0f2f7" }}>
+    // print:bg-white! — latar abu portal (inline style) ikut tercetak di ruang kosong halaman cetak (7 Okt 2026).
+    <div className="min-h-dvh flex flex-col print:bg-white!" style={{ backgroundColor: "#f0f2f7" }}>
       {/* Kepala portal MENEMPEL (temuan user 15 Sep 2026: bar atas portal hilang saat digulir). Tingginya diukur
           UkurKepalaPortal → --tinggi-kepala-portal, dipakai PageHeader di dalam portal supaya menempel di bawahnya; pita menu
           tab menempel di bawah PageHeader (PitaPortal, 21 Sep 2026 — dulu pita ikut di dalam kepala ini, di atas header). */}

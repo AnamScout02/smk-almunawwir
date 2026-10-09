@@ -16,7 +16,7 @@ export type KodeTahap = (typeof KODE_TAHAP)[number];
 export const INFO_TAHAP: Record<KodeTahap, { judul: string; ket: string; oleh: "CALON" | "PANITIA" | "OTOMATIS"; keSekolah: boolean }> = {
   DAFTAR: { judul: "Pendaftaran", ket: "Formulir dan berkas terkirim.", oleh: "OTOMATIS", keSekolah: false },
   VERIFIKASI: { judul: "Verifikasi Berkas", ket: "Panitia memeriksa kelengkapan dan kesesuaian berkas.", oleh: "PANITIA", keSekolah: false },
-  SERAGAM: { judul: "Ukuran Seragam", ket: "Pilih ukuran baju dan celana untuk pemesanan seragam.", oleh: "CALON", keSekolah: false },
+  SERAGAM: { judul: "Ukuran Seragam", ket: "Pilih ukuran seragam untuk pemesanan.", oleh: "CALON", keSekolah: false },
   ASESMEN: { judul: "Asesmen Awal", ket: "Wawancara singkat bersama panitia di sekolah.", oleh: "PANITIA", keSekolah: true },
   PEMERIKSAAN: { judul: "Cek Fisik & Kesehatan", ket: "Pemeriksaan fisik dan kesehatan oleh panitia di sekolah.", oleh: "PANITIA", keSekolah: true },
   DITERIMA: { judul: "Pengumuman Hasil", ket: "Keputusan penerimaan dari panitia.", oleh: "PANITIA", keSekolah: false },
@@ -49,7 +49,20 @@ export function bacaJadwal(v: unknown): PetaJadwal {
 /* ───────────────────────────── Seragam ───────────────────────────── */
 
 export type UkuranSeragam = { label: string; keterangan: string };
-export type ItemSeragam = { nama: string; ukuran: UkuranSeragam[] };
+/** `untuk` (7 Okt 2026, permintaan user: "rok dan celana jangan disamakan … parameternya dari jenis kelamin"):
+ *  SEMUA = semua calon, L = hanya putra, P = hanya putri. Calon hanya melihat & mengisi item untuk jenis kelaminnya. */
+export type UntukSeragam = "SEMUA" | "L" | "P";
+export type ItemSeragam = { nama: string; untuk?: UntukSeragam; ukuran: UkuranSeragam[] };
+export const LABEL_UNTUK_SERAGAM: Record<UntukSeragam, string> = { SEMUA: "Putra & putri", L: "Khusus putra", P: "Khusus putri" };
+
+/** Jenis kelamin dari isian formulir ("Laki-laki"/"Perempuan"; data lama "L"/"P"). "?" = tidak diketahui. */
+export const jkDari = (g: string | null | undefined): "L" | "P" | "?" => (/^l/i.test(g ?? "") ? "L" : /^p/i.test(g ?? "") ? "P" : "?");
+
+/** Item seragam yang berlaku untuk satu calon. Jenis kelamin tidak diketahui = semua item (supaya tidak ada yang terlewat). */
+export function itemSeragamUntuk(s: SetelanSeragam, gender: string | null | undefined): ItemSeragam[] {
+  const jk = jkDari(gender);
+  return s.item.filter(i => jk === "?" || !i.untuk || i.untuk === "SEMUA" || i.untuk === jk);
+}
 export type SetelanSeragam = { item: ItemSeragam[]; catatan: string; gambar: string };
 
 export const SERAGAM_BAWAAN: SetelanSeragam = {
@@ -65,7 +78,17 @@ export const SERAGAM_BAWAAN: SetelanSeragam = {
       ],
     },
     {
-      nama: "Celana / Rok",
+      nama: "Celana", untuk: "L",
+      ukuran: [
+        { label: "28", keterangan: "Lingkar pinggang 71 cm" },
+        { label: "30", keterangan: "Lingkar pinggang 76 cm" },
+        { label: "32", keterangan: "Lingkar pinggang 81 cm" },
+        { label: "34", keterangan: "Lingkar pinggang 86 cm" },
+        { label: "36", keterangan: "Lingkar pinggang 91 cm" },
+      ],
+    },
+    {
+      nama: "Rok", untuk: "P",
       ukuran: [
         { label: "28", keterangan: "Lingkar pinggang 71 cm" },
         { label: "30", keterangan: "Lingkar pinggang 76 cm" },
@@ -85,6 +108,7 @@ export function bacaSetelanSeragam(teks: string | undefined): SetelanSeragam {
     const item = Array.isArray(v.item)
       ? v.item.map(i => ({
           nama: String(i?.nama ?? "").trim(),
+          untuk: (["L", "P"].includes(String(i?.untuk)) ? i!.untuk : "SEMUA") as UntukSeragam,
           ukuran: Array.isArray(i?.ukuran)
             ? i.ukuran.map(u => ({ label: String(u?.label ?? "").trim(), keterangan: String(u?.keterangan ?? "").trim() })).filter(u => u.label)
             : [],
@@ -341,8 +365,54 @@ export function pesanKabar(o: {
 /** Kunci SiteSetting tahapan — diizinkan ditulis lewat /api/spmb/pengaturan. */
 export const KUNCI_TAHAPAN_SPMB = [
   "spmb.tahapSeleksi", "spmb.tahapDaftarUlang", "spmb.seragam", "spmb.asesmen", "spmb.pemeriksaan", "spmb.mpls",
-  "spmb.syaratBayar", "spmb.uangMuka", "spmb.infoBayar", "spmb.alurTahap",
+  "spmb.syaratBayar", "spmb.uangMuka", "spmb.infoBayar", "spmb.alurTahap", "spmb.pakta",
 ];
+
+/* ───────────── Surat pernyataan / pakta integritas (7 Oktober 2026) ─────────────
+ * Dibaca & ditandatangani ORANG TUA di HP pada tahap daftar ulang. Teksnya diatur panitia; yang sudah
+ * ditandatangani disimpan sebagai SALINAN (`Admission.paktaTeks`) supaya perubahan teks kemudian tidak
+ * mengubah apa yang dulu disetujui. `wajib` = konfirmasi daftar ulang menunggu pakta ditandatangani. */
+
+export type SetelanPakta = { aktif: boolean; wajib: boolean; judul: string; isi: string };
+export const PAKTA_BAWAAN: SetelanPakta = {
+  aktif: true,
+  wajib: true,
+  judul: "Surat Pernyataan Orang Tua / Wali",
+  isi: [
+    "Kami yang bertanda tangan di bawah ini, orang tua / wali dari calon murid tersebut di atas, dengan ini menyatakan bahwa:",
+    "1. Putra/putri kami bersedia mematuhi seluruh tata tertib sekolah dan pondok pesantren {sekolah}.",
+    "2. Putra/putri kami bersedia mengikuti seluruh kegiatan sekolah dan pesantren sesuai jadwal, termasuk tata tertib asrama bila tinggal di asrama.",
+    "3. Putra/putri kami tidak akan membawa, menggunakan, atau mengedarkan rokok, narkoba, minuman keras, senjata tajam, maupun barang terlarang lainnya.",
+    "4. Penggunaan HP dan barang elektronik mengikuti aturan yang ditetapkan pesantren.",
+    "5. Apabila putra/putri kami melanggar, kami bersedia menerima sanksi sesuai ketentuan, termasuk dikembalikan kepada orang tua.",
+    "6. Kami bersedia bekerja sama dengan sekolah dalam pembinaan putra/putri kami dan memenuhi kewajiban administrasi yang telah ditetapkan.",
+    "Pernyataan ini kami buat dengan sadar, tanpa paksaan dari pihak mana pun, untuk dipergunakan sebagaimana mestinya.",
+  ].join("\n"),
+};
+
+export function bacaPakta(teks: string | undefined): SetelanPakta {
+  try {
+    const v = JSON.parse(teks || "{}") as Partial<SetelanPakta>;
+    return {
+      aktif: v.aktif !== undefined ? !!v.aktif : PAKTA_BAWAAN.aktif,
+      wajib: v.wajib !== undefined ? !!v.wajib : PAKTA_BAWAAN.wajib,
+      judul: String(v.judul ?? "").trim() || PAKTA_BAWAAN.judul,
+      isi: String(v.isi ?? "").trim() || PAKTA_BAWAAN.isi,
+    };
+  } catch { return PAKTA_BAWAAN; }
+}
+
+/** Teks pakta siap tampil — `{sekolah}` diganti nama sekolah. */
+export const isiPakta = (p: SetelanPakta, sekolah: string) => p.isi.replace(/\{sekolah\}/g, sekolah);
+
+export const HUBUNGAN_WALI = ["Ayah", "Ibu", "Wali"] as const;
+
+/** Kapan orang tua boleh menandatangani: saat tahap Daftar Ulang terbuka (atau, bila tahap itu dimatikan,
+ *  setelah semua tahap selesai). Menandatangani lebih awal tidak bermakna — calon belum tentu diterima. */
+export function paktaTerbuka(b: BarisTahapan, a: AturanTahapan): boolean {
+  if (a.daftarUlang) return tahapTerbuka("DAFTAR_ULANG", b, a);
+  return tahapBerlaku(a).every(k => tahapSelesai(k, b, a) !== false);
+}
 
 /* ─────────────────── Alur Pendaftaran di halaman SPMB publik ───────────────────
  * Permintaan user 6 Okt 2026: alur di web "harusnya sama satu dengan yang sudah di setting ketentuan
@@ -354,7 +424,7 @@ export type KodeAlur = KodeTahap | "MPLS";
 export const ALUR_WEB_BAWAAN: Record<KodeAlur, { judul: string; isi: string }> = {
   DAFTAR: { judul: "Isi Formulir & Unggah Berkas", isi: "Lengkapi formulir online dan unggah berkas. Nomor pendaftaran langsung terbit, dan tautan grup WhatsApp gelombang tampil setelah mendaftar." },
   VERIFIKASI: { judul: "Verifikasi Berkas", isi: "Panitia memeriksa kelengkapan berkas. Bila ada yang kurang, pesan panitia muncul di halaman tahapan dan berkas bisa diunggah ulang." },
-  SERAGAM: { judul: "Pilih Ukuran Seragam", isi: "Pilih ukuran baju dan celana sesuai tabel ukuran untuk pemesanan seragam." },
+  SERAGAM: { judul: "Pilih Ukuran Seragam", isi: "Pilih ukuran seragam sesuai tabel ukuran untuk pemesanan — putra baju & celana, putri baju & rok." },
   ASESMEN: { judul: "Asesmen Awal", isi: "Wawancara singkat bersama panitia di sekolah sesuai jadwal gelombang." },
   PEMERIKSAAN: { judul: "Cek Fisik & Kesehatan", isi: "Pemeriksaan fisik dan kesehatan di sekolah: tinggi & berat badan, mata, tes buta warna, dan lainnya." },
   DITERIMA: { judul: "Pengumuman Hasil", isi: "Hasil dibuka lewat nomor pendaftaran dan tanggal lahir di halaman tahapan." },
@@ -445,4 +515,43 @@ export function susunJadwalWeb(
     titik.push({ label: "MPLS", dari: o.mpls.mulai || null, sampai: o.mpls.selesai || null });
     return { nama: g.nama, titik };
   });
+}
+
+/* ───────────────────── Calon TERTAHAN (7 Oktober 2026) ─────────────────────
+ * Satu sumber untuk saringan "tertahan" di portal panitia, Kabari Massal, dan pengingat otomatis
+ * (pengingat-spmb.ts): di tahap berjalan, giliran SIAPA yang harus bertindak, dan apa pesannya. */
+
+export type KunciTertahan = "PERBAIKAN" | "SERAGAM" | "SESI" | "PAKTA" | "DAFTAR_ULANG" | "BAYAR";
+export const PESAN_TERTAHAN: Record<KunciTertahan, string> = {
+  PERBAIKAN: "Berkas pendaftaran Anda masih perlu diperbaiki. Unggah ulang lewat halaman tahapan.",
+  SERAGAM: "Ukuran seragam belum dipilih. Pilih lewat halaman tahapan supaya pesanan bisa diproses.",
+  SESI: "Sesi kedatangan untuk asesmen & cek kesehatan belum dipilih. Pilih sebelum kuotanya penuh.",
+  PAKTA: "Surat pernyataan orang tua belum ditandatangani. Buka halaman tahapan untuk membaca dan menandatanganinya.",
+  DAFTAR_ULANG: "Konfirmasi daftar ulang belum dilakukan. Buka halaman tahapan untuk melanjutkan.",
+  BAYAR: "Pembayaran daftar ulang belum memenuhi syarat untuk mengikuti MPLS. Lihat rincian di kartu Pembayaran halaman tahapan.",
+};
+
+/** Kunci tertahan bila GILIRAN CALON; null = giliran panitia (atau tidak sedang tertahan). */
+export function kunciTertahan(kini: TahapCalon | null | undefined, o: {
+  sesiId: string | null; adaSesi: boolean; daftarUlangConfirmedAt: Date | string | null; bayarCukup?: boolean; paktaPerlu?: boolean;
+}): KunciTertahan | null {
+  if (!kini) return null;
+  if (kini.status === "PERBAIKAN") return "PERBAIKAN";
+  if (kini.status !== "BERJALAN") return null;
+  if (kini.kode === "SERAGAM") return "SERAGAM";
+  if (kini.kode === "ASESMEN" && !o.sesiId && o.adaSesi) return "SESI";
+  if (kini.kode === "DAFTAR_ULANG") {
+    if (o.paktaPerlu) return "PAKTA";
+    if (!o.daftarUlangConfirmedAt) return "DAFTAR_ULANG";
+    if (o.bayarCukup === false) return "BAYAR";
+  }
+  return null;
+}
+
+/** Waktu kegiatan terakhir di tahapan calon — dasar hitungan "sudah berapa hari tertahan". */
+export function aktivitasTerakhir(b: Record<string, unknown>): Date {
+  const kolom = ["createdAt", "verifikasiAt", "perbaikanAt", "seragamAt", "asesmenAt", "pemeriksaanAt", "daftarUlangConfirmedAt", "paktaAt"];
+  let t = 0;
+  for (const k of kolom) { const v = b[k]; if (v) t = Math.max(t, new Date(v as string).getTime()); }
+  return new Date(t);
 }

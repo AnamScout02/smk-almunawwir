@@ -30,13 +30,13 @@ const GRADASI = [
  * supaya tidak terpotong "…" di kisi 4 kolom. Nama asli tetap dipakai di sidebar & judul halaman. */
 const labelKisi = (teks: string) => teks.replace(/\s*\([^)]*\)\s*$/, "").trim();
 
-function Kartu({ item }: { item: ItemMenuKisi }) {
+function Kartu({ item, className = "" }: { item: ItemMenuKisi; className?: string }) {
   // Gambar mengikuti FITURNYA (pemetaan alamat → kata kunci nama menu); warna ubin tetap per menu
   // sehingga sama di dashboard maupun halaman Semua Menu.
   const gambar = ilustrasiUntuk(item.href, item.label);
   const warna = warnaMenu(item.href, GRADASI.length);
   return (
-    <Link href={item.href} className="kartu-menu">
+    <Link href={item.href} className={`kartu-menu ${className}`}>
       {/* SATU gaya: chip gradasi + gambar putih. Menu inti memakai ilustrasi berlapis, sisanya ikon
           garis — keduanya putih di atas chip yang sama sehingga tampak satu keluarga. */}
       <span className="ikon-menu" style={{ background: GRADASI[warna] }}>
@@ -136,10 +136,20 @@ export default function MenuLengkap({ grup, judul = "Semua Menu", ringkas, hrefS
   ) : null;
 
   if (ringkas) {
-    const maks = Math.max(0, ringkas - 1);
-    // Bila pengguna sudah mengatur sendiri, urutannya ikut pilihannya; bila belum, urutan bawaan.
+    // BARIS SELALU PENUH (7 Okt 2026, temuan user: desktop menyisakan setengah baris kosong). Kisi 4 kolom di HP,
+    // 6 di tablet, 8 di desktop — jumlah ubin tiap lebar dibulatkan ke atas ke kelipatan kolomnya (`ringkas` = jumlah
+    // di HP), satu ubin terakhir untuk "Lihat Semua". Ubin kelebihan disembunyikan per lebar layar lewat CSS.
+    const slot = { hp: Math.ceil(ringkas / 4) * 4, sm: Math.ceil(ringkas / 6) * 6, lg: Math.ceil(ringkas / 8) * 8 };
+    const sisa = hrefSemua ? 1 : 0;
+    const maks = Math.max(0, Math.max(slot.hp, slot.sm, slot.lg) - sisa);
+    // Pilihan sendiri didahulukan; bila kurang, sisa ubin diisi urutan bawaan supaya baris tetap penuh.
     const pilihanValid = (favorit ?? []).map(h => semuaItem.find(i => i.href === h)).filter(Boolean) as ItemMenuKisi[];
-    const tampil = pilihanValid.length ? pilihanValid.slice(0, maks) : semuaItem.slice(0, maks);
+    const tampil = [...pilihanValid, ...semuaItem.filter(i => !pilihanValid.includes(i))].slice(0, maks);
+    const kelasUbin = (i: number) => [
+      i < slot.hp - sisa ? "" : "max-sm:hidden",
+      i < slot.sm - sisa ? "" : "sm:max-lg:hidden",
+      i < slot.lg - sisa ? "" : "lg:hidden",
+    ].join(" ");
     return (
       <section className="panel p-4 sm:p-5">
         {PitaPintasan}
@@ -152,7 +162,7 @@ export default function MenuLengkap({ grup, judul = "Semua Menu", ringkas, hrefS
           </button>
         </div>
         <div className="kisi-menu grid grid-cols-4 gap-1 sm:grid-cols-6 lg:grid-cols-8">
-          {tampil.map(i => <Kartu key={i.href} item={i} />)}
+          {tampil.map((i, n) => <Kartu key={i.href} item={i} className={kelasUbin(n)} />)}
           {hrefSemua && (
             <Link href={hrefSemua} className="kartu-menu">
               <span className="ikon-menu" style={{ background: "linear-gradient(135deg, #6B7280 0%, #374151 100%)" }}><LayoutGrid size={21} strokeWidth={1.9} /></span>
@@ -162,7 +172,7 @@ export default function MenuLengkap({ grup, judul = "Semua Menu", ringkas, hrefS
         </div>
 
         <Modal open={aturBuka} onClose={() => !simpanSibuk && setAturBuka(false)} title="Atur Menu Cepat"
-          description={`Ketuk ikon untuk menambah; geser ikon terpilih untuk mengubah urutan (maksimal ${maks})`} size="lg" scrollBody
+          description={`Ketuk ikon untuk menambah; geser ikon terpilih untuk mengubah urutan (maksimal ${maks} — di HP tampil ${slot.hp - sisa} teratas)`} size="lg" scrollBody
           footer={<>
             <button type="button" onClick={() => setPilihan([])} className="btn-modal-cancel">Kosongkan</button>
             <button type="button" onClick={simpanFavorit} disabled={simpanSibuk} className="btn-modal-save">

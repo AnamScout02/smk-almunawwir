@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import TahapanCalon from "@/components/spmb/TahapanCalon";
 import { Search, CheckCircle2, Clock, XCircle, CalendarCheck, MessageSquare, Loader2, AlertCircle, Printer, ListChecks } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
 import Link from "next/link";
@@ -117,6 +118,15 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tahapan TAMPIL DI TEMPAT (7 Okt 2026, permintaan user): nomor + tanggal lahir cocok → daftar tahapan muncul di bagian
+  // Cek Status ini, bukan berpindah ke /spmb/tahapan. Kunci yang tersimpan di HP (dari kunjungan sebelumnya) langsung dipakai.
+  const [tahapan, setTahapan] = useState<{ nomor: string; t: string } | null>(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem("spmb-tahapan") || "null");
+      if (v?.nomor && v?.t) queueMicrotask(() => setTahapan(v));
+    } catch { /* abaikan */ }
+  }, []);
 
   async function handleCheck(e: React.FormEvent) {
     e.preventDefault();
@@ -134,10 +144,9 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
       if (!res.ok) {
         setResult({ found: null, error: data.error || t.genericError });
       } else if (data?.found && data.data?.nomor && data.data?.tandaCetak) {
-        // Cek Status & halaman Tahapan DISATUKAN (6 Okt 2026): nomor + tanggal lahir cocok → langsung ke halaman Tahapan
-        // yang memuat semuanya (status, jadwal, seragam, pembayaran, kabar). Jalur WA/e-mail tetap ringkas di sini.
-        window.location.href = `/spmb/tahapan?nomor=${encodeURIComponent(data.data.nomor)}&t=${encodeURIComponent(data.data.tandaCetak)}`;
-        return;
+        // Cek Status & Tahapan DISATUKAN: nomor + tanggal lahir cocok → tahapan lengkap (status, jadwal, seragam, pembayaran,
+        // kabar) tampil di sini. Jalur WA/e-mail tetap ringkas karena tidak menerbitkan tanda.
+        setTahapan({ nomor: data.data.nomor, t: data.data.tandaCetak });
       } else {
         setResult(data);
       }
@@ -159,6 +168,16 @@ export default function AdmissionsStatusCheck({ lang = "id" }: { lang?: Lang }) 
   const cfg = result && "data" in result && result.found
     ? STATUS_CONFIG[result.data.status] ?? STATUS_CONFIG.PENDING
     : null;
+
+  if (tahapan) {
+    return (
+      <div className="space-y-3">
+        <h2 className="font-heading text-2xl font-bold text-navy">{t.title}</h2>
+        <TahapanCalon key={tahapan.nomor} lang={lang} nomorAwal={tahapan.nomor} tandaAwal={tahapan.t}
+          onKeluar={() => { setTahapan(null); reset(); }} />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">

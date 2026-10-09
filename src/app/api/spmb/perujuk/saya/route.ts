@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/dal";
-import { prisma } from "@/lib/prisma";
+import { pastikanPerujukAkun } from "@/lib/spmb-perujuk";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 import { generateQrWithLogoDataUrl } from "@/lib/qrcode";
 import { LABEL_JENIS } from "@/lib/spmb-perujuk-label";
@@ -14,17 +14,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const session = await verifySession();
-    const siswa = session.role === "STUDENT"
-      ? await prisma.student.findFirst({ where: { userId: session.userId }, select: { id: true } }).catch(() => null)
-      : null;
-
-    const r = await prisma.perujukSpmb.findFirst({
-      where: {
-        aktif: true,
-        OR: [{ userId: session.userId }, ...(siswa ? [{ studentId: siswa.id }] : [])],
-      },
-      select: { kode: true, nama: true, jenis: true, _count: { select: { pendaftar: true } } },
-    }).catch(() => null);
+    // Dibuat sendiri bila belum ada (guru, staf, siswa aktif) — lihat `pastikanPerujukAkun`.
+    const r = await pastikanPerujukAkun(session).catch(() => null);
 
     if (!r) return NextResponse.json({ punya: false });
 

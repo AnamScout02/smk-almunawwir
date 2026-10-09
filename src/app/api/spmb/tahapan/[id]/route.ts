@@ -7,11 +7,13 @@ import { assertSpmb } from "@/lib/spmb";
 import { logActivity } from "@/lib/activity-log";
 import { kirimLatar } from "@/lib/push-server";
 import { kabariCalon, kabarTahapan } from "@/lib/spmb-kabar";
+import { hapusTtdPakta } from "@/lib/spmb-dokumen";
 import { lahirIso, tandaFormulir } from "@/lib/spmb-formulir";
+import { ringkasCalon } from "@/lib/spmb-ringkasan";
 import { aturanTahapan, daftarSesi, denganBayar, ringkasBayar, setelanBayar, tahapanDari, tautanTahapan } from "@/lib/spmb-tahapan-server";
 import {
-  ASESMEN_BAWAAN, BERKAS_BAKU, INFO_TAHAP, PEMERIKSAAN_BAWAAN, bacaIsian, bacaIsiTahap, bacaMpls, bacaSetelanSeragam,
-  tahapBerlaku, tahapSelesai, type IsianTahap, type JawabanTahap, type KodeTahap, type PilihanSeragam,
+  ASESMEN_BAWAAN, BERKAS_BAKU, HUBUNGAN_WALI, INFO_TAHAP, PEMERIKSAAN_BAWAAN, bacaIsian, bacaIsiTahap, bacaMpls, bacaPakta, bacaSetelanSeragam, isiPakta, itemSeragamUntuk,
+  aktivitasTerakhir, kunciTertahan, tahapBerlaku, tahapSelesai, type IsianTahap, type JawabanTahap, type KodeTahap, type PilihanSeragam,
 } from "@/lib/spmb-tahapan";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +41,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         },
       }),
       aturanTahapan(),
-      getSettings(["spmb.seragam", "spmb.asesmen", "spmb.pemeriksaan", "spmb.mpls", "spmb.tautanGrup", "school.name"]),
+      getSettings(["spmb.seragam", "spmb.asesmen", "spmb.pemeriksaan", "spmb.mpls", "spmb.tautanGrup", "school.name", "spmb.pakta",
+        ...BERKAS_BAKU.map(b => `form.require_${b.kunci}`)]),
       setelanBayar(),
       ringkasBayar([id]),
     ]);
@@ -47,13 +50,47 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const a = denganBayar(mentah, setBayar, petaBayar);
     const { tahap, tuntas, ditolak } = tahapanDari(a, aturan, a.gelombang?.jadwalTahap, a.sesi);
     const tanda = a.nomor ? tandaFormulir(a.nomor, lahirIso(a.birthDate)) : undefined;
+    const [sesiPilihan, langganan, kabar, syaratWajib] = await Promise.all([
+      a.gelombangId ? daftarSesi(a.gelombangId) : [],
+      prisma.langgananSpmb.count({ where: { admissionId: id } }),
+      prisma.kabarSpmb.findMany({ where: { admissionId: id }, orderBy: { createdAt: "desc" }, take: 10, select: { id: true, judul: true, isi: true, perangkat: true, createdAt: true } }),
+      prisma.dokumenSyaratSpmb.findMany({ where: { aktif: true, wajib: true }, select: { id: true, nama: true } }).catch(() => []),
+    ]);
+    const pakta = bacaPakta(s["spmb.pakta"]);
+    const berkas = [
+      ...BERKAS_BAKU.map(b => ({ kunci: b.kunci, label: b.label, url: (a[b.kolom] as string | null) ?? null })),
+      ...a.berkasSpmb.map(b => ({ kunci: `syarat:${b.syarat.id}`, label: b.syarat.nama, url: b.berkas })),
+    ];
+    // Ringkasan satu paragraf (src/lib/spmb-ringkasan.ts) — aturan yang sama dengan daftar Tahapan Calon.
+    const berjalan = tahap.find(t => t.status !== "SELESAI") ?? null;
+    // "Wajib" mengikuti setelan formulir: "0" = opsional, "off" = disembunyikan (sama dengan isRequired di formulir).
+    const wajibBaku = (kunci: string) => !["0", "off"].includes(s[`form.require_${kunci}`] ?? "");
+    const ringkasan = ringkasCalon({
+      nama: a.fullName, nomor: a.nomor, jurusan: a.chosenMajor, gelombang: a.gelombang?.nama ?? null,
+      perujuk: a.perujuk?.nama ?? null, daftar: a.createdAt, tahap, tuntas, ditolak, status: a.status,
+      verifikasiStatus: a.verifikasiStatus, perbaikanAt: a.perbaikanAt,
+      dimintaUlang: a.verifikasiDokumen.map(k => berkas.find(x => x.kunci === k)?.label ?? k.replace(/^syarat:/, "dokumen syarat")),
+      berkasKurang: [
+        ...BERKAS_BAKU.filter(b => wajibBaku(b.kunci) && !a[b.kolom]).map(b => b.label),
+        ...syaratWajib.filter(x => !a.berkasSpmb.some(y => y.syarat.id === x.id && y.berkas)).map(x => x.nama),
+      ],
+      tertahan: tuntas || ditolak ? null : kunciTertahan(berjalan, {
+        sesiId: a.sesiId, adaSesi: sesiPilihan.length > 0, daftarUlangConfirmedAt: a.daftarUlangConfirmedAt,
+        bayarCukup: a.bayar.cukup, paktaPerlu: pakta.aktif && pakta.wajib && !a.paktaAt,
+      }),
+      diamHari: tuntas || ditolak ? 0 : Math.floor((Date.now() - aktivitasTerakhir(a).getTime()) / 86_400_000),
+      bayar: a.bayar, buktiMenunggu: a.pembayaranSpmb.filter(x => x.status === "MENUNGGU").length,
+      sesi: a.sesi ? `${a.sesi.tanggal} pukul ${a.sesi.jamMulai}–${a.sesi.jamSelesai}${a.sesi.tempat ? `, ${a.sesi.tempat}` : ""}` : null,
+      adaHp: langganan > 0, kabarTerakhir: kabar[0]?.createdAt ?? null, sudahSiswa: !!a.studentId,
+    });
 
     return NextResponse.json({
+      ringkasan,
       calon: {
         id: a.id, nomor: a.nomor, nama: a.fullName, jurusan: a.chosenMajor, phone: a.phone, email: a.email,
         lahir: lahirIso(a.birthDate), tempatLahir: a.birthPlace, gender: a.gender, sekolahAsal: a.previousSchool,
         wali: a.guardianName, alamat: a.address, status: a.status, gelombang: a.gelombang?.nama ?? null,
-        nik: a.nik, nisn: a.nisn, jalur: a.jalur, wilayah: [a.kecamatan, a.kabupaten].filter(Boolean).join(", ") || null,
+        nik: a.nik, nisn: a.nisn, jalur: a.jalur, wilayah: [a.desa, a.kecamatan, a.kabupaten].filter(Boolean).join(", ") || null,
         perujuk: a.perujuk ? `${a.perujuk.nama} (${a.perujuk.kode})` : a.perujukKode ? `${a.perujukKode} (tidak dikenali)` : null,
         verifikasiStatus: a.verifikasiStatus, verifikasiPesan: a.verifikasiPesan, verifikasiDokumen: a.verifikasiDokumen,
         verifikasiAt: a.verifikasiAt, verifikasiOleh: a.verifikasiOleh, perbaikanAt: a.perbaikanAt,
@@ -63,21 +100,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         grupDiklik: !!a.grupDiklikAt, grupBergabung: !!a.grupBergabungAt,
         daftarUlangAt: a.daftarUlangConfirmedAt, keteranganPotongan: a.keteranganPotongan, sesiId: a.sesiId,
       },
+      pakta: {
+        aktif: pakta.aktif, wajib: pakta.wajib,
+        sudah: a.paktaAt ? { nama: a.paktaNama, hubungan: a.paktaHubungan, at: a.paktaAt, digital: !!a.paktaTtd } : null,
+      },
       bayar: a.bayar,
-      sesiPilihan: a.gelombangId ? await daftarSesi(a.gelombangId) : [],
-      langganan: await prisma.langgananSpmb.count({ where: { admissionId: id } }),
-      kabar: await prisma.kabarSpmb.findMany({ where: { admissionId: id }, orderBy: { createdAt: "desc" }, take: 10, select: { id: true, judul: true, isi: true, perangkat: true, createdAt: true } }),
+      sesiPilihan, langganan, kabar,
       pembayaran: a.pembayaranSpmb,
-      berkas: [
-        ...BERKAS_BAKU.map(b => ({ kunci: b.kunci, label: b.label, url: (a[b.kolom] as string | null) ?? null })),
-        ...a.berkasSpmb.map(b => ({ kunci: `syarat:${b.syarat.id}`, label: b.syarat.nama, url: b.berkas })),
-      ],
+      berkas,
       tahap, tuntas, ditolak,
       isian: {
         asesmen: bacaIsian(s["spmb.asesmen"], ASESMEN_BAWAAN),
         pemeriksaan: bacaIsian(s["spmb.pemeriksaan"], PEMERIKSAAN_BAWAAN),
       },
-      setelanSeragam: bacaSetelanSeragam(s["spmb.seragam"]),
+      setelanSeragam: (() => { const st = bacaSetelanSeragam(s["spmb.seragam"]); return { ...st, item: itemSeragamUntuk(st, a.gender) }; })(),
       mpls: bacaMpls(s["spmb.mpls"]),
       sekolah: s["school.name"] || "SMK Al-Munawwir IIBS",
       tautan: a.nomor ? tautanTahapan(a.nomor, tanda) : null,
@@ -146,7 +182,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       // Panitia boleh mengisi/mengubah atas nama calon (mis. calon datang langsung ke sekolah).
       const setelan = bacaSetelanSeragam((await getSettings(["spmb.seragam"]))["spmb.seragam"]);
       const masuk = (Array.isArray(b?.pilihan) ? b.pilihan : []) as PilihanSeragam[];
-      const pilihan = setelan.item.map(i => ({ item: i.nama, ukuran: masuk.find(x => x?.item === i.nama)?.ukuran ?? "" }));
+      const pilihan = itemSeragamUntuk(setelan, a.gender).map(i => ({ item: i.nama, ukuran: masuk.find(x => x?.item === i.nama)?.ukuran ?? "" }));
       if (pilihan.some(p => !p.ukuran)) return NextResponse.json({ error: "Pilih semua ukuran seragam." }, { status: 400 });
       const kurang = kurangSebelum("SERAGAM", a, aturan);
       if (kurang) return NextResponse.json({ error: `Selesaikan tahap "${kurang}" dulu.` }, { status: 409 });
@@ -218,6 +254,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       if (konfirmasi) {
         const kurang = kurangSebelum("DAFTAR_ULANG", a, aturan);
         if (kurang) return NextResponse.json({ error: `Selesaikan tahap "${kurang}" dulu.` }, { status: 409 });
+        const pakta = bacaPakta((await getSettings(["spmb.pakta"]))["spmb.pakta"]);
+        if (pakta.aktif && pakta.wajib && !a.paktaAt) {
+          return NextResponse.json({ error: "Surat pernyataan orang tua belum ditandatangani. Bila ditandatangani di kertas, tandai di bagian Surat Pernyataan." }, { status: 409 });
+        }
       }
       await prisma.admission.update({ where: { id }, data: { daftarUlangConfirmedAt: konfirmasi ? a.daftarUlangConfirmedAt ?? sekarang : null } });
       keterangan = konfirmasi ? "mengonfirmasi daftar ulang" : "membatalkan konfirmasi daftar ulang";
@@ -233,6 +273,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       await prisma.admission.update({ where: { id }, data: { sesiId: sesiId || null } });
       keterangan = sesiId ? "menetapkan sesi kedatangan" : "melepas sesi kedatangan";
       if (sesiId) kabar = { kunci: `spmb-sesi:${id}:${sesiId}`, judul: "Jadwal kedatangan ditetapkan", isi: "Panitia menetapkan sesi kedatangan Anda. Lihat jadwalnya di halaman tahapan.", langsung: true };
+    } else if (aksi === "pakta-kertas") {
+      // Orang tua tanpa HP menandatangani lembar cetak di sekolah — panitia menandai sudah ditandatangani.
+      const nama = String(b?.nama ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
+      const hubungan = (HUBUNGAN_WALI as readonly string[]).includes(String(b?.hubungan)) ? String(b.hubungan) : "";
+      if (nama.length < 3 || !hubungan) return NextResponse.json({ error: "Isi nama penanda tangan dan hubungannya dengan calon." }, { status: 400 });
+      if (a.paktaAt) return NextResponse.json({ error: "Surat pernyataan sudah tercatat ditandatangani." }, { status: 409 });
+      const s = await getSettings(["spmb.pakta", "school.name"]);
+      await prisma.admission.update({
+        where: { id },
+        data: { paktaAt: sekarang, paktaNama: nama, paktaHubungan: hubungan, paktaTtd: null, paktaTeks: isiPakta(bacaPakta(s["spmb.pakta"]), s["school.name"] || "SMK Al-Munawwir IIBS") },
+      });
+      keterangan = "menandai surat pernyataan ditandatangani di kertas";
+    } else if (aksi === "pakta-reset") {
+      await prisma.admission.update({ where: { id }, data: { paktaAt: null, paktaNama: null, paktaHubungan: null, paktaTtd: null, paktaTeks: null, paktaToken: null } });
+      await hapusTtdPakta(a.paktaTtd);
+      keterangan = "membuka ulang surat pernyataan";
     } else if (aksi === "buka-ulang") {
       const kode = String(b?.tahap ?? "");
       const data = kode === "ASESMEN" ? { asesmenAt: null } : kode === "PEMERIKSAAN" ? { pemeriksaanAt: null } : kode === "SERAGAM" ? { seragamAt: null } : null;

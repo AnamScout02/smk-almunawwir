@@ -2,6 +2,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
+import { CalendarRange } from "lucide-react";
 import {
   Calculator, Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
@@ -10,11 +11,10 @@ import {
   UserCheck, HeartPulse, Flag, Library, Network, BadgeCheck, FileQuestion, GraduationCap, Activity, CheckSquare, CalendarClock, History, Trophy, Medal, Sliders, FileCheck2, ShieldAlert, BookOpenCheck, HeartHandshake,
   ChevronDown, Search, IdCard, Heart, MoreHorizontal, ScanLine, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, CalendarOff, HandCoins, ScanSearch,
-  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen, Moon
-} from "lucide-react";
+  Forward, Send, Inbox, ClipboardSignature, Vote, LayoutGrid, DoorOpen, Moon, MapPinned, Merge } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
-import { CalendarX2, FileUser, BellRing, DatabaseZap, QrCode, Siren, MessagesSquare, MessageSquareHeart, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, Camera, CircleHelp, Gauge, Wrench, FlaskConical, Megaphone, Home, Phone, Target, Handshake, Palette } from "lucide-react";
+import { ArrowLeftRight, ScrollText, ListTodo, Reply, CalendarX2, FileUser, BellRing, DatabaseZap, QrCode, Siren, MessagesSquare, MessageSquareHeart, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, Camera, CircleHelp, Gauge, Wrench, FlaskConical, Megaphone, Home, Phone, Target, Handshake, Palette } from "lucide-react";
 import NotificationBell from "@/components/shared/NotificationBell";
 import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBottomNav";
 import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
@@ -30,6 +30,7 @@ export const menuGroups = [
     label: null,
     items: [
       { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, badge: 0 },
+      { href: "/dashboard/admin/meja-kerja", label: "Meja Kerja TU", icon: ListTodo, badge: 0 },
     ],
   },
   {
@@ -57,6 +58,7 @@ export const menuGroups = [
     items: [
       { href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList, badgeKey: "pendingAdmissions" as const },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, badge: 0 },
+      { href: "/dashboard/admin/peta-sebaran", label: "Peta Sebaran", icon: MapPinned, badge: 0 },
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, badge: 0 },
       { href: "/dashboard/admin/majors", label: "Jurusan", icon: BookOpen, badge: 0 },
       { href: "/dashboard/admin/teachers", label: "Guru", icon: UserCog, badge: 0 },
@@ -144,10 +146,7 @@ export const menuGroups = [
   {
     label: "PKL & Alumni",
     items: [
-      { href: "/dashboard/admin/pkl-pendaftaran", label: "Pendaftaran PKL", icon: FileCheck2, badge: 0 },
-      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, badge: 0 },
-      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, badge: 0 },
-      { href: "/dashboard/admin/mitra-mou", label: "Status MoU Mitra", icon: Handshake, badge: 0 },
+      { href: "/pusat-pkl", label: "Pusat PKL", icon: Briefcase, badge: 0 },
       { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, badge: 0 },
       { href: "/dashboard/admin/lowongan", label: "Lowongan Kerja BKK", icon: BriefcaseBusiness, badge: 0 },
     ],
@@ -157,7 +156,9 @@ export const menuGroups = [
     items: [
       { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, badge: 0 },
       { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, badge: 0 },
+      { href: "/dashboard/admin/rapikan-sekolah", label: "Rapikan Nama Sekolah", icon: Merge, badge: 0 },
       { href: "/dashboard/admin/buku-klapper", label: "Buku Klapper", icon: BookA, badge: 0 },
+      { href: "/dashboard/admin/mutasi-siswa", label: "Mutasi Siswa", icon: ArrowLeftRight, badge: 0 },
       { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat, badge: 0 },
       { href: "/dashboard/admin/kenaikan-kelas", label: "Buku Kenaikan Kelas", icon: GraduationCap, badge: 0 },
       { href: "/dashboard/admin/verifikasi-data", label: "Verifikasi Perubahan Data", icon: ShieldCheck, badgeKey: "pendingProfileEdits" as const },
@@ -170,6 +171,7 @@ export const menuGroups = [
     items: [
       { href: "/dashboard/admin/persuratan", label: "Agenda Surat", icon: Mail, badge: 0 },
       { href: "/dashboard/admin/disposisi", label: "Disposisi Surat Masuk", icon: Forward, badgeKey: "belumDisposisi" as const },
+      { href: "/dashboard/admin/disposisi-surat", label: "Disposisi dari HP", icon: Reply, badge: 0 },
       { href: "/dashboard/admin/ekspedisi", label: "Buku Ekspedisi", icon: Send, badge: 0 },
       { href: "/dashboard/admin/permintaan-surat", label: "Permintaan Surat", icon: Inbox, badgeKey: "permintaanSurat" as const },
       { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen, badge: 0 },
@@ -181,12 +183,14 @@ export const menuGroups = [
     items: [
       { href: "/dashboard/admin/rapor-siswa", label: "Penerimaan Rapor", icon: ClipboardCheck, badge: 0 },
       { href: "/dashboard/admin/cek-kelulusan", label: "Cek Kelulusan", icon: GraduationCap, badge: 0 },
+      { href: "/dashboard/admin/paket-kelulusan", label: "Paket Kelulusan", icon: ScrollText, badge: 0 },
       { href: "/dashboard/admin/ijazah-serah", label: "Penyerahan Ijazah", icon: GraduationCap, badge: 0 },
       { href: "/dashboard/admin/legalisir", label: "Legalisir Dokumen", icon: Stamp, badge: 0 },
       { href: "/dashboard/admin/kartu-tanda", label: "Kartu Tanda", icon: IdCard, badge: 0 },
       { href: "/dashboard/admin/buku-tamu", label: "Buku Tamu", icon: BookUser, badge: 0 },
       { href: "/dashboard/admin/nominatif", label: "Nominatif Kelas XII", icon: FileSpreadsheet, badge: 0 },
       { href: "/dashboard/admin/profil-sekolah", label: "Profil Sekolah", icon: Building2, badge: 0 },
+      { href: "/dashboard/admin/laporan-bulanan", label: "Laporan Bulanan TU", icon: CalendarRange, badge: 0 },
       { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, badge: 0 },
     ],
   },

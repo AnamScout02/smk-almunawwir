@@ -1,12 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
-import { UserCheck, Loader2, Edit2, Search } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { UserCheck, Loader2, Edit2, Search, QrCode, MessageCircle, Copy, Check, MapPinned, Users, ClipboardCheck, TrendingUp, Clock } from "lucide-react";
+import StatTile from "@/components/admin/StatTile";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import Modal from "@/components/admin/Modal";
 import Select from "@/components/admin/Select";
 import Paginasi from "@/components/shared/Paginasi";
 import { usePaginasi } from "@/lib/use-paginasi";
+import { salinTeks } from "@/lib/salin-teks";
+import { useToast } from "@/components/shared/ToastProvider";
+import { ALAMAT_APLIKASI } from "@/lib/alamat-aplikasi";
 import DatePicker from "@/components/shared/DatePicker";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 import { BarisKembali } from "@/components/shared/TombolKembali";
@@ -19,7 +25,20 @@ interface Alumni {
   id: string; nis: string; enrollYear: number | null;
   user: { name: string }; major: { name: string; code: string };
   alumniTracer: Tracer | null;
+  lulus?: string;
+  ajak?: { nomor: string; milik: "alumni" | "ortu" } | null;
 }
+
+/** Pesan AJAKAN mengisi tracer (8 Okt 2026). Dikirim petugas satu per satu lewat WhatsApp miliknya sendiri — situs tidak
+ *  pernah mengirim apa pun. Yang sudah diajak diingat di PERAMBAN petugas (bukan di server), sekadar penanda kerja. */
+const TAUTAN_TRACER = `${ALAMAT_APLIKASI}/tracer-study`;
+const pesanAjak = (nama: string, milik: "alumni" | "ortu" | "grup") =>
+  milik === "ortu"
+    ? `Assalamu'alaikum Bapak/Ibu, kami dari SMK Al-Munawwir IIBS. Mohon bantuannya meneruskan pesan ini kepada ananda ${nama} (alumni): sekolah sedang mendata kabar lulusan. Pengisiannya ±2 menit, tanpa akun, cukup NISN/NIS dan tanggal lahir: ${TAUTAN_TRACER} — Terima kasih.`
+    : milik === "alumni"
+      ? `Assalamu'alaikum ${nama}, apa kabar? Kami dari SMK Al-Munawwir IIBS sedang mendata kabar alumni (bekerja, kuliah, atau wirausaha). Mohon isi sebentar ya, ±2 menit, tanpa akun, cukup NISN/NIS dan tanggal lahir: ${TAUTAN_TRACER} — Terima kasih.`
+      : `Assalamu'alaikum alumni SMK Al-Munawwir IIBS. Sekolah sedang mendata kabar lulusan (bekerja, kuliah, atau wirausaha). Mohon isi sebentar, ±2 menit, tanpa akun, cukup NISN/NIS dan tanggal lahir: ${TAUTAN_TRACER} — Terima kasih, mohon diteruskan ke teman seangkatan.`;
+const KUNCI_DIAJAK = "tracer-diajak";
 
 const STATUS_OPTIONS = [
   { value: "BEKERJA", label: "Bekerja" },
@@ -53,6 +72,14 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
   const [fAngkatan, setFAngkatan] = useState("");
   const [fJurusan, setFJurusan] = useState("");
   const [fStatus, setFStatus] = useState("");
+  const toast = useToast();
+  const [diajak, setDiajak] = useState<Record<string, string>>({});
+  useEffect(() => { try { setDiajak(JSON.parse(localStorage.getItem(KUNCI_DIAJAK) || "{}")); } catch { /* penyimpanan peramban tidak tersedia */ } }, []);
+  const tandaiDiajak = (id: string) => setDiajak(d => {
+    const n = { ...d, [id]: new Date().toISOString().slice(0, 10) };
+    try { localStorage.setItem(KUNCI_DIAJAK, JSON.stringify(n)); } catch { /* abaikan */ }
+    return n;
+  });
 
   function load() {
     setLoading(true);
@@ -87,6 +114,11 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
   }
 
   const withData = items.filter(i => i.alumniTracer).length;
+  // Keterserapan dihitung dari yang SUDAH mengisi — bukan dari seluruh alumni (yang belum mengisi tidak diketahui kabarnya).
+  const terserap = items.filter(i => ["BEKERJA", "KULIAH", "WIRAUSAHA"].includes(i.alumniTracer?.status ?? "")).length;
+  const belumKerja = items.filter(i => i.alumniTracer?.status === "BELUM_BEKERJA").length;
+  const dasar = usePathname().replace(/\/$/, "");
+  const qrHref = `${dasar}/qr`;
   const q = search.toLowerCase();
   const angkatanList = [...new Set(items.map(i => i.enrollYear).filter((y): y is number => typeof y === "number"))]
     .sort((a, b) => b - a);
@@ -111,6 +143,15 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
       {kembaliHref && <BarisKembali href={kembaliHref} />}
 
       {!loading && items.length > 0 && (
+        <div className="kisi-kartu kisi-kartu-4 mb-5">
+          <StatTile value={items.length} label="Alumni" icon={Users} color="primary" />
+          <StatTile value={withData} label="Sudah mengisi tracer" sublabel={`${((withData / items.length) * 100).toLocaleString("id-ID", { maximumFractionDigits: 1 })}% dari alumni`} icon={ClipboardCheck} color="blue" />
+          <StatTile value={withData >= 20 ? `${Math.round((terserap / withData) * 100)}%` : "—"} label="Bekerja, kuliah, atau wirausaha" sublabel={withData >= 20 ? `${terserap} dari ${withData} yang mengisi` : `Baru ${withData} yang mengisi — minimal 20 untuk dihitung`} icon={TrendingUp} color="emerald" />
+          <StatTile value={belumKerja} label="Belum bekerja / kuliah" icon={Clock} color="amber" />
+        </div>
+      )}
+
+      {!loading && items.length > 0 && (
         <div className="baris-alat mb-5">
         <div className="alat-cari">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -131,6 +172,14 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
           <Select value={fStatus} onChange={setFStatus} placeholder="Semua status"
             options={[{ value: "", label: "Semua status" },
               { value: "BELUM", label: "Belum Disurvei" }, ...STATUS_OPTIONS]} />
+        </div>
+        <div className="alat-aksi">
+          <button type="button" className="btn-modal-cancel btn-teks"
+            onClick={async () => ((await salinTeks(pesanAjak("", "grup"))) ? toast.success("Pesan ajakan disalin — tempel di grup alumni") : toast.error("Gagal menyalin pesan"))}>
+            <Copy /> Salin Pesan untuk Grup
+          </button>
+          <Link href={`${dasar}/sebaran`} className="btn-modal-cancel btn-teks"><MapPinned /> Sebaran &amp; Laporan</Link>
+          <Link href={qrHref} className="btn-modal-cancel btn-teks"><QrCode /> Kartu QR untuk Alumni</Link>
         </div>
       </div>
       )}
@@ -172,6 +221,15 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
                     </td>
                     <td className="text-gray-500 text-xs">{item.alumniTracer?.institutionName || "-"}</td>
                     <td className="text-right whitespace-nowrap">
+                      {!item.alumniTracer && item.ajak && (
+                        <a href={`https://wa.me/${item.ajak.nomor}?text=${encodeURIComponent(pesanAjak(item.user.name, item.ajak.milik))}`}
+                          target="_blank" rel="noopener noreferrer" onClick={() => tandaiDiajak(item.id)}
+                          title={`Ajak lewat WhatsApp ${item.ajak.milik === "ortu" ? "orang tua" : "alumni"}${diajak[item.id] ? ` — sudah diajak ${diajak[item.id]}` : ""}`}
+                          className={`mr-1 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${diajak[item.id] ? "text-gray-400 hover:bg-gray-50" : "text-emerald-700 hover:bg-emerald-50"}`}>
+                          {diajak[item.id] ? <Check size={14} /> : <MessageCircle size={14} />}
+                          {diajak[item.id] ? "Diajak" : item.ajak.milik === "ortu" ? "Ajak via ortu" : "Ajak"}
+                        </a>
+                      )}
                       <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-700 transition" title="Isi/Ubah">
                         <Edit2 size={14} />
                       </button>

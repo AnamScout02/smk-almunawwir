@@ -1,5 +1,4 @@
-import IndustryPartnersManager from "@/components/shared/IndustryPartnersManager";
+import { redirect } from "next/navigation";
 
-export default function TeacherHumasIndustryPartnersPage() {
-  return <IndustryPartnersManager />;
-}
+/** Mitra Industri dilebur ke Pusat PKL → Data DUDI (9 Okt 2026). Rute lama tetap hidup sebagai pengalihan. */
+export default function Page() { redirect("/pusat-pkl/dudi"); }

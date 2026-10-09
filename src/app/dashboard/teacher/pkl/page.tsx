@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Briefcase, Loader2, Building2, ChevronRight, Star } from "lucide-react";
+import { Briefcase, Loader2, Building2, ChevronRight, Star, TriangleAlert, Printer, FileCheck2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 
@@ -44,6 +44,12 @@ export default function TeacherPklPage() {
         title="PKL Pembimbingan"
         description="Pantau jurnal harian & beri catatan + nilai untuk siswa bimbingan PKL Anda"
       />
+
+      <div className="alat-aksi alat-teks justify-end mb-5">
+        <Link href="/dashboard/teacher/pkl/laporan-akhir" className="btn-modal-cancel"><FileCheck2 size={16} /> Laporan Akhir</Link>
+        <Link href="/dashboard/teacher/pkl/laporan-monitoring" className="btn-modal-cancel"><Printer size={16} /> Laporan Monitoring</Link>
+        <Link href="/dashboard/teacher/pkl/masalah" className="btn-modal-cancel"><TriangleAlert size={16} /> Laporan Masalah</Link>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">

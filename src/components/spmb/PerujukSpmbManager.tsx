@@ -23,6 +23,7 @@ type Perujuk = {
 const WARNA_JENIS: Record<string, string> = {
   SISWA: "bg-blue-50 text-blue-700 border-blue-200",
   PEGAWAI: "bg-purple-50 text-purple-700 border-purple-200",
+  ALUMNI: "bg-emerald-50 text-emerald-700 border-emerald-200",
   LUAR: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
@@ -66,7 +67,7 @@ export default function PerujukSpmbManager() {
     return data.filter(p => {
       if (saring === "aktif" && !p.aktif) return false;
       if (saring === "nonaktif" && p.aktif) return false;
-      if (["SISWA", "PEGAWAI", "LUAR"].includes(saring) && p.jenis !== saring) return false;
+      if (["SISWA", "PEGAWAI", "ALUMNI", "LUAR"].includes(saring) && p.jenis !== saring) return false;
       if (!q) return true;
       return p.nama.toLowerCase().includes(q) || p.kode.toLowerCase().includes(q);
     });
@@ -118,6 +119,7 @@ export default function PerujukSpmbManager() {
               { value: "nonaktif", label: "Nonaktif" },
               { value: "SISWA", label: "Siswa" },
               { value: "PEGAWAI", label: "Guru / Pegawai" },
+              { value: "ALUMNI", label: "Alumni" },
               { value: "LUAR", label: "Perujuk luar" },
             ]} />
           </div>
@@ -247,7 +249,8 @@ export default function PerujukSpmbManager() {
               <label className="label-field">Jenis</label>
               <Select value={form.jenis} onChange={v => setForm({ ...form, jenis: v })}
                 options={[
-                  { value: "LUAR", label: "Perujuk Luar (alumni, wali murid, tokoh)" },
+                  { value: "LUAR", label: "Perujuk Luar (wali murid, tokoh)" },
+                  { value: "ALUMNI", label: "Alumni" },
                   { value: "SISWA", label: "Siswa" },
                   { value: "PEGAWAI", label: "Guru / Pegawai" },
                 ]} />

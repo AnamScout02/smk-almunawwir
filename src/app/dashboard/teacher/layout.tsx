@@ -1,4 +1,5 @@
 import { verifyRole } from "@/lib/dal";
+import { PENANDA_PANITIA_PKL, anggotaPanitiaPkl } from "@/lib/pkl-humas";
 import { getSettings } from "@/lib/site-settings";
 import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
@@ -9,13 +10,14 @@ import PusatNotifikasiPortal from "@/components/shared/PusatNotifikasiPortal";
 import ImpersonationBanner from "@/components/shared/ImpersonationBanner";
 import { bagianWib } from "@/lib/waktu-wib";
 import { antreanGuru } from "@/lib/antrean-kerja";
+import { anggotaPanitia } from "@/lib/spmb";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
   const impersonator = await getImpersonatorSession();
-  const [s, teacher, overdueBooks] = await Promise.all([
+  const [s, teacher, overdueBooks, panitia] = await Promise.all([
     getSettings(["logo.emblem", "logo.full_white"]),
     prisma.teacher.findFirst({
       where: { user: { email: session.email } },
@@ -27,8 +29,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       },
     }),
     getOverdueLoanCount(session.userId),
+    anggotaPanitia().catch(() => [] as string[]),
   ]);
   const jabatanNames = teacher?.jabatan.map(j => j.jabatan.name) ?? [];
+  // Anggota Panitia PKL tambahan: penanda jabatan semu KHUSUS untuk membangun menu (jangan ikut ke hitungan lain).
+  const panitiaPkl = (await anggotaPanitiaPkl().catch(() => [] as string[])).includes(session.userId);
   const hasInternshipBimbingan = (teacher?._count.internshipsSupervised ?? 0) > 0;
   const hasHomeroom = (teacher?._count.homeroomOf ?? 0) > 0;
   const hasTeaching = (teacher?._count.teachingLoad ?? 0) > 0;
@@ -62,7 +67,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         <TeacherSidebar
           logoEmblem={s["logo.emblem"]}
           logoFullWhite={s["logo.full_white"]}
-          jabatanNames={jabatanNames}
+          jabatanNames={panitiaPkl ? [...jabatanNames, PENANDA_PANITIA_PKL] : jabatanNames}
           hasInternshipBimbingan={hasInternshipBimbingan}
           isGuruPiketOnDutyToday={isGuruPiketOnDutyToday}
           overdueBooks={overdueBooks}
@@ -70,6 +75,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           impersonating={!!impersonator}
           tindakan={tindakan}
           hasTeaching={hasTeaching}
+          panitiaSpmb={panitia.includes(session.userId)}
         />
         {/* pb-[...]: ruang utk bottom nav bar mobile — calc(4rem + safe-area-inset-bottom), lihat
             komentar sama di dashboard/student/layout.tsx (fix device ber-notch 2026-08-23). */}

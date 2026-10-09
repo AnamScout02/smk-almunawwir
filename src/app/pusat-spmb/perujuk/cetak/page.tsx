@@ -25,7 +25,7 @@ export const metadata = { title: "Cetak Kartu Referral" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ jenis?: string }> }) {
   await verifySpmbAccess();
   const { jenis = "" } = await searchParams;
-  const saring = ["SISWA", "PEGAWAI", "LUAR"].includes(jenis) ? jenis : undefined;
+  const saring = ["SISWA", "PEGAWAI", "ALUMNI", "LUAR"].includes(jenis) ? jenis : undefined;
 
   const [daftar, s] = await Promise.all([
     prisma.perujukSpmb.findMany({
@@ -47,6 +47,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ j
     { id: "", label: "Semua" },
     { id: "SISWA", label: "Siswa" },
     { id: "PEGAWAI", label: "Guru / Pegawai" },
+    { id: "ALUMNI", label: "Alumni" },
     { id: "LUAR", label: "Perujuk Luar" },
   ];
 

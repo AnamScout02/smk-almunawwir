@@ -20,6 +20,8 @@ RUN npx prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
+# TypeScript TensorFlow.js (pemeriksa pas foto SPMB, 7 Okt 2026) membuat pemeriksaan tipe melewati batas heap bawaan ±2 GB.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 # Cache build Next disimpan di cache mount (5 Okt 2026): setelah cache Docker dipangkas, build dari nol makan ±56 menit.
 # Mount ini tidak ikut terhapus oleh pemangkasan lapisan biasa dan tidak ikut masuk image.
 RUN --mount=type=cache,target=/app/.next/cache npm run build

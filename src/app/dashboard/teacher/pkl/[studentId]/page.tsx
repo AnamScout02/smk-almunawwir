@@ -5,9 +5,10 @@ import Link from "next/link";
 import { ArrowLeft, Briefcase, Loader2, Building2, Calendar, MessageSquare, Save, Star } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import PanelPklHumas from "@/components/pkl/PanelPklHumas";
+import LencanaFotoJurnal from "@/components/pkl/LencanaFotoJurnal";
 import TombolKembali from "@/components/shared/TombolKembali";
 
-interface JournalEntry { id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null; lat: number | null; lng: number | null; akurasi: number | null }
+interface JournalEntry { fotoTerverifikasi?: boolean; fotoWaktu?: string | null; kompetensi?: string[]; id: string; date: string; activity: string; photoUrl: string | null; teacherNote: string | null; lat: number | null; lng: number | null; akurasi: number | null }
 
 interface InternshipDetail {
   id: string;
@@ -160,6 +161,10 @@ export default function TeacherPklDetailPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-700 mb-2">{entry.activity}</p>
+                  <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <LencanaFotoJurnal ada={!!entry.photoUrl} terverifikasi={!!entry.fotoTerverifikasi} waktu={entry.fotoWaktu} lokasi={entry.lat != null} />
+                    {entry.kompetensi?.length ? <span className="text-xs text-gray-500">Kompetensi: {entry.kompetensi.join(", ")}</span> : null}
+                  </div>
                   <div className="flex gap-2">
                     <input value={notes[entry.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [entry.id]: e.target.value }))}
                       placeholder="Tulis catatan untuk siswa..." className="input-field text-xs flex-1" />

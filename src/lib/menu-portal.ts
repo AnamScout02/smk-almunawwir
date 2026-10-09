@@ -45,9 +45,32 @@ export const MENU_PUSAT_SPMB: ItemNavPortal[] = [
   { href: "/pusat-spmb/seleksi", label: "Seleksi & Nilai", singkat: "Seleksi", ikon: "seleksi" },
   { href: "/pusat-spmb/pengumuman", label: "Pengumuman", singkat: "Hasil", ikon: "pengumuman" },
   { href: "/pusat-spmb/konversi", label: "Jadi Siswa", ikon: "konversi" },
+  { href: "/pusat-spmb/rombel", label: "Pembagian Rombel", singkat: "Rombel", ikon: "rombel" },
+  { href: "/pusat-spmb/mpls", label: "MPLS", ikon: "mpls" },
   { href: "/pusat-spmb/perujuk", label: "Perujuk & Referral", singkat: "Perujuk", ikon: "perujuk" },
   { href: "/pusat-spmb/statistik", label: "Statistik & Sebaran", singkat: "Statistik", ikon: "laporan" },
+  { href: "/pusat-spmb/sasaran", label: "Sasaran & Potensi", singkat: "Sasaran", ikon: "sasaran" },
   { href: "/pusat-spmb/sekolah-asal", label: "Rapikan Nama Sekolah", singkat: "Sekolah", ikon: "sekolah" },
   { href: "/pusat-spmb/promosi", label: "Poster & Promosi", singkat: "Promosi", ikon: "promosi" },
+  { href: "/pusat-spmb/panitia", label: "Panitia SPMB", singkat: "Panitia", ikon: "panitia" },
   { href: "/pusat-spmb/pengaturan", label: "Pengaturan SPMB", singkat: "Pengaturan", ikon: "pengaturan" },
+];
+
+/** PUSAT PKL (9 Oktober 2026) — portal Humas: dasbor, penempatan siswa ke DUDI, dan data lengkap DUDI. */
+export const MENU_PUSAT_PKL: ItemNavPortal[] = [
+  { href: "/pusat-pkl", label: "Beranda", ikon: "beranda", persis: true },
+  { href: "/pusat-pkl/pendaftaran", label: "Pendaftaran PKL", singkat: "Daftar", ikon: "pendaftar" },
+  { href: "/pusat-pkl/penempatan", label: "Penempatan Siswa", singkat: "Penempatan", ikon: "penempatan" },
+  { href: "/pusat-pkl/dudi", label: "Data DUDI", singkat: "DUDI", ikon: "dudi" },
+  { href: "/pusat-pkl/monitoring", label: "Monitoring", ikon: "monitoring" },
+  { href: "/pusat-pkl/peringatan", label: "Peringatan Dini", singkat: "Peringatan", ikon: "peringatan" },
+  { href: "/pusat-pkl/laporan-akhir", label: "Laporan Akhir", ikon: "laporanAkhir" },
+  { href: "/pusat-pkl/nilai", label: "Nilai Akhir", ikon: "nilaiAkhir" },
+  { href: "/pusat-pkl/peta", label: "Peta PKL", singkat: "Peta", ikon: "petaPkl" },
+  { href: "/pusat-pkl/kalender", label: "Kalender PKL", singkat: "Kalender", ikon: "kalender" },
+  { href: "/pusat-pkl/arsip", label: "Arsip Angkatan", singkat: "Arsip", ikon: "arsip" },
+  { href: "/pusat-pkl/surat", label: "Surat & SPPD", singkat: "Surat", ikon: "administrasi" },
+  { href: "/pusat-pkl/masalah", label: "Laporan Masalah", singkat: "Masalah", ikon: "masalah" },
+  { href: "/pusat-pkl/kompetensi", label: "Kecocokan Kompetensi", singkat: "Kompetensi", ikon: "sasaran" },
+  { href: "/pusat-pkl/panitia", label: "Panitia PKL", singkat: "Panitia", ikon: "panitia" },
 ];

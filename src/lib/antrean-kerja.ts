@@ -123,7 +123,7 @@ async function hitungAntreanGuru(o: { userId: string; teacherId: string | null; 
   }
   if (punya("Wakil Kepala Humas")) {
     tugas.push(prisma.pklRegistration.count({ where: { status: "PENDING" } })
-      .then(butir("Pendaftaran PKL menunggu diproses", "/dashboard/teacher/humas/pkl-pendaftaran")));
+      .then(butir("Pendaftaran PKL menunggu diproses", "/pusat-pkl/pendaftaran")));
     const batasMou = new Date(Date.now() + 60 * 86400000);
     tugas.push(prisma.industryPartner.count({ where: { mouEndDate: { lte: batasMou } } })
       .then(butir("MoU mitra berakhir ≤60 hari / kedaluwarsa", "/dashboard/teacher/humas")));

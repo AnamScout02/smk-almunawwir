@@ -1,4 +1,5 @@
 "use client";
+import PindaiSuratMasuk from "@/components/admin/PindaiSuratMasuk";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Save, Trash2, Mail, Send, Eye, Search, PenLine, Printer, FileText, ClipboardSignature } from "lucide-react";
@@ -456,6 +457,13 @@ export default function PersuratanPage() {
               <textarea className="input-field resize-none" rows={3} value={modal?.keterangan ?? ""}
                 onChange={e => setModal(p => ({ ...p, keterangan: e.target.value }))} />
             </div>
+            {tab === "MASUK" && (
+              <div className="col-span-2">
+                <label className="label-field">Pindaian surat</label>
+                <PindaiSuratMasuk fileUrl={modal?.fileUrl ?? ""} isi={{ nomor: modal?.nomor, tanggal: modal?.tanggal?.slice(0, 10), pihak: modal?.pihak, perihal: modal?.perihal }}
+                  onBerkas={url => setModal(p => ({ ...p, fileUrl: url }))} onPakai={(k, v) => setModal(p => ({ ...p, [k]: v }))} />
+              </div>
+            )}
             <div className="col-span-2">
               <label className="label-field">Link File / Lampiran</label>
               <input className="input-field" value={modal?.fileUrl ?? ""}

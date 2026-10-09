@@ -11,10 +11,11 @@ type Data = { hak: { spmb: boolean; induk: boolean }; totalNama: number; kelompo
 /** Rapikan nama sekolah asal (6 Okt 2026) — sistem menyarankan, panitia memutuskan (src/lib/nama-sekolah.ts).
  *  PASTI = penulisannya sama setelah dirapikan (kapital, singkatan, tanda hubung) → aman digabung sekaligus.
  *  MIRIP = dugaan salah ketik / berekor tempat → dicentang satu per satu oleh panitia. */
-export default function RapikanSekolahManager() {
+/** `awal` = tab pertama: "spmb" di Pusat SPMB, "induk" di halaman dashboard (8 Okt 2026 — fitur ini juga di luar SPMB). */
+export default function RapikanSekolahManager({ awal = "spmb" }: { awal?: "spmb" | "induk" } = {}) {
   const toast = useToast();
   const confirm = useConfirm();
-  const [sumber, setSumber] = useState<"spmb" | "induk">("spmb");
+  const [sumber, setSumber] = useState<"spmb" | "induk">(awal);
   const [d, setD] = useState<Data | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [sibuk, setSibuk] = useState(false);

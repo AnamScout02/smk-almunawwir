@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition, useEffect, useRef } from "react";
-import { GraduationCap, CheckCircle2, Upload, X, FileText, Image as ImageIcon, Loader2, Copy, ChevronLeft, ChevronRight, ListChecks, MessageCircle } from "lucide-react";
+import { GraduationCap, CheckCircle2, Upload, X, FileText, Crop, Camera, Image as ImageIcon, Loader2, Copy, ChevronLeft, ChevronRight, ListChecks, MessageCircle } from "lucide-react";
 import { salinTeks } from "@/lib/salin-teks";
 import { periksaFormulirSpmb, type IsianSpmb, type KunciIsian } from "@/lib/spmb-form";
 import type { Jalur } from "@/lib/spmb-konten";
@@ -9,7 +9,14 @@ import Select from "@/components/admin/Select";
 import type { Lang } from "@/lib/lang";
 import { catatJejak } from "@/lib/spmb-jejak";
 import { bacaBerkas, BISA_DIBACA } from "@/lib/ocr-berkas";
+import { kecilkanFoto, periksaMutu, periksaPasFoto, ukuranTeks, wajahDominan, wajahUtama } from "@/lib/olah-foto";
+import KameraBerkas, { kameraTersedia } from "@/components/spmb/KameraBerkas";
+import PasFotoOtomatis from "@/components/spmb/PasFotoOtomatis";
+import type { Kotak } from "@/lib/pas-foto";
 import PeriksaBerkasOcr, { type KeadaanOcr } from "@/components/spmb/PeriksaBerkasOcr";
+import PemindaiDokumen from "@/components/spmb/PemindaiDokumen";
+import { deteksiDokumen, kanvasKeFile, type Sudut } from "@/lib/pindai-dokumen";
+import { JENIS_KOTAK, salahKotak } from "@/lib/kenali-dokumen";
 import IsianSekolahAsal from "@/components/spmb/IsianSekolahAsal";
 
 const inputClass =
@@ -35,16 +42,31 @@ interface DocConfig {
 const ui = {
   id: {
     docs: [
-      { key: "ijazah" as DocKey, label: "Ijazah / SKL SMP/MTs", hint: "JPG, PNG, atau PDF · maks 5MB" },
-      { key: "kk" as DocKey, label: "Kartu Keluarga (KK)", hint: "JPG, PNG, atau PDF · maks 5MB" },
-      { key: "ktp_wali" as DocKey, label: "KTP Orang Tua / Wali", hint: "JPG, PNG, atau PDF · maks 5MB" },
-      { key: "foto" as DocKey, label: "Pas Foto (3×4)", hint: "JPG atau PNG · maks 5MB" },
+      { key: "ijazah" as DocKey, label: "Ijazah / SKL SMP/MTs", hint: "JPG, PNG, atau PDF · foto HP otomatis dikecilkan" },
+      { key: "kk" as DocKey, label: "Kartu Keluarga (KK)", hint: "JPG, PNG, atau PDF · foto HP otomatis dikecilkan" },
+      { key: "ktp_wali" as DocKey, label: "KTP Orang Tua / Wali", hint: "JPG, PNG, atau PDF · foto HP otomatis dikecilkan" },
+      { key: "foto" as DocKey, label: "Pas Foto (3×4)", hint: "JPG atau PNG · tegak, wajah terlihat jelas" },
       { key: "dokumen_lain" as DocKey, label: "Dokumen Lain (Opsional)", hint: "Sertifikat, piagam, dll" },
     ],
     clickUpload: "Klik untuk upload",
     uploadFailed: "Upload gagal, coba lagi",
     uploading: "Mengupload",
     viewFile: "Lihat file",
+    memproses: "Menyiapkan foto…",
+    terlaluBesar: "Berkas lebih dari 5 MB. Kirim foto/PDF yang lebih kecil.",
+    dikecilkan: (a: string, b: string) => `dikecilkan ${a} → ${b}`,
+    hapusBerkas: "Hapus berkas",
+    memeriksaWajah: "Memeriksa pas foto…",
+    saranJudul: "Sebaiknya foto ulang:",
+    gantiFoto: "Ganti foto",
+    saranTetap: "Atau biarkan bila menurut Anda sudah jelas.",
+    rapikan: "Potong & luruskan",
+    dirapikan: "dipotong & diluruskan",
+    rapikanPas: "Rapikan pas foto",
+    pasDirapikan: "dipotong 3×4",
+    pindaiKamera: "Pindai dengan kamera",
+    ambilFoto: "Ambil foto dengan kamera",
+    salahKotak: (n: number) => `${n} berkas tampaknya salah kotak — lihat peringatan kuning di bawah berkasnya. Bila berkas Anda memang sudah benar, tekan Daftar sekali lagi.`,
     docRequired: (label: string) => `Dokumen "${label}" wajib diupload.`,
     submitFailed: "Gagal mengirim pendaftaran, coba lagi.",
     connFailed: "Koneksi gagal, silakan coba lagi.",
@@ -96,16 +118,31 @@ const ui = {
   },
   en: {
     docs: [
-      { key: "ijazah" as DocKey, label: "Diploma / Junior High Graduation Certificate", hint: "JPG, PNG, or PDF · max 5MB" },
-      { key: "kk" as DocKey, label: "Family Card (KK)", hint: "JPG, PNG, or PDF · max 5MB" },
-      { key: "ktp_wali" as DocKey, label: "Parent / Guardian ID Card", hint: "JPG, PNG, or PDF · max 5MB" },
-      { key: "foto" as DocKey, label: "Photo (3×4)", hint: "JPG or PNG · max 5MB" },
+      { key: "ijazah" as DocKey, label: "Diploma / Junior High Graduation Certificate", hint: "JPG, PNG, or PDF · phone photos are reduced automatically" },
+      { key: "kk" as DocKey, label: "Family Card (KK)", hint: "JPG, PNG, or PDF · phone photos are reduced automatically" },
+      { key: "ktp_wali" as DocKey, label: "Parent / Guardian ID Card", hint: "JPG, PNG, or PDF · phone photos are reduced automatically" },
+      { key: "foto" as DocKey, label: "Photo (3×4)", hint: "JPG or PNG · portrait, face clearly visible" },
       { key: "dokumen_lain" as DocKey, label: "Other Document (Optional)", hint: "Certificates, awards, etc." },
     ],
     clickUpload: "Click to upload",
     uploadFailed: "Upload failed, please try again",
     uploading: "Uploading",
     viewFile: "View file",
+    memproses: "Preparing photo…",
+    terlaluBesar: "File is over 5 MB. Please send a smaller photo/PDF.",
+    dikecilkan: (a: string, b: string) => `reduced ${a} → ${b}`,
+    hapusBerkas: "Remove file",
+    memeriksaWajah: "Checking photo…",
+    saranJudul: "Consider retaking the photo:",
+    gantiFoto: "Replace photo",
+    saranTetap: "Or keep it if it looks clear to you.",
+    rapikan: "Crop & straighten",
+    dirapikan: "cropped & straightened",
+    rapikanPas: "Tidy up photo",
+    pasDirapikan: "cropped to 3×4",
+    pindaiKamera: "Scan with camera",
+    ambilFoto: "Take photo with camera",
+    salahKotak: (n: number) => `${n} file(s) seem to be in the wrong box — see the yellow warning under the file. If your files are correct, press Register once more.`,
     docRequired: (label: string) => `The "${label}" document is required.`,
     submitFailed: "Failed to submit registration, please try again.",
     connFailed: "Connection failed, please try again.",
@@ -165,7 +202,7 @@ type FormData = {
    *  tidak boleh menggagalkan pendaftaran. */
   perujukKode: string;
   /** Wilayah terstruktur (kode Kepmendagri) — untuk peta sebaran pendaftar. Opsional. */
-  kabupatenKode: string; kecamatanKode: string;
+  kabupatenKode: string; kecamatanKode: string; desaKode: string;
 };
 
 const JALUR_OPTIONS: Record<Lang, { value: string; label: string }[]> = {
@@ -197,7 +234,7 @@ const EMPTY: FormData = {
   fullName: "", birthPlace: "", birthDate: "", gender: "",
   nik: "", phone: "", nisn: "", address: "",
   previousSchool: "", email: "", guardianName: "", chosenMajor: "", jalur: "REGULER",
-  perujukKode: "", kabupatenKode: "", kecamatanKode: "",
+  perujukKode: "", kabupatenKode: "", kecamatanKode: "", desaKode: "",
 };
 
 /** Pesan merah di bawah kotak isian. `role="alert"` supaya pembaca layar menyebutkannya. */
@@ -207,35 +244,132 @@ function Galat({ pesan }: { pesan?: string }) {
 }
 
 function FileUploadField({
-  config, required, onUploaded, onBerkas, t,
-}: { config: DocConfig; required: boolean; onUploaded: (url: string) => void; onBerkas?: (file: File) => void; t: typeof ui["id"] }) {
-  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  config, required, onUploaded, onBerkas, t, lang,
+}: { config: DocConfig; required: boolean; onUploaded: (url: string) => void; onBerkas?: (file: File, kanvas: HTMLCanvasElement | null) => void; t: typeof ui["id"]; lang: Lang }) {
+  const [status, setStatus] = useState<"idle" | "memproses" | "uploading" | "done" | "error">("idle");
   const [fileName, setFileName] = useState("");
   const [url, setUrl] = useState("");
+  const [ukuran, setUkuran] = useState<{ asal: number; jadi: number } | null>(null);
+  const [saran, setSaran] = useState<string[]>([]);
+  const [memeriksa, setMemeriksa] = useState(false);
+  const [pesanGagal, setPesanGagal] = useState("");
+  const [dirapikan, setDirapikan] = useState(false);
+  /** Pemindai dokumen terbuka. `otomatis` = terbuka sendiri sebelum unggah (tepi kertas terduga). */
+  const [pindai, setPindai] = useState<{ sudut: Sudut | null; otomatis: boolean } | null>(null);
+  /** Foto ASLI (sudah dikecilkan) — disimpan supaya bisa dirapikan ulang tanpa memilih berkas lagi. */
+  const sumber = useRef<{ file: File; kanvas: HTMLCanvasElement; ukuranAsal: number; wajah?: Kotak } | null>(null);
+  /** Foto Pas Otomatis terbuka (potong 3×4 + ganti latar). `otomatis` = terbuka sendiri sebelum unggah. */
+  const [pas, setPas] = useState<{ wajah: Kotak; otomatis: boolean } | null>(null);
+  /** Kamera di dalam halaman — hanya di HTTPS; diperiksa setelah terpasang supaya tidak beda dengan render server. */
+  const [adaKamera, setAdaKamera] = useState(false);
+  const [kamera, setKamera] = useState(false);
+  useEffect(() => { setAdaKamera(kameraTersedia()); }, []);
   const ref = useRef<HTMLInputElement>(null);
+  const pasFoto = config.key === "foto";
+  const giliran = useRef(0);
 
-  async function handleFile(file: File) {
-    setStatus("uploading");
-    setFileName(file.name);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("type", config.key);
-    const res = await fetch("/api/admissions/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (res.ok) {
-      setStatus("done");
-      setUrl(data.url);
-      onUploaded(data.url);
-      onBerkas?.(file);
-    } else {
-      setStatus("error");
+  // Foto dikecilkan DI HP dulu (olah-foto.ts) — foto kamera 4–8 MB sering gagal terkirim di sinyal lemah.
+  // Foto DOKUMEN yang tepi kertasnya terduga dibuka di pemindai (potong, luruskan, jernihkan) sebelum diunggah;
+  // yang tidak terduga langsung diunggah dan bisa dirapikan belakangan lewat tombol "Potong & luruskan".
+  async function handleFile(asli: File) {
+    const ke = ++giliran.current;
+    sumber.current = null;
+    setStatus("memproses"); setFileName(asli.name); setSaran([]); setUkuran(null); setPesanGagal(""); setDirapikan(false);
+    const olah = await kecilkanFoto(asli, pasFoto ? 1600 : 2000).catch(() => null);
+    if (giliran.current !== ke) return;
+    const file = olah?.file ?? asli;
+    if (olah?.kanvas && pasFoto) {
+      // Pas foto: bila wajah ditemukan dan fotonya BELUM berbentuk pas foto (bukan 3×4, atau pemeriksa memberi
+      // saran), tawarkan Foto Pas Otomatis. Pas foto studio yang sudah benar langsung diunggah apa adanya.
+      const wajah = await wajahUtama(olah.kanvas);
+      if (giliran.current !== ke) return;
+      if (wajah) {
+        sumber.current = { file, kanvas: olah.kanvas, ukuranAsal: olah.ukuranAsal, wajah };
+        const bentuk = olah.kanvas.height / olah.kanvas.width;
+        const catatan = bentuk < 1.25 || bentuk > 1.42 ? ["bentuk"] : await periksaPasFoto(olah.kanvas, lang).catch(() => []);
+        if (giliran.current !== ke) return;
+        if (catatan.length) { setPas({ wajah, otomatis: true }); return; }
+      }
+    }
+    if (olah?.kanvas && !pasFoto) {
+      sumber.current = { file, kanvas: olah.kanvas, ukuranAsal: olah.ukuranAsal };
+      const sudut = deteksiDokumen(olah.kanvas);
+      if (sudut) { setPindai({ sudut, otomatis: true }); return; }
+    }
+    unggah(file, olah?.kanvas ?? null, olah?.dikecilkan ? olah.ukuranAsal : null, false, ke);
+  }
+
+  async function unggah(file: File, kanvas: HTMLCanvasElement | null, ukuranAsal: number | null, rapi: boolean, ke: number) {
+    if (file.size > 5 * 1024 * 1024) { setStatus("error"); setPesanGagal(t.terlaluBesar); return; }
+    setSaran([]);
+    if (kanvas) {
+      const awal = periksaMutu(kanvas, lang);
+      setSaran(awal);
+      if (pasFoto) {
+        setMemeriksa(true);
+        periksaPasFoto(kanvas, lang).then(w => { if (giliran.current === ke) setSaran([...awal, ...w]); })
+          .catch(() => {}).finally(() => { if (giliran.current === ke) setMemeriksa(false); });
+      }
+    }
+    setStatus("uploading"); setFileName(file.name);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", config.key);
+      const res = await fetch("/api/admissions/upload", { method: "POST", body: fd });
+      const data = await res.json().catch(() => null);
+      if (giliran.current !== ke) return;
+      if (res.ok && data?.url) {
+        setStatus("done");
+        setUrl(data.url);
+        setUkuran(ukuranAsal ? { asal: ukuranAsal, jadi: file.size } : null);
+        setDirapikan(rapi);
+        onUploaded(data.url);
+        onBerkas?.(file, kanvas);
+      } else {
+        setStatus("error"); setPesanGagal(data?.error || t.uploadFailed);
+      }
+    } catch {
+      // Dulu tanpa penangkap: sinyal putus di tengah unggah membuat "Mengupload…" berputar selamanya.
+      if (giliran.current === ke) { setStatus("error"); setPesanGagal(t.uploadFailed); }
     }
   }
 
+  /** Hasil pemindai dipakai: dijadikan berkas JPEG lalu diunggah (menggantikan unggahan sebelumnya bila ada). */
+  async function pakaiHasil(hasil: HTMLCanvasElement) {
+    const s = sumber.current;
+    setPindai(null); setPas(null);
+    if (!s) return;
+    const ke = ++giliran.current;
+    setStatus("memproses");
+    const file = await kanvasKeFile(hasil, s.file.name).catch(() => null);
+    if (giliran.current !== ke) return;
+    if (file) unggah(file, hasil, s.ukuranAsal, true, ke);
+    else unggah(s.file, s.kanvas, s.ukuranAsal, false, ke);
+  }
+
+  /** Pemindai ditutup tanpa hasil. Saat terbuka otomatis, unggahan dilanjutkan dengan foto asli — tidak pernah menggantung. */
+  function tutupPindai() {
+    const p = pindai ?? pas, s = sumber.current;
+    setPindai(null); setPas(null);
+    if (p?.otomatis && s) unggah(s.file, s.kanvas, s.ukuranAsal, false, giliran.current);
+  }
+
+  /** "Pakai Foto Asli": saat terbuka otomatis = lanjut unggah; saat dibuka belakangan = kembali ke foto asli
+   *  hanya bila yang terunggah sekarang adalah hasil rapikan. */
+  function pakaiAsli() {
+    const p = pindai ?? pas, s = sumber.current;
+    setPindai(null); setPas(null);
+    if (s && (p?.otomatis || dirapikan)) unggah(s.file, s.kanvas, s.ukuranAsal, false, ++giliran.current);
+  }
+
   function clear() {
+    giliran.current++;
     setStatus("idle");
     setFileName("");
     setUrl("");
+    setUkuran(null); setSaran([]); setMemeriksa(false); setPesanGagal(""); setDirapikan(false); setPindai(null); setPas(null);
+    sumber.current = null;
     onUploaded("");
     if (ref.current) ref.current.value = "";
   }
@@ -248,30 +382,74 @@ function FileUploadField({
         {config.label} {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {status === "idle" || status === "error" ? (
+        <>
         <label className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary-500 bg-gray-50 hover:bg-primary-50 cursor-pointer transition-colors">
           <Icon size={22} className="text-gray-300 mb-1" />
           <span className="text-xs text-gray-400 font-medium">{t.clickUpload}</span>
-          <span className="text-xs text-gray-300 mt-0.5">{config.hint}</span>
-          {status === "error" && <span className="text-xs text-red-500 mt-1">{t.uploadFailed}</span>}
+          <span className="text-xs text-gray-400 mt-0.5 px-3 text-center">{config.hint}</span>
+          {status === "error" && <span className="text-xs text-red-500 mt-1 px-3 text-center">{pesanGagal || t.uploadFailed}</span>}
           <input ref={ref} type="file" accept={config.accept} className="hidden" required={required && !url}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
         </label>
-      ) : status === "uploading" ? (
+        {adaKamera && (
+          <button type="button" onClick={() => setKamera(true)} className="btn-modal-cancel btn-teks mt-2 w-full">
+            <Camera size={16} /> {pasFoto ? t.ambilFoto : t.pindaiKamera}
+          </button>
+        )}
+        </>
+      ) : status === "memproses" || status === "uploading" ? (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50">
           <Loader2 size={20} className="animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">{t.uploading} {fileName}…</span>
+          <span className="min-w-0 truncate text-sm text-gray-500">{status === "memproses" ? t.memproses : `${t.uploading} ${fileName}…`}</span>
         </div>
       ) : (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50">
-          <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-emerald-700 truncate">{fileName}</p>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline">{t.viewFile}</a>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50">
+            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-emerald-700 truncate">{fileName}</p>
+              <p className="text-xs text-emerald-700">
+                <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">{t.viewFile}</a>
+                {ukuran && <span className="angka text-emerald-600"> · {t.dikecilkan(ukuranTeks(ukuran.asal), ukuranTeks(ukuran.jadi))}</span>}
+                {dirapikan && <span className="text-emerald-600"> · {pasFoto ? t.pasDirapikan : t.dirapikan}</span>}
+              </p>
+            </div>
+            {sumber.current && !pasFoto && (
+              <button type="button" onClick={() => setPindai({ sudut: sumber.current ? deteksiDokumen(sumber.current.kanvas) : null, otomatis: false })}
+                className="btn-modal-cancel btn-teks shrink-0 px-3 py-1.5 text-xs"><Crop size={14} /> {t.rapikan}</button>
+            )}
+            {sumber.current?.wajah && pasFoto && (
+              <button type="button" onClick={() => setPas({ wajah: sumber.current!.wajah!, otomatis: false })}
+                className="btn-modal-cancel btn-teks shrink-0 px-3 py-1.5 text-xs"><Crop size={14} /> {t.rapikanPas}</button>
+            )}
+            <button type="button" onClick={clear} title={t.hapusBerkas} className="sentuh text-gray-400 hover:text-red-500 transition-colors">
+              <X size={15} />
+            </button>
           </div>
-          <button type="button" onClick={clear} className="text-gray-400 hover:text-red-500 transition-colors">
-            <X size={15} />
-          </button>
+          {memeriksa && <p className="flex items-center gap-1.5 text-xs text-gray-400"><Loader2 size={12} className="animate-spin" /> {t.memeriksaWajah}</p>}
+          {saran.length > 0 && (
+            <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-800">
+              <p className="font-semibold">{t.saranJudul}</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">{saran.map(x => <li key={x}>{x}</li>)}</ul>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={clear} className="btn-modal-cancel btn-teks px-3 py-1.5 text-xs"><Upload size={14} /> {t.gantiFoto}</button>
+                <span className="text-xs text-amber-700">{t.saranTetap}</span>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+      {pindai && sumber.current && (
+        <PemindaiDokumen kanvas={sumber.current.kanvas} sudutAwal={pindai.sudut} lang={lang}
+          onPakai={pakaiHasil} onAsli={pakaiAsli} onTutup={tutupPindai} />
+      )}
+      {pas && sumber.current && (
+        <PasFotoOtomatis kanvas={sumber.current.kanvas} wajah={pas.wajah} lang={lang}
+          onPakai={pakaiHasil} onAsli={pakaiAsli} onTutup={tutupPindai} />
+      )}
+      {kamera && (
+        <KameraBerkas mode={pasFoto ? "swafoto" : "dokumen"} lang={lang} onTutup={() => setKamera(false)}
+          onFoto={f => { setKamera(false); handleFile(f); }} />
       )}
     </div>
   );
@@ -315,6 +493,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   const [ocr, setOcr] = useState<Record<string, KeadaanOcr>>({});
   const [kabupatenList, setKabupatenList] = useState<{ k: string; n: string; p: string }[]>([]);
   const [kecamatanList, setKecamatanList] = useState<{ k: string; n: string }[]>([]);
+  const [desaKab, setDesaKab] = useState<{ k: string; n: string }[]>([]);
 
   // Daftar wilayah resmi (public/data/wilayah) — kabupaten sekali saat dimuat, kecamatan per kabupaten.
   useEffect(() => {
@@ -323,7 +502,9 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
   useEffect(() => {
     if (!form.kabupatenKode) { setKecamatanList([]); return; }
     fetch(`/data/wilayah/kec/${form.kabupatenKode}.json`).then(r => r.json()).then(setKecamatanList).catch(() => setKecamatanList([]));
+    fetch(`/data/wilayah/desa/${form.kabupatenKode}.json`).then(r => r.json()).then(setDesaKab).catch(() => setDesaKab([]));
   }, [form.kabupatenKode]);
+  const desaList = form.kecamatanKode ? desaKab.filter(d => d.k.startsWith(form.kecamatanKode + ".")) : [];
 
   // Jejak corong: langkah yang DICAPAI (bukan yang sedang dilihat saat kembali) dan pendaftaran berhasil.
   useEffect(() => { if (langkah > 0) catatJejak(`LANGKAH_${langkah + 1}`); }, [langkah]);
@@ -349,15 +530,24 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
     return () => window.removeEventListener("spmb-pilih-jurusan", dengar);
   }, [majors]);
 
-  /** KK & ijazah dibaca otomatis setelah terunggah untuk MEMERIKSA ketikan (lihat ocr-berkas.ts). */
-  function periksaBerkas(kunci: string, file: File) {
-    if (kunci !== "kk" && kunci !== "ijazah") return;
+  /** KK, ijazah, dan KTP wali dibaca otomatis setelah terunggah: KK & ijazah untuk MEMERIKSA ketikan
+   *  (ocr-berkas.ts), dan ketiganya untuk mengenali berkas yang salah kotak (kenali-dokumen.ts).
+   *  Berkas yang nyaris tanpa tulisan diperiksa wajahnya — pas foto yang masuk kotak dokumen. */
+  function periksaBerkas(kunci: string, file: File, kanvas: HTMLCanvasElement | null) {
+    if (!JENIS_KOTAK[kunci]) return;
+    setSalahDitegur(false);
     if (!BISA_DIBACA.test(file.type)) { setOcr(o => ({ ...o, [kunci]: { keadaan: "lewat" } })); return; }
     setOcr(o => ({ ...o, [kunci]: { keadaan: "baca" } }));
     bacaBerkas(file)
-      .then(hasil => setOcr(o => ({ ...o, [kunci]: { keadaan: "siap", hasil } })))
+      .then(async hasil => {
+        let salah: KeadaanOcr["salah"] = hasil ? salahKotak(kunci, hasil.teks) : null;
+        if (!salah && kanvas && (hasil?.teks.replace(/\s/g, "").length ?? 0) < 60 && await wajahDominan(kanvas)) salah = "foto";
+        setOcr(o => ({ ...o, [kunci]: { keadaan: "siap", hasil, salah } }));
+      })
       .catch(() => setOcr(o => ({ ...o, [kunci]: { keadaan: "gagal" } })));
   }
+  /** Teguran salah kotak hanya menahan Daftar SEKALI — dugaan bisa keliru, calon tetap boleh melanjutkan. */
+  const [salahDitegur, setSalahDitegur] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   /** Kode perujuk datang lewat `?ref=KODE` (tautan atau QR yang dibagikan perujuk) — diisikan
@@ -477,6 +667,16 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
     if (jumlah) {
       setError(jumlah === 1 ? t.ringkasGalatSatu : t.ringkasGalat(jumlah));
       // Gulir ke ringkasan supaya terlihat walau kesalahannya di bawah layar.
+      requestAnimationFrame(() => ringkasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+      return;
+    }
+
+    // Berkas yang terbaca sebagai jenis lain (KK di kotak ijazah) ditegur SEBELUM terkirim — sekali saja.
+    const salah = Object.entries(ocr).filter(([k, v]) => v.salah && docUrls[k as DocKey]).length;
+    if (salah && !salahDitegur) {
+      setSalahDitegur(true);
+      setLangkah(TERAKHIR);
+      setError(t.salahKotak(salah));
       requestAnimationFrame(() => ringkasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
       return;
     }
@@ -710,22 +910,30 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
               aria-invalid={!!galat.email} className={inputClass + (galat.email ? kelasSalah : "")} />
             <Galat pesan={galat.email} />
           </div>
-          {/* Kabupaten/Kota & Kecamatan — pilihan dari daftar resmi, untuk peta sebaran pendaftar. */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Kabupaten/Kota, Kecamatan & Desa — pilihan dari daftar resmi, untuk peta sebaran pendaftar. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="min-w-0">
               <label className={labelClass}>{lang === "id" ? "Kabupaten/Kota" : "Regency/City"}</label>
               <Select value={form.kabupatenKode}
-                onChange={v => setForm(f => ({ ...f, kabupatenKode: v, kecamatanKode: v === f.kabupatenKode ? f.kecamatanKode : "" }))}
+                onChange={v => setForm(f => v === f.kabupatenKode ? f : ({ ...f, kabupatenKode: v, kecamatanKode: "", desaKode: "" }))}
                 placeholder={lang === "id" ? "Cari kabupaten/kota…" : "Search regency/city…"}
                 options={kabupatenList.map(k => ({ value: k.k, label: `${k.n} — ${k.p}` }))}
                 buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
             </div>
             <div className="min-w-0">
               <label className={labelClass}>{lang === "id" ? "Kecamatan" : "District"}</label>
-              <Select value={form.kecamatanKode} onChange={v => setField("kecamatanKode", v)}
+              <Select value={form.kecamatanKode} onChange={v => setForm(f => v === f.kecamatanKode ? f : ({ ...f, kecamatanKode: v, desaKode: "" }))}
                 disabled={!form.kabupatenKode}
                 placeholder={form.kabupatenKode ? (lang === "id" ? "Pilih kecamatan…" : "Choose district…") : (lang === "id" ? "Pilih kabupaten dulu" : "Choose regency first")}
                 options={kecamatanList.map(k => ({ value: k.k, label: k.n }))}
+                buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
+            </div>
+            <div className="min-w-0">
+              <label className={labelClass}>{lang === "id" ? "Desa/Kelurahan" : "Village"}</label>
+              <Select value={form.desaKode} onChange={v => setField("desaKode", v)}
+                disabled={!form.kecamatanKode}
+                placeholder={form.kecamatanKode ? (lang === "id" ? "Pilih desa/kelurahan…" : "Choose village…") : (lang === "id" ? "Pilih kecamatan dulu" : "Choose district first")}
+                options={desaList.map(k => ({ value: k.k, label: k.n }))}
                 buttonClassName={inputClass + " flex items-center justify-between gap-2 cursor-pointer"} />
             </div>
           </div>
@@ -823,11 +1031,11 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
                     setDoc(doc.key, url);
                     if (!url) setOcr(o => { const n = { ...o }; delete n[doc.key]; return n; });
                   }}
-                  onBerkas={file => periksaBerkas(doc.key, file)}
-                  t={t}
+                  onBerkas={(file, kanvas) => periksaBerkas(doc.key, file, kanvas)}
+                  t={t} lang={lang}
                 />
-                {(doc.key === "kk" || doc.key === "ijazah") && (
-                  <PeriksaBerkasOcr jenis={doc.key} ocr={ocr[doc.key]} lang={lang}
+                {(doc.key === "kk" || doc.key === "ijazah" || doc.key === "ktp_wali") && (
+                  <PeriksaBerkasOcr jenis={doc.key} label={doc.label} ocr={ocr[doc.key]} lang={lang}
                     isian={{ fullName: form.fullName, nik: form.nik, nisn: form.nisn, birthDate: form.birthDate }}
                     pakai={(kunci, nilai) => setField(kunci, nilai)} />
                 )}
@@ -845,7 +1053,7 @@ export default function AdmissionsForm({ lang = "id" }: { lang?: Lang }) {
                   }}
                   required={sy.wajib}
                   onUploaded={url => setBerkasSyarat(b => ({ ...b, [sy.id]: url }))}
-                  t={t}
+                  t={t} lang={lang}
                 />
               ))}
             </div>

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
-import { assertHumas } from "@/lib/humas-guard";
+import { assertPkl as assertHumas } from "@/lib/pkl-humas";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ studentId: string }> }) {

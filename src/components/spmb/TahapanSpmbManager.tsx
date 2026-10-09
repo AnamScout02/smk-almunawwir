@@ -3,7 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ListChecks, Search, Loader2, Check, Clock, AlertTriangle, XCircle, Download, MessageCircle, FileText, Shirt,
   ClipboardList, HeartPulse, Send, Copy, ExternalLink, Save, Undo2, Users, Mail, Wallet, Plus, Trash2, Percent, Printer,
+  IdCard, ReceiptText, Signature, BellRing, Hourglass, CopyCheck,
 } from "lucide-react";
+import Link from "next/link";
 import DatePicker from "@/components/shared/DatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Modal from "@/components/admin/Modal";
@@ -15,7 +17,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { salinTeks } from "@/lib/salin-teks";
 import {
-  INFO_TAHAP, LABEL_SYARAT_BAYAR, hitungImt, peringatanButaWarna, pesanKabar, rupiah,
+  HUBUNGAN_WALI, INFO_TAHAP, LABEL_SYARAT_BAYAR, PESAN_TERTAHAN, type KunciTertahan, hitungImt, peringatanButaWarna, pesanKabar, rupiah,
   type InfoBayar, type InfoMpls, type SyaratBayar, type IsiTahap, type IsianTahap, type KodeTahap, type SetelanSeragam, type StatusTahap, type TahapCalon, type IsiSeragam,
 } from "@/lib/spmb-tahapan";
 
@@ -26,14 +28,17 @@ type Baris = {
   tuntas: boolean; ditolak: boolean; grupDiklik: boolean; grupBergabung: boolean; sudahSiswa: boolean;
   bayar: { sah: number; menunggu: number; sisa: number; tagihan: number; lunas: boolean };
   sesiId: string | null; sesi: string | null;
+  diamHari: number; giliran: "CALON" | "PANITIA" | null; tertahan: KunciTertahan | null;
+  kabarTerakhir: string | null; adaHp: boolean; paktaSudah: boolean; terverifikasi: boolean; ganda: boolean;
 };
 type Rekap = {
   bayarRingkas: { tagihanPerCalon: number; biayaGelombang: { nama: string; biaya: number }[]; syarat: SyaratBayar; uangMuka: number; terkumpul: number; menungguPeriksa: number; lunas: number };
-  data: Baris[]; kode: KodeTahap[]; rekapTahap: Record<KodeTahap, number>;
+  data: Baris[]; kode: KodeTahap[]; rekapTahap: Record<KodeTahap, number>; kelompokGanda: number;
   perGelombang: { id: string; nama: string; adaGrup: boolean; pendaftar: number; klikGrup: number; bergabung: number; sesi: { id: string; label: string; kuota: number; terisi: number }[] }[];
 };
 
 type Detail = {
+  ringkasan: string[];
   calon: {
     id: string; nomor: string | null; nama: string; jurusan: string; phone: string; email: string; lahir: string; tempatLahir: string | null;
     gender: string | null; sekolahAsal: string | null; wali: string | null; alamat: string | null; status: string; gelombang: string | null;
@@ -56,6 +61,7 @@ type Detail = {
   tahap: TahapCalon[]; tuntas: boolean; ditolak: boolean;
   isian: { asesmen: IsianTahap[]; pemeriksaan: IsianTahap[] };
   setelanSeragam: SetelanSeragam; mpls: InfoMpls; sekolah: string; tautan: string | null;
+  pakta: { aktif: boolean; wajib: boolean; sudah: { nama: string | null; hubungan: string | null; at: string; digital: boolean } | null };
 };
 
 const SARINGAN = [
@@ -69,12 +75,15 @@ const SARINGAN = [
   { value: "DITERIMA", label: "Menunggu pengumuman" },
   { value: "DAFTAR_ULANG", label: "Menunggu daftar ulang" },
   { value: "TUNTAS", label: "Tuntas — resmi MPLS" },
+  { value: "TERTAHAN_CALON", label: "Tertahan — menunggu calon" },
+  { value: "TERTAHAN_PANITIA", label: "Tertahan — menunggu panitia" },
   { value: "K_DITERIMA", label: "Keputusan: diterima" },
   { value: "K_CADANGAN", label: "Keputusan: cadangan" },
   { value: "K_DITOLAK", label: "Keputusan: tidak diterima" },
   { value: "BAYAR_MENUNGGU", label: "Bukti bayar menunggu diperiksa" },
   { value: "BELUM_LUNAS", label: "Pembayaran belum lunas" },
   { value: "LUNAS", label: "Pembayaran lunas" },
+  { value: "GANDA", label: "Diduga pendaftar ganda" },
 ];
 
 const IKON_STATUS: Record<StatusTahap, { ikon: typeof Check; kelas: string; label: string }> = {
@@ -96,10 +105,17 @@ export default function TahapanSpmbManager() {
   const [gelombang, setGelombang] = useState("");
   const [saring, setSaring] = useState("");
   const [sesiSaring, setSesiSaring] = useState("");
+  // Ambang "tertahan": sudah berapa hari tanpa kegiatan di tahapannya.
+  const [ambang, setAmbang] = useState("3");
+  const [massal, setMassal] = useState(false);
+  const [pesanan, setPesanan] = useState(false);
   // Menu lama "Daftar Ulang" dialihkan ke sini dengan ?saring=… (tautan & penanda lama tetap sampai).
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get("saring");
     if (v && SARINGAN.some(x => x.value === v)) queueMicrotask(() => setSaring(v));
+    // Halaman Pendaftar Diduga Ganda menautkan ke sini dengan ?buka=<id> — jendela calonnya langsung terbuka.
+    const b = new URLSearchParams(window.location.search).get("buka");
+    if (b) queueMicrotask(() => setBukaId(b));
   }, []);
   const [bukaId, setBukaId] = useState<string | null>(null);
 
@@ -117,19 +133,24 @@ export default function TahapanSpmbManager() {
       if (sesiSaring && (sesiSaring === "TANPA" ? b.sesiId : b.sesiId !== sesiSaring)) return false;
       if (!saring) return true;
       if (saring === "TUNTAS") return b.tuntas;
+      if (saring === "TERTAHAN_CALON" || saring === "TERTAHAN_PANITIA") {
+        return b.giliran === (saring === "TERTAHAN_CALON" ? "CALON" : "PANITIA") && b.diamHari >= Number(ambang);
+      }
       if (saring === "K_DITERIMA") return ["DITERIMA", "ACCEPTED"].includes(b.status);
       if (saring === "K_CADANGAN") return b.status === "CADANGAN";
       if (saring === "K_DITOLAK") return ["DITOLAK", "REJECTED"].includes(b.status);
       if (saring === "BAYAR_MENUNGGU") return b.bayar.menunggu > 0;
       if (saring === "BELUM_LUNAS") return !b.ditolak && !b.bayar.lunas;
       if (saring === "LUNAS") return b.bayar.lunas;
+      if (saring === "GANDA") return b.ganda;
       if (saring === "PERBAIKAN") return b.verifikasiStatus === "PERBAIKAN";
       if (saring === "DIPERBAIKI") return b.diperbaiki;
       if (saring === "VERIFIKASI") return b.berjalan?.kode === "VERIFIKASI" && b.berjalan.status === "BERJALAN";
       return b.berjalan?.kode === saring;
     });
-  }, [rekap, cari, saring, sesiSaring]);
-  const hal = usePaginasi(tersaring, 50, `${cari}|${saring}|${gelombang}|${sesiSaring}`);
+  }, [rekap, cari, saring, sesiSaring, ambang]);
+  const hal = usePaginasi(tersaring, 50, `${cari}|${saring}|${gelombang}|${sesiSaring}|${ambang}`);
+  const modeTertahan = saring === "TERTAHAN_CALON" || saring === "TERTAHAN_PANITIA";
   const opsiSesi = (rekap?.perGelombang.find(g => g.id === gelombang)?.sesi ?? []);
 
   if (memuat && !rekap) return (
@@ -154,6 +175,17 @@ export default function TahapanSpmbManager() {
           <StatTile value={rekap?.rekapTahap.SERAGAM ?? 0} label="Sudah pilih seragam" icon={Shirt} color="blue" />
           <StatTile value={tuntas} label="Resmi peserta MPLS" icon={Check} color="emerald" />
         </div>
+
+        {(rekap?.kelompokGanda ?? 0) > 0 && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <CopyCheck size={18} className="shrink-0" />
+            <p className="min-w-0 flex-1">
+              <span className="font-semibold">{rekap!.kelompokGanda} kelompok pendaftar diduga ganda</span> — NIK atau NISN sama, atau nama dan tanggal lahir
+              yang sama. Baris kembar ikut menghitung kuota, peringkat, dan pesanan seragam.
+            </p>
+            <Link href="/pusat-spmb/tahapan/ganda" className="btn-modal-save btn-teks">Periksa</Link>
+          </div>
+        )}
 
         {/* Progres per tahap */}
         <div className="panel p-5">
@@ -222,6 +254,11 @@ export default function TahapanSpmbManager() {
               options={[{ value: "", label: "Semua gelombang" }, ...(rekap?.perGelombang ?? []).map(g => ({ value: g.id, label: g.nama }))]} />
           </div>
           <div className="alat-saring"><Select value={saring} onChange={setSaring} options={SARINGAN} /></div>
+          {modeTertahan && (
+            <div className="alat-saring">
+              <Select value={ambang} onChange={setAmbang} options={[1, 3, 7, 14].map(n => ({ value: String(n), label: `Diam ≥ ${n} hari` }))} />
+            </div>
+          )}
           {opsiSesi.length > 0 && (
             <div className="alat-saring">
               <Select value={sesiSaring} onChange={setSesiSaring}
@@ -230,6 +267,9 @@ export default function TahapanSpmbManager() {
             </div>
           )}
           <div className="alat-aksi">
+            <a href={`/pusat-spmb/tahapan/kartu?${new URLSearchParams({ ...(gelombang ? { gelombangId: gelombang } : {}), ...(sesiSaring ? { sesiId: sesiSaring } : {}) })}`}
+              className="btn-modal-cancel btn-teks"><IdCard size={16} /> Kartu Peserta</a>
+            <button type="button" onClick={() => setPesanan(true)} className="btn-modal-cancel btn-teks"><Printer size={16} /> Surat Pesanan Seragam</button>
             <a href={`/api/spmb/tahapan/seragam${gelombang ? `?gelombangId=${gelombang}` : ""}`} className="btn-modal-cancel btn-teks">
               <Download size={16} /> Rekap Seragam
             </a>
@@ -241,6 +281,21 @@ export default function TahapanSpmbManager() {
             </a>
           </div>
         </div>
+
+        {modeTertahan && tersaring.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <Hourglass size={18} className="shrink-0" />
+            <p className="min-w-0 flex-1">
+              <span className="font-semibold">{tersaring.length} calon</span> tidak ada kegiatan ≥ {ambang} hari
+              {saring === "TERTAHAN_CALON"
+                ? <> — menunggu tindakan calon. <span className="angka">{tersaring.filter(b => b.adaHp).length}</span> di antaranya menerima pemberitahuan di HP, sisanya lewat WhatsApp.</>
+                : " — menunggu tindakan panitia (verifikasi, asesmen, cek kesehatan, atau keputusan). Buka tiap calon untuk menyelesaikannya."}
+            </p>
+            {saring === "TERTAHAN_CALON" && (
+              <button type="button" onClick={() => setMassal(true)} className="btn-modal-save btn-teks"><BellRing size={16} /> Kabari {tersaring.length} Calon</button>
+            )}
+          </div>
+        )}
 
         <div className="panel overflow-hidden">
           {tersaring.length === 0 ? (
@@ -266,6 +321,7 @@ export default function TahapanSpmbManager() {
                         <td>
                           <p className="font-medium text-primary-900">{b.nama}</p>
                           <p className="text-xs text-gray-400">{b.nomor} · {b.jurusan || "—"}</p>
+                          {b.ganda && <Link href="/pusat-spmb/tahapan/ganda" className="mt-1 inline-block text-xs font-medium text-amber-700 hover:underline">Diduga ganda</Link>}
                         </td>
                         {kode.map(k => {
                           const st = IKON_STATUS[b.centang[k] ?? "MENUNGGU"];
@@ -289,6 +345,12 @@ export default function TahapanSpmbManager() {
                             : b.berjalan?.status === "PERBAIKAN" ? <span className="status-badge bg-amber-50 text-amber-700 border-amber-200">Menunggu perbaikan</span>
                             : <span className="text-sm text-gray-600">{b.berjalan?.judul}</span>}
                           {b.sesi && <span className="angka mt-1 block text-xs text-gray-400">Sesi {b.sesi}</span>}
+                          {b.giliran && b.diamHari >= 1 && (
+                            <span className={`mt-1 block text-xs ${b.diamHari >= 7 ? "text-red-600" : b.diamHari >= 3 ? "text-amber-700" : "text-gray-400"}`}>
+                              Diam {b.diamHari} hari · {b.giliran === "CALON" ? "giliran calon" : "giliran panitia"}
+                              {b.kabarTerakhir ? ` · dikabari ${new Date(b.kabarTerakhir).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })}` : ""}
+                            </span>
+                          )}
                         </td>
                         <td className="text-right">
                           <button type="button" onClick={() => setBukaId(b.id)} className="btn-modal-save px-3 text-xs">Buka</button>
@@ -305,6 +367,8 @@ export default function TahapanSpmbManager() {
       </div>
 
       {bukaId && <DetailCalon id={bukaId} onTutup={() => setBukaId(null)} onBerubah={muat} />}
+      {massal && <KabarMassal calon={tersaring} onTutup={() => { setMassal(false); muat(); }} />}
+      {pesanan && <SuratPesanan gelombang={gelombang} onTutup={() => setPesanan(false)} />}
     </div>
   );
 }
@@ -360,6 +424,20 @@ function DetailCalon({ id, onTutup, onBerubah }: { id: string; onTutup: () => vo
               );
             })}
           </div>
+
+          {/* Ringkasan otomatis — disusun dengan aturan dari data calon (src/lib/spmb-ringkasan.ts), bukan AI. */}
+          {d.ringkasan?.length > 0 && (
+            <div className="rounded-xl border border-gray-100 bg-[#f5f6fa] p-4">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <p className="label-kecil">Ringkasan</p>
+                <button type="button" title="Salin ringkasan" className="p-1.5 text-gray-400 hover:text-primary-700 rounded-lg hover:bg-white transition"
+                  onClick={async () => { (await salinTeks(d.ringkasan.join(" "))) ? toast.success("Ringkasan disalin") : toast.error("Gagal menyalin"); }}>
+                  <Copy size={14} />
+                </button>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-700">{d.ringkasan.join(" ")}</p>
+            </div>
+          )}
 
           <BarisKeputusan d={d} sibuk={sibuk} onTutup={onTutup} onBerubah={async () => { await muat(); onBerubah(); }} />
 
@@ -702,6 +780,8 @@ function TabBayar({ d, sibuk, kirim }: { d: Detail; sibuk: boolean; kirim: Kirim
         {" "}Pembayaran tetap bisa dicatat setelah MPLS dan setelah calon menjadi siswa.
       </p>
 
+      {d.pakta.aktif && <BagianPakta d={d} sibuk={sibuk} kirim={kirim} />}
+
       {/* Konfirmasi daftar ulang */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 p-4">
         <div className="text-sm">
@@ -730,6 +810,9 @@ function TabBayar({ d, sibuk, kirim }: { d: Detail; sibuk: boolean; kirim: Kirim
                   <span className={`status-badge ${LABEL[p.status] ?? ""}`}>{p.status === "SAH" ? "Sah" : p.status === "MENUNGGU" ? "Menunggu" : "Ditolak"}</span>
                   {p.bukti && <a href={p.bukti} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary-700 hover:underline">Bukti <ExternalLink size={13} /></a>}
                   <div className="ml-auto flex gap-1">
+                    {p.status === "SAH" && (
+                      <a href={`/pusat-spmb/tahapan/kuitansi/${p.id}`} className="btn-modal-cancel px-3 text-xs"><ReceiptText size={13} /> Kuitansi</a>
+                    )}
                     {p.status !== "SAH" && (
                       <button type="button" disabled={sibuk} onClick={() => kirim({ aksi: "bayar-sahkan", pembayaranId: p.id }, "Pembayaran disahkan")} className="btn-modal-save px-3 text-xs">Sahkan</button>
                     )}
@@ -842,8 +925,142 @@ function BarisKeputusan({ d, sibuk, onTutup, onBerubah }: { d: Detail; sibuk: bo
         {!["DITOLAK", "REJECTED"].includes(d.calon.status) && tombol("DITOLAK", "Tolak", "btn-modal-cancel")}
         {k && tombol("PENDING", "Batalkan keputusan", "btn-modal-cancel")}
         <a href={`/pusat-spmb/pendaftar/${d.calon.id}/cetak`} className="btn-modal-cancel px-3 text-xs"><Printer size={13} /> Cetak Formulir</a>
+        {d.calon.verifikasiStatus === "TERVERIFIKASI" && (
+          <a href={`/pusat-spmb/tahapan/${d.calon.id}/kartu`} className="btn-modal-cancel px-3 text-xs"><IdCard size={13} /> Kartu Peserta</a>
+        )}
         <button type="button" onClick={hapus} title="Hapus pendaftar" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
       </div>
     </div>
+  );
+}
+
+/** Surat pernyataan orang tua di jendela calon: status, cetak, tandai ditandatangani di kertas, buka ulang. */
+function BagianPakta({ d, sibuk, kirim }: { d: Detail; sibuk: boolean; kirim: KirimDetail }) {
+  const confirm = useConfirm();
+  const p = d.pakta;
+  const [kertas, setKertas] = useState(false);
+  const [nama, setNama] = useState(d.calon.wali ?? "");
+  const [hubungan, setHubungan] = useState("");
+  return (
+    <div className="space-y-3 rounded-xl border border-gray-100 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm">
+          <p className="font-semibold text-navy"><Signature size={15} className="mr-1 inline" />Surat pernyataan orang tua{p.wajib ? " (wajib sebelum daftar ulang)" : ""}</p>
+          <p className="text-gray-500">
+            {p.sudah
+              ? `Ditandatangani ${p.sudah.nama} (${p.sudah.hubungan}) ${waktu(p.sudah.at)} — ${p.sudah.digital ? "di HP" : "di kertas"}.`
+              : "Belum ditandatangani. Orang tua menandatangani di halaman tahapan, atau cetak lembarnya untuk ditandatangani di sekolah."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <a href={`/pusat-spmb/tahapan/${d.calon.id}/pakta`} className="btn-modal-cancel px-3 text-xs"><Printer size={13} /> Cetak</a>
+          {p.sudah
+            ? <button type="button" disabled={sibuk} className="btn-modal-cancel px-3 text-xs"
+                onClick={async () => { if (await confirm("Buka ulang surat pernyataan? Tanda tangan yang tersimpan dihapus dan orang tua perlu menandatangani lagi.")) kirim({ aksi: "pakta-reset" }, "Surat pernyataan dibuka ulang"); }}>
+                <Undo2 size={13} /> Buka Ulang</button>
+            : !kertas && <button type="button" onClick={() => setKertas(true)} className="btn-modal-cancel px-3 text-xs"><Check size={13} /> Ditandatangani di Kertas</button>}
+        </div>
+      </div>
+      {kertas && !p.sudah && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <div><label className="label-field">Nama penanda tangan</label><input className="input-field" value={nama} onChange={e => setNama(e.target.value)} /></div>
+          <div className="flex flex-wrap gap-1.5">
+            {HUBUNGAN_WALI.map(h => (
+              <button key={h} type="button" onClick={() => setHubungan(h)}
+                className={`sentuh rounded-lg border px-3 py-2 text-sm transition ${hubungan === h ? "border-primary-700 bg-primary-900 text-white" : "border-gray-200 bg-white text-gray-600 hover:border-primary-300"}`}>{h}</button>
+            ))}
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => setKertas(false)} className="btn-modal-cancel">Batal</button>
+            <button type="button" disabled={sibuk || nama.trim().length < 3 || !hubungan} className="btn-modal-save"
+              onClick={async () => { if (await kirim({ aksi: "pakta-kertas", nama, hubungan }, "Ditandai sudah ditandatangani")) setKertas(false); }}>
+              <Save size={16} /> Simpan
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Kabari massal calon yang tertahan di giliran calon — push + halaman tahapan; yang tanpa pemberitahuan HP
+ *  dikembalikan sebagai tombol WhatsApp satu per satu. */
+function KabarMassal({ calon, onTutup }: { calon: Baris[]; onTutup: () => void }) {
+  const toast = useToast();
+  const [pesan, setPesan] = useState("");
+  const [sibuk, setSibuk] = useState(false);
+  const [hasil, setHasil] = useState<{ dicatat: number; sudahHariIni: number; keHp: number; tanpaHp: { id: string; nama: string; nomor: string | null; wa: string }[] } | null>(null);
+  const jenis = Array.from(new Set(calon.map(c => c.tertahan).filter((x): x is KunciTertahan => !!x)));
+  async function kirim() {
+    setSibuk(true);
+    const r = await fetch("/api/spmb/tahapan/kabar-massal", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: calon.map(c => c.id), pesan }),
+    }).catch(() => null);
+    const x = await r?.json().catch(() => null);
+    setSibuk(false);
+    if (r?.ok) { setHasil(x); toast.success(`${x.dicatat} calon dikabari`); } else toast.error(x?.error ?? "Gagal mengirim kabar");
+  }
+  return (
+    <Modal open onClose={onTutup} size="lg" scrollBody title={`Kabari ${calon.length} calon`}
+      description="Kabar tampil di halaman tahapan calon dan terkirim ke HP yang mengaktifkan pemberitahuan — paling banyak sekali per hari per calon."
+      footer={hasil ? <button type="button" onClick={onTutup} className="btn-modal-cancel">Tutup</button> : <>
+        <button type="button" onClick={onTutup} className="btn-modal-cancel">Batal</button>
+        <button type="button" disabled={sibuk} onClick={kirim} className="btn-modal-save">{sibuk ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Kirim Kabar</button>
+      </>}>
+      {!hasil ? (
+        <div className="space-y-4">
+          <div>
+            <p className="label-field">Pesan bawaan sesuai tahap tiap calon</p>
+            <ul className="space-y-1.5 text-sm text-gray-600">
+              {jenis.map(k => <li key={k} className="rounded-lg bg-gray-50 px-3 py-2"><span className="font-medium text-navy">{calon.filter(c => c.tertahan === k).length} calon:</span> {PESAN_TERTAHAN[k]}</li>)}
+            </ul>
+          </div>
+          <div>
+            <label className="label-field">Pesan sendiri (opsional — menggantikan pesan bawaan untuk semua)</label>
+            <textarea className="input-field min-h-[90px]" maxLength={600} value={pesan} onChange={e => setPesan(e.target.value)} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            {hasil.dicatat} calon dikabari ({hasil.keHp} sampai ke HP){hasil.sudahHariIni ? ` · ${hasil.sudahHariIni} sudah dikabari hari ini, dilewati` : ""}.
+          </p>
+          {hasil.tanpaHp.length > 0 && (
+            <div>
+              <p className="label-field">{hasil.tanpaHp.length} calon belum mengaktifkan pemberitahuan — kirim lewat WhatsApp</p>
+              <ul className="divide-y divide-gray-100 rounded-xl border border-gray-100">
+                {hasil.tanpaHp.map(c => (
+                  <li key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+                    <span className="min-w-0 flex-1"><span className="font-medium text-navy">{c.nama}</span> <span className="text-gray-400">{c.nomor}</span></span>
+                    <a href={c.wa} target="_blank" rel="noopener noreferrer" className="btn-modal-save px-3 text-xs"><MessageCircle size={13} /> WhatsApp</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/** Isian surat pesanan seragam sebelum dicetak (kepada siapa, batas selesai, catatan). */
+function SuratPesanan({ gelombang, onTutup }: { gelombang: string; onTutup: () => void }) {
+  const [kepada, setKepada] = useState("");
+  const [batas, setBatas] = useState("");
+  const [catatan, setCatatan] = useState("");
+  const q = new URLSearchParams({ ...(gelombang ? { gelombangId: gelombang } : {}), ...(kepada.trim() ? { kepada: kepada.trim() } : {}), ...(batas ? { batas } : {}), ...(catatan.trim() ? { catatan: catatan.trim() } : {}) });
+  return (
+    <Modal open onClose={onTutup} title="Surat Pesanan Seragam" description="Jumlah per ukuran dipisah putra & putri. Daftar nama per calon ada di Rekap Seragam (Excel)."
+      footer={<>
+        <button type="button" onClick={onTutup} className="btn-modal-cancel">Batal</button>
+        <a href={`/pusat-spmb/tahapan/seragam?${q}`} className="btn-modal-save"><Printer size={16} /> Cetak</a>
+      </>}>
+      <div className="space-y-4">
+        <div><label className="label-field">Kepada (penjahit / vendor)</label><input className="input-field" value={kepada} onChange={e => setKepada(e.target.value)} placeholder="Kosong = ditulis tangan" /></div>
+        <div><label className="label-field">Mohon selesai paling lambat</label><DatePicker value={batas} onChange={setBatas} /></div>
+        <div><label className="label-field">Catatan</label><textarea className="input-field min-h-[70px]" value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Mis. bahan, warna, logo bordir" /></div>
+      </div>
+    </Modal>
   );
 }

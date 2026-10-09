@@ -41,6 +41,7 @@ const admissionSchema = z.object({
   perujukKode: z.string().max(40).optional().default(""),
   kabupatenKode: z.string().max(10).optional().default(""),
   kecamatanKode: z.string().max(10).optional().default(""),
+  desaKode: z.string().max(16).optional().default(""),
   // Dokumen
   ijazah: berkasUnggahan,
   kk: berkasUnggahan,
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
     // Kode referral dicocokkan ULANG di server — kode yang salah TIDAK menggagalkan pendaftaran,
     // hanya membuat tautan perujuknya kosong (salah ketik kode bukan alasan menolak anak orang).
     const perujuk = await cocokkanPerujuk(d.perujukKode);
-    const wilayah = await rapikanWilayah(d.kabupatenKode, d.kecamatanKode);
+    const wilayah = await rapikanWilayah(d.kabupatenKode, d.kecamatanKode, d.desaKode);
 
     const nomor = await nomorPendaftaranBaru(gelombang.id, gelombang.urutan);
 

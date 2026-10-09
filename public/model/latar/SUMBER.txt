@@ -1,0 +1,3 @@
+MediaPipe Selfie Segmentation (general, 256x256) versi TensorFlow.js — pemisah orang/latar untuk Foto Pas Otomatis.
+Sumber: https://tfhub.dev/mediapipe/tfjs-model/selfie_segmentation/general/1 (lisensi Apache-2.0), diunduh 8 Oktober 2026.
+Keluaran [256,256,2]: kanal 0 = latar, kanal 1 = orang. Dipakai src/lib/pas-foto.ts.

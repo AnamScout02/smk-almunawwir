@@ -1929,3 +1929,465 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
      - Formulir SPMB: `IsianSekolahAsal` menyarankan nama yang sudah dikenal (Buku Induk + pendaftar) lewat
        `/api/public/sekolah-asal` (hanya nama sekolah, disinggahkan 10 mnt, dibatasi per IP). Calon tetap boleh mengetik nama baru.
      - Data nyata saat dibuat: 213 penulisan di Buku Induk → 64 kelompok (mis. SMPN/SMP Negeri/Manbaul Manba'ul Falah = 424 siswa).
+
+131. **Dokumen calon, calon tertahan, target, MPLS, dan panitia SPMB (7 Oktober 2026).**
+     - **Tiga dokumen cetak, masing-masing DUA pintu satu lembar** (`src/lib/spmb-dokumen.ts` + komponen `*SpmbSheet`):
+       pakta orang tua (`/spmb/pakta` & `/pusat-spmb/tahapan/[id]/pakta`), kuitansi cicilan SAH (`/spmb/kuitansi?p=` &
+       `/pusat-spmb/tahapan/kuitansi/[pid]`), kartu peserta tes (`/spmb/kartu` & `/pusat-spmb/tahapan/[id]/kartu`, massal
+       `/pusat-spmb/tahapan/kartu?gelombangId&sesiId`, 2 per A4, maks 200). Pintu calon = nomor + tanda (`calonDariTanda`);
+       kuitansi calon disaring `admissionId` supaya hanya miliknya. QR keaslian pola #49: `/verify/pakta-spmb`,
+       `/verify/kuitansi-spmb` (status TERKINI — pembayaran yang kemudian ditolak tidak lagi tampil sah), kartu memakai QR
+       formulir (`cetakToken`). Nomor kuitansi `KW-SPMB-<tahun WIB>-0001`, dibuat SEKALI saat pertama dicetak.
+     - **Pakta** (`spmb.pakta` {aktif, wajib, judul, isi}, editor di Pengaturan → Tahapan Calon → Surat Pernyataan): dibuka saat
+       tahap Daftar Ulang terbuka (`paktaTerbuka`), TTD lewat `PenyuntingTtd` (prop `ekstra` = nama/hubungan/setuju) ke
+       `PUT /api/spmb/calon/pakta`, gambar di folder RAHASIA `public/uploads/rahasia/spmb-pakta` (disisipkan sebagai data URL).
+       Teks yang ditandatangani disimpan SALINAN (`paktaTeks`). `wajib` = konfirmasi daftar ulang (calon & panitia) ditolak 409
+       sampai ditandatangani; panitia bisa "Ditandatangani di Kertas" atau "Buka Ulang". Hapus pendaftar ikut menghapus TTD.
+     - **Calon tertahan = satu sumber `kunciTertahan` + `PESAN_TERTAHAN` + `aktivitasTerakhir`** (spmb-tahapan.ts), dipakai
+       saringan "Tertahan — menunggu calon/panitia" di Tahapan Calon, Kabari Massal (`/api/spmb/tahapan/kabar-massal`, maks
+       sekali per calon per hari, yang tanpa langganan push dikembalikan sebagai tombol WA), dan pengingat otomatis
+       (pengingat-spmb.ts — pembayaran sengaja TIDAK diingatkan otomatis).
+     - **Rekap seragam per putra/putri** satu sumber `rekapSeragam` (src/lib/spmb-seragam.ts) untuk Excel & surat pesanan
+       `/pusat-spmb/tahapan/seragam` (Kepada/batas/catatan dari jendela "Surat Pesanan Seragam"). Jenis kelamin formulir =
+       "Laki-laki"/"Perempuan" (bukan L/P) — pakai `jkDari` (spmb-tahapan.ts).
+     - **Item seragam punya `untuk`: SEMUA | L | P** (permintaan user 7 Okt 2026: "rok dan celana jangan disamakan … parameternya
+       dari jenis kelamin"). Bawaan: Baju (semua), Celana (putra), Rok (putri) — jangan kembali ke item gabungan "Celana / Rok".
+       Calon & panitia hanya melihat/mengisi item untuk jenis kelamin calon lewat `itemSeragamUntuk` (dipakai GET & simpan di
+       /api/spmb/calon dan /api/spmb/tahapan/[id]); jenis kelamin tak diketahui = semua item. Surat pesanan menampilkan item
+       khusus dengan satu kolom Jumlah.
+     - **Target vs capaian** (`GelombangSpmb.target`, 0 = jumlah kuota) di Statistik & Sebaran: `targetGelombang`
+       (src/lib/spmb-target.ts) + `GrafikTarget` (SVG server). Tahun lalu = pendaftar rentang tanggal yang sama −365 hari.
+     - **Paket MPLS** (`/pusat-spmb/mpls`): membuat/memperbarui SATU Kegiatan berhari-hari (id di `spmb.mplsKegiatanId`) dari
+       Info MPLS + jam harian; peserta `targetUserIds` = akun siswa dari calon TUNTAS yang sudah dijadikan siswa (Admission hanya
+       punya `studentId`, tanpa relasi). Calon resmi yang belum jadi siswa didaftar terpisah — Kegiatan hanya bisa menyasar akun.
+     - **Panitia tambahan** (`spmb.panitia` = array userId, `/pusat-spmb/panitia`): `assertSpmb`/`bolehSpmb` meloloskan Admin, guru
+       pemegang JABATAN_SPMB, staf TAS berjabatan Tata Usaha penuh (TAS_JABATAN), ATAU anggota daftar ini — guru maupun staf
+       (`anggotaPanitia`, singgah 30 dtk, `lupakanPanitia` saat disimpan). **Diperketat 7 Okt 2026**: dulu SEMUA akun TAS lolos
+       (Kebersihan/Security bisa membuka lewat alamat langsung), dan staf non-TU tidak bisa ditambahkan. Menu: guru lewat prop
+       `panitiaSpmb`; staf lewat penanda jabatan semu "Panitia SPMB" (`jabatanUntukMenu`, dipakai layout admin, dashboard TAS, dan
+       `konteksMenuTas`). Yang boleh menambah/mengeluarkan: `bolehAturPanitia` (Admin, staf TU penuh, guru pemegang jabatan) —
+       BUKAN anggota tambahan. `spmb.panitia` sengaja tidak ada di DIIZINKAN /api/spmb/pengaturan.
+     - Tanya Jawab SPMB: "Apakah harus mondok?" → TIDAK harus (keputusan user 7 Okt 2026) — jangan menulis "seluruh siswa
+       tinggal di asrama" di teks mana pun.
+
+132. **Pembagian Rombel kelas X (7 Oktober 2026) — `/pusat-spmb/rombel`, hitungan murni `src/lib/bagi-rombel.ts`.**
+     Permintaan user: kelas maks 30, dibagi RATA ("50 anak TKJ = 25 TKJ 1 + 25 TKJ 2"), seimbang putra/putri & asal sekolah,
+     lalu panitia menyetujui. Jumlah kelas = ⌈n/maks⌉ (bisa diubah ±), siswa diurutkan jenis kelamin → `kunciSekolah` → nama
+     lalu dibagikan ULAR; panitia boleh memindah siswa (→1/→2…) & mengganti nama kelas sebelum "Setujui" per jurusan.
+     - Kandidat = siswa AKTIF tanpa kelas yang berasal dari SPMB (`Admission.studentId`; Student TIDAK punya relasi ke Admission).
+     - **Persetujuan DIKUNCI selama kelas X jurusan itu masih berisi angkatan berjalan** (server 409 + layar): Kenaikan Kelas
+       memindah SEMUA siswa kelas X (apa pun nama kelasnya) ke XI, jadi siswa baru yang lebih dulu diberi kelas X ikut naik.
+       Siswa tanpa kelas dilewati Kenaikan Kelas — itu sebabnya Jadi Siswa sebaiknya TANPA rombel.
+     - Kelas yang belum ada dibuat (grade 10, jurusan itu); isian `bukuIndukData.rombel` ikut diisi angka di belakang nama kelas.
+     - Penjaga satu pintu dengan Jadi Siswa: `sesiKonversi` (src/lib/spmb-konversi.ts — Admin & BUKU_INDUK_FULL_JABATAN).
+     - **Nomor absen = urut nama** di seluruh sistem (daftar siswa, absensi, `{ABSEN}` ujian), jadi selalu abjad. NIS saat Jadi Siswa
+       kini diterbitkan per jurusan lalu NAMA (`orderBy chosenMajor, fullName`) — dulu urut acak database.
+
+133. **Peta sebaran berjenjang & olah foto sebelum unggah (7 Oktober 2026).**
+     - **Peta** (`PetaSebaran`, panel di /pusat-spmb/statistik): Indonesia → provinsi → kabupaten → kecamatan → DESA, diketuk
+       untuk turun. Batas provinsi/kabupaten/kecamatan se-Indonesia = `public/data/peta` (±6 MB) dibangun
+       `npx tsx scripts/bangun-peta.ts <folder-unduhan>` dari cahyadsn/wilayah_boundaries (MIT, kode Kepmendagri 2025 = kode
+       `public/data/wilayah`). Lapis Penduduk/"per 100 rb penduduk" sempat dibuat lalu DIHAPUS (user: peta untuk asal pendaftar/
+       siswa, bukan kependudukan) — kolom `pd`/`l` di berkas peta tak dipakai layar. Selain diketuk, wilayah dipilih lewat
+       SARINGAN berjenjang Provinsi → Kabupaten → Kecamatan → Desa (satu state `jejak` dengan ketukan peta).
+       **Warna = skala BERGANTI RONA** (kuning→merah tua pendaftar, hijau→nila siswa) dengan batas kelas KUANTIL per tingkat
+       (ragam ≤5 angka = satu warna per angka) dan keterangan berupa RENTANG — user menolak gradasi satu warna ("hampir sama
+       kepekatannya"). **Layar Penuh** untuk presentasi: yang dibuat fullscreen SELURUH halaman (`documentElement`) lalu panel
+       dibentangkan `fixed inset-0 z-[55]` — bila panel sendiri yang fullscreen, popup `Select` (portal ke body) tidak tampil.
+       Sengaja tanpa pendengar Esc sendiri: Esc menutup dropdown dan tidak boleh ikut mengakhiri presentasi. Pengurai satu sumber
+       `src/lib/peta-batas.ts` (sumber kadang berspasi setelah koma — Kalimantan Selatan sempat hilang). **Batas desa ±1 GB TIDAK
+       ikut image**: `batasDesa` (src/lib/peta-desa.ts) mengunduh per kabupaten saat pertama dibuka, menyimpan di volume
+       `public/uploads/peta-desa`; rute `/api/peta/desa/[kab]` dijaga `bolehPeta` (orang luar tidak bisa memicu unduhan).
+     - Hitungan satu sumber `src/lib/peta-sebaran.ts`, peta {kode: jumlah} semua tingkat. Pendaftar = kode formulir (kini sampai
+       `desaKode`/`desa`, daftar desa `public/data/wilayah/desa/<kab>.json`). Siswa aktif = TEKS alamat Buku Induk dicocokkan ke
+       kode lewat nama (nama kabupaten kembar diputuskan provinsi → kecamatan; ragu = tidak ditebak, "belum terpetakan").
+       Jadi Siswa kini mengisi `province/kabupaten/kecamatan/desa` Buku Induk dari wilayah pendaftar.
+       **Lapis Alumni** (8 Okt 2026) = siswa `LULUS` dengan pencocokan alamat yang sama (`hitungBukuInduk`), dikelompokkan per
+       TAHUN LULUS dari `bukuIndukData.graduationDate`; tanpa tanggal lulus hanya ikut "semua angkatan". Tracer alumni
+       (`AlumniTracer`) belum dipakai — baru 1 baris.
+       **Peta juga di luar SPMB** (8 Okt 2026, user: "tidak cuman di spmb saja"): halaman `/dashboard/{admin,teacher}/peta-sebaran`
+       (`PetaSebaranHalaman`, komponen & hitungan SAMA dengan panel Statistik SPMB). Akses satu sumber `JABATAN_PETA`
+       (src/lib/peta-akses.ts, netral — dipakai sidebar Admin/TAS/Guru) + penjaga `assertPeta`/`bolehPeta` (peta-guard.ts:
+       Admin, panitia SPMB, staf TU penuh, pemegang JABATAN_PETA); rute batas desa memakai `bolehPeta`. Gambar menu sendiri
+       `petaSebaran` — BUKAN "peta" (itu Tracer Study).
+     - **Olah foto** (`src/lib/olah-foto.ts`, di peramban): `kecilkanFoto` (dokumen 2000 px, pas foto 1000 px, JPEG 0,82; PDF/
+       HEIC tak terbaca dikirim apa adanya) — batas 5 MB diperiksa SETELAH dikecilkan. `periksaMutu` (gelap, silau, buram =
+       variansi Laplacian persentil-90 per petak; buram ditahan bila sudah gelap) dan `periksaPasFoto` (BlazeFace TF.js backend
+       CPU, model di `public/model/wajah` ±466 KB — BUKAN MediaPipe, mesinnya 13 MB terlalu berat untuk sinyal lemah) HANYA SARAN,
+       unggahan tetap jalan. Ambang diuji dengan pas foto & foto asli: tajam 750–14.500, kabur 2 px ≤ 94.
+     - **Menu Cepat dashboard selalu berbaris PENUH** (temuan user 7 Okt 2026): kisi 4/6/8 kolom (HP/tablet/desktop), jumlah ubin
+       tiap lebar = `ringkas` dibulatkan ke kelipatan kolomnya (ringkas 12 → HP 12, tablet 12, desktop 16), ubin kelebihan
+       disembunyikan CSS per lebar (`max-sm:hidden`, `sm:max-lg:hidden`, `lg:hidden`), "Lihat Semua" selalu ubin terakhir.
+       Pilihan "Atur" didahulukan; bila kurang, sisanya diisi urutan bawaan — jangan kembali ke jumlah tetap.
+
+134. **Kartu referral dibuat sendiri saat dibuka + cari buku katalog (8 Oktober 2026).**
+     - Laporan user: "beberapa kartu identitas tidak muncul referral spmb, Lutfiatul Amila dan lain-lain". Kode massal PEGAWAI
+       hanya membaca baris `Teacher` ber-NIP, jadi 5 staf TAS (tanpa baris Teacher, #93) tidak pernah punya kode; siswa/guru
+       yang masuk setelah tombol ditekan juga terlewat. Sekarang: `/api/spmb/perujuk/saya` memanggil `pastikanPerujukAkun`
+       (src/lib/spmb-perujuk.ts) — guru, staf TAS, dan siswa AKTIF dibuatkan kode saat kartu pertama dibuka (nomor induk + 4
+       karakter acak; tanpa nomor induk = 6 angka acak). Baris yang DINONAKTIFKAN panitia tidak dibuat ulang; orang tua & admin
+       tidak dibuatkan. Rute massal PEGAWAI kini ikut menyertakan staf TAS.
+     - Pusat Perpustakaan → Katalog & Data → tab Katalog punya kotak cari (judul, penulis, penerbit, kategori, lokasi,
+       barcode) — dulu kotak cari hanya ada di tab Peminjaman.
+     - **Rapikan Nama Sekolah juga di luar Pusat SPMB** (user 8 Okt 2026: "harusnya ada di fitur juga, bukan hanya di spmb"):
+       `/dashboard/{admin,teacher}/rapikan-sekolah` = komponen & API yang sama (`RapikanSekolahManager awal="induk"`),
+       dijaga `BUKU_INDUK_FULL_JABATAN`; menu di grup TU — Buku Induk & Data (Admin, TAS/Operator) dan di samping Buku Induk
+       guru Operator Sekolah. Gambar menu `rapikanSekolah`. Peta Sebaran sudah lebih dulu punya halaman dashboard (#133).
+
+135. **Tracer alumni, referral alumni, dan Analisis Sebaran (8 Oktober 2026).**
+     - **Formulir tracer publik `/tracer-study` SUDAH ADA sejak lama** (verifikasi + token 30 menit) — jangan dibuat ulang. Yang
+       ditambah: verifikasi menerima **NISN atau NIS** + tanggal lahir (alumni jarang ingat NIS; nomor yang cocok dengan >1 alumni
+       tidak ditebak), status disaring ke 5 nilai baku di server (dipakai saringan peta & angka keterserapan), dan kartu QR A6
+       (`KartuQrTracer`, `…/tracer-study/qr` di kedua portal, alamat `ALAMAT_APLIKASI`).
+     - **Alumni yang mengisi tracer langsung mendapat kode referral SPMB** (`pastikanPerujukAlumni`, jenis perujuk baru `ALUMNI`):
+       6 ANGKA ACAK — bukan turunan NISN/NIS, karena NISN adalah kunci masuk formulir tracer. Yang semasa siswa sudah punya kode
+       tetap memakai kode itu; baris yang dinonaktifkan panitia tidak dihidupkan lagi. Gagal membuat kode tidak menggagalkan tracer.
+     - **Keterserapan dihitung dari yang SUDAH MENGISI, bukan dari seluruh alumni** — dan layar selalu menyebut "N dari M alumni
+       mengisi". Persen BARU ditulis bila pengisinya ≥20 (`MIN_PENGISI_TRACER`) — "100%" dari satu pengisi bukan angka.
+     - **Peta: saringan status tracer** dihitung di KLIEN dari `SebaranAlumni.baris` = `[kode, tahun lulus, status]` tanpa identitas,
+       supaya bisa digabung dengan saringan angkatan. Simpan tracer memanggil `lupakanSebaranAlumni()`.
+     - **Analisis Sebaran** (`/dashboard/{admin,teacher}/peta-sebaran/analisis`, satu sumber `analisisSebaran` di
+       src/lib/analisis-sebaran.ts — juga dipakai Excel `/api/peta/alamat-belum-lengkap` & **Laporan Sebaran** cetak A4
+       `…/peta-sebaran/laporan`). Angkatan = `enrollYear` SEMUA status (yang dinilai dari mana sekolah menerima siswa).
+       **Menurun/tumbuh membandingkan PANGSA, bukan jumlah** (`geser`): kelengkapan alamat tiap angkatan sangat berbeda
+       (2019: 1 dari 86 terpetakan; 2022: 182 dari 184), jadi jumlah mentah menuduh daerah "menurun" padahal alamatnya kosong.
+       Ambang sengaja tidak peka (≥5 siswa, pangsa ≤60% / ≥1,4×, selisih ≥1 poin persen) dan hasilnya DAFTAR UNTUK DITINJAU. Per 8 Okt 2026 sebaran
+       kecamatan stabil (Singojuruh/Songgon/Sempu ±80%) — tabel tetap menampilkan semua baris supaya "tidak ada yang menurun"
+       terlihat sebagai temuan, bukan halaman kosong.
+     - Alamat belum lengkap hanya siswa AKTIF, dikelompokkan per kelas, hanya untuk pemegang `assertPeta` (daftar nama siswa).
+     - **Satu pintu per urusan (user 8 Okt 2026: "di SPMB fokus SPMB, tracer fokus tracer, siswa fokus siswa").** Hitungan
+       tetap satu sumber; yang dipisah pintunya. **Pusat SPMB** → Statistik: peta pendaftar + siswa aktif (pembanding),
+       `/pusat-spmb/sasaran` (Sasaran Promosi & Asal Sekolah) + Laporan Sebaran cetak. **Tracer Study** (Humas/BKK):
+       `…/tracer-study/sebaran` (peta alumni, keterserapan per angkatan & jurusan, tempat kerja/kampus terbanyak —
+       `laporanTracer`, src/lib/laporan-tracer.ts) + `…/tracer-study/laporan` (cetak A4). **Data Siswa** → Peta Sebaran: siswa
+       aktif saja + Alamat Belum Lengkap. `PetaSebaran` menerima `lapis={[…]}`; `AnalisisSebaranHalaman` menerima `tampil`.
+       Jangan menaruh lapis alumni kembali ke peta SPMB/Data Siswa.
+
+     - **Saringan rentang angkatan masuk** (`?dari=&sampai=`, `SaringAngkatan`) di Laporan Sebaran & Sasaran Promosi/Asal Sekolah.
+       Tanpa saringan laporan memakai siswa AKTIF; dengan saringan memakai SEMUA siswa yang masuk pada rentang itu (aktif, lulus,
+       keluar). Periode pembanding menurun/tumbuh ikut dipersempit (`periodeDari`: 3 angkatan terakhir rentang vs ≤5 sebelumnya);
+       rentang ≤3 angkatan tidak bisa dibandingkan dan layar mengatakannya. Tahun di luar data diabaikan, rentang terbalik dibetulkan.
+     - **Ajakan tracer = tombol WhatsApp per alumni, ditekan petugas** (`/api/tracer-study` mengirim `ajak: {nomor, milik}`:
+       HP alumni di Buku Induk didahulukan, kalau tidak ada nomor orang tua dengan pesan berbeda). Situs TIDAK mengirim apa pun;
+       "sudah diajak" hanya penanda di peramban petugas (localStorage `tracer-diajak`). Per 8 Okt 2026: 494 dari 673 punya nomor.
+     - **Alamat belum lengkap sampai ke orangnya** (`alamatKurang`, src/lib/analisis-sebaran.ts — aturan sama dengan daftar TU):
+       wali kelas melihat penandanya di Daftar Siswa (kelas walinya saja), siswa mendapat butir "Perlu tindakan" menuju Biodata
+       yang hilang sendiri begitu alamatnya terpetakan atau selama pengajuan biodatanya masih PENDING.
+
+136. **Potensi Lulusan SMP/MTs dari internet (8 Oktober 2026) — `PotensiSekolah`, src/lib/potensi-smp.ts.** Permintaan user:
+     "ambil data dari internet jumlah siswa SMP kelas IX per kecamatan maupun per sekolah". Tab di `/pusat-spmb/sasaran?bagian=potensi`.
+     - **Sumber: layanan terbuka situs resmi "Sekolah Kita"** (`sekolah.data.kemendikdasmen.go.id/v1/sekolah-service`, yang dipakai
+       halaman publiknya sendiri, tanpa login): `POST sekolah/cari-sekolah` (`page` mulai 0, `kabupaten_kota: "Kab. Banyuwangi"`,
+       `bentuk_pendidikan: "SMP" | "MTs"`) lalu `GET sekolah/peserta-didik/<sekolah_id>` (`pd_tkt_7..9_l/p`) & `rombongan-belajar`.
+       **`dapo.kemendikdasmen.go.id` JANGAN dipakai** — dipasangi penghalang robot (SafeLine); jangan dicoba dilewati.
+     - Data DISALIN saat panitia menekan "Perbarui" (latar, berurutan, jeda 350 ms; 366 sekolah Banyuwangi ±2,5 menit), bukan tiap
+       halaman dibuka. Hanya kabupaten yang memang asal siswa kita (`kabupatenBoleh`, ≥3 siswa). Kemajuan di `globalThis`.
+     - Nama sekolah sumber ditulis lain ("MTSS AL FATAH SRAGI", "MTs MTS …", berekor nama tempat) → dicocokkan `buatPencocok`
+       (src/lib/cocok-sekolah.ts): kunci sama → awalan sama yang tunggal → `miripSekolah` yang tunggal; lebih dari satu calon =
+       tidak dicocokkan. Cakupan saat dibuat: 935 dari 1.076 siswa. Nama pasangannya DITAMPILKAN di baris supaya salah cocok terlihat.
+     - "Serapan" = rata-rata siswa kita per tahun (angkatan pembanding terbaru) ÷ kelas IX sekarang — perkiraan kasar, dan layar
+       menyebutnya begitu. Semester data bisa campur (sekolah yang belum sinkron masih semester sebelumnya).
+     - **Menu sendiri "Sasaran & Potensi"** di pita Pusat SPMB (user: "saya tidak melihatnya" — dulu hanya tautan kecil di Statistik).
+       Saringan satu sumber `saringPotensi` (layar, cetak `/pusat-spmb/sasaran/potensi-cetak`, Excel): BEBERAPA kecamatan (`kec` dipisah
+       koma, `PilihBanyak`), jenjang, negeri/swasta, cari nama/NPSN, urut (kelas IX / terdekat / serapan). Tabel hanya kelas IX (user).
+     - **Nama kepala sekolah & nomor HP TIDAK ADA di sumber terbuka** (diperiksa: full-detail & Referensi Data hanya memuat alamat,
+       telepon kantor, email, website, akreditasi, titik lokasi, jumlah guru). Karena itu `PotensiSekolah.kepala/kontak/catatan/
+       dikunjungi` DIISI PANITIA (tombol pensil, `PUT /api/spmb/potensi/[npsn]`) dan tidak pernah ditimpa "Perbarui". Jarak = garis
+       lurus dari titik sekolah kita; titik di luar Indonesia dianggap salah isi.
+     - Pencocokan nama disinggahkan per kabupaten (`singgahCocok`, kunci ikut waktu salin) — tanpa itu tiap ganti saringan ±3 detik.
+
+137. **Peta Persaingan & Proyeksi 3 Tahun (9 Oktober 2026) — `susunPersaingan`, src/lib/potensi-smp.ts.** Tab di Pusat SPMB →
+     Sasaran & Potensi. Sumber sama dengan #136; `PotensiSekolah` kini juga memuat SMK/SMA/MA (`k10/k11/k12`), diambil TERPISAH
+     (`KELOMPOK.smp` vs `KELOMPOK.lanjutan`, `POST /api/spmb/potensi {jenis}`) — hapus-yang-basi dibatasi per kelompok supaya
+     memperbarui satu kelompok tidak menghapus yang lain.
+     - **HANYA angka pasti** (keputusan user, rekomendasi "B"): lulusan tiap SMP/MTs, kelas X/XI/XII tiap sekolah lanjutan, siswa
+       yang masuk ke kita. **Tidak ada tabel "dari SMP A ke sekolah X"** — data terbuka tidak memuat asal SMP siswa sekolah lain;
+       diperiksa: Dapodik/VervalPD hanya lewat akun SMP, spmbjatim.net tidak membuka daftar per sekolah (hasil hanya lewat akun
+       peserta), formulir ke guru BK & pertanyaan di formulir SPMB DITOLAK user. Memodelkannya tanpa pembanding = tebakan yang
+       tampak presisi; jangan dibuat. Cek ulang Juni 2027 saat pengumuman SPMB Jatim.
+     - **Jurusan pesaing TIDAK dipakai**: `full-detail.kurikulum` hanya menyebut SATU jurusan per sekolah (terbukti salah untuk
+       sekolah kita sendiri). Arah penerimaan = kelas XII → kelas X (≥15% & ≥10 siswa). Data MA sering kosong.
+     - Sekolah kita dikenali dari SiteSetting `nominatif.npsn`. Pangsa memakai SEMUA sekolah lanjutan di wilayah/radius (bukan yang
+       tersaring jenjang/status) supaya penyebutnya tetap. Peta `PetaPersaingan`: warna kecamatan = potensi (di atas nilai tengah)
+       × serapan (≥2% lulusan/tahun masuk ke kita), titik = sekolah (besar menurut kelas IX / kelas X).
+     - Proyeksi: kelas IX/VIII/VII = lulusan 3 tahun ke depan per kecamatan (data sudah ada dari #136, tanpa pengambilan baru).
+
+138. **Pemindai dokumen, pengenal jenis dokumen, dan pendaftar ganda SPMB (8 Oktober 2026).**
+     - **Pemindai** (`src/lib/pindai-dokumen.ts` + `PemindaiDokumen`): potong, luruskan (homografi), jernihkan — murni JS di
+       peramban, TANPA pustaka (opencv.js ±8 MB terlalu berat untuk sinyal lemah). Sudut kertas diduga dari warna LATAR di
+       bingkai foto; `deteksiSudut` mengembalikan null bila ragu (kertas sewarna meja, kertas memenuhi foto, gumpalan bukan
+       segi empat). Dugaan hanyalah titik awal: hasil selalu diperlihatkan dulu, sudut bisa digeser, dan "Pakai Foto Asli"
+       selalu ada. Menutup jendela yang terbuka otomatis = lanjut dengan foto asli (unggahan tidak boleh menggantung).
+       Dipasang di kotak unggah formulir (semua kotak kecuali pas foto) dan unggah ulang berkas di `/spmb/tahapan`
+       (`dokumen` — bukti bayar & pas foto dilewati). Fungsi inti bekerja pada larik piksel supaya bisa diuji tanpa peramban.
+     - **Pengenal jenis** (`src/lib/kenali-dokumen.ts`): kata kunci berbobot pada teks OCR yang SUDAH dibaca (tanpa model
+       baru), satu huruf boleh meleset. Satu jenis baru disebut bila skor ≥3 DAN unggul ≥2 dari jenis lain; selain itu null.
+       Kotak yang diperiksa hanya `JENIS_KOTAK` (ijazah, kk, ktp_wali — KTP wali kini ikut dibaca OCR, khusus jenisnya).
+       Berkas nyaris tanpa tulisan + satu wajah besar (`wajahDominan`) = pas foto di kotak dokumen. Teguran tampil di bawah
+       berkas dan menahan tombol Daftar SEKALI (`salahDitegur`) — tidak pernah menolak unggahan, karena dugaan bisa keliru.
+     - **Pendaftar ganda** (`src/lib/spmb-ganda.ts` murni, `/pusat-spmb/tahapan/ganda`, `/api/spmb/ganda`): NIK/NISN sama =
+       kuat; tanggal lahir sama + nama mirip, atau nama + WA sama = dugaan. Ragam "Muhammad" disamakan. **Kembar**: dua NIK
+       (atau NISN) sah yang berbeda tidak ditandai kecuali namanya persis sama. NIK/NISN berisi satu angka berulang diabaikan.
+       Hasilnya DAFTAR UNTUK DIPERIKSA — tidak ada yang dihapus/digabung otomatis; "Bukan Ganda" disimpan sebagai pasangan id
+       di SiteSetting `spmb.gandaAbaikan`. Selalu dihitung dari SELURUH pendaftar (ganda lintas gelombang yang tersering).
+       Tidak diperiksa saat calon mendaftar: memberi tahu "NIK ini sudah terdaftar" di halaman publik = pintu menebak NIK.
+
+139. **Ringkasan per calon, pindai dari kamera, dan Foto Pas Otomatis (9 Oktober 2026).**
+     - **Ringkasan** (`ringkasCalon`, src/lib/spmb-ringkasan.ts — murni, netral): satu paragraf di jendela calon (tahap, giliran
+       siapa, berkas kurang/diminta ulang, hari diam, pembayaran, sesi, cara menghubungi). Disusun dengan ATURAN dari data yang
+       sama dengan daftar Tahapan Calon (`kunciTertahan`, `aktivitasTerakhir`, `InfoBayar`) — bukan AI; kalimat yang datanya
+       kosong tidak ditulis. Asesmen & cek kesehatan hanya SUDAH/BELUM, tidak pernah isinya. "Berkas wajib" mengikuti
+       `form.require_*` ("0" opsional, "off" disembunyikan) + `DokumenSyaratSpmb` aktif & wajib.
+     - **Kamera di halaman** (`KameraBerkas`): mode `dokumen` (kamera belakang) menjalankan `deteksiSudut` tiap 250 ms pada
+       bingkai 320 px dan memotret SENDIRI bila kertas ≥28% bingkai dan diam 4 pemeriksaan berturut; mode `swafoto` (kamera
+       depan, garis panduan) dipotret manual. Hasilnya sebuah File yang masuk `handleFile` biasa — pemindai, pengecil, dan
+       pemeriksa mutu TIDAK punya jalur kedua. Foto penuh lewat `ImageCapture.takePhoto` bila ada (bingkai video hanya ±1080p).
+       Tombolnya hanya tampil bila `kameraTersedia()` (HTTPS) — di `http://<ip>:3000` tidak ada, calon memilih dari galeri.
+     - **Foto Pas Otomatis** (src/lib/pas-foto.ts + `PasFotoOtomatis`): wajah (BlazeFace) → potong 3×4 600×800 → latar
+       merah/biru dengan MediaPipe Selfie Segmentation TF.js di `public/model/latar` (±330 KB; kanal 1 = orang). Model
+       dijalankan sekali, ganti warna hanya menempel ulang. Terbuka otomatis hanya bila fotonya BELUM berbentuk pas foto
+       (bukan 3×4 atau `periksaPasFoto` memberi saran); pas foto studio yang sudah benar diunggah apa adanya. "Latar asli"
+       dan "Pakai Foto Asli" selalu ada; bila porsi orang di luar 20–90% bidang, penggantian latar dimatikan (model gagal).
+       Topeng hanya 256×256 — tepi rambut/jilbab bisa kurang rapi, jadi hasil selalu diperlihatkan dulu.
+
+140. **Pusat PKL (9 Oktober 2026) — portal Humas di `/pusat-pkl` (pola Pusat SPMB), akses `aksesHumas` lewat `sesiPkl()`.**
+     Dulu penempatan hanya di `/dashboard/admin/internships`, yang TIDAK bisa dibuka Wakil Kepala Humas (#45). Rute lama
+     (`admin/internships`, `admin/industry-partners`, `teacher/humas/industry-partners`) kini pengalihan.
+     - **Tempat PKL dari KATALOG DUDI**: `Internship.mitraId` → `IndustryPartner`; `company` tetap diisi SALINAN nama DUDI
+       supaya layar/cetakan lama tidak berubah (ganti nama DUDI ikut memperbarui salinannya). `mitraId` null = belum dapat
+       DUDI. `IndustryPartner` kini data lengkap (pimpinan, titik lokasi, jurusan diterima, `pekerjaan`, fasilitas, `aktif`).
+       DUDI berriwayat penempatan tidak bisa dihapus — dinonaktifkan. Kuota terisi = penempatan `ONGOING` (`terisiPerDudi`).
+     - **Satu sumber peserta**: `muatPeserta()` (src/lib/pkl-server.ts) untuk layar Penempatan, dasbor, dan Excel
+       `/api/pkl/rekap` (Per DUDI · Siswa per DUDI · Belum Dapat DUDI · Mutasi).
+     - **Penempatan massal hanya mengubah isian yang DIKIRIM** (DUDI saja / guru saja / tanggal saja). Peringatan kuota &
+       jurusan dibalas 409 `peringatan[]`; layar bertanya lalu mengirim ulang dengan `paksa` (`useKirim`).
+     - **Lama PKL tidak seragam** (`lamaBulan` 3/6): `selesaiDari(mulai, bulan)` = mulai + N bulan − 1 hari, tetap bisa diubah.
+     - **Mutasi = pindah tempat SETELAH PKL berjalan.** `Internship` tetap satu baris per siswa (tempat SEKARANG); tempat lama
+       + alasan di `MutasiPkl`. Mengganti DUDI siswa yang PKL-nya sudah berjalan lewat Ubah/Massal DITOLAK 409 — wajib Mutasi.
+       Mutasi mengosongkan catatan pengantaran dan MENCABUT tautan penilaian pembimbing di tempat lama.
+     - **Pengantaran/penjemputan** = kolom di `Internship` (`diantarPada/Oleh`, `diterimaOleh`, `dijemputPada/Oleh`).
+     - **Laporan masalah** (`LaporanPkl`, pelapor SISWA | INDUSTRI | GURU): BARU → DITANGANI → SELESAI + tindak lanjut.
+       Humas melihat semua (`/pusat-pkl/masalah`), guru pembimbing hanya bimbingannya (`/dashboard/teacher/pkl/masalah`);
+       pintu notifikasi `/pkl/laporan`. Penerima kabar = `penerimaLaporan` (Wakil Kepala Humas + guru pembimbing).
+     - **Foto jurnal terverifikasi** (src/lib/pkl-foto.ts): foto dari `KameraBerkas mode="bebas"` dicap di peramban
+       (`capFoto`) lalu diunggah ke `/api/student/pkl/foto`, yang mencatat WAKTU SERVER dan menerbitkan tanda HMAC
+       (berlaku 20 menit, jurnal harus untuk hari itu). Foto galeri lewat `/api/upload` → tanpa tanda → "waktu tidak
+       terverifikasi". Bukan anti-akal mutlak: membuktikan jalur & waktu kirim, bukan isi fotonya.
+     - **Kompetensi satu istilah**: `Major.skills` dipakai siswa menandai jurnal (`InternshipJournal.kompetensi`, disaring
+       server ke daftar jurusannya) DAN Humas menandai `IndustryPartner.pekerjaan` → `/pusat-pkl/kompetensi`.
+     - **Portal industri tanpa akun** `/portal-dudi/<token>` (hash di `IndustryPartner.tokenPortalHash`, token asli tampil
+       SEKALI saat dibuat; buat ulang = yang lama mati): presensi HARI INI saja (`PresensiPkl`), paraf jurnal, nilai akhir,
+       lapor masalah. Setiap tindakan diperiksa `mitraId` = DUDI pemilik token; tanpa NIS/kontak siswa; dibatasi per IP.
+     - **BKK & tracer**: Data DUDI menampilkan alumni yang menurut tracer BEKERJA di DUDI itu (nama dicocokkan tanpa
+       PT/CV/tanda baca) + berapa yang eks-PKL di sana, dan menyarankan "calon pemberi kerja" (nilai industri ≥85 atau ada
+       alumni bekerja). Penandaannya tetap keputusan Humas (`calonPemberiKerja`).
+     - `prisma db push` di server ini: jangan `--accept-data-loss`; indeks unik pada kolom baru memicu peringatan itu —
+       pakai `@@index` + keunikan dijaga kode (token acak).
+
+141. **Pusat PKL lanjutan (9 Oktober 2026): satu menu, surat lewat TU, panitia, pengingat, monitoring di lokasi, jurnal tahan putus.**
+     - **Menu PKL SATU** (teguran user: "malah terpisah"): sidebar hanya "Pusat PKL"; Pendaftaran PKL (`/pusat-pkl/pendaftaran`)
+       dan Status MoU Mitra (Data DUDI) ada DI DALAMNYA. Rute lama (`admin/pkl-pendaftaran`, `teacher/humas/pkl-pendaftaran`,
+       `admin/mitra-mou`) = pengalihan. Fitur PKL baru masuk `MENU_PUSAT_PKL`, bukan menu sidebar baru.
+     - **Surat & SPPD PKL tetap milik buku agenda TU** (`/pusat-pkl/surat`, src/lib/pkl-surat.ts): permohonan/pengantar/penarikan =
+       baris `Surat` KELUAR, surat tugas guru (+SPPD) = `SuratTugas`; nomor SELALU dari `nomorSuratBerikutnya` (satu urutan sekolah).
+       `SuratPkl` hanyalah TAUTAN (surat mana milik urusan PKL). Mengubah isi/menghapus = Tata Usaha di Persuratan. Lembar cetak
+       satu sumber: `src/components/surat/CetakSuratKeluar.tsx` & `CetakSuratTugas.tsx` (penjagaan akses dilakukan PEMANGGIL) —
+       dipakai halaman TU dan `/pusat-pkl/surat/[id]/cetak` (hanya surat yang tercatat di `SuratPkl`).
+     - **Panitia PKL** (`pkl.panitia`, `/pusat-pkl/panitia`, layar = `PanitiaSpmbManager` dengan prop `api`/`nama`): SEMUA rute
+       urusan PKL dijaga `aksesPusatPkl` / `assertPkl` (src/lib/pkl-humas.ts) = `aksesHumas` ATAU anggota tambahan. `aksesHumas`
+       tetap untuk hal Humas di luar PKL (tracer, dashboard Humas) dan untuk siapa yang boleh MENGATUR daftar panitia. Menu:
+       penanda jabatan semu "Panitia PKL" (staf lewat `jabatanUntukMenu`; guru disisipkan di layout & `konteksMenuGuru` KHUSUS
+       untuk daftar jabatan yang dioper ke menu).
+     - **Pengingat jurnal PKL** (`pengingatPkl`, jam `notifikasi.jamPkl` bawaan 16.30): siswa yang sedang PKL hari itu dan belum
+       menulis jurnal; kunci per siswa per hari; terdaftar di keempat tempat (#51).
+     - **Monitoring di lokasi**: `MonitoringPkl.lat/lng/akurasi/jarakMeter`; jarak ke titik DUDI dihitung SERVER (≤300 m = "di
+       lokasi"). Foto kunjungan dulu TIDAK PERNAH tersimpan (API hanya menerima awalan `/uploads/`, unggahan beralamat
+       `/api/uploads/`) — diperbaiki.
+     - **Jurnal tahan putus sinyal** (src/lib/antrean-jurnal.ts, IndexedDB termasuk fotonya): gagal jaringan → masuk antrean,
+       dikirim saat `online`/halaman dibuka. Galat ≥500 & jaringan = coba lagi nanti; galat lain = butir dibuang supaya antrean
+       tidak macet. Foto antrean dicap waktu KIRIM, dan hanya terverifikasi bila terkirim di hari yang sama dengan jurnalnya.
+
+142. **Pusat PKL gelombang 4 (9 Oktober 2026): kalender, pembanding, arsip, sertifikat massal, laporan monitoring, statistik web.**
+     - **Kalender PKL** (`/pusat-pkl/kalender`, server page): "gelombang" TIDAK disimpan — ia kelompok siswa bertanggal mulai &
+       selesai sama, dihitung dari `muatPeserta`. Garis waktu + agenda 60 hari (mulai, selesai, MoU berakhir).
+     - **Pembanding antar DUDI** (`/pusat-pkl/pembanding`, `/api/pkl/pembanding`) dan **Monitoring per guru**
+       (`/pusat-pkl/monitoring`, `/api/pkl/monitoring?bulan=`): siswa bimbingan, catatan bulan itu, kunjungan terbukti di lokasi
+       (≤300 m dari titik DUDI), dan siswa yang BELUM dimonitor bulan itu.
+     - **Laporan Monitoring cetak** = satu komponen `LaporanMonitoringCetak` dua pintu: Pusat PKL (`…/monitoring/cetak?guru=&bulan=`)
+       dan portal guru (`/dashboard/teacher/pkl/laporan-monitoring` — id guru dari SESI, bukan dari alamat). Batas bulan dihitung
+       WIB. TTD guru & kepala = TTD pribadi (#123). Dipakai sebagai lampiran SPPD.
+     - **Arsip per angkatan** (`/pusat-pkl/arsip`, Excel `/api/pkl/arsip?ta=`): TANPA tabel arsip — `Internship` tidak dihapus saat
+       siswa lulus, jadi arsip = semua baris (status siswa apa pun) per tahun ajaran tanggal MULAI (`tahunAjaranPkl`, Juli+).
+       Satu sumber `muatArsipPkl` + `ringkasAngkatan` (src/lib/pkl-arsip.ts) untuk layar & Excel. `muatPeserta` tetap hanya siswa AKTIF.
+     - **Sertifikat massal** (`/pusat-pkl/sertifikat?kelas=&dudi=`, maks 60 per cetak): `siapkanSertifikat` (src/lib/pkl-sertifikat.ts)
+       + `LembarSertifikatPkl` dipakai cetak satuan DAN massal — nomor & token tetap dibuat SEKALI (#49).
+     - **Statistik PKL di web** (`StatistikPkl`, beranda & halaman SPMB): ANGKA saja, tanpa nama siswa/DUDI. Sengaja TIDAK tampil
+       sampai ≥5 mitra aktif DAN ≥10 siswa ditempatkan pada tahun ajaran berjalan — jangan diturunkan ambangnya supaya "terlihat
+       ada"; "1 mitra industri" di halaman pendaftaran merugikan. Warna ikut tema SPMB lewat `var(--spmb-*, cadangan)`.
+
+143. **Pusat PKL gelombang 5 (9 Oktober 2026): presensi siswa, peringatan dini, pantauan orang tua, laporan akhir, umpan balik.**
+     - **Presensi PKL dari HP siswa** (`PanelHarianPkl` di halaman PKL siswa, `/api/student/pkl/harian`): masuk (dengan lokasi HP;
+       jarak ke titik DUDI dihitung SERVER, ≤300 m = "di lokasi" — `src/lib/pkl-harian.ts`), pulang (≥1 jam setelah masuk), atau
+       izin/sakit berketerangan (`metode: "SISWA"`). Hanya selama masa PKL di DUDI yang sudah ditetapkan. **Catatan pembimbing
+       industri/sekolah yang bukan HADIR tidak pernah ditimpa siswa** (aturan #33). Tanpa izin lokasi / lewat HTTP presensi tetap
+       tercatat bertanda "tanpa lokasi" — menolak presensi karena GPS HP bermasalah lebih merugikan. PKL TIDAK memakai `cekLibur`:
+       hari kerjanya mengikuti DUDI, bukan kalender sekolah.
+     - **Peringatan dini PKL** = satu sumber `hitungPeringatanPkl` (src/lib/pkl-peringatan.ts), tampil di `/pusat-pkl/peringatan` dan
+       sebagai butir "Perlu tindakan" di Beranda PKL. Tanda "tidak presensi" HANYA untuk siswa yang pernah presensi — sebelum
+       presensi dipakai semua siswa akan tertandai. Dihitung saat dibuka, tidak mengirim notifikasi apa pun.
+     - **Pantauan orang tua** (`/dashboard/parent/pkl`, `pantauPklSiswa`): hanya baca — tempat, masa, guru pembimbing, kehadiran 30
+       hari, 10 jurnal terakhir. SENGAJA tanpa laporan masalah (bisa memuat hal yang belum dibicarakan anak dengan orang tuanya),
+       kontak pembimbing industri, dan titik lokasi.
+     - **Laporan akhir** (kolom `Internship.laporanAkhir*`): siswa mengunggah PDF (folder `pkl-jurnal`) → DIKIRIM → guru pembimbing
+       (bimbingannya saja) atau panitia PKL menyetujui / meminta revisi berketerangan (`LaporanAkhirPklManager`, dua pintu:
+       `/pusat-pkl/laporan-akhir` & `/dashboard/teacher/pkl/laporan-akhir`; cakupan ditentukan server lewat `aksesPkl`). Yang sudah
+       DISETUJUI tidak bisa diganti siswa.
+     - **Umpan balik siswa tentang DUDI** (`Internship.umpanBalik` = {bintang, aspek, saran, rekomendasi}): dibuka 14 hari sebelum
+       PKL selesai sampai 30 hari sesudahnya (`umpanTerbuka`). Dibaca Pembanding antar DUDI; TIDAK diperlihatkan ke DUDI lewat
+       portal industri — jangan ditambahkan ke sana, siswa menilai jujur justru karena itu.
+
+144. **Pusat PKL gelombang 6 (9 Oktober 2026): nilai akhir, impor & saran penempatan, peta, riwayat DUDI, agenda, kabar DUDI, darurat, linimasa.**
+     - **Nilai akhir PKL berbobot** (`/pusat-pkl/nilai`, hitungan murni `src/lib/pkl-nilai.ts`): lima komponen — nilai industri,
+       nilai guru (Grade "Nilai PKL"), jurnal (jumlah jurnal ÷ hari kerja Senin–Sabtu yang sudah dijalani), kehadiran (baru
+       dihitung setelah 5 catatan presensi), laporan akhir (100 bila DISETUJUI). **Bobot diatur panitia** (SiteSetting
+       `pkl.bobotNilai`; bawaan 40/20/15/15/10 hanya titik awal, bukan keputusan sekolah) dan dinormalkan terhadap komponen yang
+       ADA; komponen kosong selalu disebut ("belum lengkap"), tidak dihitung nol. **Hitungan ≠ nilai tetap**: baru tersimpan ke
+       `Internship.nilaiAkhir*` saat tombol "Tetapkan Nilai" ditekan, supaya arsip tidak berubah saat bobot diubah.
+     - **Impor penempatan dari Excel** (`/api/pkl/penempatan/impor`, jendela di `AlatPenempatanPkl`): GET = template berisi peserta
+       sekarang + sheet daftar DUDI/guru yang sah; POST tanpa `terapkan` = PRATINJAU (tidak menulis), dengan `terapkan=1` = baris
+       sah diterapkan. Nama DUDI/guru harus ADA dan TUNGGAL — tidak pernah ditebak; sel kosong = tidak diubah; siswa yang PKL-nya
+       sudah berjalan di DUDI lain ditolak (wajib Mutasi, #140). Hanya untuk siswa yang SUDAH peserta.
+     - **Saran penempatan** (`/api/pkl/penempatan/saran`): aturan, bukan AI — DUDI aktif BERKUOTA yang menerima jurusan siswa dan
+       masih punya sisa; didahulukan yang sekecamatan dengan rumah siswa lalu yang sisa kuotanya terbanyak. DUDI tanpa kuota tidak
+       ikut. Hanya usulan: penerapannya lewat `POST /api/pkl/penempatan` biasa per DUDI.
+     - **Peta PKL** (`/pusat-pkl/peta`, `PetaPkl`): titik DUDI di atas batas kecamatan kabupaten sekolah (35.10), besar lingkaran =
+       siswa sedang PKL. DUDI di luar kabupaten & tanpa titik didaftar di samping, tidak dihilangkan.
+     - **Riwayat per mitra** (`/pusat-pkl/dudi/[id]`): semua siswa yang pernah PKL di DUDI itu per tahun ajaran + yang pindah keluar
+       (`MutasiPkl.dariMitraId`) + saran siswa TANPA NAMA. **Linimasa per siswa** (`/pusat-pkl/siswa/[studentId]`): jurnal diringkas
+       per minggu, bukan satu baris per hari.
+     - **Agenda PKL dari panitia** (`pkl.agenda`, panel di Kalender PKL): `untuk: "SEMUA"` ikut tampil di halaman PKL siswa,
+       "PANITIA" hanya di kalender. Kalender tetap menghitung mulai/selesai/MoU sendiri — agenda manual adalah tambahan.
+     - **Kabar ke DUDI** (`/pusat-pkl/dudi/kabar`): satu pesan bertanda `{nama}/{narahubung}/{jumlah}` + tombol WhatsApp per DUDI
+       yang ditekan petugas. Situs tidak mengirim apa pun (pola ajakan tracer, #135).
+     - **Tombol darurat siswa** (di `PanelHarianPkl`, hanya saat sedang PKL): telepon guru pembimbing + laporan berjenis `DARURAT`
+       ke Humas & guru (jalur `/api/student/pkl/laporan` yang sama, disertai lokasi HP bila diizinkan). JANGAN diuji di server
+       hidup — notifikasinya sampai ke orang sungguhan.
+
+145. **Pusat PKL gelombang 7 (9 Oktober 2026): laporan tahunan, portofolio siswa, jurnal salin-tempel, halaman & formulir mitra.**
+     - **Laporan PKL tahunan** (`/pusat-pkl/arsip/cetak?ta=`): cetak A4 dari `ringkasAngkatan` yang sama dengan Arsip & Excel.
+     - **Portofolio PKL siswa** (`/dashboard/student/pkl/portofolio`): satu lembar A4 dari data PKL-nya sendiri (kompetensi dari tanda
+       di jurnal, kegiatan pilihan, nilai, foto TERVERIFIKASI saja). Tidak ada isian baru — jangan menambah formulir "isi CV".
+     - **Jurnal salin-tempel** masuk `hitungPeringatanPkl`: teks sama persis ≥4 kali, atau sama dengan teman se-DUDI di tanggal
+       yang sama ≥3 hari; jurnal <40 huruf tidak dinilai. Tanda untuk DILIHAT guru — pekerjaan PKL memang sering berulang.
+     - **Halaman publik `/mitra-industri`** (menu Informasi di navbar): hanya DUDI aktif + `tampilPublik` (nama, bidang, kecamatan,
+       logo) + `StatistikPkl` + **formulir "Jadi Mitra PKL"** (`POST /api/public/mitra-usulan`, 3 kiriman/IP/30 menit, kolom jebakan
+       robot). Usulan SELALU tersimpan sebagai DUDI NONAKTIF bertanda `IndustryPartner.usulan` dan `tampilPublik: false` — tidak
+       muncul di penempatan, peta, saran, maupun web sampai Humas menyimpannya dalam keadaan aktif (saat itu `usulan` jadi false).
+       Nama yang sudah ada tidak dibuat ulang dan jawabannya tetap sama (formulir tidak boleh jadi alat menebak daftar mitra).
+       Saringan "Usulan dari web" ada di Data DUDI.
+
+146. **Tata Usaha: pindai surat masuk, disposisi dari HP, Meja Kerja TU (9 Oktober 2026).**
+     - **Pindai surat masuk** (`PindaiSuratMasuk` di formulir Agenda Surat → Surat Masuk): kamera/galeri → pemindai dokumen SPMB
+       (#138) → disimpan ke folder RAHASIA `public/uploads/rahasia/surat-masuk` lewat `POST /api/admin/surat/pindai` (tanda tangan
+       berkas diperiksa, maks 6 MB) → OCR di peramban → `uraiSurat` (src/lib/urai-surat.ts, murni) MENGUSULKAN nomor, tanggal,
+       pengirim, perihal. Usulan tidak pernah mengisi sendiri (tombol "Pakai"). PDF disimpan tanpa dibaca. Pindaian dibuka hanya
+       lewat `/api/surat/berkas/<nama>` (`bolehBukaSurat`: Admin, TAS, Kepala Sekolah, guru berjabatan TU, atau orang yang dituju
+       disposisi surat itu). Dulu lampiran surat masuk hanya kolom URL yang diketik.
+     - **Disposisi dari HP** (`DisposisiSuratHp`, `/dashboard/{teacher,admin}/disposisi-surat`, pintu notifikasi `/disposisi-surat`,
+       API `/api/disposisi-surat`): PIMPINAN (`pimpinanSurat` = Admin / jabatan Kepala Sekolah) melihat surat masuk yang belum
+       didisposisi, memilih tujuan, menulis instruksi, dan menandatangani; SEMUA guru & staf melihat disposisi yang ditujukan ke
+       dirinya/jabatannya dan melaporkan tindak lanjut (`PUT …/[id]`, hanya orang yang dituju; catatan beberapa penerima disambung
+       bernama). Surat masuk baru → Kepala Sekolah dikabari (`kabariSuratMasuk`).
+       **Tujuan dipilih dari NAMA JABATAN & PEGAWAI yang benar-benar ada** (`pilihanTujuan`), bukan `TUJUAN_DISPOSISI_UMUM` — daftar
+       lama itu memakai sebutan yang tidak sama dengan nama jabatan ("Wakil Kepala Bidang Kurikulum" vs "Wakil Kepala Kurikulum"),
+       jadi penerimanya tidak pernah dikabari. Daftar lama tetap dipakai layar register TU & lembar cetak.
+       **Tanda tangan**: `Disposisi.dariUserId` + `ditandatanganiAt`; lembar cetak memakai TTD pribadi akun itu (#123) HANYA bila
+       `ditandatanganiAt` terisi. Pimpinan yang belum punya TTD bisa menggambarnya di layar itu juga (`PenyuntingTtd` →
+       `/api/ttd/saya`). Disposisi yang dicatat TU (tanpa `dariUserId`) tetap berperilaku seperti dulu.
+       **Tautan notifikasi disposisi sekarang `/disposisi-surat`** — dulu `/dashboard/admin/disposisi`, yang tidak bisa dibuka
+       guru (#45). Kabar disposisi satu sumber: `kabariTujuanDisposisi` (src/lib/disposisi-server.ts).
+     - **Meja Kerja TU** (`/dashboard/admin/meja-kerja`, `susunMejaKerja` di src/lib/meja-kerja-tu.ts, `verifyTasAccess`): halaman
+       tersendiri berisi BUTIR pekerjaan yang menunggu (disposisi untuk saya, surat belum didisposisi, disposisi belum selesai,
+       permintaan surat & legalisir, verifikasi biodata, berkas SPMB, arsip kedaluwarsa, pesan situs), terlama di atas, yang
+       terlalu lama ditandai merah. Syaratnya SAMA dengan lencana sidebar/lonceng — kalau syarat lencana diubah, ubah di sini juga.
+       Ini halaman menu, bukan pita pengingat di tiap halaman (#31 tetap berlaku).
+
+147. **Mutasi Siswa satu pintu & Paket Kelulusan (9 Oktober 2026).**
+     - **Surat untuk siswa dari templat = `buatSuratSiswa`** (src/lib/surat-siswa.ts): baris `Surat` KELUAR biasa (nomor
+       `nomorSuratBerikutnya`, isi dari pustaka templat, ber-QR saat dicetak). WAJIB dipanggil BERURUTAN — nomor dihitung dari
+       surat yang sudah tersimpan, jadi `Promise.all` menghasilkan nomor kembar.
+     - **Mutasi Siswa** (`/dashboard/admin/mutasi-siswa`, `MutasiSiswaManager`, `/api/admin/mutasi-siswa`; menulis = Buku Induk
+       penuh, membaca/centang = `verifyTasAccess`). KELUAR: surat pindah (templat `MUT_KELUAR`) dibuat LEBIH DULU, baru status +
+       `exitDate` + `pindahDate/transferTo/alasanPindah/suratNo` di Buku Induk, lalu `cabutSemuaSesiPengguna`. Kunci Buku Induk
+       yang dipakai SAMA dengan formulir Buku Induk, sehingga Buku Mutasi terisi tanpa kode tambahan. MASUK: akun + NIS lewat
+       `penghitungNis`/`emailDariNis`/`hashSandiBawaan` (aturan "Jadi Siswa" SPMB), `pindahanDari/diterimaDate/tingkatMasuk/
+       rombel/kelasAsal/masukSuratNo`, opsional surat `MUT_MASUK`.
+     - **Daftar periksa = `periksaMutasi`** (src/lib/mutasi-siswa.ts): butir otomatis DIBACA DARI DATA (jadi benar juga untuk
+       mutasi yang dicatat lewat Buku Induk), butir di luar situs (Dapodik, berkas asli, surat ditandatangani) dicentang petugas
+       dan disimpan sebagai teks `bukuIndukData.mutasiCentang`. Dapodik TIDAK diubah dari situs (#38).
+     - **Paket Kelulusan** (`/dashboard/admin/paket-kelulusan`, `muatPaketKelulusan`): SKL massal dari templat `KET_LULUS` (wajib
+       nomor & tanggal SK kelulusan, maks 60 sekali jalan, yang sudah punya dilewati; tautan di `bukuIndukData.sklSuratId/
+       sklNomor`), cetak massal `…/cetak`, dan status serah terima ijazah yang HANYA DIBACA dari `IjazahHandover`.
+     - **Lembar surat keluar satu komponen: `IsiSuratKeluar`** (src/components/surat) — dipakai cetak satuan
+       (`CetakSuratKeluar`) dan cetak massal SKL. Jangan menyalin lembarnya ke halaman lain.
+
+148. **Meja Kerja TU memuat SEMUA data TU yang belum selesai (9 Oktober 2026, permintaan user).** `susunMejaKerja` kini ±28 bagian:
+     persuratan (surat belum didisposisi, disposisi berjalan & untuk saya, permintaan surat, surat keluar tanpa isi, surat masuk
+     tanpa pindaian, nomor surat kembar, ekspedisi tanpa tanda terima, arsip tanpa berkas / habis masa berlaku), layanan (legalisir
+     diajukan / dikerjakan / belum diambil, bantuan cair belum diambil, tamu belum pulang), siswa (mutasi belum lengkap, lulusan
+     belum ambil ijazah, verifikasi biodata, berkas SPMB, **Buku Induk Siswa belum lengkap** (11 isian pokok), **temuan Pemeriksa Data**, **nama sekolah asal ganda/mirip**), alumni
+     (tanggal lulus / nomor ijazah kosong, belum isi tracer), kepegawaian (cuti menunggu, SK habis, **data guru belum lengkap**,
+     pegawai tanpa TTD digital), dan pesan situs.
+     - **Tiap bagian memakai sumber yang SAMA dengan halamannya**: `jalankanPemeriksaan` (Pemeriksa Data), `kelompokkanSekolah`
+       (Rapikan Nama Sekolah), `mutasiTerbaru` (Mutasi Siswa). Jangan menghitung ulang dengan syarat sendiri — Meja Kerja yang
+       angkanya beda dari halamannya lebih buruk daripada tidak ada.
+     - **Fitur TU baru yang punya keadaan menunggu / belum lengkap WAJIB menambah bagiannya di `susunMejaKerja`.**
+     - **Dua tab** (keputusan user 9 Okt 2026): "Pekerjaan harian" (bawaan) dan "Kelengkapan data" (`?bagian=data`), dipilah
+       `KUNCI_KELENGKAPAN` di meja-kerja-tu.ts. Tanpa itu angka utama 1.343 butir, 1.200-an di antaranya tracer/ijazah/buku
+       induk. Bagian baru yang sifatnya tunggakan isian masuk daftar itu; yang menunggu tindakan orang tidak.
+     - Bagian yang punya butir terlambat tampil lebih dulu; tiap bagian hanya menampilkan 6 butir pertama + "dan N lainnya".
+       Tiap kueri dibungkus `pegang` — satu bagian gagal tidak menjatuhkan halaman.
+
+149. **Pusat PKL adalah SUMBER bagian "J. PKL" Buku Induk (9 Oktober 2026).** Temuan user: penempatan, guru pembimbing, lokasi,
+     dan lama PKL di Pusat PKL tidak pernah sampai ke Buku Induk — bagian J adalah isian manual `bukuIndukData.pkl*` yang berdiri
+     sendiri. Sekarang `sinkronBukuIndukPkl` (src/lib/pkl-server.ts) menyalin `Internship` → `pklPlace, pklAddress, pklStartDate,
+     pklEndDate, pklLama, pklSupervisor (guru pembimbing), pklLatitude/Longitude (titik DUDI), pklScore` + penanda
+     `pklDariPusat: "1"`, dipanggil lewat `sinkronLatar` di SETIAP rute yang mengubah penempatan/guru/tanggal/nilai (penempatan
+     massal & satuan, mutasi, impor Excel, tetapkan nilai, penilaian industri, ubah data DUDI, rute admin lama).
+     - **Rute baru yang mengubah `Internship` WAJIB memanggil `sinkronLatar`.** Menyalin (bukan membaca saat tampil) dipilih
+       karena pembaca Buku Induk ada di banyak tempat (tabel, cetak, Excel, halaman depan rapor) dan semuanya membaca kunci itu.
+     - Hanya siswa yang SUDAH punya DUDI & tidak dibatalkan; siswa yang belum ditempatkan tidak disentuh, jadi isian manual lama
+       (416 siswa/alumni saat dibuat) tetap utuh. Nilai hanya ditimpa bila Pusat PKL memang punya nilainya.
+     - Formulir Buku Induk menampilkan peringatan "terisi otomatis dari Pusat PKL" bila `pklDariPusat`; ketikan manual di sana akan
+       tertimpa pada perubahan penempatan berikutnya — ubah di Pusat PKL.
+
+150. **SPMB → Buku Induk & rekap Buku Mutasi (9 Oktober 2026).** "Jadi Siswa" menyalin data pendaftar SEKALI (`dataSiswaDariPendaftar`);
+     nama ayah/ibu, HP orang tua, dan agama TIDAK ditanyakan formulir SPMB dan user memutuskan TIDAK menambahkannya — dilengkapi
+     lewat Buku Induk/biodata. Siswa baru SPMB bukan mutasi masuk (daftar masuk hanya yang `pindahanDari` terisi). Rekap per
+     tingkat Buku Mutasi punya baris "Belum ada kelas" yang hanya muncul bila ada siswa aktif tanpa kelas (sebelum Pembagian
+     Rombel), supaya jumlah per tingkat = total aktif. Surat pindah dari Mutasi Siswa TANPA blok "Kepada Yth." (templat
+     `MUT_KELUAR` memang tak beralamat; dengan blok itu surat meluber ke halaman 2).
+
+151. **Riwayat Buku Induk bisa dikembalikan, Profil Siswa satu halaman, Laporan Bulanan TU (9 Oktober 2026).**
+     - **Riwayat = satu pintu `src/lib/riwayat-induk.ts`** (siswa & guru). Pencatatan per isian SUDAH ada sejak 12 Sep 2026
+       (ActivityLog `UPDATE_BUKU_INDUK`, `metadata.perubahan` = label + nilai berformat); yang ditambah: `metadata.mentah` =
+       nilai ASLI per tempat simpan (`kolom:<nama>`, `induk:<kunci>`, `akun:name`) supaya bisa DIKEMBALIKAN — nilai berformat
+       (tanggal, L/P) tidak bisa dibalik. Pola jalur tulis: `potretSiswa/potretGuru` SEBELUM menulis → `catatRiwayat…`
+       sesudahnya (`.catch(() => 0)`, gagal mencatat tidak menggagalkan simpan). Sudah dipasang di formulir Buku Induk siswa &
+       guru, persetujuan biodata siswa & pegawai, Mutasi Siswa (keluar), sinkron Pusat PKL (`PELAKU_SISTEM`), impor Excel
+       siswa & guru (hanya baris yang DIPERBARUI), dan Rapikan Nama Sekolah (`catatRiwayatSatuKolom` — satu catatan per siswa
+       tanpa memotret tiap baris). Jalur baru yang mengubah Buku Induk WAJIB memakai pola ini.
+     - **Kembalikan** (`kembalikanRiwayat`, `POST /api/admin/buku-induk/riwayat/[logId]` + `jalur?`, akses Buku Induk PENUH):
+       isian yang sudah diubah LAGI sejak catatan itu TIDAK ditimpa (dilaporkan `dilewati`) — menimpanya menghapus perubahan
+       yang lebih baru tanpa terlihat. Mengembalikan = catatan riwayat baru ("mengembalikan perubahan …"), jadi bisa dibalik
+       lagi. Catatan sebelum 9 Okt 2026 tidak punya `mentah` → tanpa tombol. Kunci teknis (`mutasiCentang`, `pklDariPusat`,
+       `sklSuratId/sklNomor`) tidak dicatat. Tampilan satu komponen `DaftarRiwayatInduk` (siswa, guru admin, guru Operator Sekolah).
+     - **Profil Siswa** = `/dashboard/admin/students/[id]` (`muatProfilSiswa`, src/lib/profil-siswa.ts): identitas, orang tua,
+       kehadiran tahun ajaran, ringkasan nilai, riwayat kelas, PKL, poin, surat & layanan TU, berkas, lainnya. HANYA membaca;
+       **catatan BK & kunjungan UKS hanya JUMLAH** (isinya tetap di menu BK/UKS). Isian pokok satu sumber `pokokKurang`
+       (src/lib/induk-pokok.ts) — dipakai juga Meja Kerja.
+     - **Laporan Bulanan TU** (`/dashboard/admin/laporan-bulanan?bulan=YYYY-MM`, `susunLaporanBulanan`): satu halaman =
+       pratinjau + lembar cetak A4. Aturan mutasi SAMA dengan Buku Mutasi (ubah keduanya bersamaan). "Keadaan siswa" = keadaan
+       saat laporan dibuat (situs tidak menyimpan potret akhir bulan) dan lembarnya menyebut begitu — jangan ditulis seolah
+       angka akhir bulan. TTD Kepala = TTD pribadi (#123); Kepala TU dikosongkan (tidak ada akun pasti).
+

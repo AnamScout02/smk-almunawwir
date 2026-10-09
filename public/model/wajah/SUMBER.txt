@@ -1,0 +1,2 @@
+BlazeFace (pendeteksi wajah) — https://tfhub.dev/tensorflow/tfjs-model/blazeface/1/default/1 (Apache-2.0).
+Diunduh 7 Oktober 2026. Dipakai pemeriksa pas foto formulir SPMB (src/lib/olah-foto.ts), berjalan di peramban.

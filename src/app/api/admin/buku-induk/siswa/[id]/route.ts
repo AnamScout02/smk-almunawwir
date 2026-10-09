@@ -5,7 +5,8 @@ import { assertBukuIndukSiswaScope } from "@/lib/buku-induk-access";
 import { verifySession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-log";
-import { diffBukuIndukRaw, DIFF_SELECT } from "@/lib/buku-induk-diff";
+import { DIFF_SELECT } from "@/lib/buku-induk-diff";
+import { potretSiswa, catatRiwayatSiswa } from "@/lib/riwayat-induk";
 import bcrypt from "bcryptjs";
 import { toProperCaseName, normalizeBukuIndukText } from "@/lib/text";
 import { keUks } from "@/lib/tinggi-berat";
@@ -68,6 +69,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     select: { classId: true, ...DIFF_SELECT },
   });
   if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+  const sebelum = await potretSiswa(id);
 
   const body = await req.json();
   const {
@@ -154,17 +156,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     // Tanpa ini, kalau suatu saat ada data yang "tiba-tiba salah", tidak ada cara tahu siapa yang
     // mengubah dan apa isinya sebelum diubah — padahal Buku Induk adalah dokumen resmi sekolah.
     // Sengaja dibungkus try/catch: gagal mencatat riwayat tidak boleh menggagalkan penyimpanan.
-    try {
-      const sesudah = await prisma.student.findUnique({ where: { id }, select: DIFF_SELECT });
-      const perubahan = sesudah ? diffBukuIndukRaw(existing, sesudah) : [];
-      if (perubahan.length > 0) {
-        await logActivity(session, {
-          action: "UPDATE_BUKU_INDUK", entity: "Student", entityId: id,
-          description: `${session.name} mengubah ${perubahan.length} data Buku Induk milik "${student.user.name}" (${student.nis}): ${perubahan.slice(0, 5).map(p => p.label).join(", ")}${perubahan.length > 5 ? ", dll" : ""}`,
-          metadata: { nis: student.nis, nama: student.user.name, perubahan },
-        });
-      }
-    } catch (e) { lemparBilaPengalihan(e); console.error("[buku-induk siswa PUT] gagal catat riwayat", e); }
+    // Sejak 9 Okt 2026 lewat satu pintu `catatRiwayatSiswa` — ikut menyimpan nilai ASLI supaya bisa dikembalikan.
+    await catatRiwayatSiswa(session, id, sebelum).catch(e => { console.error("[buku-induk siswa PUT] gagal catat riwayat", e); return 0; });
 
     // Akun Orang Tua dibuat/dihubungkan otomatis dari No. HP — gagal-sync tidak boleh menggagalkan simpan siswa.
     await syncParentAccountForStudent(student.id, student.parentPhone, student.parentName).catch(() => {});

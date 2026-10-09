@@ -1,4 +1,6 @@
 import "server-only";
+import { PENANDA_PANITIA_PKL, anggotaPanitiaPkl } from "@/lib/pkl-humas";
+import { anggotaPanitia, jabatanUntukMenu } from "@/lib/spmb";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
@@ -35,12 +37,13 @@ export const konteksMenuGuru = cache(async (session: SessionPayload) => {
     isGuruPiketOnDutyToday = !!duty;
   }
   return {
-    jabatanNames: guru?.jabatan.map(j => j.jabatan.name) ?? [],
+    jabatanNames: [...(guru?.jabatan.map(j => j.jabatan.name) ?? []), ...((await anggotaPanitiaPkl().catch(() => [] as string[])).includes(session.userId) ? [PENANDA_PANITIA_PKL] : [])],
     hasInternshipBimbingan: (guru?._count.internshipsSupervised ?? 0) > 0,
     hasHomeroom: (guru?._count.homeroomOf ?? 0) > 0,
     hasTeaching: (guru?._count.teachingLoad ?? 0) > 0,
     isGuruPiketOnDutyToday,
     overdueBooks,
+    panitiaSpmb: (await anggotaPanitia().catch(() => [] as string[])).includes(session.userId),
   };
 });
 
@@ -70,7 +73,7 @@ export const konteksMenuTas = cache(async (session: SessionPayload) => {
     where: { user: { email: session.email } }, select: { jabatan: { select: { name: true } } },
   }).catch(() => []);
   const nama = [...(jabatan?.jabatan.map(j => j.jabatan.name) ?? []), ...staf.map(s => s.jabatan.name)];
-  return { jabatanNames: [...new Set(nama)] };
+  return { jabatanNames: await jabatanUntukMenu([...new Set(nama)], session.userId) };
 });
 
 /** MENU CEPAT pilihan akun — dibaca di SERVER supaya kisi menu langsung tampil sesuai aturan

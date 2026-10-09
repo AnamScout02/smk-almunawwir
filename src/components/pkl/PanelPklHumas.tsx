@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Award, ClipboardCheck, Copy, Link2, Loader2, MessageCircle, Plus, Printer, Trash2 } from "lucide-react";
+import { Award, ClipboardCheck, Copy, Link2, Loader2, MessageCircle, Plus, Printer, Trash2, MapPin } from "lucide-react";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
 import DatePicker from "@/components/shared/DatePicker";
@@ -16,7 +16,7 @@ const ASPEK: Record<string, string> = {
 };
 const CARA: Record<string, string> = { KUNJUNGAN: "Kunjungan", TELEPON: "Telepon", DARING: "Daring" };
 interface Data {
-  monitoring: { id: string; tanggal: string; cara: string; catatan: string; fotoUrl: string | null; olehNama: string }[];
+  monitoring: { id: string; tanggal: string; cara: string; catatan: string; fotoUrl: string | null; olehNama: string; lat: number | null; lng: number | null; akurasi: number | null; jarakMeter: number | null }[];
   penilaian: { nilai: Record<string, number> | null; rata: number | null; penilai: string | null; catatan: string | null; pada: string | null; tautanAktif: boolean; tautanSampai: string | null };
   sertifikat: { nomor: string | null; pada: string | null };
 }
@@ -29,6 +29,18 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
   const [d, setD] = useState<Data | null>(null);
   const [url, setUrl] = useState("");
   const [form, setForm] = useState<null | { tanggal: string; cara: string; catatan: string; fotoUrl: string }>(null);
+  // "Saya di lokasi" — lokasi HP guru saat kunjungan; jaraknya ke titik DUDI dihitung server (bukti kunjungan).
+  const [lokasi, setLokasi] = useState<{ lat: number; lng: number; akurasi: number } | null>(null);
+  const [pesanLokasi, setPesanLokasi] = useState("");
+  function ambilLokasi() {
+    if (!window.isSecureContext || !navigator.geolocation) { setPesanLokasi("Lokasi hanya bisa diambil lewat alamat HTTPS aplikasi."); return; }
+    setPesanLokasi("Mengambil lokasi…");
+    navigator.geolocation.getCurrentPosition(
+      p => { setLokasi({ lat: p.coords.latitude, lng: p.coords.longitude, akurasi: p.coords.accuracy }); setPesanLokasi(`Lokasi tercatat (±${Math.round(p.coords.accuracy)} m).`); },
+      () => setPesanLokasi("Izin lokasi ditolak atau lokasi tidak ditemukan."),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  }
   const [sibuk, setSibuk] = useState(false);
   const muat = useCallback(() => {
     fetch(`/api/pkl/${internshipId}/monitoring`, { cache: "no-store" }).then(r => r.json()).then(x => { if (x.penilaian) setD(x); }).catch(() => {});
@@ -50,11 +62,11 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
   async function simpanMonitoring() {
     if (!form) return;
     setSibuk(true);
-    const r = await fetch(`/api/pkl/${internshipId}/monitoring`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, tanggal: `${form.tanggal}T09:00:00+07:00` }) }).catch(() => null);
+    const r = await fetch(`/api/pkl/${internshipId}/monitoring`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, tanggal: `${form.tanggal}T09:00:00+07:00`, ...(form.cara === "KUNJUNGAN" && lokasi ? lokasi : {}) }) }).catch(() => null);
     const x = await r?.json().catch(() => null);
     setSibuk(false);
     if (!r?.ok) { toast.error(x?.error ?? "Gagal menyimpan."); return; }
-    toast.success("Monitoring tercatat."); setForm(null); muat();
+    toast.success("Monitoring tercatat."); setForm(null); setLokasi(null); setPesanLokasi(""); muat();
   }
 
   if (!d) return <div className="panel mb-6 flex justify-center p-6 text-gray-400"><Loader2 size={20} className="animate-spin" /></div>;
@@ -107,7 +119,14 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
           <ul className="divide-y divide-gray-50">
             {d.monitoring.map(m => (
               <li key={m.id} className="py-2.5 text-sm">
-                <p className="text-xs text-gray-500">{tgl(m.tanggal)} · {CARA[m.cara] ?? m.cara} · {m.olehNama}</p>
+                <p className="text-xs text-gray-500">{tgl(m.tanggal)} · {CARA[m.cara] ?? m.cara} · {m.olehNama}
+                  {m.lat != null && m.lng != null && (
+                    <a href={`https://www.google.com/maps?q=${m.lat},${m.lng}`} target="_blank" rel="noopener noreferrer"
+                      className={`ml-2 font-medium hover:underline ${m.jarakMeter != null && m.jarakMeter <= 300 ? "text-emerald-700" : "text-amber-700"}`}>
+                      {m.jarakMeter == null ? "berlokasi" : m.jarakMeter <= 300 ? `di lokasi (${m.jarakMeter} m dari titik DUDI)` : `${m.jarakMeter >= 1000 ? `${(m.jarakMeter / 1000).toFixed(1)} km` : `${m.jarakMeter} m`} dari titik DUDI`}
+                    </a>
+                  )}
+                </p>
                 <p className="text-gray-700 whitespace-pre-line">{m.catatan}</p>
                 {m.fotoUrl && <a href={m.fotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary-700 hover:underline">Lihat foto</a>}
               </li>
@@ -125,6 +144,12 @@ export default function PanelPklHumas({ internshipId, siswa, perusahaan, sertifi
               <div><label className="label-field">Cara</label><Select value={form.cara} onChange={v => setForm({ ...form, cara: v })} options={Object.entries(CARA).map(([value, label]) => ({ value, label }))} /></div>
             </div>
             <div><label htmlFor="catatan-monitoring" className="label-field">Hasil monitoring</label><textarea id="catatan-monitoring" rows={4} maxLength={3000} className="input-field" value={form.catatan} onChange={e => setForm({ ...form, catatan: e.target.value })} placeholder="Kehadiran, sikap, pekerjaan yang dilakukan, kendala, masukan dari pembimbing industri" /></div>
+            {form.cara === "KUNJUNGAN" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={ambilLokasi} className="btn-modal-cancel btn-teks"><MapPin size={16} /> {lokasi ? "Perbarui Lokasi" : "Saya di Lokasi"}</button>
+                <span className={`text-xs ${lokasi ? "text-emerald-700" : "text-gray-500"}`}>{pesanLokasi || "Tekan saat berada di tempat PKL — lokasi menjadi bukti kunjungan."}</span>
+              </div>
+            )}
             <ImageUpload value={form.fotoUrl} onChange={v => setForm({ ...form, fotoUrl: v })} folder="pkl-jurnal" label="Foto kunjungan (opsional)" />
           </div>
         )}

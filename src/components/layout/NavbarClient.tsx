@@ -17,7 +17,7 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "Fasilitas", href: "/facilities" }, { name: "Ekstrakurikuler", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
     ] },
     { key: "informasi", name: "Informasi", items: [
-      { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Lomba & Event", href: "/lomba" }, { name: "Galeri", href: "/gallery" },
+      { name: "Berita", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Lomba & Event", href: "/lomba" }, { name: "Mitra Industri", href: "/mitra-industri" }, { name: "Galeri", href: "/gallery" },
     ] },
     { key: "layanan", name: "Layanan", items: [
       { name: "Cek Kelulusan", href: "/cek-kelulusan" }, { name: "Tahapan Pendaftaran SPMB", href: "/spmb/tahapan" },
@@ -32,7 +32,7 @@ const menuSitus: Record<"id" | "en", MenuUtama[]> = {
       { name: "Facilities", href: "/facilities" }, { name: "Extracurricular", href: "/extracurricular" }, { name: "Alumni", href: "/alumni" },
     ] },
     { key: "informasi", name: "Information", items: [
-      { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Competitions & Events", href: "/lomba" }, { name: "Gallery", href: "/gallery" },
+      { name: "News", href: "/news" }, { name: "Agenda", href: "/agenda" }, { name: "Competitions & Events", href: "/lomba" }, { name: "Industry Partners", href: "/mitra-industri" }, { name: "Gallery", href: "/gallery" },
     ] },
     { key: "layanan", name: "Services", items: [
       { name: "Graduation Status", href: "/cek-kelulusan" }, { name: "Registration Progress", href: "/spmb/tahapan" },

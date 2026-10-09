@@ -1,3 +1,4 @@
+import { potretGuru, catatRiwayatGuru } from "@/lib/riwayat-induk";
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { terapkanBiodataPegawai } from "@/lib/biodata-pegawai";
@@ -69,7 +70,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       else if (lingkup === "buku") buku[field] = isi.new;
     }
 
+    // Riwayat Buku Induk Guru — hanya pegawai yang punya baris Teacher (staf TAS memakai BiodataPegawai, CLAUDE.md #93).
+    const guruRiwayat = await prisma.teacher.findUnique({ where: { userId: pengajuan.userId }, select: { id: true } });
+    const sebelumRiwayat = guruRiwayat ? await potretGuru(guruRiwayat.id) : null;
     await terapkanBiodataPegawai(pengajuan.userId, top, buku);
+    if (guruRiwayat) await catatRiwayatGuru(session, guruRiwayat.id, sebelumRiwayat, "persetujuan pengajuan biodata pegawai").catch(() => 0);
     await prisma.pegawaiEditRequest.update({
       where: { id },
       data: {

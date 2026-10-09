@@ -1,12 +1,4 @@
-import PageHeader from "@/components/admin/PageHeader";
-import { FileCheck2 } from "lucide-react";
-import PklRegistrationReview from "@/components/shared/PklRegistrationReview";
+import { redirect } from "next/navigation";
 
-export default function TeacherHumasPklPendaftaranPage() {
-  return (
-    <div className="p-6 lg:p-8 pt-16 lg:pt-8">
-      <PageHeader icon={<FileCheck2 size={22} />} title="Pendaftaran PKL" description="Tinjau pendaftaran PKL siswa kelas XI & kelola dokumen syarat" />
-      <PklRegistrationReview />
-    </div>
-  );
-}
+/** Pendaftaran PKL pindah ke Pusat PKL (9 Okt 2026). Rute lama tetap hidup sebagai pengalihan. */
+export default function Page() { redirect("/pusat-pkl/pendaftaran"); }

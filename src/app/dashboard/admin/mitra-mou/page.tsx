@@ -1,7 +1,5 @@
-import StatusMouMitra from "@/components/jabatan/StatusMouMitra";
+import { redirect } from "next/navigation";
 
-/** Salinan portal ADMIN (19 September 2026) — superadmin berakses penuh tetapi bukan guru/pegawai,
- * jadi halaman ini disediakan di portalnya sendiri. Isinya komponen yang sama, bukan duplikat kode. */
-export default function Page() {
-  return <StatusMouMitra basePath="/dashboard/admin" />;
-}
+/** Status MoU Mitra dilebur ke Pusat PKL → Data DUDI (9 Okt 2026, user: "malah terpisah"): keadaan MoU tiap DUDI,
+ *  saringan MoU habis/segera habis, dan dokumennya ada di sana. Kepala Sekolah (guru) tetap punya halamannya di portal guru. */
+export default function Page() { redirect("/pusat-pkl/dudi"); }

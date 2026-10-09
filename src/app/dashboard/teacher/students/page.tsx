@@ -7,6 +7,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import GroupedSection from "@/components/admin/GroupedSection";
 import EmptyState from "@/components/admin/EmptyState";
 import Link from "next/link";
+import Alert from "@/components/admin/Alert";
+import { alamatKurang } from "@/lib/analisis-sebaran";
 
 export default async function TeacherStudentsPage() {
   const session = await verifyRole(["TEACHER", "ADMIN"]);
@@ -29,6 +31,10 @@ export default async function TeacherStudentsPage() {
   });
 
   const classes = teacher?.homeroomOf ?? [];
+  // Alamat yang belum terpetakan sampai kecamatan (8 Okt 2026) — aturan yang sama dengan Peta Sebaran → Alamat Belum Lengkap,
+  // tetapi wali kelas hanya melihat kelas walinya. Buku Induk tidak dikirim ke layar, hanya keterangan apa yang kurang.
+  const kurang = new Map<string, string>();
+  for (const c of classes) for (const s of c.students) { const k = await alamatKurang(s.bukuIndukData); if (k) kurang.set(s.id, k); }
 
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
@@ -37,6 +43,15 @@ export default async function TeacherStudentsPage() {
         title="Daftar Siswa"
         description="Daftar siswa dari kelas yang Anda ampu sebagai wali kelas."
       />
+
+      {kurang.size > 0 && (
+        <div className="mb-5">
+          <Alert variant="warning" title={`${kurang.size} siswa alamat rumahnya belum lengkap`}>
+            Ditandai di bawah namanya. Minta siswanya melengkapi lewat menu Biodata di portal siswa (diverifikasi Tata Usaha),
+            atau sampaikan alamatnya ke Tata Usaha.
+          </Alert>
+        </div>
+      )}
 
       {classes.length === 0 ? (
         <EmptyState icon={Users} title="Belum Ada Kelas Wali" description="Hubungi admin untuk ditugaskan sebagai wali kelas." />
@@ -65,7 +80,10 @@ export default async function TeacherStudentsPage() {
                         <tr key={s.id}>
                           <td className="text-gray-400 text-xs">{i + 1}</td>
                           <td className="font-mono text-xs text-gray-600">{s.nis}</td>
-                          <td className="font-semibold text-primary-900">{s.user.name}</td>
+                          <td>
+                            <p className="font-semibold text-primary-900">{s.user.name}</p>
+                            {kurang.has(s.id) && <p className="text-xs text-amber-700">{kurang.get(s.id)}</p>}
+                          </td>
                           <td className="font-mono text-xs text-gray-400 hidden md:table-cell">{s.nisn ?? "—"}</td>
                           <td className="text-gray-400 text-xs hidden lg:table-cell">{s.user.email}</td>
                           <td className="text-right">

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { sinkronLatar, siswaDiDudi } from "@/lib/pkl-server";
 import { verifyRole } from "@/lib/dal";
-import { assertHumas } from "@/lib/humas-guard";
+import { assertPkl as assertHumas } from "@/lib/pkl-humas";
 import { NextRequest } from "next/server";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
@@ -38,6 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
       },
     });
 
+    sinkronLatar([studentId]);
     return Response.json(internship);
   } catch (e) {
     lemparBilaPengalihan(e);

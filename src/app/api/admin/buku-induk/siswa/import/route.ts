@@ -1,3 +1,4 @@
+import { potretSiswa, catatRiwayatSiswa } from "@/lib/riwayat-induk";
 import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyBukuIndukFullAccess } from "@/lib/buku-induk-access";
@@ -42,7 +43,7 @@ function dateStr(val: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyBukuIndukFullAccess();
+  const sesiImpor = await verifyBukuIndukFullAccess();
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -292,10 +293,12 @@ export async function POST(req: NextRequest) {
         // Status kosong di Excel = biarkan status lama (bawaan "AKTIF" hanya untuk siswa BARU) — kalau tidak, siswa yang
         // sudah LULUS/PINDAH kembali AKTIF hanya karena diimpor ulang.
         if (!s(row["Status (AKTIF/LULUS/KELUAR/PINDAH)"])) delete dasar.studentStatus;
+        const sebelumRiwayat = await potretSiswa(existing.id);
         await prisma.student.update({
           where: { nis },
           data: { ...dasar, majorId, bukuIndukData: gabung as Prisma.InputJsonValue, ...(classId ? { classId } : {}) },
         });
+        await catatRiwayatSiswa(sesiImpor, existing.id, sebelumRiwayat, "impor Excel").catch(() => 0);
         await syncParentAccountForStudent(existing.id, basicData.parentPhone, basicData.parentName).catch(() => {});
         results.updated++;
       } else {

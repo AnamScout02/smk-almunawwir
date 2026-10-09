@@ -1,4 +1,5 @@
 import React from "react";
+import { jabatanUntukMenu } from "@/lib/spmb";
 import { hitungPengajuanBiodata } from "@/lib/biodata-pegawai";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
@@ -29,7 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (session.role === "TAS" || session.role === "TEACHER") {
     const [pendingProfileEdits, jabatanNames, overdueBooks] = await Promise.all([
       hitungPengajuanBiodata(),
-      getJabatanNames(session.email),
+      getJabatanNames(session.email).then(j => jabatanUntukMenu(j, session.userId)),
       getOverdueLoanCount(session.userId),
     ]);
     return (

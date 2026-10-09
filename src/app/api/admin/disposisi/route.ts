@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
-import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
+import { kirimLatar } from "@/lib/push-server";
+import { kabariTujuanDisposisi } from "@/lib/disposisi-server";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
@@ -53,22 +54,8 @@ export async function POST(req: Request) {
     // Surat yang sudah didisposisikan otomatis dianggap sudah dibaca — kalau tidak, lencana
     // "surat masuk belum dibaca" di sidebar tetap menyala padahal sudah ditindaklanjuti.
     await prisma.surat.update({ where: { id: b.suratId }, data: { isRead: true } }).catch(() => {});
-    // Kabari yang dituju (17 Sep 2026): tujuan berupa NAMA JABATAN atau NAMA ORANG — keduanya dicocokkan.
-    kirimLatar(async () => {
-      const [jabatanGuru, jabatanStaf, orang] = await Promise.all([
-        prisma.teacher.findMany({ where: { jabatan: { some: { jabatan: { name: { in: tujuan } } } } }, select: { userId: true } }),
-        prisma.user.findMany({ where: { role: "TAS", staffJabatan: { some: { jabatan: { name: { in: tujuan } } } } }, select: { id: true } }),
-        prisma.user.findMany({ where: { name: { in: tujuan } }, select: { id: true } }),
-      ]);
-      const userIds = [...new Set([...jabatanGuru.map(g => g.userId), ...jabatanStaf.map(x => x.id), ...orang.map(x => x.id)])];
-      if (!userIds.length) return;
-      await kirimNotifikasi({
-        userIds, jenis: "PENGUMUMAN", kunci: `disposisi:${row.id}`,
-        judul: `Disposisi ${row.sifat === "BIASA" ? "" : row.sifat.replace("_", " ").toLowerCase() + " "}— ${row.surat.perihal}`.replace("  ", " "),
-        isi: `${row.instruksi.slice(0, 120)}${row.batasWaktu ? ` · batas ${row.batasWaktu.toLocaleDateString("id-ID", { day: "numeric", month: "long", timeZone: "Asia/Jakarta" })}` : ""}`,
-        url: "/dashboard/admin/disposisi", tag: `disposisi-${row.id}`,
-      });
-    });
+    // Kabari yang dituju — satu sumber dengan disposisi pimpinan dari HP (src/lib/disposisi-server.ts).
+    kirimLatar(() => kabariTujuanDisposisi(row));
     return Response.json(row, { status: 201 });
   } catch (e) {
     lemparBilaPengalihan(e);

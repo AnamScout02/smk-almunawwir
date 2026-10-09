@@ -25,6 +25,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       if (!isNaN(d.getTime())) data.tutup = d;
     }
     if (b?.biayaDaftar !== undefined) data.biayaDaftar = Math.max(0, Number(b.biayaDaftar) || 0);
+    // Target pendaftar (7 Okt 2026) — 0 = statistik memakai jumlah kuota jurusan gelombang ini.
+    if (b?.target !== undefined) data.target = Math.min(100_000, Math.max(0, Math.round(Number(b.target) || 0)));
     if (b?.catatan !== undefined) data.catatan = String(b.catatan ?? "").trim() || null;
     if (b?.tahunAjaranId !== undefined) data.tahunAjaranId = String(b.tahunAjaranId ?? "").trim() || null;
     if (typeof b?.aktif === "boolean") data.aktif = b.aktif;

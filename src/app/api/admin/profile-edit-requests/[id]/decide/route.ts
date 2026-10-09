@@ -1,3 +1,4 @@
+import { potretSiswa, catatRiwayatSiswa } from "@/lib/riwayat-induk";
 import { bakuNamaSekolah } from "@/lib/nama-sekolah";
 import { prisma } from "@/lib/prisma";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
@@ -66,6 +67,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const currentBuku = (request.student.bukuIndukData as Record<string, unknown>) ?? {};
     const mergedBuku = normalizeBukuIndukText({ ...currentBuku, ...bukuUpdates });
 
+    const sebelumRiwayat = await potretSiswa(request.student.id);
     await prisma.$transaction([
       prisma.student.update({
         where: { id: request.student.id },
@@ -84,6 +86,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         },
       }),
     ]);
+
+    await catatRiwayatSiswa(session, request.student.id, sebelumRiwayat, "persetujuan pengajuan biodata siswa").catch(() => 0);
 
     // Kalau pengajuan mengubah No. HP/Nama Orang Tua, sinkronkan akun Orang Tua otomatis —
     // gagal-sync tidak boleh menggagalkan approval yang sudah tersimpan di atas.

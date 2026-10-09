@@ -1,24 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
-import { getJabatanNames } from "@/lib/jabatan-guard";
-import { BUKU_INDUK_FULL_JABATAN } from "@/lib/buku-induk-access";
-import { cocokJurusan, dataSiswaDariPendaftar, emailDariNis, hashSandiBawaan, penghitungNis } from "@/lib/spmb-konversi";
+import { cocokJurusan, dataSiswaDariPendaftar, emailDariNis, hashSandiBawaan, penghitungNis, sesiKonversi } from "@/lib/spmb-konversi";
 import { logActivity } from "@/lib/activity-log";
-import { ringkasBayar, setelanBayar } from "@/lib/spmb-tahapan-server";
-import { hitungBayar } from "@/lib/spmb-tahapan";
+import { aturanTahapan, denganBayar, ringkasBayar, setelanBayar } from "@/lib/spmb-tahapan-server";
+import { hitungBayar, susunTahapan } from "@/lib/spmb-tahapan";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
 
 export const dynamic = "force-dynamic";
 
-async function boleh() {
-  const s = await verifySession();
-  if (s.role === "ADMIN") return s;
-  if (s.role === "TEACHER" || s.role === "TAS") {
-    const j = await getJabatanNames(s.email);
-    if (j.some(n => BUKU_INDUK_FULL_JABATAN.includes(n))) return s;
-  }
-  return null;
-}
+const boleh = sesiKonversi;
 
 /** Pendaftar DITERIMA yang belum masuk Buku Induk + pilihan kelas X. Admin, staf TU, Operator Sekolah. */
 export async function GET() {
@@ -26,18 +15,20 @@ export async function GET() {
   const [pendaftar, jurusan, kelas, sudah] = await Promise.all([
     prisma.admission.findMany({ where: { status: { in: ["DITERIMA", "ACCEPTED"] }, studentId: null }, orderBy: [{ chosenMajor: "asc" }, { fullName: "asc" }] }),
     prisma.major.findMany({ select: { id: true, code: true, name: true, nisCode: true } }),
-    prisma.class.findMany({ where: { grade: 10 }, select: { id: true, name: true, majorId: true }, orderBy: { name: "asc" } }),
+    // `isi` = siswa AKTIF di kelas itu sekarang — kelas tidak terikat tahun ajaran, jadi sebelum Kenaikan Kelas
+    // "X TKJ 1" masih berisi angkatan berjalan dan calon baru akan bercampur (peringatan di layar konfirmasi).
+    prisma.class.findMany({ where: { grade: 10 }, select: { id: true, name: true, majorId: true, _count: { select: { students: { where: { studentStatus: "AKTIF" } } } } }, orderBy: { name: "asc" } }),
     prisma.admission.count({ where: { studentId: { not: null } } }),
   ]);
-  const [setBayar, petaBayar] = await Promise.all([setelanBayar(), ringkasBayar(pendaftar.map(a => a.id))]);
+  const [setBayar, petaBayar, aturan] = await Promise.all([setelanBayar(), ringkasBayar(pendaftar.map(a => a.id)), aturanTahapan()]);
   return Response.json({
     sudahDikonversi: sudah,
-    kelas,
+    kelas: kelas.map(({ _count, ...k }) => ({ ...k, isi: _count.students })),
     pendaftar: pendaftar.map(a => {
       const j = cocokJurusan(a.chosenMajor, jurusan);
       return {
         id: a.id, nama: a.fullName, jurusanPilihan: a.chosenMajor, majorId: j?.id ?? null, jurusanKode: j?.code ?? null,
-        siapNis: !!j?.nisCode, nisn: a.nisn, sekolahAsal: a.previousSchool, daftarUlang: !!a.daftarUlangConfirmedAt, bayarTerverifikasi: hitungBayar(setBayar, a.potonganBiaya, petaBayar.get(a.id)?.sah ?? 0, 0, a.gelombangId).lunas || a.paymentVerified,
+        siapNis: !!j?.nisCode, nisn: a.nisn, tuntas: susunTahapan(denganBayar(a, setBayar, petaBayar), aturan).tuntas, sekolahAsal: a.previousSchool, daftarUlang: !!a.daftarUlangConfirmedAt, bayarTerverifikasi: hitungBayar(setBayar, a.potonganBiaya, petaBayar.get(a.id)?.sah ?? 0, 0, a.gelombangId).lunas || a.paymentVerified,
       };
     }),
   });
@@ -54,7 +45,8 @@ export async function POST(req: Request) {
   const kelasPer = (b.kelasPerJurusan ?? {}) as Record<string, string>;
   if (!ids.length) return Response.json({ error: "Pilih pendaftar." }, { status: 400 });
   const [pendaftar, jurusan, kelas] = await Promise.all([
-    prisma.admission.findMany({ where: { id: { in: ids }, status: { in: ["DITERIMA", "ACCEPTED"] }, studentId: null } }),
+    // Diproses per jurusan lalu NAMA (7 Okt 2026): NIS terbit urut abjad di tiap jurusan, sama dengan urutan absen.
+    prisma.admission.findMany({ where: { id: { in: ids }, status: { in: ["DITERIMA", "ACCEPTED"] }, studentId: null }, orderBy: [{ chosenMajor: "asc" }, { fullName: "asc" }] }),
     prisma.major.findMany({ select: { id: true, code: true, name: true, nisCode: true } }),
     prisma.class.findMany({ where: { grade: 10 }, select: { id: true, name: true, majorId: true } }),
   ]);

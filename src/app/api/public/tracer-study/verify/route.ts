@@ -11,14 +11,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Terlalu banyak percobaan. Coba lagi beberapa saat lagi." }, { status: 429 });
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const { nis, birthDate } = body;
-  if (!nis || !birthDate) {
-    return NextResponse.json({ error: "NIS dan tanggal lahir wajib diisi" }, { status: 400 });
+  const nomor = String(nis ?? "").trim().slice(0, 40);
+  if (!nomor || typeof birthDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return NextResponse.json({ error: "NISN/NIS dan tanggal lahir wajib diisi" }, { status: 400 });
   }
 
-  const student = await prisma.student.findFirst({
-    where: { nis: String(nis).trim(), studentStatus: "LULUS" },
+  // NISN ATAU NIS (8 Okt 2026): alumni jarang ingat NIS sekolah (`924/001.10.2.1`), sedangkan NISN tercetak di ijazah.
+  // Nomor yang cocok dengan lebih dari satu alumni TIDAK ditebak — dijawab "tidak ditemukan".
+  const calon = await prisma.student.findMany({
+    where: { studentStatus: "LULUS", OR: [{ nis: nomor }, { nisn: nomor }] },
+    take: 2,
     select: {
       id: true, birthDate: true, enrollYear: true,
       user: { select: { name: true } },
@@ -27,8 +31,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const student = calon.length === 1 ? calon[0] : null;
   if (!student || !student.birthDate || student.birthDate.toISOString().slice(0, 10) !== birthDate) {
-    return NextResponse.json({ error: "Data tidak ditemukan. Periksa kembali NIS dan tanggal lahir." }, { status: 404 });
+    return NextResponse.json({ error: "Data tidak ditemukan. Periksa kembali NISN/NIS dan tanggal lahir." }, { status: 404 });
   }
 
   const token = await signTracerToken(student.id);

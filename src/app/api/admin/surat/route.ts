@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
 import { prisma } from "@/lib/prisma";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { kirimLatar } from "@/lib/push-server";
+import { kabariSuratMasuk } from "@/lib/disposisi-server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
         templateValue: templateValue || null, templateIsi: templateIsi ?? undefined,
       },
     });
+    if (tipe === "MASUK") kirimLatar(() => kabariSuratMasuk(surat));
     return NextResponse.json(surat, { status: 201 });
   } catch (e) {
     lemparBilaPengalihan(e);

@@ -924,6 +924,94 @@ model Internship {
   sertifikatToken      String?             @unique // QR keaslian sertifikat
   sertifikatPada       DateTime?
   monitoring           MonitoringPkl[]
+  // ── Pusat PKL (9 Okt 2026, src/lib/pkl-server.ts) ───────────────────────────────────────────
+  /// Tempat PKL dari KATALOG DUDI. `company` tetap diisi nama DUDI (salinan) supaya layar & cetakan lama
+  /// yang membaca `company` tidak berubah. null = belum dapat DUDI.
+  mitraId              String?
+  mitra                IndustryPartner?    @relation(fields: [mitraId], references: [id], onDelete: SetNull)
+  /// Lama PKL dalam bulan (3 / 6 — tidak seragam antar siswa). Tanggal selesai dihitung darinya, tetap bisa diubah.
+  lamaBulan            Int?
+  // Pengantaran & penjemputan (serah terima ke/dari DUDI).
+  diantarPada          DateTime?
+  diantarOleh          String?
+  diterimaOleh         String?
+  dijemputPada         DateTime?
+  dijemputOleh         String?
+  // Akhir PKL
+  laporanAkhirUrl      String?
+  laporanAkhirStatus   String? // DIKIRIM | REVISI | DISETUJUI
+  laporanAkhirCatatan  String?
+  laporanAkhirPada     DateTime?
+  nilaiAkhir           Json?
+  nilaiAkhirRata       Float?
+  umpanBalik           Json?
+  umpanBalikPada       DateTime?
+  mutasi               MutasiPkl[]
+  laporanMasalah       LaporanPkl[]
+  presensi             PresensiPkl[]
+
+  @@index([mitraId])
+}
+
+/// Riwayat pindah tempat PKL. `Internship` selalu memuat penempatan SEKARANG (satu baris per siswa);
+/// tempat sebelumnya tercatat di sini supaya rekap per DUDI & sertifikat tetap bisa menelusurinya.
+model MutasiPkl {
+  id           String     @id @default(cuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  tanggal      DateTime
+  dariMitraId  String?
+  dariNama     String
+  dariMulai    DateTime?
+  keMitraId    String?
+  keNama       String
+  alasan       String
+  laporanId    String? // laporan masalah yang menjadi dasar mutasi (bila ada)
+  olehNama     String
+  createdAt    DateTime   @default(now())
+
+  @@index([internshipId])
+  @@index([dariMitraId])
+}
+
+/// Laporan masalah selama PKL — dari siswa, pembimbing industri (portal DUDI), atau guru pembimbing.
+model LaporanPkl {
+  id            String     @id @default(cuid())
+  internshipId  String
+  internship    Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  pelapor       String // SISWA | INDUSTRI | GURU
+  pelaporNama   String
+  jenis         String // SAKIT | KECELAKAAN | PELANGGARAN | TIDAK_COCOK | LAINNYA
+  isi           String
+  fotoUrl       String?
+  status        String     @default("BARU") // BARU | DITANGANI | SELESAI
+  tindakLanjut  String?
+  ditanganiOleh String?
+  ditanganiPada DateTime?
+  selesaiPada   DateTime?
+  createdAt     DateTime   @default(now())
+
+  @@index([internshipId])
+  @@index([status])
+}
+
+/// Presensi harian di tempat PKL (terpisah dari Attendance sekolah). Satu baris per siswa per hari.
+model PresensiPkl {
+  id           String     @id @default(cuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  tanggal      DateTime // tengah malam UTC tanggal WIB-nya
+  status       String // HADIR | IZIN | SAKIT | ALPHA
+  jamMasuk     DateTime?
+  jamPulang    DateTime?
+  lat          Float?
+  lng          Float?
+  jarakMeter   Int?
+  metode       String     @default("LOKASI") // LOKASI | INDUSTRI | GURU
+  keterangan   String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([internshipId, tanggal])
 }
 
 // Katalog mitra industri (DU/DI) untuk pemantauan kemitraan Kepala Sekolah — berdiri sendiri,
@@ -931,18 +1019,47 @@ model Internship {
 // data/form PKL yang sudah ada. Status MoU (Aktif/Akan Kedaluwarsa/Kedaluwarsa) dihitung on-the-fly
 // dari mouEndDate, bukan disimpan sebagai kolom.
 model IndustryPartner {
-  id             String    @id @default(cuid())
-  name           String
-  address        String?
-  contactPerson  String?
-  contactPhone   String?
-  industryField  String?
-  mouStartDate   DateTime?
-  mouEndDate     DateTime?
-  mouDocumentUrl String? // scan/foto dokumen MoU (opsional)
-  quota          Int? // kapasitas siswa PKL yang bisa diterima mitra ini
-  notes          String?
-  createdAt      DateTime  @default(now())
+  id                String       @id @default(cuid())
+  name              String
+  address           String?
+  contactPerson     String?
+  contactPhone      String?
+  industryField     String?
+  mouStartDate      DateTime?
+  mouEndDate        DateTime?
+  mouDocumentUrl    String? // scan/foto dokumen MoU (opsional)
+  quota             Int? // kapasitas siswa PKL yang bisa diterima mitra ini
+  notes             String?
+  createdAt         DateTime     @default(now())
+  // ── Data lengkap DUDI (9 Okt 2026) ──
+  email             String?
+  website           String?
+  pimpinan          String?
+  pimpinanJabatan   String?
+  kabupaten         String?
+  kecamatan         String?
+  lat               Float?
+  lng               Float?
+  /// Jurusan yang diterima (id Major). Kosong = semua jurusan.
+  jurusanIds        String[]     @default([])
+  /// Pekerjaan / bidang kerja yang tersedia bagi siswa PKL — dasar kecocokan kompetensi.
+  pekerjaan         String[]     @default([])
+  fasilitas         String? // uang saku, makan, mess, seragam, dll.
+  jamKerja          String?
+  aktif             Boolean      @default(true)
+  /// Tautan portal industri tanpa akun (hash SHA-256 token acak 144 bit — keunikan dijaga saat dibuat, bukan oleh indeks unik).
+  tokenPortalHash   String?
+  /// Logo DUDI — ikut deret logo mitra di halaman SPMB & beranda bila `tampilPublik` (src/lib/logo-mitra.ts).
+  logoUrl           String?
+  tampilPublik      Boolean      @default(true)
+  /// Ditandai Humas/BKK sebagai calon pemberi kerja lulusan.
+  calonPemberiKerja Boolean      @default(false)
+  /// Diusulkan pemilik usaha lewat formulir publik "Jadi Mitra PKL" (/mitra-industri). Selalu masuk NONAKTIF —
+  /// baru dipakai setelah Humas memeriksa dan mengaktifkannya di Data DUDI.
+  usulan            Boolean      @default(false)
+  internships       Internship[]
+
+  @@index([tokenPortalHash])
 }
 
 // Materi pembelajaran diunggah guru per kelas & mapel (PDF/dokumen atau link eksternal).
@@ -1354,18 +1471,25 @@ model ExamAttempt {
 // Jurnal harian PKL — diisi siswa selama masa PKL (kegiatan + foto bukti kerja),
 // guru pembimbing/admin bisa memberi catatan per entri.
 model InternshipJournal {
-  id           String     @id @default(cuid())
-  internshipId String
-  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  date         DateTime
-  activity     String
-  photoUrl     String?
-  teacherNote  String?
+  id                String     @id @default(cuid())
+  internshipId      String
+  internship        Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  date              DateTime
+  activity          String
+  photoUrl          String?
+  teacherNote       String?
   // Lokasi saat jurnal dikirim (opsional, izin lokasi HP) — 17 Sep 2026
-  lat          Float?
-  lng          Float?
-  akurasi      Float?
-  createdAt    DateTime   @default(now())
+  lat               Float?
+  lng               Float?
+  akurasi           Float?
+  createdAt         DateTime   @default(now())
+  /// Foto diambil LANGSUNG dari kamera di halaman (bukan galeri) dan dicap waktu + lokasi oleh sistem.
+  fotoTerverifikasi Boolean    @default(false)
+  fotoWaktu         DateTime?
+  /// Kompetensi jurusan yang dilatih hari itu (dari Major.skills).
+  kompetensi        String[]   @default([])
+  parafIndustriAt   DateTime?
+  parafIndustriNama String?
 }
 
 // Jurnal Mengajar digital — diisi guru tiap pertemuan (materi + per-siswa nilai pengetahuan/keterampilan/catatan).
@@ -1548,6 +1672,8 @@ model GelombangSpmb {
   aktif         Boolean       @default(true)
   /// Tautan grup WhatsApp KHUSUS gelombang ini — tampil ke calon tepat setelah mendaftar (6 Okt 2026).
   tautanGrup    String?
+  /// Target jumlah pendaftar gelombang ini (7 Okt 2026). 0 = memakai jumlah kuota jurusan gelombang.
+  target        Int           @default(0)
   /// Jadwal tahap yang mengharuskan calon datang ke sekolah, per gelombang (src/lib/spmb-tahapan.ts):
   /// { "ASESMEN": { tanggal, jamMulai, jamSelesai, tempat, catatan }, "PEMERIKSAAN": {…}, … }
   jadwalTahap   Json?
@@ -1638,12 +1764,12 @@ model BerkasSpmb {
 }
 
 model Admission {
-  id                     String         @id @default(cuid())
+  id                     String           @id @default(cuid())
   /// Nomor pendaftaran yang dibawa calon (mis. "SPMB-2627-0001"). Dipakai bersama TANGGAL LAHIR
   /// untuk membuka status tanpa akun — nomor saja mudah ditebak orang lain.
-  nomor                  String?        @unique
+  nomor                  String?          @unique
   gelombangId            String?
-  gelombang              GelombangSpmb? @relation(fields: [gelombangId], references: [id])
+  gelombang              GelombangSpmb?   @relation(fields: [gelombangId], references: [id])
   fullName               String
   birthPlace             String?
   birthDate              DateTime
@@ -1658,18 +1784,20 @@ model Admission {
   kabupaten              String?
   kecamatanKode          String?
   kecamatan              String?
+  desaKode               String? // desa/kelurahan (7 Okt 2026, peta sebaran sampai tingkat desa)
+  desa                   String?
   previousSchool         String?
   email                  String
   guardianName           String?
   chosenMajor            String
-  jalur                  String         @default("REGULER") // REGULER | PRESTASI_AKADEMIK | PRESTASI_NON_AKADEMIK | TAHFIDZ | AFIRMASI
+  jalur                  String           @default("REGULER") // REGULER | PRESTASI_AKADEMIK | PRESTASI_NON_AKADEMIK | TAHFIDZ | AFIRMASI
   // Dokumen pendukung
   ijazahUrl              String?
   kkUrl                  String?
   ktpWaliUrl             String?
   fotoUrl                String?
   dokumenLainUrl         String?
-  status                 String         @default("PENDING")
+  status                 String           @default("PENDING")
   notes                  String?
   // Scoring otomatis — skorAkhir dihitung dari nilaiRapor & nilaiTes memakai bobot di SiteSetting
   // ("spmb.bobotRapor"/"spmb.bobotTes"), dipakai untuk meranking pendaftar per jurusan.
@@ -1680,29 +1808,29 @@ model Admission {
   // setelah status ACCEPTED, admin verifikasi manual lewat paymentVerified.
   buktiPembayaranUrl     String?
   daftarUlangConfirmedAt DateTime?
-  paymentVerified        Boolean        @default(false)
-  createdAt              DateTime       @default(now())
+  paymentVerified        Boolean          @default(false)
+  createdAt              DateTime         @default(now())
   /// Token keaslian cetakan formulir pendaftaran (pola CLAUDE.md #49) — dibuat SEKALI saat
   /// formulir pertama dicetak, jadi cetak ulang memakai token yang sama.
-  cetakToken             String?        @unique
+  cetakToken             String?          @unique
   /// Kode referral PERSIS seperti yang diketik pendaftar — disimpan apa adanya supaya jejaknya
   /// tetap ada walau baris perujuknya kelak dihapus/dinonaktifkan.
   perujukKode            String?
   perujukId              String?
-  perujuk                PerujukSpmb?   @relation(fields: [perujukId], references: [id], onDelete: SetNull)
+  perujuk                PerujukSpmb?     @relation(fields: [perujukId], references: [id], onDelete: SetNull)
   // Konversi ke Buku Induk (17 Sep 2026)
-  studentId              String?        @unique
+  studentId              String?          @unique
   dikonversiPada         DateTime?
   dikonversiOleh         String?
   nilaiSpmb              NilaiSpmb[]
   berkasSpmb             BerkasSpmb[]
   // ── Tahapan calon siswa (6 Okt 2026, src/lib/spmb-tahapan.ts) ──────────────────────────────
   /// BELUM | PERBAIKAN | TERVERIFIKASI — pemeriksaan berkas oleh panitia.
-  verifikasiStatus       String         @default("BELUM")
+  verifikasiStatus       String           @default("BELUM")
   /// Pesan panitia untuk calon bila berkas perlu diperbaiki (tampil di halaman tahapan calon).
   verifikasiPesan        String?
   /// Kunci dokumen yang harus diunggah ulang: "ijazah" | "kk" | "ktp_wali" | "foto" | "dokumen_lain" | "syarat:<id>".
-  verifikasiDokumen      String[]       @default([])
+  verifikasiDokumen      String[]         @default([])
   verifikasiAt           DateTime?
   verifikasiOleh         String?
   /// Calon terakhir mengirim perbaikan berkas — penanda "sudah diperbaiki, periksa lagi".
@@ -1723,14 +1851,24 @@ model Admission {
   grupDiklikAt           DateTime?
   grupBergabungAt        DateTime?
   /// Potongan biaya daftar ulang untuk calon ini (beasiswa dsb.), rupiah.
-  potonganBiaya          Int            @default(0)
+  potonganBiaya          Int              @default(0)
   keteranganPotongan     String?
   pembayaranSpmb         PembayaranSpmb[]
   /// Sesi kedatangan hari tes (asesmen + cek kesehatan) yang dipilih calon — kuota per sesi.
   sesiId                 String?
-  sesi                   SesiSpmb?      @relation(fields: [sesiId], references: [id], onDelete: SetNull)
+  sesi                   SesiSpmb?        @relation(fields: [sesiId], references: [id], onDelete: SetNull)
   langgananSpmb          LanggananSpmb[]
   kabarSpmb              KabarSpmb[]
+  // ── Surat pernyataan / pakta integritas (7 Okt 2026) — ditandatangani orang tua di HP ──
+  /// Berkas TTD di folder RAHASIA (public/uploads/rahasia/spmb-pakta) — dibuka lewat rute berizin saja.
+  paktaTtd               String?
+  paktaNama              String?
+  paktaHubungan          String?
+  paktaAt                DateTime?
+  /// SALINAN teks yang ditandatangani — teks pengaturan boleh berubah, yang sudah ditandatangani tidak.
+  paktaTeks              String?
+  /// Token keaslian cetakan pakta (pola CLAUDE.md #49).
+  paktaToken             String?          @unique
 
   @@index([status, chosenMajor])
 }
@@ -2353,6 +2491,10 @@ model Disposisi {
   tindakLanjut String?
   selesaiAt    DateTime?
   dariNama     String? // pemberi disposisi (mis. Kepala Sekolah)
+  /// Disposisi yang ditulis PIMPINAN SENDIRI dari HP (9 Okt 2026): akunnya + saat ia menandatangani. TTD di lembar cetak
+  /// diambil dari TTD pribadi akun ini (CLAUDE.md #123) dan hanya bila `ditandatanganiAt` terisi.
+  dariUserId   String?
+  ditandatanganiAt DateTime?
   inputById    String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -3069,6 +3211,12 @@ model MonitoringPkl {
   fotoUrl      String?
   olehNama     String
   createdAt    DateTime   @default(now())
+
+  /// Lokasi HP guru saat mencatat KUNJUNGAN ("Saya di lokasi") + jaraknya ke titik DUDI — bukti kunjungan untuk SPPD.
+  lat          Float?
+  lng          Float?
+  akurasi      Int?
+  jarakMeter   Int?
 
   @@index([internshipId])
 }
@@ -3791,21 +3939,24 @@ model AlokasiTransaksi {
 /// Calon mengirim bukti (MENUNGGU) atau panitia mencatat tunai (langsung SAH). Yang mengesahkan:
 /// panitia SPMB / superadmin. Modul Bendahara SENGAJA tidak disentuh — rekap lewat Excel.
 model PembayaranSpmb {
-  id           String    @id @default(cuid())
-  admissionId  String
-  admission    Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
-  jumlah       Int
-  tanggal      DateTime
-  metode       String    @default("TRANSFER") // TRANSFER | TUNAI
-  bukti        String?
-  catatan      String?
-  status       String    @default("MENUNGGU") // MENUNGGU | SAH | DITOLAK
-  alasanTolak  String?
+  id            String    @id @default(cuid())
+  admissionId   String
+  admission     Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  jumlah        Int
+  tanggal       DateTime
+  metode        String    @default("TRANSFER") // TRANSFER | TUNAI
+  bukti         String?
+  catatan       String?
+  status        String    @default("MENUNGGU") // MENUNGGU | SAH | DITOLAK
+  alasanTolak   String?
   /// null = dikirim calon sendiri dari halaman tahapan.
-  dicatatOleh  String?
-  disahkanOleh String?
-  disahkanAt   DateTime?
-  createdAt    DateTime  @default(now())
+  dicatatOleh   String?
+  disahkanOleh  String?
+  disahkanAt    DateTime?
+  createdAt     DateTime  @default(now())
+  /// Kuitansi (7 Okt 2026): nomor berurut & token keaslian — dibuat SEKALI saat kuitansi pertama dicetak (pola #49).
+  kuitansiNo    String?   @unique
+  kuitansiToken String?   @unique
 
   @@index([admissionId, status])
 }
@@ -3855,4 +4006,66 @@ model KabarSpmb {
   createdAt   DateTime  @default(now())
 
   @@index([admissionId, createdAt])
+}
+
+/// Jumlah siswa SMP/MTs per tingkat dari layanan terbuka "Sekolah Kita" Kemendikdasmen (8 Okt 2026) — SALINAN yang
+/// diperbarui panitia lewat tombol (Pusat SPMB → Sasaran Promosi → Potensi Lulusan). Hanya angka agregat per sekolah.
+model PotensiSekolah {
+  npsn       String    @id
+  sekolahId  String
+  nama       String
+  /// SMP | MTs (sasaran promosi) · SMK | SMA | MA (sekolah lanjutan — Peta Persaingan, 9 Okt 2026)
+  bentuk     String
+  status     String
+  /// Nama seperti di sumber, tanpa awalan: "Banyuwangi" (kabupaten/kota), "Singojuruh" (kecamatan).
+  kabupaten  String
+  kecamatan  String
+  semester   String?
+  k7         Int       @default(0)
+  k8         Int       @default(0)
+  k9L        Int       @default(0)
+  k9P        Int       @default(0)
+  rombel9    Int       @default(0)
+  /// Sekolah lanjutan: kelas X = penerimaan tahun ini, XI = tahun lalu, XII = dua tahun lalu.
+  k10        Int       @default(0)
+  k11        Int       @default(0)
+  k12        Int       @default(0)
+  diambilAt  DateTime  @default(now())
+  /// Dari sumber (untuk persiapan kunjungan): alamat, kontak resmi, akreditasi, titik lokasi, jumlah guru.
+  alamat     String?
+  telepon    String?
+  email      String?
+  website    String?
+  akreditasi String?
+  lintang    Float?
+  bujur      Float?
+  guru       Int       @default(0)
+  /// DIISI PANITIA — nama kepala sekolah & nomor HP tidak tersedia di sumber terbuka. Tidak pernah ditimpa saat "Perbarui".
+  kepala     String?
+  kontak     String?
+  catatan    String?
+  dikunjungi DateTime?
+
+  @@index([kabupaten, kecamatan])
+}
+
+/// Surat & SPPD yang dibuat dari Pusat PKL (9 Okt 2026). Suratnya sendiri adalah baris `Surat` / `SuratTugas` biasa
+/// di buku agenda Tata Usaha (nomor dari `nomorSuratBerikutnya`) — tabel ini hanya TAUTAN supaya Pusat PKL tahu
+/// surat mana milik urusan PKL, untuk DUDI dan siswa yang mana.
+model SuratPkl {
+  id           String   @id @default(cuid())
+  jenis        String // PERMOHONAN | PENGANTAR | PENARIKAN | TUGAS
+  suratId      String?
+  suratTugasId String?
+  nomor        String
+  perihal      String
+  mitraIds     String[] @default([])
+  namaMitra    String // salinan nama DUDI saat surat dibuat
+  studentIds   String[] @default([])
+  /// Isian formulir saat surat dibuat/diubah (tanggal PKL, lama, guru, keperluan) — supaya bisa dibuka lagi untuk DIUBAH.
+  data         Json?
+  dibuatOleh   String
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
 }

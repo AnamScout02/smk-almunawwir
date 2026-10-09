@@ -2,10 +2,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal
-} from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal, MapPinned, Merge } from "lucide-react";
+import { JABATAN_PETA } from "@/lib/peta-akses";
 import { JABATAN_EVENT } from "@/lib/event-label";
-import { Siren, Calculator } from "lucide-react";
+import { Siren, Calculator, Forward } from "lucide-react";
 import { QrCode, ScanLine, MessageSquareHeart, MessagesSquare, Contact, Hammer, ClipboardPen, CalendarCheck, BriefcaseBusiness, Activity, UserPlus, Camera, CircleHelp, ClipboardCheck, CalendarRange } from "lucide-react";
 import { FileUser } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -135,6 +135,8 @@ interface TeacherSidebarProps {
   isGuruPiketOnDutyToday?: boolean;
   overdueBooks?: number;
   hasHomeroom?: boolean;
+  /** Anggota panitia SPMB tambahan (bukan lewat jabatan) — src/lib/spmb.ts `anggotaPanitia`. */
+  panitiaSpmb?: boolean;
   /** Admin sedang "Masuk Sebagai" akun ini — topbar mobile (fixed top-0) digeser turun sedikit
    * supaya tidak ketutup pita ImpersonationBanner (sticky top-0, z-index lebih tinggi) yang
    * nempel di posisi sama. Tanpa ini tombol hamburger (buka drawer sidebar) jadi tidak kelihatan
@@ -146,10 +148,12 @@ interface TeacherSidebarProps {
  * di dashboard (MenuLengkap). Jangan mendaftar ulang menu di tempat lain. */
 export function grupMenuGuru({
   jabatanNames = [], hasInternshipBimbingan = false, isGuruPiketOnDutyToday = false,
-  overdueBooks = 0, hasHomeroom = false, hasTeaching = true,
+  overdueBooks = 0, hasHomeroom = false, hasTeaching = true, panitiaSpmb = false,
 }: TeacherSidebarProps = {}): MenuGroup[] {
   const isKepalaSekolah = jabatanNames.includes("Kepala Sekolah");
   const isWakasekHumas = jabatanNames.includes("Wakil Kepala Humas");
+  // Anggota Panitia PKL tambahan diberi penanda jabatan semu "Panitia PKL" (src/lib/pkl-humas.ts) oleh layout & konteks menu.
+  const isPanitiaPkl = jabatanNames.includes("Panitia PKL");
   const isWakasekKurikulum = jabatanNames.includes("Wakil Kepala Kurikulum");
   const isKaprogli = jabatanNames.some(n => n.startsWith("Kepala Kompetensi Keahlian "));
   const isGuruBk = jabatanNames.includes("Guru BK");
@@ -201,9 +205,9 @@ export function grupMenuGuru({
           { href: "/dashboard/teacher/operator", label: "Dashboard Operator Sekolah", icon: Database },
           { href: "/dashboard/teacher/dapodik", label: "Sinkron Dapodik", icon: DatabaseZap },
         ] : []),
-        // Panitia SPMB = JABATAN_SPMB di src/lib/spmb.ts. Daftarnya disebut di DUA tempat (penjaga
-        // server + menu ini); kalau menambah jabatan panitia, ubah keduanya.
-        ...(isOperatorSekolah || isWakasekKesiswaan || isWakasekHumas || isKepalaSekolah || isKoordinatorBranding
+        // Panitia SPMB = JABATAN_SPMB di src/lib/spmb.ts + anggota tambahan (`panitiaSpmb`). Daftar jabatannya disebut
+        // di DUA tempat (penjaga server + menu ini); kalau menambah jabatan panitia, ubah keduanya.
+        ...(panitiaSpmb || isOperatorSekolah || isWakasekKesiswaan || isWakasekHumas || isKepalaSekolah || isKoordinatorBranding
           ? [{ href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList }] : []),
         ...(isKepalaUks ? [{ href: "/dashboard/teacher/uks", label: "Dashboard UKS", icon: HeartPulse }] : []),
         ...(isBendahara ? [{ href: "/dashboard/teacher/alokasi-dana", label: "Alokasi Dana", icon: Calculator }, { href: "/dashboard/bendahara", label: "Bendahara", icon: Wallet }] : []),
@@ -265,6 +269,7 @@ export function grupMenuGuru({
         // (disamakan TAS) — lihat src/lib/buku-induk-access.ts. Keputusan eksplisit user 2026-08-22.
         ...(hasHomeroom || isOperatorSekolah ? [{ href: "/dashboard/teacher/buku-induk-siswa", label: "Buku Induk Siswa", icon: BookOpen }] : []),
         ...(isOperatorSekolah && !isTasStaff ? [{ href: "/dashboard/teacher/buku-induk-guru", label: "Buku Induk Guru", icon: UserCog }] : []),
+        ...(isOperatorSekolah && !isTasStaff ? [{ href: "/dashboard/teacher/rapikan-sekolah", label: "Rapikan Nama Sekolah", icon: Merge }] : []),
         // Peringatan Dini Siswa: wali kelas (kelasnya) & Wakasek Kesiswaan (semua). Guru BK memakai Dashboard BK (isi sama).
         ...((hasHomeroom || isWakasekKesiswaan || isKepalaSekolah) && !isGuruBk ? [{ href: "/dashboard/teacher/peringatan-dini", label: "Peringatan Dini Siswa", icon: Siren }] : []),
       ],
@@ -276,6 +281,8 @@ export function grupMenuGuru({
         // (siapa pun terjadwal piket HARI INI, bukan jabatan tetap) dapat menu terbatas terpisah,
         // cuma boleh catat Terlambat & seragam/atribut (lihat kesiswaan-guard.ts).
         ...(kesiswaanBkAccess || isKepalaSekolah ? [{ href: "/dashboard/teacher/kesiswaan/papan", label: "Papan Kesiswaan", icon: Activity }] : []),
+        // Peta Sebaran (8 Okt 2026): satu daftar jabatan dengan penjaga server (src/lib/peta-akses.ts) + panitia SPMB.
+        ...(panitiaSpmb || jabatanNames.some(n => JABATAN_PETA.includes(n)) ? [{ href: "/dashboard/teacher/peta-sebaran", label: "Peta Sebaran", icon: MapPinned }] : []),
         ...(kesiswaanBkAccess || isKepalaSekolah ? [{ href: "/dashboard/teacher/imam-sholat", label: "Jadwal Imam Sholat", icon: Moon }] : []),
         ...(kesiswaanBkAccess ? [
           { href: "/dashboard/teacher/kesiswaan/poin-siswa", label: "Poin Siswa", icon: ShieldAlert },
@@ -303,6 +310,7 @@ export function grupMenuGuru({
       label: "Kinerja & Piket",
       items: [
         { href: "/dashboard/teacher/tugas", label: "Papan Tugas", icon: ClipboardList },
+        { href: "/dashboard/teacher/disposisi-surat", label: "Disposisi Surat", icon: Forward },
         { href: "/dashboard/teacher/pkb", label: "Portofolio PKB", icon: Award },
         { href: "/dashboard/teacher/kinerja", label: "Kinerja Saya", icon: Award },
         { href: "/dashboard/teacher/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart },
@@ -322,11 +330,8 @@ export function grupMenuGuru({
       label: "PKL & Alumni",
       items: [
         ...(hasInternshipBimbingan ? [{ href: "/dashboard/teacher/pkl", label: "PKL Pembimbingan", icon: Briefcase }] : []),
-        ...(isWakasekHumas ? [
-          { href: "/dashboard/teacher/humas/pkl-pendaftaran", label: "Pendaftaran PKL", icon: FileCheck2 },
-          { href: "/dashboard/teacher/humas/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2 },
-          { href: "/dashboard/teacher/humas/tracer-study", label: "Tracer Study Alumni", icon: UserCheck },
-        ] : []),
+        ...(isWakasekHumas || isPanitiaPkl ? [{ href: "/pusat-pkl", label: "Pusat PKL", icon: Briefcase }] : []),
+        ...(isWakasekHumas ? [{ href: "/dashboard/teacher/humas/tracer-study", label: "Tracer Study Alumni", icon: UserCheck }] : []),
         ...(isKepalaSekolah ? [{ href: "/dashboard/teacher/kepala-sekolah/mitra", label: "Peta Kemitraan Industri", icon: Building2 }] : []),
         ...(isKoordinatorBkk || isWakasekHumas ? [{ href: "/dashboard/teacher/bkk/lowongan", label: "Lowongan Kerja BKK", icon: BriefcaseBusiness }] : []),
       ],
@@ -385,13 +390,13 @@ export function grupMenuGuru({
 export default function TeacherSidebar(props: TeacherSidebarProps) {
   const {
     logoEmblem = "/images/logo-emblem.png", logoFullWhite, jabatanNames = [], hasInternshipBimbingan = false,
-    isGuruPiketOnDutyToday = false, overdueBooks = 0, hasHomeroom = false, impersonating = false, tindakan = [], hasTeaching = true,
+    isGuruPiketOnDutyToday = false, overdueBooks = 0, hasHomeroom = false, impersonating = false, tindakan = [], hasTeaching = true, panitiaSpmb = false,
   } = props;
   const pathname = usePathname();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const isTasStaff = jabatanNames.includes("Tenaga Administrasi Sekolah") || jabatanNames.includes("Kepala Tenaga Administrasi Sekolah");
-  const menuGroups = grupMenuGuru({ jabatanNames, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, hasHomeroom, hasTeaching });
+  const menuGroups = grupMenuGuru({ jabatanNames, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, hasHomeroom, hasTeaching, panitiaSpmb });
   const visibleGroups = menuGroups.filter(g => g.items.length > 0);
   const ALL_HREFS = visibleGroups.flatMap(g => g.items.map(i => i.href));
 

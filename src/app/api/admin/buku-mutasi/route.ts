@@ -147,6 +147,13 @@ export async function GET(req: NextRequest) {
       label: g === 10 ? "X" : g === 11 ? "XI" : "XII",
       L: rekapByGrade[g].L, P: rekapByGrade[g].P, jumlah: rekapByGrade[g].L + rekapByGrade[g].P,
     }));
+    // Siswa aktif yang BELUM punya kelas (siswa baru SPMB sebelum Pembagian Rombel): tanpa baris ini jumlah per tingkat
+    // tidak sama dengan total siswa aktif. Baris hanya muncul bila memang ada (keputusan user 9 Okt 2026).
+    const tanpaKelas = activeStudents.filter(s => !s.class?.grade || !rekapByGrade[s.class.grade]);
+    if (tanpaKelas.length) {
+      const L = tanpaKelas.filter(s => s.gender === "L").length, P = tanpaKelas.filter(s => s.gender === "P").length;
+      rekap.push({ grade: 0, label: "Belum ada kelas", L, P, jumlah: L + P });
+    }
     const totalAktif = activeStudents.length;
 
     // Jumlah siswa di akhir bulan sebelumnya (= awal bulan ini): siswa yang sudah diterima

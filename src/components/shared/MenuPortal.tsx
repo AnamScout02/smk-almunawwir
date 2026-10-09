@@ -39,11 +39,11 @@ export function MenuSiswa({ isKelasAdmin, overdueBooks, kelasXII, hasPendingBiod
   return <MenuLengkap grup={grup} pintasan={pintasan} {...p} />;
 }
 
-export function MenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, ...p }: PropsMenuPortal & {
+export function MenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, panitiaSpmb, ...p }: PropsMenuPortal & {
   jabatanNames?: string[]; hasHomeroom?: boolean; hasTeaching?: boolean; hasInternshipBimbingan?: boolean;
-  isGuruPiketOnDutyToday?: boolean; overdueBooks?: number;
+  isGuruPiketOnDutyToday?: boolean; overdueBooks?: number; panitiaSpmb?: boolean;
 }) {
-  const grup = rapikan(grupMenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks }) as Grup[]);
+  const grup = rapikan(grupMenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, panitiaSpmb }) as Grup[]);
   // Pintasan guru (pilihan user 18 Sep 2026): Guru Piket hanya saat memang terjadwal piket hari ini —
   // di hari lain slot itu diisi Jadwal Mengajar supaya tidak ada pintasan yang mentok.
   const pintasan: ItemMenuKisi[] = [

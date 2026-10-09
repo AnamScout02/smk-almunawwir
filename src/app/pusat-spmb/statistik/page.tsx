@@ -1,11 +1,15 @@
-import { BarChart3, Filter, MapPin, School, Award, ListChecks, Wallet, CalendarClock, Shirt, HeartPulse } from "lucide-react";
+import { BarChart3, Filter, MapPin, School, Award, ListChecks, Wallet, CalendarClock, Shirt, HeartPulse, Target } from "lucide-react";
+import GrafikTarget from "@/components/spmb/GrafikTarget";
+import { targetGelombang } from "@/lib/spmb-target";
 import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import Panel from "@/components/shared/Panel";
 import { verifyRole } from "@/lib/dal";
 import { assertSpmb } from "@/lib/spmb";
 import { jabatanAtauAlihkan } from "@/lib/jabatan-guard";
-import { corongPendaftaran, peringkatPerujuk, sebaranSekolah, sebaranWilayah } from "@/lib/spmb-statistik";
+import { corongPendaftaran, peringkatPerujuk, sebaranSekolah } from "@/lib/spmb-statistik";
+import { sebaranPetaPendaftar, sebaranPetaSiswa } from "@/lib/peta-sebaran";
+import PetaSebaran from "@/components/spmb/PetaSebaran";
 import { LABEL_JENIS } from "@/lib/spmb-perujuk";
 import { statistikTahapan } from "@/lib/spmb-statistik-tahapan";
 import { INFO_TAHAP, rupiah, type KodeTahap } from "@/lib/spmb-tahapan";
@@ -28,19 +32,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   const { rentang } = await searchParams;
   const r = RENTANG.find(x => x.kode === rentang) ?? RENTANG[1];
 
-  const [corong, wilayah, sekolah, perujuk, th] = await Promise.all([
+  const [corong, petaPendaftar, petaSiswa, sekolah, perujuk, th, target] = await Promise.all([
     corongPendaftaran(new Date(Date.now() - r.hari * 86_400_000)),
-    sebaranWilayah(),
+    sebaranPetaPendaftar(),
+    sebaranPetaSiswa(),
     sebaranSekolah(30),
     peringkatPerujuk(20),
     statistikTahapan(),
+    targetGelombang(),
   ]);
   const barisTahap = [...th.perGelombang, ...(th.perGelombang.length > 1 ? [th.semua] : [])];
   const t = corong.tahap;
   const kunjung = t[0].jumlah;
   const kirim = t[t.length - 1].jumlah;
   const persen = (a: number, b: number) => (b ? Math.round((a / b) * 1000) / 10 : 0);
-  const maksWil = Math.max(1, ...wilayah.map(w => w.jumlah));
   const maksSek = Math.max(1, ...sekolah.map(s => s.jumlah));
 
   return (
@@ -98,47 +103,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
           )}
         </Panel>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-start">
-          <Panel judul="Sebaran wilayah pendaftar" ikon={<MapPin size={16} />}
-            keterangan="Kabupaten/kota & kecamatan pilihan pendaftar · pendaftar ditolak tidak dihitung">
-            {wilayah.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">Belum ada pendaftar.</p>
-            ) : (
-              <ul className="space-y-3">
-                {wilayah.map(w => (
-                  <li key={w.nama}>
-                    <details className="group">
-                      <summary className="cursor-pointer list-none">
-                        <div className="flex items-baseline justify-between gap-3 text-sm">
-                          <span className="min-w-0 font-medium text-navy">{w.nama}</span>
-                          <span className="angka shrink-0 font-semibold text-navy">{w.jumlah}</span>
-                        </div>
-                        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
-                          <span className="block h-full rounded-full bg-emerald-500" style={{ width: `${(w.jumlah / maksWil) * 100}%` }} />
-                        </div>
-                      </summary>
-                      {w.kecamatan.length > 0 && (
-                        <ul className="mt-2 space-y-1 border-l-2 border-gray-100 pl-3">
-                          {w.kecamatan.map(k => (
-                            <li key={k.nama} className="flex justify-between gap-3 text-sm text-gray-600">
-                              <span>Kec. {k.nama}</span><span className="angka font-medium">{k.jumlah}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </details>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+        {/* Peta sebaran berjenjang Indonesia → desa (7 Okt 2026) — menggantikan daftar kabupaten/kecamatan. */}
+        <Panel judul="Peta sebaran" ikon={<MapPin size={16} />}
+          tautan={{ label: "Sasaran promosi & asal sekolah", href: "/pusat-spmb/sasaran" }}
+          keterangan="Pendaftar (yang ditolak tidak dihitung) dan siswa aktif sebagai pembanding · pilih wilayah atau ketuk peta untuk turun sampai desa">
+          <PetaSebaran pendaftar={petaPendaftar} siswa={petaSiswa} lapis={["pendaftar", "siswa"]} />
+        </Panel>
 
           <Panel judul="Asal sekolah terbanyak" ikon={<School size={16} />}
             keterangan="Nama sekolah diseragamkan (mis. SMPN = SMP NEGERI) · 30 teratas">
             {sekolah.length === 0 ? (
               <p className="py-10 text-center text-sm text-gray-400">Belum ada pendaftar.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
                 {sekolah.map(s => (
                   <li key={s.nama}>
                     <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -153,7 +130,41 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
               </ul>
             )}
           </Panel>
-        </div>
+
+        {/* Target vs capaian (7 Okt 2026) — target per gelombang diisi di Pengaturan SPMB → Gelombang. */}
+        <Panel judul="Target vs capaian per gelombang" ikon={<Target size={16} />}
+          keterangan="Garis navy = pendaftar sampai hari ini · putus-putus abu = laju ideal menuju target · putus-putus emas = tahun lalu pada tanggal yang sama">
+          {target.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Belum ada gelombang.</p> : (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {target.map(g => {
+                const persen = g.target ? Math.round((g.capaian / g.target) * 100) : 0;
+                const status = g.hariBerjalan === 0 ? "Belum dibuka" : g.capaian >= g.ideal ? "Sesuai / di atas target" : "Di bawah laju target";
+                return (
+                  <div key={g.id} className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-heading font-semibold text-navy">{g.nama}</p>
+                      <p className="text-xs text-gray-500">Hari ke-<span className="angka">{g.hariBerjalan}</span> dari <span className="angka">{g.hariTotal}</span></p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <span><span className="angka text-lg font-semibold text-navy">{g.capaian}</span> <span className="text-gray-400">/ {g.target || "—"}{g.dariKuota && g.target ? " (kuota)" : ""}</span></span>
+                      {g.target > 0 && <span className="angka text-gray-500">{persen}%</span>}
+                      {g.target > 0 && g.hariBerjalan > 0 && (
+                        <span className={`status-badge ${g.capaian >= g.ideal ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>{status}</span>
+                      )}
+                    </div>
+                    {g.target > 0 && <div className="h-1.5 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, persen)}%` }} /></div>}
+                    <GrafikTarget g={g} />
+                    <p className="text-xs text-gray-500">
+                      {g.target === 0 ? "Target belum diisi — isi di Pengaturan SPMB → Gelombang & Kuota."
+                        : g.perluPerHari ? `Perlu rata-rata ${g.perluPerHari} pendaftar per hari sampai gelombang ditutup.` : g.capaian >= g.target ? "Target tercapai." : ""}
+                      {g.tahunLaluTotal !== null ? ` Tahun lalu pada rentang yang sama: ${g.tahunLaluTotal} pendaftar.` : " Belum ada data tahun lalu untuk dibandingkan."}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
 
         {/* Tahapan calon (6 Okt 2026) — angka gabungan, hitungan sama dengan halaman Tahapan Calon. */}
         <Panel judul="Kemajuan tahapan per gelombang" ikon={<ListChecks size={16} />} isi={false}

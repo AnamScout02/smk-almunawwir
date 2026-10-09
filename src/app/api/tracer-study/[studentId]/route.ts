@@ -3,6 +3,7 @@ import { verifyRole } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { assertJabatan } from "@/lib/jabatan-guard";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { lupakanSebaranAlumni } from "@/lib/peta-sebaran";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ studentId: string }> }) {
   try {
@@ -32,6 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ stud
       create: { studentId, ...data },
       update: data,
     });
+    lupakanSebaranAlumni();
     return NextResponse.json(tracer);
   } catch (e) {
     lemparBilaPengalihan(e);

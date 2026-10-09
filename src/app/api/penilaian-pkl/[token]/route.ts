@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { sinkronLatar, siswaDiDudi } from "@/lib/pkl-server";
 import { ASPEK_PKL, hashToken } from "@/lib/pkl-humas";
 import { checkRateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
 import { getSettings } from "@/lib/site-settings";
@@ -54,5 +55,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     where: { id: pkl.id },
     data: { nilaiIndustri: nilai, nilaiIndustriRata: rata, penilaiIndustri: penilai, catatanIndustri: String(b.catatan ?? "").trim().slice(0, 2000) || null, nilaiIndustriPada: new Date() },
   });
+  sinkronLatar(() => prisma.internship.findUnique({ where: { id: pkl.id }, select: { studentId: true } }).then(x => (x ? [x.studentId] : [])));
   return Response.json({ ok: true, rata });
 }

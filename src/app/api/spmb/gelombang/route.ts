@@ -14,7 +14,7 @@ export async function GET() {
     const [gelombang, jurusan, tahun] = await Promise.all([
       prisma.gelombangSpmb.findMany({
         orderBy: { urutan: "asc" },
-        include: { kuota: { include: { major: { select: { id: true, name: true, code: true } } } }, _count: { select: { pendaftar: true } } },
+        include: { kuota: { include: { major: { select: { id: true, name: true, code: true } } } }, _count: { select: { pendaftar: true, sesi: true } } },
       }),
       prisma.major.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, code: true } }),
       prisma.academicYear.findMany({ orderBy: { name: "desc" }, select: { id: true, name: true, isActive: true } }),

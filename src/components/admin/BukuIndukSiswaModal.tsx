@@ -76,7 +76,7 @@ export interface BukuIndukData {
   pklStartDate?: string; pklEndDate?: string;
   pklPlace?: string; pklAddress?: string;
   pklLatitude?: string; pklLongitude?: string;
-  pklSupervisor?: string; pklScore?: string;
+  pklSupervisor?: string; pklScore?: string; pklLama?: string; pklDariPusat?: string;
   // K – Kelulusan
   graduationDate?: string;
   graduationIjazahNo?: string; skhunNo?: string;
@@ -734,7 +734,11 @@ export default function BukuIndukSiswaModal({
 
       {/* ── J: PKL ────────────────────────────────────────────────── */}
       <Section title="J. Praktik Kerja Lapangan (PKL)" icon={Briefcase} open={!!sections.j} onToggle={() => toggleSection("j")} accent="text-teal-600">
+        {bukuForm.pklDariPusat === "1" && (
+          <p className="col-span-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">Bagian ini terisi otomatis dari <span className="font-semibold">Pusat PKL</span> (penempatan, guru pembimbing, tanggal, dan nilai). Ubah di Pusat PKL → Penempatan Siswa; ketikan di sini akan tertimpa saat penempatannya diperbarui.</p>
+        )}
         <Field label="Tanggal Mulai PKL" value={f("pklStartDate")} type="date" onChange={setF("pklStartDate")} />
+        <Field label="Lama PKL" value={f("pklLama")} placeholder="3 bulan / 6 bulan" onChange={setF("pklLama")} kapital="asli" />
         <Field label="Tanggal Berakhir PKL" value={f("pklEndDate")} type="date" onChange={setF("pklEndDate")} />
         <Field label="Nama Tempat PKL" value={f("pklPlace")} wide onChange={setF("pklPlace")} />
         <Field label="Alamat Tempat PKL" value={f("pklAddress")} type="textarea" wide onChange={setF("pklAddress")} />

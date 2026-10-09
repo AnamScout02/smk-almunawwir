@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRole } from "@/lib/dal";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
-import { assertHumas } from "@/lib/humas-guard";
+import { assertPkl as assertHumas } from "@/lib/pkl-humas";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import { logActivity } from "@/lib/activity-log";

@@ -1,3 +1,5 @@
+import { logoMitraPublik } from "@/lib/logo-mitra";
+import StatistikPkl from "@/components/sections/StatistikPkl";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -138,6 +140,7 @@ export default async function AdmissionsPage() {
   });
 
   const k = bacaKontenSpmb(s);
+  const logoMitra = await logoMitraPublik(k.logoMitra);
   // Story = galeri promosi yang sudah diunggah panitia (satu galeri satu lingkaran).
   const story = [
     ...(k.fotoPromosi.length ? [{ judul: k.judulGaleri || t.galeri, foto: k.fotoPromosi }] : []),
@@ -516,10 +519,12 @@ export default async function AdmissionsPage() {
                       <div style={{ ["--tunda" as string]: `${i * 120}ms` }}
                         className={`gerak-naik spmb-kartu overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${kanan ? "lg:col-start-2" : "lg:col-start-1"}`}>
                         {/* Gambar OPSIONAL — langkah tanpa gambar tetap rapi sejajar dengan yang bergambar. */}
+                        {/* Wadah 16:9 utuh (7 Okt 2026): gambar alur lazimnya infografis bertulisan — wadah setinggi
+                            tetap memotong teksnya. Diketuk = dibuka ukuran penuh. */}
                         {l.gambar && (
-                          <div className="relative h-36 w-full">
-                            <Image src={l.gambar} alt={l.judul} fill className="object-cover" />
-                          </div>
+                          <a href={l.gambar} target="_blank" rel="noopener noreferrer" className="relative block aspect-video w-full bg-gray-50">
+                            <Image src={l.gambar} alt={l.judul} fill sizes="(min-width: 1024px) 480px, 100vw" className="object-contain" />
+                          </a>
                         )}
                         <div className={`p-5 ${kanan ? "" : "lg:text-right"}`}>
                           <h3 className="font-heading text-base font-semibold text-navy">{l.judul}</h3>
@@ -534,7 +539,8 @@ export default async function AdmissionsPage() {
           </section>
         )}
 
-        <DeretLogo logo={k.logoMitra} judul={k.judulLogo || (lang === "id" ? "Mitra Industri & Kampus Alumni" : "Industry Partners & Alumni Universities")} gelap />
+        <DeretLogo logo={logoMitra} judul={k.judulLogo || (lang === "id" ? "Mitra Industri & Kampus Alumni" : "Industry Partners & Alumni Universities")} gelap />
+        <StatistikPkl lang={lang} />
 
         {/* ====== Sebelum & sesudah (karya siswa, renovasi) — diatur di Pusat SPMB → Poster & Promosi ====== */}
         {k.sebelumSesudah.length > 0 && (

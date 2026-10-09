@@ -7,8 +7,8 @@ import DatePicker from "@/components/shared/DatePicker";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import {
-  ASESMEN_BAWAAN, PEMERIKSAAN_BAWAAN, KUNCI_BUKU_INDUK, LABEL_JENIS, LABEL_SYARAT_BAYAR, bacaIsian, bacaMpls, bacaSetelanBayar, bacaSetelanSeragam, rupiah,
-  type InfoMpls, type SyaratBayar, type IsianTahap, type JenisIsian, type SetelanSeragam,
+  ASESMEN_BAWAAN, PAKTA_BAWAAN, PEMERIKSAAN_BAWAAN, KUNCI_BUKU_INDUK, bacaPakta, LABEL_JENIS, LABEL_SYARAT_BAYAR, bacaIsian, bacaMpls, bacaSetelanBayar, bacaSetelanSeragam, rupiah,
+  LABEL_UNTUK_SERAGAM, type UntukSeragam, type InfoMpls, type SyaratBayar, type IsianTahap, type JenisIsian, type SetelanSeragam,
 } from "@/lib/spmb-tahapan";
 
 type Kirim = (url: string, method: string, body?: unknown) => Promise<boolean>;
@@ -20,6 +20,7 @@ const BAGIAN = [
   { id: "asesmen", label: "Pertanyaan Asesmen" },
   { id: "pemeriksaan", label: "Isian Fisik & Kesehatan" },
   { id: "sesi", label: "Sesi Kedatangan" },
+  { id: "pakta", label: "Surat Pernyataan" },
 ] as const;
 
 /** Tab "Tahapan Calon" di Pengaturan SPMB (6 Oktober 2026). Semua isian disusun panitia sendiri —
@@ -51,6 +52,7 @@ export default function PengaturanTahapanSpmb({ setelan, sibuk, kirim, toast }: 
           keterangan="Diisi panitia saat mewawancarai calon. Hasilnya menjadi catatan bagi wali kelas & BK setelah calon menjadi siswa." />
       )}
       {bagian === "sesi" && <BagianSesi toast={toast} />}
+      {bagian === "pakta" && <BagianPakta setelan={setelan} sibuk={sibuk} simpan={simpan} />}
       {bagian === "pemeriksaan" && (
         <EditorIsian key="pemeriksaan" judul="Isian cek fisik & kesehatan" kunci="spmb.pemeriksaan" bawaan={PEMERIKSAAN_BAWAAN}
           awal={bacaIsian(setelan["spmb.pemeriksaan"], PEMERIKSAAN_BAWAAN)} sibuk={sibuk} simpan={simpan} bukuInduk
@@ -161,13 +163,17 @@ function BagianSeragam({ awal, sibuk, simpan }: { awal: SetelanSeragam; sibuk: b
       <div className="panel space-y-4 p-5">
         <div>
           <p className="panel-judul">Pilihan ukuran seragam</p>
-          <p className="text-sm text-gray-500">Calon memilih satu ukuran untuk setiap item. Keterangan ukuran (lebar dada, panjang, lingkar pinggang) membantu calon memilih dengan tepat.</p>
+          <p className="text-sm text-gray-500">Calon memilih satu ukuran untuk setiap item yang berlaku baginya. Tentukan tiap item untuk putra & putri, khusus putra (mis. Celana), atau khusus putri (mis. Rok) — calon hanya melihat item sesuai jenis kelaminnya, dan rekap pesanan menghitungnya terpisah.</p>
         </div>
         {s.item.map((item, i) => (
           <div key={i} className="space-y-3 rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2">
               <input className="input-field flex-1 font-semibold" value={item.nama} placeholder="Nama item (mis. Baju Putih)"
                 onChange={e => ubahItem(i, x => ({ ...x, nama: e.target.value }))} />
+              <div className="w-44 shrink-0">
+                <Select value={item.untuk ?? "SEMUA"} onChange={v => ubahItem(i, x => ({ ...x, untuk: v as UntukSeragam }))}
+                  options={(Object.keys(LABEL_UNTUK_SERAGAM) as UntukSeragam[]).map(k => ({ value: k, label: LABEL_UNTUK_SERAGAM[k] }))} />
+              </div>
               <button type="button" title="Hapus item" onClick={() => setS(v => ({ ...v, item: v.item.filter((_, k) => k !== i) }))}
                 className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
             </div>
@@ -186,7 +192,7 @@ function BagianSeragam({ awal, sibuk, simpan }: { awal: SetelanSeragam; sibuk: b
             </button>
           </div>
         ))}
-        <button type="button" onClick={() => setS(v => ({ ...v, item: [...v.item, { nama: "", ukuran: [{ label: "", keterangan: "" }] }] }))} className="btn-modal-cancel btn-teks">
+        <button type="button" onClick={() => setS(v => ({ ...v, item: [...v.item, { nama: "", untuk: "SEMUA", ukuran: [{ label: "", keterangan: "" }] }] }))} className="btn-modal-cancel btn-teks">
           <Plus size={16} /> Tambah Item
         </button>
       </div>
@@ -396,6 +402,47 @@ function BagianSesi({ toast }: { toast: Toast }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Surat pernyataan / pakta integritas orang tua (7 Okt 2026) — ditandatangani di HP pada tahap daftar ulang.
+ *  Mengubah teks TIDAK mengubah pakta yang sudah ditandatangani (tersimpan sebagai salinan per calon). */
+function BagianPakta({ setelan, sibuk, simpan }: { setelan: Record<string, string>; sibuk: boolean; simpan: (x: Record<string, string>) => void }) {
+  const confirm = useConfirm();
+  const [p, setP] = useState(() => bacaPakta(setelan["spmb.pakta"]));
+  return (
+    <div className="panel space-y-4 p-5">
+      <div>
+        <p className="panel-judul">Surat pernyataan orang tua / wali</p>
+        <p className="text-sm text-gray-500">
+          Tampil di halaman tahapan calon saat tahap Daftar Ulang terbuka. Orang tua membaca, mengisi nama & hubungan, lalu menandatangani
+          langsung di HP. Hasilnya bisa dicetak calon maupun panitia (ber-QR keaslian). Orang tua tanpa HP: cetak lembarnya dari jendela calon,
+          lalu tandai &quot;Ditandatangani di Kertas&quot;.
+        </p>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input type="checkbox" checked={p.aktif} onChange={e => setP({ ...p, aktif: e.target.checked })} /> Pakai surat pernyataan
+      </label>
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input type="checkbox" checked={p.wajib} disabled={!p.aktif} onChange={e => setP({ ...p, wajib: e.target.checked })} />
+        Wajib ditandatangani sebelum konfirmasi daftar ulang
+      </label>
+      <div><label className="label-field">Judul</label><input className="input-field" value={p.judul} onChange={e => setP({ ...p, judul: e.target.value })} /></div>
+      <div>
+        <label className="label-field">Isi pernyataan</label>
+        <textarea className="input-field min-h-[280px] text-sm leading-relaxed" value={p.isi} onChange={e => setP({ ...p, isi: e.target.value })} />
+        <p className="mt-1 text-xs text-gray-500">Tulis <code>{"{sekolah}"}</code> untuk nama sekolah. Pernyataan yang sudah ditandatangani tetap memakai teks saat ditandatangani.</p>
+      </div>
+      <div className="flex flex-wrap justify-end gap-2">
+        <button type="button" className="btn-modal-cancel"
+          onClick={async () => { if (await confirm("Kembalikan judul & isi ke teks bawaan?")) setP({ ...p, judul: PAKTA_BAWAAN.judul, isi: PAKTA_BAWAAN.isi }); }}>
+          <RotateCcw size={16} /> Teks Bawaan
+        </button>
+        <button type="button" disabled={sibuk} onClick={() => simpan({ "spmb.pakta": JSON.stringify(p) })} className="btn-modal-save">
+          {sibuk ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan
+        </button>
+      </div>
     </div>
   );
 }

@@ -37,7 +37,7 @@ const tgl = (d: Date | string | null | undefined) =>
 /** Ambil data siswa dalam bentuk yang dimengerti pengisi template. Bentuknya sengaja sama persis
  * dengan /api/admin/siswa-lookup supaya hasil isian otomatis identik dengan yang dilihat petugas
  * saat membuat surat manual. */
-async function dataSiswa(studentId: string | null): Promise<SiswaTemplate | null> {
+export async function dataSiswa(studentId: string | null): Promise<SiswaTemplate | null> {
   if (!studentId) return null;
   const s = await prisma.student.findUnique({
     where: { id: studentId },

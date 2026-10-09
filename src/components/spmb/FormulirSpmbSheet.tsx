@@ -55,12 +55,12 @@ export default function FormulirSpmbSheet({ d, sekolah, logoUrl, tahun }: {
       {/* Satu dokumen, dua pintu cetak (pendaftar & panitia) — @page-nya ditaruh di komponen
           bersama ini supaya keduanya tidak pernah berbeda margin (CLAUDE.md #21). */}
       <style>{`@page { size: A4 portrait; margin: 1cm; }`}</style>
-    <div className="print-doc a4-page mx-auto bg-white px-8 pb-10 pt-0 text-[12px] leading-relaxed text-gray-800 shadow-sm print:shadow-none">
+    <div className="print-doc mx-auto max-w-[21cm] bg-white px-8 pb-6 pt-0 text-[12px] leading-snug text-gray-800 shadow-sm print:shadow-none">
       <PrintKop title="Formulir Pendaftaran Murid Baru"
         subtitle={`SPMB ${tahun || ""} · ${sekolah}`.replace(/\s+·\s*$/, "")} logoUrl={logoUrl} />
 
       {/* Nomor pendaftaran + pas foto + QR keaslian */}
-      <div className="mb-4 flex items-start justify-between gap-5">
+      <div className="mb-3 flex items-start justify-between gap-5">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-gray-500">Nomor Pendaftaran</p>
           <p className="angka font-heading text-2xl font-bold tracking-wider text-primary-900">{d.nomor ?? "—"}</p>
@@ -87,28 +87,24 @@ export default function FormulirSpmbSheet({ d, sekolah, logoUrl, tahun }: {
       <Blok judul="A. Identitas Calon Murid" baris={identitas} />
       <Blok judul="B. Pilihan & Pendaftaran" baris={pilihan} />
 
-      <section className="mb-4">
+      <section className="mb-3">
         <h2 className="mb-1.5 border-b border-gray-300 pb-1 text-[12px] font-bold uppercase tracking-wide text-primary-900">
           C. Kelengkapan Berkas
         </h2>
-        <table className="w-full border-collapse">
-          <tbody>
-            {dokumen.map((x, i) => (
-              <tr key={`${x.nama}-${i}`} className="border-b border-gray-100 last:border-0">
-                <td className="w-6 py-1 align-top text-gray-500">{i + 1}.</td>
-                <td className="py-1 align-top">{x.nama}</td>
-                <td className="w-28 py-1 text-right align-top">
-                  {x.ada ? <span className="font-semibold text-emerald-700">Terunggah</span>
-                         : <span className="text-gray-400">Belum ada</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Dua kolom (7 Okt 2026) — satu kolom membuat tanda tangan meluber ke halaman kedua. */}
+        <ul className="grid grid-cols-2 gap-x-8">
+          {dokumen.map((x, i) => (
+            <li key={`${x.nama}-${i}`} className="flex items-baseline gap-2 border-b border-gray-100 py-[2px]">
+              <span className="w-5 shrink-0 text-gray-500">{i + 1}.</span>
+              <span className="min-w-0 flex-1">{x.nama}</span>
+              {x.ada ? <span className="font-semibold text-emerald-700">Terunggah</span> : <span className="text-gray-400">Belum ada</span>}
+            </li>
+          ))}
+        </ul>
         {dokumen.length === 0 && <p className="py-2 text-gray-400">Belum ada dokumen yang diminta.</p>}
       </section>
 
-      <section className="mb-5">
+      <section className="mb-3">
         <h2 className="mb-1.5 border-b border-gray-300 pb-1 text-[12px] font-bold uppercase tracking-wide text-primary-900">
           D. Pernyataan
         </h2>
@@ -123,19 +119,15 @@ export default function FormulirSpmbSheet({ d, sekolah, logoUrl, tahun }: {
       <div className="grid grid-cols-2 gap-10 text-center">
         <div>
           <p>Orang Tua / Wali,</p>
-          <div className="h-[2.2cm]" />
+          <div className="h-[1.5cm]" />
           <p className="border-t border-gray-400 pt-1">{d.guardianName || "(.............................)"}</p>
         </div>
         <div>
           <p>Calon Murid,</p>
-          <div className="h-[2.2cm]" />
+          <div className="h-[1.5cm]" />
           <p className="border-t border-gray-400 pt-1">{d.fullName}</p>
         </div>
       </div>
-
-      <p className="mt-6 text-center text-[10px] text-gray-400">
-        Dicetak dari sistem SPMB {sekolah}. Keasliannya dapat diperiksa dengan memindai QR di atas.
-      </p>
     </div>
     </>
   );
@@ -143,15 +135,15 @@ export default function FormulirSpmbSheet({ d, sekolah, logoUrl, tahun }: {
 
 function Blok({ judul, baris }: { judul: string; baris: [string, React.ReactNode][] }) {
   return (
-    <section className="mb-4">
+    <section className="mb-3">
       <h2 className="mb-1.5 border-b border-gray-300 pb-1 text-[12px] font-bold uppercase tracking-wide text-primary-900">{judul}</h2>
       <table className="w-full border-collapse">
         <tbody>
           {baris.map(([k, v]) => (
             <tr key={k} className="align-top">
-              <td className="w-[6cm] py-1 text-gray-600">{k}</td>
-              <td className="w-4 py-1 text-gray-400">:</td>
-              <td className="py-1 font-medium text-gray-900">{v}</td>
+              <td className="w-[6cm] py-[2px] text-gray-600">{k}</td>
+              <td className="w-4 py-[2px] text-gray-400">:</td>
+              <td className="py-[2px] font-medium text-gray-900">{v}</td>
             </tr>
           ))}
         </tbody>

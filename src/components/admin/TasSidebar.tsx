@@ -10,9 +10,10 @@ import {
   ChevronDown, Search, CheckSquare, MoreHorizontal, Wallet, FileSpreadsheet,
   BookA, BookUser, Stamp, FileText, CalendarOff, HandCoins, ClipboardCheck, ScanSearch,
   Calculator, Signature, Forward, Send, Inbox, ClipboardSignature, CalendarDays, DatabaseZap,
-  Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid, 
-} from "lucide-react";
-import { FileUser } from "lucide-react";
+  Megaphone, Hammer, ClipboardPen, BriefcaseBusiness, UserPlus, CircleHelp, QrCode, LayoutGrid, MapPinned, Merge } from "lucide-react";
+import { JABATAN_PETA } from "@/lib/peta-akses";
+import { FileUser, Reply, ListTodo, ArrowLeftRight, ScrollText } from "lucide-react";
+import { CalendarRange } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -44,13 +45,17 @@ export const menuGroupsTas = [
     label: null,
     items: [
       { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/meja-kerja", label: "Meja Kerja TU", icon: ListTodo, show: (_j: string[], full: boolean) => full },
     ],
   },
   {
     label: "Data Siswa & Guru",
     items: [
-      { href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList, show: (_j: string[], full: boolean) => full },
+      // Anggota Panitia SPMB tambahan diberi penanda jabatan "Panitia SPMB" (src/lib/spmb.ts jabatanUntukMenu).
+      { href: "/pusat-spmb", label: "Pusat SPMB", icon: ClipboardList, show: (j: string[], full: boolean) => full || j.includes("Panitia SPMB") },
       { href: "/dashboard/admin/students", label: "Siswa", icon: Users, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/peta-sebaran", label: "Peta Sebaran", icon: MapPinned,
+        show: (j: string[], full: boolean) => full || j.includes("Panitia SPMB") || j.some(n => JABATAN_PETA.includes(n)) },
       { href: "/dashboard/admin/classes", label: "Kelas", icon: School, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/teachers", label: "Guru & Pegawai", icon: UserCog, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/jabatan", label: "Jabatan", icon: Award, show: (_j: string[], full: boolean) => full },
@@ -98,8 +103,7 @@ export const menuGroupsTas = [
   {
     label: "PKL & Alumni",
     items: [
-      { href: "/dashboard/admin/internships", label: "PKL", icon: Briefcase, show: (_j: string[], full: boolean) => full },
-      { href: "/dashboard/admin/industry-partners", label: "Mitra Industri (DU/DI)", icon: Building2, show: (_j: string[], full: boolean) => full },
+      { href: "/pusat-pkl", label: "Pusat PKL", icon: Briefcase, show: (j: string[], full: boolean) => full || j.includes("Panitia PKL") },
       { href: "/dashboard/admin/tracer-study", label: "Tracer Study Alumni", icon: UserCheck, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/lowongan", label: "Lowongan Kerja BKK", icon: BriefcaseBusiness, show: (_j: string[], full: boolean) => full },
     ],
@@ -109,7 +113,9 @@ export const menuGroupsTas = [
     items: [
       { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
       { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+      { href: "/dashboard/admin/rapikan-sekolah", label: "Rapikan Nama Sekolah", icon: Merge, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
       { href: "/dashboard/admin/buku-klapper", label: "Buku Klapper", icon: BookA, show: (j: string[], full: boolean) => full || j.includes("Operator Sekolah") },
+      { href: "/dashboard/admin/mutasi-siswa", label: "Mutasi Siswa", icon: ArrowLeftRight, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/kenaikan-kelas", label: "Buku Kenaikan Kelas", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/pemeriksa-data", label: "Pemeriksa Data", icon: ScanSearch, show: (_j: string[], full: boolean) => full },
@@ -121,6 +127,8 @@ export const menuGroupsTas = [
     items: [
       { href: "/dashboard/admin/persuratan", label: "Agenda Surat", icon: Mail, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/disposisi", label: "Disposisi Surat Masuk", icon: Forward, show: (_j: string[], full: boolean) => full },
+      // Disposisi yang DITUJUKAN ke akun ini — semua staf, bukan hanya TU penuh.
+      { href: "/dashboard/admin/disposisi-surat", label: "Disposisi untuk Saya", icon: Reply, show: () => true },
       { href: "/dashboard/admin/ekspedisi", label: "Buku Ekspedisi", icon: Send, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/permintaan-surat", label: "Permintaan Surat", icon: Inbox, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen, show: (_j: string[], full: boolean) => full },
@@ -132,12 +140,14 @@ export const menuGroupsTas = [
     items: [
       { href: "/dashboard/admin/rapor-siswa", label: "Penerimaan Rapor", icon: ClipboardCheck, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/cek-kelulusan", label: "Cek Kelulusan", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/paket-kelulusan", label: "Paket Kelulusan", icon: ScrollText, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/ijazah-serah", label: "Penyerahan Ijazah", icon: GraduationCap, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/legalisir", label: "Legalisir Dokumen", icon: Stamp, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/kartu-tanda", label: "Kartu Tanda", icon: IdCard, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/buku-tamu", label: "Buku Tamu", icon: BookUser, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/nominatif", label: "Nominatif Kelas XII", icon: FileSpreadsheet, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/profil-sekolah", label: "Profil Sekolah", icon: Building2, show: (_j: string[], full: boolean) => full },
+      { href: "/dashboard/admin/laporan-bulanan", label: "Laporan Bulanan TU", icon: CalendarRange, show: (_j: string[], full: boolean) => full },
       { href: "/dashboard/admin/reports", label: "Laporan & Ekspor", icon: BarChart2, show: (_j: string[], full: boolean) => full },
     ],
   },

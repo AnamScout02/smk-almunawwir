@@ -9,7 +9,7 @@ import { bacaJadwal, bacaSetelanBayar, hitungBayar, susunTahapan, type AturanTah
 export const PILIH_TAHAPAN = {
   createdAt: true, status: true, verifikasiStatus: true, verifikasiPesan: true, verifikasiAt: true,
   seragamAt: true, asesmenAt: true, pemeriksaanAt: true, paymentVerified: true, daftarUlangConfirmedAt: true,
-  potonganBiaya: true, gelombangId: true,
+  potonganBiaya: true, gelombangId: true, paktaAt: true,
 } as const;
 
 export async function aturanTahapan(): Promise<AturanTahapan> {

@@ -17,7 +17,7 @@ interface BelumAktif {
 
 interface Data {
   tersedia: boolean;
-  pengaturan: { aktif: boolean; jamAbsensi: string; jamPiket: string; jamJurnal: string; jamPeringatanDini: string; jamPerpustakaan: string; jamRekapKelas: string; jamRingkasanOrtu: string; jamSpmb: string; tanggalLibur: string[]; liburNasional: boolean };
+  pengaturan: { aktif: boolean; jamAbsensi: string; jamPiket: string; jamJurnal: string; jamPeringatanDini: string; jamPerpustakaan: string; jamRekapKelas: string; jamRingkasanOrtu: string; jamSpmb: string; jamPkl: string; tanggalLibur: string[]; liburNasional: boolean };
   libur: { mendatang: { tanggal: string; nama: string; sumber: keyof typeof SUMBER_LIBUR }[]; nasional: { jumlah: number; diperbarui: string | null } };
   perangkat: { total: number; pengguna: number; perPeran: { peran: string; perangkat: number; pengguna: number }[] };
   riwayat: { id: string; jenis: string; judul: string; isi: string; jumlahPenerima: number; jumlahPerangkat: number; createdAt: string }[];
@@ -169,6 +169,7 @@ export default function NotifikasiPushManager() {
                   ["jamRekapKelas", "Rekap harian kelas", "Ke wali kelas: jumlah hadir/izin/sakit/alpha hari ini, nama siswa alpha, dan izin orang tua yang menunggu"],
                   ["jamRingkasanOrtu", "Ringkasan mingguan orang tua", "Tiap Sabtu ke orang tua: kehadiran anak pekan ini, nilai baru, dan poin"],
                   ["jamSpmb", "Pengingat calon siswa SPMB", "Ke HP calon yang mengaktifkan pemberitahuan: H-1 jadwal ke sekolah, dan tiap 3 hari bila masih tertahan (perbaikan berkas, ukuran seragam, sesi, daftar ulang)"],
+                  ["jamPkl", "Jurnal PKL belum diisi", "Ke siswa yang sedang PKL hari itu dan belum menulis jurnal hariannya"],
                 ] as const).map(([kunci, judul, ket]) => (
                   <div key={kunci}>
                     <label className="label-field" htmlFor={`jam-${kunci}`}>{judul}</label>
