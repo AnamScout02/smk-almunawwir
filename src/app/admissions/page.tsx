@@ -71,7 +71,7 @@ const TEKS = {
     satuan: ["Hari", "Jam", "Menit", "Detik"],
     angkaSiswa: "Siswa aktif", angkaAlumni: "Alumni", angkaJurusan: "Konsentrasi keahlian", angkaKursi: "Kursi tersedia",
     jurusanLabel: "Konsentrasi Keahlian", jurusanJudul: "Pilih jalan masa depanmu",
-    kursi: "kursi", dari: "dari", pelajari: "Pelajari", kuotaKet: "Sisa kursi",
+    kursi: "kursi", dari: "dari", pelajari: "Pelajari", kuotaKet: "Sisa kursi", perJurusan: "Sisa kursi per jurusan", penuh: "penuh",
     waSingkat: "Tanya WA",
     terbaru: (n: number) => `${n} calon murid mendaftar dalam 7 hari terakhir`,
     duta: "Duta SPMB", dutaKet: "Siswa, guru, dan sahabat sekolah yang paling banyak mengajak calon murid.", ajak: "pendaftar",
@@ -93,7 +93,7 @@ const TEKS = {
     satuan: ["Days", "Hours", "Min", "Sec"],
     angkaSiswa: "Active students", angkaAlumni: "Alumni", angkaJurusan: "Study programs", angkaKursi: "Seats available",
     jurusanLabel: "Study Programs", jurusanJudul: "Choose your future path",
-    kursi: "seats", dari: "of", pelajari: "Explore", kuotaKet: "Seats left",
+    kursi: "seats", dari: "of", pelajari: "Explore", kuotaKet: "Seats left", perJurusan: "Seats left per program", penuh: "full",
     waSingkat: "Ask on WA",
     terbaru: (n: number) => `${n} students registered in the last 7 days`,
     duta: "SPMB Ambassadors", dutaKet: "Students, teachers, and friends of the school who referred the most applicants.", ajak: "applicants",
@@ -168,6 +168,18 @@ export default async function AdmissionsPage() {
     const terisi = pendaftarAcuan.filter(a => cocokJurusan(a.chosenMajor, m)).length;
     return [m.id, kuota ? { kuota, sisa: Math.max(0, kuota - terisi) } : null] as const;
   }));
+  // Sisa kursi PER JURUSAN untuk tiap gelombang yang sedang BERJALAN (10 Okt 2026, permintaan user: kartu gelombang aktif bisa
+  // diketuk untuk melihatnya). Aturan hitungnya sama dengan di atas; gelombang yang belum/ sudah lewat tidak dihitung.
+  const berjalanIds = gelombang.filter(g => g.buka.getTime() <= kini && g.tutup.getTime() >= kini).map(g => g.id);
+  const pendaftarBerjalan = berjalanIds.length
+    ? await prisma.admission.findMany({ where: { gelombangId: { in: berjalanIds }, status: { notIn: ["DITOLAK", "REJECTED"] } }, select: { gelombangId: true, chosenMajor: true } }).catch(() => [])
+    : [];
+  const kursiGelombang = new Map(gelombang.filter(g => berjalanIds.includes(g.id)).map(g => [g.id, jurusan.flatMap(m => {
+    const kuota = g.kuota.find(x => x.majorId === m.id)?.kuota ?? 0;
+    if (!kuota) return [];
+    const terisi = pendaftarBerjalan.filter(a => a.gelombangId === g.id && cocokJurusan(a.chosenMajor, m)).length;
+    return [{ id: m.id, kode: m.code, nama: m.name, kuota, sisa: Math.max(0, kuota - terisi) }];
+  })] as const));
   const kursiTotal = [...kuotaJurusan.values()].reduce((a, x) => a + (x?.sisa ?? 0), 0);
 
   // WIB, bukan jam server (UTC): gelombang dibuka 00.00 WIB tersimpan 17.00 UTC HARI SEBELUMNYA (CLAUDE.md #42).
@@ -334,6 +346,25 @@ export default async function AdmissionsPage() {
                             style={{ ["--tunda" as string]: `${300 + i * 120}ms` }}>
                             <span className={`block h-full rounded-full ${w.aksenBg}`} style={{ width: `${(sisa / totalKuota) * 100}%` }} />
                           </div>
+                        )}
+                        {/* Hanya gelombang yang SEDANG berjalan yang bisa dibuka — <details> bawaan, tanpa JavaScript. */}
+                        {(kursiGelombang.get(g.id)?.length ?? 0) > 0 && (
+                          <details className="group mt-4">
+                            <summary className={`sentuh flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-semibold ${w.kacaIsi} [&::-webkit-details-marker]:hidden`}>
+                              {t.perJurusan}<span aria-hidden className="transition-transform group-open:rotate-180">▾</span>
+                            </summary>
+                            <ul className="mt-3 space-y-2.5">
+                              {kursiGelombang.get(g.id)!.map(j => (
+                                <li key={j.id}>
+                                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                                    <span className="min-w-0"><span className="font-semibold">{j.kode}</span> <span className={`text-xs ${w.samar}`}>{j.nama}</span></span>
+                                    <span className="angka shrink-0 font-medium">{j.sisa > 0 ? <>{j.sisa} <span className={`text-xs ${w.samar}`}>{t.dari} {j.kuota}</span></> : <span className="text-xs uppercase tracking-wide">{t.penuh}</span>}</span>
+                                  </div>
+                                  <div className={`mt-1 h-1 overflow-hidden rounded-full ${w.kacaIsi}`}><span className={`block h-full rounded-full ${w.aksenBg}`} style={{ width: `${(j.sisa / j.kuota) * 100}%` }} /></div>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
                         )}
                       </div>
                     );

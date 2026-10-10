@@ -97,7 +97,10 @@ export default function BukuIndukSiswaPage() {
     setSelected(student);
   }
 
+  // Tautan langsung dari Meja Kerja / Pemeriksa Data: bagian formulir & isian yang harus langsung terbuka.
+  const [letak, setLetak] = useState({ bagian: "", isian: "" });
   function closeModal() {
+    setLetak({ bagian: "", isian: "" });
     setIsNew(false);
     setSelected(null);
   }
@@ -112,7 +115,7 @@ export default function BukuIndukSiswaPage() {
     const editId = searchParams.get("edit");
     if (!editId || students.length === 0) return;
     const target = students.find(s => s.id === editId);
-    if (target) openEdit(target);
+    if (target) { openEdit(target); setLetak({ bagian: (searchParams.get("bagian") ?? "").replace(/[^a-z]/g, "").slice(0, 1), isian: (searchParams.get("isian") ?? "").slice(0, 120) }); }
     router.replace("/dashboard/admin/buku-induk/siswa");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [students, searchParams]);
@@ -259,6 +262,8 @@ export default function BukuIndukSiswaPage() {
 
       <BukuIndukSiswaModal
         student={selected}
+        bagianAwal={letak.bagian || undefined}
+        isianAwal={letak.isian || undefined}
         isNew={isNew}
         onClose={closeModal}
         onSaved={handleSaved}

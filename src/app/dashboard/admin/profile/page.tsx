@@ -7,6 +7,7 @@ import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
 import KunciAplikasi from "@/components/shared/KunciAplikasi";
 import KelolaPasskey from "@/components/shared/KelolaPasskey";
+import TelegramSaya from "@/components/shared/TelegramSaya";
 import TandaTanganSaya from "@/components/shared/TandaTanganSaya";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
@@ -65,6 +66,7 @@ export default async function AdminProfilePage() {
       <div className="mt-6"><NotifikasiPerangkat /></div>
       <div className="mt-6"><PerangkatAktif /></div>
       <div className="mt-6"><TandaTanganSaya /></div>
+      <TelegramSaya />
       <div className="mt-6"><KelolaPasskey /></div>
       <div className="mt-6"><KunciAplikasi /></div>
 

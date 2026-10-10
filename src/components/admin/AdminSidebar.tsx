@@ -2,7 +2,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Bug } from "lucide-react";
 import {
   Calculator, Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
@@ -243,6 +243,7 @@ export const menuGroups = [
       { href: "/dashboard/admin/notifikasi", label: "Notifikasi Push", icon: BellRing, badge: 0 },
       { href: "/dashboard/admin/log-aktivitas", label: "Log Aktivitas", icon: History, badge: 0 },
       { href: "/dashboard/admin/performa-server", label: "Performa Server", icon: Activity, badge: 0 },
+      { href: "/dashboard/admin/galat-server", label: "Galat Server", icon: Bug, badge: 0 },
       { href: "/dashboard/admin/absen-mandiri", label: "Presensi Mandiri", icon: QrCode, badge: 0 },
       { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard, badge: 0 },
       { href: "/dashboard/admin/biodata", label: "Biodata Saya", icon: FileUser, badge: 0 },

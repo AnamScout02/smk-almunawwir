@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { useSorotBaris } from "@/lib/cari-awal";
 import { useCallback, useEffect, useState } from "react";
 import { School, Loader2, Merge, Wand2 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -19,6 +21,7 @@ export default function RapikanSekolahManager({ awal = "spmb" }: { awal?: "spmb"
   const [d, setD] = useState<Data | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [sibuk, setSibuk] = useState(false);
+  useSorotBaris();
 
   const muat = useCallback(() => {
     setMemuat(true);
@@ -87,7 +90,7 @@ export default function RapikanSekolahManager({ awal = "spmb" }: { awal?: "spmb"
         ) : (
           <>
             <p className="text-sm text-gray-500">{d.totalNama} penulisan berbeda · {d.kelompok.length} kelompok perlu dirapikan</p>
-            {d.kelompok.map(k => <KartuKelompok key={k.varian.map(v => v.nama).join("|")} k={k} gabung={gabung} />)}
+            {d.kelompok.map(k => <KartuKelompok key={k.varian.map(v => v.nama).join("|")} k={k} gabung={gabung} sumber={sumber} />)}
           </>
         )}
       </div>
@@ -95,7 +98,33 @@ export default function RapikanSekolahManager({ awal = "spmb" }: { awal?: "spmb"
   );
 }
 
-function KartuKelompok({ k, gabung }: { k: KelompokSekolah; gabung: (t: string, v: string[]) => Promise<number> }) {
+type Anak = { id: string; nama: string; ket: string; href: string };
+
+/** Daftar anak yang sekolah asalnya ditulis PERSIS `nama` — dimuat saat nama sekolah itu diklik; tiap anak menaut langsung
+ *  ke isian Asal Sekolah di Buku Induk (atau jendela calon SPMB) supaya bisa dibetulkan satu per satu. */
+function AnakSekolah({ sumber, nama }: { sumber: string; nama: string }) {
+  const [anak, setAnak] = useState<Anak[] | null>(null);
+  useEffect(() => {
+    fetch(`/api/spmb/sekolah-asal?sumber=${sumber}&nama=${encodeURIComponent(nama)}`).then(r => r.json()).then(x => setAnak(x?.anak ?? [])).catch(() => setAnak([]));
+  }, [sumber, nama]);
+  if (!anak) return <p className="py-2 pl-6 text-xs text-gray-400"><Loader2 size={12} className="inline animate-spin" /> Memuat nama…</p>;
+  if (!anak.length) return <p className="py-2 pl-6 text-sm text-gray-400">Tidak ada data dengan penulisan ini.</p>;
+  return (
+    <ul className="mb-1 ml-6 mt-1 divide-y divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60">
+      {anak.map(a => (
+        <li key={a.id}>
+          <Link href={a.href} className="flex items-baseline gap-2 px-3 py-1.5 text-sm transition hover:bg-white">
+            <span className="min-w-0 flex-1 truncate font-medium text-primary-900">{a.nama}</span>
+            <span className="shrink-0 text-xs text-gray-500">{a.ket}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function KartuKelompok({ k, gabung, sumber }: { k: KelompokSekolah; gabung: (t: string, v: string[]) => Promise<number>; sumber: string }) {
+  const [buka, setBuka] = useState<Set<string>>(new Set());
   const kunciUtama = kunciSekolah(k.varian[0].nama);
   // Kelompok MIRIP: yang tercentang di awal hanya yang PASTI sama dengan penulisan terbanyak.
   const [pilih, setPilih] = useState<Set<string>>(() => new Set(k.varian.filter(v => k.pasti || kunciSekolah(v.nama) === kunciUtama).map(v => v.nama)));
@@ -103,7 +132,7 @@ function KartuKelompok({ k, gabung }: { k: KelompokSekolah; gabung: (t: string, 
   const [sibuk, setSibuk] = useState(false);
   const total = k.varian.filter(v => pilih.has(v.nama)).reduce((t, v) => t + v.jumlah, 0);
   return (
-    <div className="panel space-y-3 p-5">
+    <div className="panel space-y-3 p-5" data-baris={k.saran}>
       <div className="flex flex-wrap items-center gap-2">
         <span className={`status-badge ${k.pasti ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>{k.pasti ? "Pasti sama" : "Mirip"}</span>
         <span className="text-sm text-gray-500">{k.varian.length} penulisan · {k.varian.reduce((t, v) => t + v.jumlah, 0)} data</span>
@@ -114,9 +143,12 @@ function KartuKelompok({ k, gabung }: { k: KelompokSekolah; gabung: (t: string, 
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={pilih.has(v.nama)}
                 onChange={e => setPilih(p => { const n = new Set(p); if (e.target.checked) n.add(v.nama); else n.delete(v.nama); return n; })} />
-              <span className="min-w-0 flex-1">{v.nama}</span>
-              <span className="angka text-xs text-gray-400">{v.jumlah}</span>
+              <button type="button" aria-expanded={buka.has(v.nama)} title="Lihat siapa saja yang sekolahnya ditulis begini"
+                onClick={e => { e.preventDefault(); setBuka(p => { const n = new Set(p); if (n.has(v.nama)) n.delete(v.nama); else n.add(v.nama); return n; }); }}
+                className="min-w-0 flex-1 text-left text-primary-900 underline decoration-gray-300 underline-offset-2 hover:decoration-primary-500">{v.nama}</button>
+              <span className="angka text-xs text-gray-400">{v.jumlah} {buka.has(v.nama) ? "▴" : "▾"}</span>
             </label>
+            {buka.has(v.nama) && <AnakSekolah sumber={sumber} nama={v.nama} />}
           </li>
         ))}
       </ul>

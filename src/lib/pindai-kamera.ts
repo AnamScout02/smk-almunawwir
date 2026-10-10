@@ -8,7 +8,10 @@ type Detektor = { detect: (s: CanvasImageSource) => Promise<{ rawValue: string }
 /** Pindai QR lewat kamera belakang HP/laptop. Memakai BarcodeDetector bawaan browser bila ada (Chrome
  * Android/desktop), selain itu `jsqr` (JavaScript murni — jalan di Safari iPhone). Kamera hanya bisa dibuka di
  * alamat HTTPS. Kode yang sama diabaikan selama `jedaUlangMs` supaya satu QR tidak terkirim berkali-kali. */
-export function usePindaiKamera({ aktif, onKode, jedaUlangMs = 4000 }: { aktif: boolean; onKode: (kode: string) => void; jedaUlangMs?: number }) {
+export function usePindaiKamera({ aktif, onKode, jedaUlangMs = 4000, format }: { aktif: boolean; onKode: (kode: string) => void; jedaUlangMs?: number;
+  /** Jenis kode selain QR (mis. ["ean_13"] untuk ISBN). Hanya lewat BarcodeDetector bawaan — peramban tanpanya (Safari iPhone) berstatus "tidak-didukung". */
+  format?: string[] }) {
+  const formatKunci = (format ?? ["qr_code"]).join(",");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [status, setStatus] = useState<StatusKamera>("mati");
   const onKodeRef = useRef(onKode);
@@ -45,7 +48,9 @@ export function usePindaiKamera({ aktif, onKode, jedaUlangMs = 4000 }: { aktif: 
 
       const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detektor }).BarcodeDetector;
       let detektor: Detektor | null = null;
-      if (BD) { try { detektor = new BD({ formats: ["qr_code"] }); } catch { detektor = null; } }
+      if (BD) { try { detektor = new BD({ formats: formatKunci.split(",") }); } catch { detektor = null; } }
+      // jsqr hanya mengerti QR: untuk barcode batang tanpa BarcodeDetector, kamera dimatikan lagi dan pemanggil memakai ketikan.
+      if (!detektor && formatKunci !== "qr_code") { stream.getTracks().forEach(t => t.stop()); setStatus("tidak-didukung"); return; }
       const jsQR = detektor ? null : (await import("jsqr")).default;
 
       const putaran = async () => {
@@ -80,7 +85,7 @@ export function usePindaiKamera({ aktif, onKode, jedaUlangMs = 4000 }: { aktif: 
       if (jeda) clearTimeout(jeda);
       stream?.getTracks().forEach(t => t.stop());
     };
-  }, [aktif, jedaUlangMs]);
+  }, [aktif, jedaUlangMs, formatKunci]);
 
   return { videoRef, status };
 }

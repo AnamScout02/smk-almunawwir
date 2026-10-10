@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -66,6 +67,7 @@ export default function TracerStudyManager({ kembaliHref }: { kembaliHref?: stri
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   // Alumni menumpuk tiap tahun, jadi daftar ini mencakup SELURUH angkatan sekaligus. Tanpa
   // saringan, mengisi tracer satu angkatan berarti menyisir ratusan baris angkatan lain
   // (permintaan user 29 September 2026).

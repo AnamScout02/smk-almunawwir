@@ -211,6 +211,8 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   arsipSk: p => <S {...p}><path d="M4 11a4 4 0 014-4h10l4 5h14a4 4 0 014 4v20a4 4 0 01-4 4H8a4 4 0 01-4-4z" fill={W} /><rect x="10" y="20" width="16" height="2.8" rx="1.4" fill={N2} /><circle cx="36" cy="33" r="8" fill={B} /><path d="M32 39l-1 8 5-2.6 5 2.6-1-8z" fill={G} /><circle cx="36" cy="33" r="3.4" fill={N} /></S>,
   /* Diagram donat + koin — alokasi dana iuran */
   alokasiDana: p => <S {...p}><circle cx="20" cy="22" r="15" fill={W} /><path d="M20 22V7a15 15 0 0115 15z" fill={B} /><path d="M20 22l-10.6 10.6A15 15 0 015 22z" fill={N2} /><circle cx="20" cy="22" r="6" fill={W} /><circle cx="37" cy="36" r="8" fill={G} /><path d="M37 32v8M34 34.5h4.5a1.7 1.7 0 010 3.4h-3a1.7 1.7 0 000 3.4H40" stroke={N} strokeWidth="1.8" strokeLinecap="round" fill="none" /></S>,
+  /* Layar situs + segitiga peringatan — catatan galat server */
+  galatServer: p => <S {...p}><rect x="4" y="7" width="34" height="25" rx="4" fill={W} /><rect x="4" y="7" width="34" height="6" rx="3" fill={N2} /><path d="M10 19h14M10 25h9" stroke={N2} strokeWidth="2.4" strokeLinecap="round" /><path d="M34 21l10 18H24z" fill={G} stroke={B} strokeWidth="2.2" strokeLinejoin="round" /><path d="M34 28v5" stroke={B} strokeWidth="2.6" strokeLinecap="round" /><circle cx="34" cy="36" r="1.5" fill={B} /></S>,
   /* Layar situs + kunci pas — mode pemeliharaan */
   pemeliharaan: p => <S {...p}><rect x="4" y="7" width="34" height="25" rx="4" fill={W} /><rect x="4" y="7" width="34" height="6" rx="3" fill={N2} /><path d="M15 39h12" stroke={N2} strokeWidth="2.6" strokeLinecap="round" /><path d="M21 32v7" stroke={N2} strokeWidth="2.6" /><circle cx="35" cy="31" r="10" fill={B} /><path d="M31 35l6-6m0 0a3 3 0 104 -4l-2 2-2-2 2-2a3 3 0 00-4 4" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></S>,
   /* Lembar + goresan tanda tangan + pena — tanda tangan pegawai */
@@ -452,6 +454,7 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/admin/arsip-sk": "arsipSk",
   "/dashboard/admin/tanda-tangan": "tandaTangan",
   "/dashboard/admin/pemeliharaan": "pemeliharaan",
+  "/dashboard/admin/galat-server": "galatServer",
   "/dashboard/admin/alokasi-dana": "alokasiDana",
   "/dashboard/teacher/alokasi-dana": "alokasiDana",
   "/dashboard/teacher/arsip-sk": "arsipSk",

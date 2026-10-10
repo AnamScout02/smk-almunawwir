@@ -1,4 +1,5 @@
 "use client";
+import { sorotIsian } from "@/lib/cari-awal";
 /** Buku Induk Guru — komponen bersama portal Admin/TU (/dashboard/admin/buku-induk/guru) dan portal Guru untuk Operator Sekolah
  * (/dashboard/teacher/buku-induk-guru, 17 Sep 2026). API-nya dijaga verifyBukuIndukFullAccess (TU + Operator Sekolah). */
 import React, { useState, useEffect, useCallback } from "react";
@@ -165,7 +166,11 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
     const editId = searchParams.get("edit");
     if (!editId || teachers.length === 0) return;
     const target = teachers.find(t => t.id === editId);
-    if (target) openEdit(target);
+    if (target) {
+      openEdit(target);
+      const bagian = (searchParams.get("bagian") ?? "").replace(/[^a-z]/g, "");
+      if (bagian) { setSections({ [bagian]: true }); sorotIsian(bagian, (searchParams.get("isian") ?? "").slice(0, 120).split("|")); }
+    }
     setPulangKeTabel(searchParams.get("kembali") === "tabel");
     router.replace(basePath);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -352,7 +357,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               {saveError && <Alert variant="error">{saveError}</Alert>}
 
               {/* A: Data Pribadi */}
-              <Section title="A. Data Pribadi" icon={User} open={!!sections.personal} onToggle={() => toggleSection("personal")}>
+              <Section penanda="personal" title="A. Data Pribadi" icon={User} open={!!sections.personal} onToggle={() => toggleSection("personal")}>
                 <Field label="NIK (16 digit)" value={e("nik")} type="nik" onChange={setE("nik")} />
                 <Field label="NUPTK" value={e("nuptk")} type="nik" onChange={setE("nuptk")} />
                 <Field label="Jenis Kelamin" value={String(form.gender ?? "")}
@@ -373,7 +378,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               </Section>
 
               {/* B: Kepegawaian */}
-              <Section title="B. Data Kepegawaian" icon={Briefcase} open={!!sections.kerja} onToggle={() => toggleSection("kerja")}>
+              <Section penanda="kerja" title="B. Data Kepegawaian" icon={Briefcase} open={!!sections.kerja} onToggle={() => toggleSection("kerja")}>
                 <Field label="Pendidikan Terakhir" value={String(form.education ?? "")} options={md("pendidikan_guru")}
                   onChange={v => setForm(p => ({...p, education: v}))} />
                 <Field label="No. Sertifikat Pendidik" value={e("certNo")} onChange={setE("certNo")} kapital="asli" />
@@ -420,14 +425,14 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               </Section>
 
               {/* C: Pendidikan */}
-              <Section title="C. Riwayat Pendidikan" icon={GraduationCap} open={!!sections.pendidikan} onToggle={() => toggleSection("pendidikan")}>
+              <Section penanda="pendidikan" title="C. Riwayat Pendidikan" icon={GraduationCap} open={!!sections.pendidikan} onToggle={() => toggleSection("pendidikan")}>
                 <IsianGrupGuru grup="Riwayat Pendidikan" e={e} setE={setE} />
                 <Field label="Keterangan Riwayat Pendidikan" value={String(form.teacherNotes ?? "")} type="textarea" wide
                   onChange={v => setForm(p => ({...p, teacherNotes: v}))} />
               </Section>
 
               {/* D: Tempat Tinggal */}
-              <Section title="D. Data Tempat Tinggal" icon={Home} open={!!sections.alamat} onToggle={() => toggleSection("alamat")}>
+              <Section penanda="alamat" title="D. Data Tempat Tinggal" icon={Home} open={!!sections.alamat} onToggle={() => toggleSection("alamat")}>
                 <Field label="Alamat Lengkap" value={String(form.address ?? "")} type="textarea" wide
                   onChange={v => setForm(p => ({...p, address: v}))} />
                 <WilayahSelect
@@ -443,7 +448,7 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               </Section>
 
               {/* E: Akun & Login */}
-              <Section title="E. Akun & Login" icon={KeyRound} open={!!sections.akun} onToggle={() => toggleSection("akun")} accent="text-indigo-600">
+              <Section penanda="akun" title="E. Akun & Login" icon={KeyRound} open={!!sections.akun} onToggle={() => toggleSection("akun")} accent="text-indigo-600">
                 {isNew ? (
                   <>
                     <div>
@@ -538,22 +543,22 @@ export default function BukuIndukGuruManager({ basePath = "/dashboard/admin/buku
               </Section>
 
               {/* F–K: isian dari berkas rujukan Buku Induk sekolah (30 September 2026) */}
-              <Section title="F. Kesehatan" icon={Home} open={!!sections.kesehatan} onToggle={() => toggleSection("kesehatan")}>
+              <Section penanda="kesehatan" title="F. Kesehatan" icon={Home} open={!!sections.kesehatan} onToggle={() => toggleSection("kesehatan")}>
                 <IsianGrupGuru grup="Kesehatan" e={e} setE={setE} />
               </Section>
-              <Section title="G. Perkawinan" icon={User} open={!!sections.kawin} onToggle={() => toggleSection("kawin")}>
+              <Section penanda="kawin" title="G. Perkawinan" icon={User} open={!!sections.kawin} onToggle={() => toggleSection("kawin")}>
                 <IsianGrupGuru grup="Perkawinan" e={e} setE={setE} />
               </Section>
-              <Section title="H. Ibu Kandung" icon={User} open={!!sections.ibu} onToggle={() => toggleSection("ibu")}>
+              <Section penanda="ibu" title="H. Ibu Kandung" icon={User} open={!!sections.ibu} onToggle={() => toggleSection("ibu")}>
                 <IsianGrupGuru grup="Ibu Kandung" e={e} setE={setE} />
               </Section>
-              <Section title="I. Data Anak" icon={Users} open={!!sections.anak} onToggle={() => toggleSection("anak")}>
+              <Section penanda="anak" title="I. Data Anak" icon={Users} open={!!sections.anak} onToggle={() => toggleSection("anak")}>
                 <IsianGrupGuru grup="Anak" e={e} setE={setE} />
               </Section>
-              <Section title="J. Penghargaan" icon={GraduationCap} open={!!sections.penghargaan} onToggle={() => toggleSection("penghargaan")}>
+              <Section penanda="penghargaan" title="J. Penghargaan" icon={GraduationCap} open={!!sections.penghargaan} onToggle={() => toggleSection("penghargaan")}>
                 <IsianGrupGuru grup="Penghargaan" e={e} setE={setE} />
               </Section>
-              <Section title="K. Pindah / Keluar" icon={Briefcase} open={!!sections.pindah} onToggle={() => toggleSection("pindah")}>
+              <Section penanda="pindah" title="K. Pindah / Keluar" icon={Briefcase} open={!!sections.pindah} onToggle={() => toggleSection("pindah")}>
                 <IsianGrupGuru grup="Pindah / Keluar" e={e} setE={setE} />
               </Section>
       </Modal>

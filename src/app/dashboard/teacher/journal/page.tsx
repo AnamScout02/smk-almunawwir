@@ -1,4 +1,5 @@
 "use client";
+import { kirimAtauAntre } from "@/lib/antrean-kirim";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { NotebookPen, Loader2, Save, Printer, Users, Pencil, FileSpreadsheet, Download, Upload } from "lucide-react";
@@ -160,13 +161,15 @@ export default function TeacherJournalPage() {
       return;
     }
     setSaving(true);
-    const res = await fetch("/api/teacher/journal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classId: selected.classId, subject: selected.subjectName, date, semester, materi, rows }),
+    // Sinyal kelas sering hilang: kiriman yang tidak sampai disimpan di perangkat dan dikirim sendiri (src/lib/antrean-kirim.ts).
+    const { antre, res } = await kirimAtauAntre({
+      kunci: `jurnal|${selected.classId}|${selected.subjectName}|${date}`, url: "/api/teacher/journal",
+      label: `Jurnal ${selected.className} ${date.split("-").reverse().join("/")}`,
+      isi: { classId: selected.classId, subject: selected.subjectName, date, semester, materi, rows },
     });
     setSaving(false);
-    if (!res.ok) { const d = await res.json(); toast.error(d.error || "Gagal menyimpan jurnal"); return; }
+    if (antre) { toast.info("Sinyal terputus — jurnal disimpan di perangkat ini dan dikirim sendiri saat tersambung. Jangan keluar dari akun dulu."); return; }
+    if (!res || !res.ok) { const d = await res?.json().catch(() => null); toast.error(d?.error || "Gagal menyimpan jurnal"); return; }
     loadHistory();
     toast.success("Jurnal pertemuan tersimpan.");
   }

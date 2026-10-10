@@ -1,4 +1,5 @@
 "use client";
+import { useSorotBaris } from "@/lib/cari-awal";
 import { useCallback, useEffect, useState } from "react";
 import { Forward, Loader2, FileText, Inbox, Send, Archive, PenLine, CheckCircle2, Clock, ExternalLink } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -51,6 +52,7 @@ export default function DisposisiSuratHp() {
     }).catch(() => toast.error("Gagal memuat disposisi."));
   }, [toast]);
   useEffect(() => { muat(true); }, [muat]);
+  useSorotBaris();
 
   function mulai(s: Surat) { setBuka(s); setF({ tujuan: [], instruksi: "", sifat: "BIASA", batasWaktu: "", tandaTangani: true }); setOrang(""); setGambarTtd(false); }
   const alih = (t: string) => setF(s => ({ ...s, tujuan: s.tujuan.includes(t) ? s.tujuan.filter(x => x !== t) : [...s.tujuan, t] }));
@@ -98,7 +100,7 @@ export default function DisposisiSuratHp() {
           d.menunggu.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Tidak ada surat masuk yang menunggu disposisi.</p> : (
             <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {d.menunggu.map(s => (
-                <li key={s.id} className="panel flex min-w-0 flex-col gap-2 p-4">
+                <li key={s.id} data-baris={s.id} className="panel flex min-w-0 flex-col gap-2 p-4">
                   <p className="text-xs text-gray-400"><span className="angka">{tgl(s.tanggal)}</span> · {s.nomor}</p>
                   <p className="font-semibold text-primary-900">{s.perihal}</p>
                   <p className="text-sm text-gray-600">Dari {s.pihak}</p>
@@ -113,7 +115,7 @@ export default function DisposisiSuratHp() {
         ) : daftar.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">{tab === "saya" ? "Belum ada disposisi yang ditujukan kepada Anda." : "Anda belum menulis disposisi dari halaman ini."}</p> : (
           <ul className="space-y-4">
             {daftar.map(x => (
-              <li key={x.id} className="panel min-w-0 p-4">
+              <li key={x.id} data-baris={x.id} className="panel min-w-0 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`status-badge ${STATUS[x.status]?.kelas ?? ""}`}>{STATUS[x.status]?.label ?? x.status}</span>
                   {x.sifat !== "BIASA" && <span className="status-badge bg-red-50 text-red-600 border-red-200">{SIFAT.find(s => s.value === x.sifat)?.label}</span>}

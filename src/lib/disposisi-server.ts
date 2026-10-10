@@ -1,3 +1,4 @@
+import { TUJUAN_KELOMPOK } from "@/lib/tu-konstanta";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { kirimNotifikasi } from "@/lib/push-server";
@@ -10,7 +11,14 @@ export async function akunTujuan(tujuan: string[]): Promise<string[]> {
     prisma.user.findMany({ where: { role: "TAS", staffJabatan: { some: { jabatan: { name: { in: tujuan } } } } }, select: { id: true } }),
     prisma.user.findMany({ where: { name: { in: tujuan }, role: { in: ["TEACHER", "TAS", "ADMIN"] } }, select: { id: true } }),
   ]);
-  return [...new Set([...jabatanGuru.map(g => g.userId), ...jabatanStaf.map(x => x.id), ...orang.map(x => x.id)])];
+  // Sebutan kelompok: "Kepala Program Keahlian" = semua kepala kompetensi/konsentrasi keahlian, "Wali Kelas" = semua wali kelas.
+  const [kaprodi, wali] = await Promise.all([
+    tujuan.includes(TUJUAN_KELOMPOK.kaprodi)
+      ? prisma.teacher.findMany({ where: { jabatan: { some: { jabatan: { OR: [{ name: { startsWith: "Kepala Kompetensi Keahlian" } }, { name: { startsWith: "Kepala Konsentrasi Keahlian" } }, { name: { startsWith: "Kepala Program Keahlian" } }] } } } }, select: { userId: true } }).catch(() => [])
+      : [],
+    tujuan.includes(TUJUAN_KELOMPOK.wali) ? prisma.teacher.findMany({ where: { homeroomOf: { some: {} } }, select: { userId: true } }).catch(() => []) : [],
+  ]);
+  return [...new Set([...jabatanGuru.map(g => g.userId), ...jabatanStaf.map(x => x.id), ...orang.map(x => x.id), ...kaprodi.map(x => x.userId), ...wali.map(x => x.userId)])];
 }
 
 /** Kabari yang dituju. Tautannya PINTU `/disposisi-surat` — guru tidak bisa membuka halaman admin (CLAUDE.md #45), dan dulu

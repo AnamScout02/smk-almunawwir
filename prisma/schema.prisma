@@ -22,6 +22,7 @@ model User {
   role              Role                 @default(STUDENT)
   jabatan           String?
   avatar            String?
+  tautanTelegram    TautanTelegram?
   teacher           Teacher?
   student           Student?
   parent            Parent?
@@ -718,6 +719,7 @@ model Student {
   absensiPindai                 AbsensiPindaiLog[]
   penempatanRuangUjian          PenempatanRuangUjian[]
   perujukSpmb                   PerujukSpmb[]
+  berkasSiswa                   BerkasSiswa[]
 }
 
 // ── Modul Bendahara (Tagihan Siswa) ────────────────────────────────────────────────────────
@@ -4068,4 +4070,49 @@ model SuratPkl {
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// BERKAS SISWA DIGITAL (10 Okt 2026) — pindaian dokumen pribadi per siswa (ijazah SMP, KK, akta, …) pengganti map fisik.
+/// Berkasnya di folder RAHASIA `public/uploads/rahasia/berkas-siswa/<studentId>/` dan hanya dibuka lewat
+/// /api/berkas-siswa/[id] (src/lib/berkas-siswa.ts). Satu jenis boleh lebih dari satu berkas (mis. KK lama & baru).
+model BerkasSiswa {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  jenis        String // kunci JENIS_BERKAS_SISWA
+  keterangan   String?
+  berkas       String // nama berkas di folder rahasia (tanpa jalur)
+  mime         String
+  ukuran       Int
+  diunggahOleh String
+  createdAt    DateTime @default(now())
+
+  @@index([studentId])
+}
+
+/// Akun guru/staf yang menautkan Telegram-nya (10 Okt 2026) — kabar yang masuk kotak notifikasi ikut dikirim ke obrolan itu.
+model TautanTelegram {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatId    String   @unique
+  nama      String?
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+/// Galat yang terjadi di server (10 Okt 2026) — satu baris per JENIS galat (sidik), dihitung berapa kali terjadi.
+model GalatServer {
+  id           String    @id @default(cuid())
+  sidik        String    @unique
+  pesan        String
+  jalur        String
+  metode       String?
+  jenis        String?
+  tumpukan     String?
+  jumlah       Int       @default(1)
+  pertama      DateTime  @default(now())
+  terakhir     DateTime  @default(now())
+  diberitahuAt DateTime?
+
+  @@index([terakhir])
 }

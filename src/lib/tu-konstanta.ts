@@ -114,12 +114,16 @@ export const STATUS_DISPOSISI = [
   { value: "SELESAI",  label: "Selesai",               style: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 ] as const;
 
-/** Tujuan disposisi yang paling sering dipakai — tetap bisa diketik bebas di formnya. */
+/** Tujuan disposisi yang paling sering dipakai — tetap bisa diketik bebas di formnya.
+ *  Sebutannya WAJIB sama persis dengan NAMA JABATAN di sistem (10 Okt 2026): dulu tertulis "Wakil Kepala Bidang Kurikulum"
+ *  sedangkan jabatannya "Wakil Kepala Kurikulum", sehingga penerimanya tidak pernah dikabari dan tidak melihat disposisinya.
+ *  Dua sebutan KELOMPOK (bukan nama jabatan) diurai `TUJUAN_KELOMPOK`: semua kepala program/konsentrasi keahlian & semua wali kelas. */
 export const TUJUAN_DISPOSISI_UMUM = [
-  "Wakil Kepala Bidang Kurikulum",
-  "Wakil Kepala Bidang Kesiswaan",
-  "Wakil Kepala Bidang Sarana Prasarana",
-  "Wakil Kepala Bidang Hubungan Masyarakat",
+  "Wakil Kepala Kurikulum",
+  "Wakil Kepala Kesiswaan",
+  "Wakil Kepala Sarana Prasarana",
+  "Wakil Kepala Humas",
+  "Wakil Kepala Bidang Penjamin Mutu",
   "Kepala Tenaga Administrasi Sekolah",
   "Bendahara Sekolah",
   "Kepala Program Keahlian",
@@ -127,6 +131,9 @@ export const TUJUAN_DISPOSISI_UMUM = [
   "Guru BK",
   "Arsip",
 ];
+export const TUJUAN_KELOMPOK = { kaprodi: "Kepala Program Keahlian", wali: "Wali Kelas" } as const;
+/** Jabatan yang termasuk kelompok "Kepala Program Keahlian". */
+export const jabatanKaprodi = (nama: string) => /^Kepala (Kompetensi|Konsentrasi|Program) Keahlian/i.test(nama);
 
 export const CARA_KIRIM = [
   { value: "LANGSUNG", label: "Diantar Langsung" },

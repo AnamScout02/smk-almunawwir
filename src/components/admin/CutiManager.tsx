@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarOff, Loader2, Plus, Search, Edit2, Trash2, Check, X } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -38,6 +39,7 @@ export default function CutiManager() {
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [statusFilter, setStatusFilter] = useState("");
 
   const [open, setOpen] = useState(false);

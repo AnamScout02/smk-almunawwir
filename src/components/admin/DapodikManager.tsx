@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from "next/navigation";
 import { pecahAlamatDapodik } from "@/lib/dapodik-alamat";
 import { useMemo, useState } from "react";
 import {
@@ -90,6 +91,9 @@ export default function DapodikManager({ npsn, bolehUbah, ...awal }: Koneksi & {
   const [data, setData] = useState<PratinjauDapodik | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("siswa");
+  // Buku Induk di portal yang sedang dibuka (guru Operator Sekolah tidak bisa membuka rute admin).
+  const diGuru = usePathname().startsWith("/dashboard/teacher");
+  const indukHref = tab === "siswa" ? (diGuru ? "/dashboard/teacher/buku-induk-siswa" : "/dashboard/admin/buku-induk/siswa") : tab === "gtk" ? (diGuru ? "/dashboard/teacher/buku-induk-guru" : "/dashboard/admin/buku-induk/guru") : "";
   const [saring, setSaring] = useState<Saringan>("semua");
   const [cari, setCari] = useState("");
   const confirmDialog = useConfirm();
@@ -548,7 +552,7 @@ export default function DapodikManager({ npsn, bolehUbah, ...awal }: Koneksi & {
                                       <p className="text-amber-700">Lengkapi: {b.kurangDiDapodik.map(k => `${k.label} ${k.nilai}`).join(" · ")}</p>
                                     )}
                                     {b.kurangDiTu.length > 0 && (
-                                      <p className="text-gray-400">Data TU belum mengisi {b.kurangDiTu.join(", ")} — dilengkapi TU dari berkas</p>
+                                      <p className="text-gray-400">Data TU belum mengisi {b.kurangDiTu.join(", ")} — dilengkapi TU dari berkas{b.tuId && indukHref ? <> · <a href={`${indukHref}?edit=${b.tuId}`} className="font-semibold text-primary-700 hover:underline">Buka Buku Induk</a></> : null}</p>
                                     )}
                                   </td>
                                 </tr>

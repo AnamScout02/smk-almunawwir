@@ -111,7 +111,7 @@ export async function POST(req: Request) {
               data: {
                 userId: u.id, nis: nomor, nisn: nisn || null, majorId: kelas!.majorId, classId: kelas!.id, enrollYear: tgl.getUTCFullYear(), gender: jk, studentStatus: "AKTIF",
                 birthPlace: teks(b.birthPlace, 80) || null, birthDate: lahir, address: teks(b.address, 300) || null, parentName: teks(b.parentName, 120) ? toProperCaseName(teks(b.parentName, 120)) : null,
-                parentPhone: teks(b.parentPhone, 30) || null, previousSchool: asal,
+                parentPhone: teks(b.parentPhone, 30) || null, // previousSchool (SMP/MTs asal) SENGAJA kosong: sekolah yang ditinggalkan ada di pindahanDari.
                 bukuIndukData: { pindahanDari: asal, alasanPindahKe: alasan, diterimaDate: tgl.toISOString().slice(0, 10), tingkatMasuk: TINGKAT[kelas!.grade] ?? String(kelas!.grade),
                   rombel: /(\d+)\s*$/.exec(kelas!.name)?.[1] ?? "", kelasAsal: teks(b.kelasAsal, 40), masukSuratNo: teks(b.nomorSuratAsal, 80) },
               },

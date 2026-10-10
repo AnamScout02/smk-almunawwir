@@ -11,6 +11,7 @@ import { FileUser } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
+import { menuGroupsTas } from "@/components/admin/TasSidebar";
 import MobileBottomNav, { type ItemNavBawah } from "@/components/shared/MobileBottomNav";
 import MenuAkunMobile from "@/components/shared/MenuAkunMobile";
 import KotakNotifikasiTombol from "@/components/shared/KotakNotifikasiTombol";
@@ -358,18 +359,20 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/perpustakaan-peringkat", label: "Papan Peringkat Perpustakaan", icon: Trophy },
       ],
     },
-    ...(isTasStaff ? [{
-      label: "Tata Usaha",
-      items: [
-        { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk Siswa", icon: BookOpen },
-        { href: "/dashboard/admin/buku-induk/guru", label: "Buku Induk Guru", icon: UserCog },
-        { href: "/dashboard/admin/buku-mutasi", label: "Buku Mutasi", icon: Repeat },
-        { href: "/dashboard/admin/verifikasi-data", label: "Verifikasi Perubahan Data", icon: ShieldCheck },
-        { href: "/dashboard/admin/persuratan", label: "Persuratan", icon: Mail },
-        { href: "/dashboard/admin/notulen-rapat", label: "Notulen Rapat", icon: NotebookPen },
-        { href: "/dashboard/admin/arsip", label: "Pengarsipan", icon: Archive },
-      ],
-    }] : []),
+    /* Guru yang merangkap jabatan Tata Usaha: menunya DITURUNKAN dari daftar menu staf TU (`menuGroupsTas`), bukan ditulis
+       ulang. Dulu di sini tertulis mati 7 butir, sehingga guru-TU tidak pernah melihat Meja Kerja TU, Mutasi Siswa, Disposisi,
+       Legalisir, dst. yang dilihat staf TU (laporan user 10 Okt 2026 — pelajaran #90: daftar tautan tetap = cepat basi).
+       Fitur TU di luar tiga grup ini (Siswa, Kelas, Presensi Pegawai, …) ada di "Semua Menu Tata Usaha". */
+    ...(isTasStaff ? [
+      { label: "Tata Usaha", items: [
+        { href: "/dashboard/admin/meja-kerja", label: "Meja Kerja TU", icon: ListChecks },
+        { href: "/dashboard/admin/menu", label: "Semua Menu Tata Usaha", icon: LayoutGrid },   // bukan /dashboard/admin: kisi menu HP membuang tautan dashboard polos
+      ] },
+      ...menuGroupsTas.filter(g => g.label?.startsWith("TU — ")).map(g => ({
+        label: g.label as string,
+        items: g.items.filter(x => x.show(jabatanNames, true)).map(x => ({ href: x.href, label: x.label, icon: x.icon as LucideIcon })),
+      })),
+    ] : []),
     {
       label: "Akun Saya",
       items: [

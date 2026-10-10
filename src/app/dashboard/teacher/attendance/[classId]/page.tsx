@@ -1,4 +1,5 @@
 "use client";
+import { kirimAtauAntre } from "@/lib/antrean-kirim";
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Save, CheckSquare, Loader2 } from "lucide-react";
@@ -117,11 +118,12 @@ export default function AbsensiPage() {
     setSaveError("");
     startTransition(async () => {
       const records = students.map(s => ({ studentId: s.id, date, status: attendance[s.id] }));
-      const res = await fetch("/api/teacher/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records }),
+      const { antre, res } = await kirimAtauAntre({
+        kunci: `absensi|${classId}|${date}`, url: "/api/teacher/attendance", isi: { records },
+        label: `Absensi ${cls?.name ?? "kelas"} ${date.split("-").reverse().join("/")}`,
       });
+      if (antre) { setSaveError("Sinyal terputus — absensi disimpan di perangkat ini dan dikirim sendiri saat tersambung. Jangan keluar dari akun dulu."); return; }
+      if (!res || !res.ok) { const d = await res?.json().catch(() => null); setSaveError(d?.error || "Absensi gagal disimpan. Coba lagi."); return; }
       if (res.ok) {
         setSaved(true);
         setCalRefresh(v => v + 1); // langsung refresh panel jurnal kanan, biar kelihatan "live"

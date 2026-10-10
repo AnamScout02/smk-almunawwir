@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Save, Trash2, Archive, Search, ExternalLink, Pencil, Loader2 } from "lucide-react";
 import DatePicker from "@/components/shared/DatePicker";
@@ -31,6 +32,7 @@ export default function ArsipPage() {
   const [fTahun, setFTahun] = useState("");
   const [fKategori, setFKategori] = useState("");
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [modal, setModal] = useState<Partial<Arsip> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);

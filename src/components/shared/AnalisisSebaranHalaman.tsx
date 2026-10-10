@@ -26,7 +26,9 @@ const urutArah = { turun: 0, naik: 1, tetap: 2 };
 
 /** Tiap pintu hanya membuka bagiannya (8 Okt 2026, user: "SPMB fokus SPMB, siswa fokus siswa"): Pusat SPMB = promosi +
  *  sekolah, Data Siswa = alamat. `alamat` = URL halaman ini (untuk tautan tab). */
-export default async function AnalisisSebaranHalaman({ alamat, kembaliHref, laporanHref, bagian, tampil, judul, keterangan, dari: dariMentah, sampai: sampaiMentah, potensi }: {
+export default async function AnalisisSebaranHalaman({ indukHref, alamat, kembaliHref, laporanHref, bagian, tampil, judul, keterangan, dari: dariMentah, sampai: sampaiMentah, potensi }: {
+  /** Alamat Buku Induk Siswa di portal pemanggil — bila diisi, nama di "Alamat Belum Lengkap" menaut LANGSUNG ke isian alamat siswa itu. */
+  indukHref?: string;
   alamat: string; kembaliHref?: string; laporanHref?: string; bagian?: string; dari?: string; sampai?: string; potensi?: SaringPotensi & SaringPersaingan; tampil: Bagian[]; judul: string; keterangan: string;
 }) {
   const a = await analisisSebaran();
@@ -190,7 +192,7 @@ export default async function AnalisisSebaranHalaman({ alamat, kembaliHref, lapo
                         {k.siswa.map((s, i) => (
                           <tr key={s.id}>
                             <td className="angka">{i + 1}</td>
-                            <td className="font-semibold text-primary-900">{s.nama}</td>
+                            <td className="font-semibold text-primary-900">{indukHref ? <Link href={`${indukHref}?edit=${s.id}&bagian=b&isian=${encodeURIComponent("Provinsi|Desa|Dusun")}`} className="hover:underline">{s.nama}</Link> : s.nama}</td>
                             <td className="font-mono text-xs text-gray-500">{s.nis}</td>
                             <td className="text-gray-600">{s.sebab}</td>
                           </tr>

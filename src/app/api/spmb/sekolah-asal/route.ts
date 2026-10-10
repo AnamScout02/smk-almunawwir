@@ -30,9 +30,23 @@ async function daftarNama(sumber: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { spmb, induk } = await hak();
+    const { s, spmb, induk } = await hak();
     const sumber = req.nextUrl.searchParams.get("sumber") === "induk" ? "induk" : "spmb";
     if (sumber === "spmb" ? !spmb : !induk) return NextResponse.json({ error: "Tidak berwenang", hak: { spmb, induk } }, { status: 403 });
+    // ?nama=<penulisan persis> → SIAPA saja yang sekolah asalnya ditulis begitu (10 Okt 2026, permintaan user: tiap nama sekolah
+    // diklik memunculkan anak-anaknya), masing-masing dengan tautan langsung ke isian Asal Sekolah / jendela calon.
+    const satu = req.nextUrl.searchParams.get("nama");
+    if (satu) {
+      if (sumber === "induk") {
+        const dasar = s.role === "TEACHER" ? "/dashboard/teacher/buku-induk-siswa" : "/dashboard/admin/buku-induk/siswa";
+        const isian = encodeURIComponent("Asal Sekolah|Nama Sekolah|Sekolah Asal");
+        const baris = await prisma.student.findMany({ where: { previousSchool: satu }, take: 500, orderBy: { user: { name: "asc" } },
+          select: { id: true, nis: true, studentStatus: true, enrollYear: true, user: { select: { name: true } }, class: { select: { name: true } } } });
+        return NextResponse.json({ anak: baris.map(x => ({ id: x.id, nama: x.user.name, ket: [x.nis, x.class?.name ?? (x.studentStatus && x.studentStatus !== "AKTIF" ? x.studentStatus.toLowerCase() : "belum ada kelas"), x.enrollYear ? `angkatan ${x.enrollYear}` : ""].filter(Boolean).join(" · "), href: `${dasar}?edit=${x.id}&bagian=d&isian=${isian}` })) });
+      }
+      const baris = await prisma.admission.findMany({ where: { previousSchool: satu }, take: 500, orderBy: { fullName: "asc" }, select: { id: true, fullName: true, nomor: true, chosenMajor: true } });
+      return NextResponse.json({ anak: baris.map(x => ({ id: x.id, nama: x.fullName, ket: [x.nomor, x.chosenMajor].filter(Boolean).join(" · "), href: `/pusat-spmb/tahapan?buka=${x.id}` })) });
+    }
     const nama = await daftarNama(sumber);
     return NextResponse.json({ hak: { spmb, induk }, totalNama: nama.length, kelompok: kelompokkanSekolah(nama) });
   } catch (e) {

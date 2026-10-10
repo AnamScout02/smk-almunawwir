@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useEffect, useState, type ReactNode } from "react";
 import { ShieldCheck, Loader2, Check, X, Search, GraduationCap, Users } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -124,6 +125,7 @@ export default function VerifikasiDataPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [fKelas, setFKelas] = useState("");
   const [fPeran, setFPeran] = useState("");
 

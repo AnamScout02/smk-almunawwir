@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import PindaiSuratMasuk from "@/components/admin/PindaiSuratMasuk";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -52,6 +53,9 @@ export default function PersuratanPage() {
   const [unreadMasuk, setUnreadMasuk] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
+  // Tautan langsung boleh menyebut tabnya (`?tab=KELUAR`) — bawaan halaman ini Surat Masuk.
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "KELUAR") setTab("KELUAR"); }, []);
   const [modal, setModal] = useState<Partial<Surat> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);

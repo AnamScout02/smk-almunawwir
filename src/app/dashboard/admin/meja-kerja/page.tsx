@@ -10,9 +10,10 @@ export const metadata = { title: "Meja Kerja TU" };
 const tgl = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
 
 /** MEJA KERJA TU — semua pekerjaan Tata Usaha yang sedang menunggu, dengan butir-butirnya, dalam satu layar. */
-export default async function Page({ searchParams }: { searchParams: Promise<{ bagian?: string }> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ bagian?: string; lihat?: string }> }) {
   const session = await verifyTasAccess();
-  const data = (await searchParams).bagian === "data";
+  const sp = await searchParams, data = sp.bagian === "data", lihat = sp.lihat ?? "";
+  const alamat = (k?: string) => `/dashboard/admin/meja-kerja?${data ? "bagian=data&" : ""}${k ? `lihat=${k}` : ""}`.replace(/[?&]$/, "");
   const seluruh = await susunMejaKerja(session);
   const jumlahDi = (d: boolean) => seluruh.filter(b => KUNCI_KELENGKAPAN.has(b.kunci) === d).reduce((a, b) => a + b.jumlah, 0);
   const semua = seluruh.filter(b => KUNCI_KELENGKAPAN.has(b.kunci) === data);
@@ -41,27 +42,33 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         {ada.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">{data ? "Semua data sudah lengkap." : "Tidak ada pekerjaan yang menunggu. Meja bersih."}</p> : (
           <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
             {[...ada].sort((x, y) => Number(y.butir.some(z => z.telat)) - Number(x.butir.some(z => z.telat))).map(b => (
-              <div key={b.kunci} className="panel min-w-0 overflow-hidden">
+              <div key={b.kunci} id={b.kunci} className={`panel min-w-0 scroll-mt-28 overflow-hidden ${lihat === b.kunci ? "xl:col-span-2" : ""}`}>
                 <div className="panel-kepala">
                   <p className="panel-judul">{b.judul} <span className="angka ml-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">{b.jumlah}</span></p>
                   <Link href={b.href} className="panel-tautan">{b.aksi}</Link>
                 </div>
                 <ul className="divide-y divide-gray-100">
-                  {b.butir.slice(0, 6).map(x => (
+                  {b.butir.slice(0, lihat === b.kunci ? 400 : 6).map(x => (
                     <li key={x.id}>
-                      <Link href={b.href} className="flex items-start gap-3 px-5 py-2.5 text-sm transition hover:bg-gray-50">
+                      <Link href={x.href ?? b.href} className="flex items-start gap-3 px-5 py-2.5 text-sm transition hover:bg-gray-50">
                         <span className="min-w-0 flex-1"><span className="block truncate font-medium text-primary-900">{x.judul}</span><span className="block truncate text-xs text-gray-500">{x.ket}</span></span>
                         {x.waktu && <span className={`angka shrink-0 text-xs ${x.telat ? "font-semibold text-red-600" : "text-gray-400"}`}>{tgl(x.waktu)}</span>}
                       </Link>
                     </li>
                   ))}
                 </ul>
-                {b.jumlah > 6 && <p className="border-t border-gray-100 px-5 py-2.5 text-xs text-gray-500">dan {b.jumlah - 6} lainnya — yang paling lama menunggu ditampilkan lebih dulu.</p>}
+                {b.butir.length > 6 && (
+                  <p className="border-t border-gray-100 px-5 py-2.5 text-xs text-gray-500">
+                    {lihat === b.kunci
+                      ? <>{b.butir.length > 400 ? `400 dari ${b.butir.length} ditampilkan — yang selesai dikerjakan hilang dari daftar. ` : ""}<Link href={`${alamat()}#${b.kunci}`} scroll={false} className="font-semibold text-primary-700 hover:underline">Ringkas kembali</Link></>
+                      : <>dan {b.butir.length - 6} lainnya — <Link href={`${alamat(b.kunci)}#${b.kunci}`} scroll={false} className="font-semibold text-primary-700 hover:underline">tampilkan semua</Link></>}
+                  </p>
+                )}
               </div>
             ))}
           </div>
         )}
-        <p className="text-xs text-gray-500">Tanggal merah = menunggu terlalu lama atau sudah melewati batas waktu. Pekerjaan harian = persuratan, layanan, mutasi, dan kepegawaian yang menunggu tindakan; Kelengkapan data = tunggakan isian yang dicicil (buku induk, alumni, tracer, ijazah, arsip).</p>
+        <p className="text-xs text-gray-500">Ketuk satu butir untuk langsung membuka data itu. Tanggal merah = menunggu terlalu lama atau sudah melewati batas waktu. Pekerjaan harian = persuratan, layanan, mutasi, dan kepegawaian yang menunggu tindakan; Kelengkapan data = tunggakan isian yang dicicil (buku induk, alumni, tracer, ijazah, arsip).</p>
       </div>
     </div>
   );

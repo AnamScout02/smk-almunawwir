@@ -116,3 +116,17 @@ export async function register() {
   sampleOnce();
   setInterval(sampleOnce, SAMPLE_INTERVAL_MS);
 }
+
+/** Galat yang tidak tertangkap saat merender halaman / menjalankan route → tabel GalatServer + kabar Telegram ke Superadmin
+ *  (src/lib/galat-server.ts). Kait resmi Next.js (instrumentation `onRequestError`). */
+export async function onRequestError(
+  galat: unknown,
+  permintaan: { path: string; method: string },
+  konteks: { routePath?: string; routeType?: string },
+) {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  try {
+    const { catatGalat } = await import("@/lib/galat-server");
+    await catatGalat(galat, { jalur: permintaan.path, metode: permintaan.method, jenis: konteks.routeType, rute: konteks.routePath });
+  } catch { /* diam */ }
+}

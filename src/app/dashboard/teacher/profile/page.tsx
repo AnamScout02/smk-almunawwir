@@ -7,6 +7,7 @@ import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import PerangkatAktif from "@/components/shared/PerangkatAktif";
 import KunciAplikasi from "@/components/shared/KunciAplikasi";
 import KelolaPasskey from "@/components/shared/KelolaPasskey";
+import TelegramSaya from "@/components/shared/TelegramSaya";
 import TandaTanganSaya from "@/components/shared/TandaTanganSaya";
 import NotifikasiPerangkat from "@/components/shared/NotifikasiPerangkat";
 import AvatarUpload from "@/components/shared/AvatarUpload";
@@ -104,6 +105,7 @@ export default async function TeacherProfilePage() {
       <PerangkatAktif />
 
       <TandaTanganSaya />
+      <TelegramSaya />
       <KelolaPasskey />
       <KunciAplikasi />
       </div>

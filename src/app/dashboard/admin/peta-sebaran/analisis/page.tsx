@@ -8,6 +8,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const session = await verifyRole(["ADMIN", "TAS"]);
   await jabatanAtauAlihkan(session, () => assertPeta(session));
   const { bagian } = await searchParams;
-  return <AnalisisSebaranHalaman alamat="/dashboard/admin/peta-sebaran/analisis" kembaliHref="/dashboard/admin/peta-sebaran" bagian={bagian} tampil={["alamat"]}
+  return <AnalisisSebaranHalaman indukHref="/dashboard/admin/buku-induk/siswa" alamat="/dashboard/admin/peta-sebaran/analisis" kembaliHref="/dashboard/admin/peta-sebaran" bagian={bagian} tampil={["alamat"]}
     judul="Alamat Belum Lengkap" keterangan="Siswa aktif yang belum muncul di peta sampai kecamatan, per kelas" />;
 }

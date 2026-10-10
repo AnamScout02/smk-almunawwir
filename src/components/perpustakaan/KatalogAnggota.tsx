@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookmarkCheck, BookmarkPlus, BookOpen, FileText, Library, Loader2, MapPin, Search, X, LibraryBig } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -24,6 +25,7 @@ export default function KatalogAnggota() {
   const confirm = useConfirm();
   const [data, setData] = useState<Data | null>(null);
   const [cari, setCari] = useState("");
+  useCariAwal(setCari);
   const [kategori, setKategori] = useState("SEMUA");
   const [hanyaTersedia, setHanyaTersedia] = useState(false);
   const [sibuk, setSibuk] = useState<string | null>(null);

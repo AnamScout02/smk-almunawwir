@@ -56,6 +56,8 @@ export default function BukuIndukSiswaManager({ backHref, canManageAccount = tru
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Student | null>(null);
+  const [bagianAwal, setBagianAwal] = useState("");
+  const [isianAwal, setIsianAwal] = useState("");
   const [page, setPage] = useState(1);
   // 50 baris/halaman: dgn 124 kolom, tiap baris = 125 sel. 100 baris (12.500 sel) masih menahan
   // tampilan ±2,7 detik; 50 baris memangkasnya jadi separuh tanpa membuat jumlah halaman jadi
@@ -80,7 +82,7 @@ export default function BukuIndukSiswaManager({ backHref, canManageAccount = tru
     const editId = searchParams.get("edit");
     if (!editId || students.length === 0) return;
     const target = students.find(s => s.id === editId);
-    if (target) setEditing(target);
+    if (target) { setEditing(target); setBagianAwal((searchParams.get("bagian") ?? "").replace(/[^a-z]/g, "").slice(0, 1)); setIsianAwal((searchParams.get("isian") ?? "").slice(0, 120)); }
     router.replace(pathname);   // bersihkan param supaya refresh tidak membuka modal lagi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [students, searchParams]);
@@ -258,10 +260,12 @@ export default function BukuIndukSiswaManager({ backHref, canManageAccount = tru
 
       <BukuIndukSiswaModal
         student={editing}
+        bagianAwal={bagianAwal || undefined}
+        isianAwal={isianAwal || undefined}
         isNew={false}
         canManageAccount={canManageAccount}
-        onClose={() => setEditing(null)}
-        onSaved={() => { setEditing(null); fetchStudents(); }}
+        onClose={() => { setEditing(null); setBagianAwal(""); }}
+        onSaved={() => { setEditing(null); setBagianAwal(""); fetchStudents(); }}
       />
     </div>
   );

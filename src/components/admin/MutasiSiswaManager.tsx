@@ -50,6 +50,8 @@ export default function MutasiSiswaManager() {
     setPeriksa({ id, data: null });
     fetch(`/api/admin/mutasi-siswa?periksa=${id}`).then(r => r.json()).then(x => setPeriksa(x.error ? null : { id, data: x })).catch(() => setPeriksa(null));
   }, []);
+  // Tautan langsung dari Meja Kerja TU: ?periksa=<id> membuka daftar periksa siswa itu.
+  useEffect(() => { const v = new URLSearchParams(window.location.search).get("periksa"); if (v && /^[a-z0-9]{10,40}$/i.test(v)) bukaPeriksa(v); }, [bukaPeriksa]);
   async function kirim(body: Record<string, unknown>) {
     setSibuk(true); setGalat({});
     try {

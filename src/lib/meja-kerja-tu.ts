@@ -1,19 +1,29 @@
 import "server-only";
-import { pokokKurang } from "@/lib/induk-pokok";
+import { pokokKurang, tautanPokok } from "@/lib/induk-pokok";
+import { berkasPokokKurang } from "@/lib/berkas-siswa";
+import { labelBerkasSiswa } from "@/lib/berkas-siswa-jenis";
 import { prisma } from "@/lib/prisma";
 import { sebutanSaya } from "@/lib/surat-berkas";
 import { mutasiTerbaru } from "@/lib/mutasi-siswa";
 import { jalankanPemeriksaan } from "@/lib/pemeriksa-data";
 import { kelompokkanSekolah } from "@/lib/nama-sekolah";
 
-export type ButirMeja = { id: string; judul: string; ket: string; waktu: Date | null; telat?: boolean };
+/** `href` = tautan LANGSUNG ke data butir itu (10 Okt 2026, permintaan user: klik butir harus membuka anak/suratnya, bukan
+ *  sekadar halaman menunya). Kosong = pakai tautan bagian. Butir baru sebisa mungkin mengisinya. */
+export type ButirMeja = { id: string; judul: string; ket: string; waktu: Date | null; telat?: boolean; href?: string };
 /** Bagian yang sifatnya KELENGKAPAN DATA (tunggakan lama, ratusan butir) — dipisah dari pekerjaan harian supaya angka
  *  "pekerjaan menunggu" berarti (9 Okt 2026: 1.343 butir, 1.200-an di antaranya tracer/ijazah/buku induk). */
 export const KUNCI_KELENGKAPAN = new Set(["pemeriksa", "nama-sekolah", "induk-siswa", "guru", "alumni", "tracer", "ttd", "ijazah",
-  "surat-kosong", "surat-tanpa-pindai", "arsip-tanpa-berkas"]);
+  "surat-kosong", "surat-tanpa-pindai", "arsip-tanpa-berkas", "berkas-siswa"]);
 export type BagianMeja = { kunci: string; judul: string; href: string; aksi: string; jumlah: number; butir: ButirMeja[] };
 
 const H = 86_400_000;
+const q = (v: string) => encodeURIComponent(v.slice(0, 80));
+/** Letak isian Buku Induk Guru: bagian accordion + awalan label (lihat BukuIndukGuruManager). */
+const LETAK_GURU: Record<string, [string, string]> = { "NIK": ["personal", "NIK"], "tanggal lahir": ["personal", "Tanggal Lahir"], "tempat lahir": ["personal", "Tempat Lahir"],
+  "jenis kelamin": ["personal", "Jenis Kelamin"], "agama": ["personal", "Agama"], "nomor HP": ["personal", "No. HP"], "alamat": ["alamat", "Alamat Lengkap"],
+  "pendidikan terakhir": ["kerja", "Pendidikan Terakhir"], "tanggal mulai tugas": ["kerja", "Tanggal Mulai"] };
+const tautanGuru = (id: string, kurang: string[]) => { const [b, i] = LETAK_GURU[kurang[0]] ?? ["personal", ""]; return `/dashboard/admin/buku-induk/guru?edit=${id}&bagian=${b}${i ? `&isian=${encodeURIComponent(i)}` : ""}`; };
 const pegang = <T,>(p: Promise<T>, cadangan: T) => p.catch(() => cadangan);
 
 /** MEJA KERJA TU (9 Okt 2026) — "yang menunggu dikerjakan hari ini" dalam SATU layar, dengan butir-butirnya (bukan hanya
@@ -52,7 +62,7 @@ export async function susunMejaKerja(session: { role: string; email: string; use
     pegang(prisma.surat.findMany({ where: { tipe: "KELUAR", content: null, docxUrl: null, fileUrl: null, createdAt: { gte: new Date(kini.getTime() - 90 * H) } }, orderBy: { tanggal: "asc" }, select: { id: true, nomor: true, perihal: true, tanggal: true } }), []),
     pegang(prisma.student.findMany({ where: { studentStatus: "LULUS", ijazahHandovers: { none: { dokumen: { has: "IJAZAH" } } } }, select: { id: true, bukuIndukData: true, user: { select: { name: true } }, class: { select: { name: true } } } }), []),
     pegang(prisma.user.count({ where: { role: { in: ["TEACHER", "TAS"] }, ttdBerkas: null } }), 0),
-    pegang(prisma.user.findMany({ where: { role: { in: ["TEACHER", "TAS"] }, ttdBerkas: null }, take: 6, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }), []),
+    pegang(prisma.user.findMany({ where: { role: { in: ["TEACHER", "TAS"] }, ttdBerkas: null }, take: 400, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }), []),
     // PEMERIKSA DATA — temuan yang sama persis dengan halamannya (satu sumber `jalankanPemeriksaan`).
     pegang(jalankanPemeriksaan({ batasContoh: 1 }).then(x => x.temuan), []),
     // NAMA SEKOLAH ASAL yang ditulis berbeda-beda / mirip (Rapikan Nama Sekolah, sumber Buku Induk).
@@ -98,64 +108,69 @@ export async function susunMejaKerja(session: { role: string; email: string; use
   const lulusBelum = lulusan.filter(s => String(((s.bukuIndukData ?? {}) as Record<string, unknown>).graduationDate ?? "") >= `${tahunLulus}-01-01`);
   const bagian: BagianMeja[] = [
     { kunci: "disposisi-saya", judul: "Disposisi untuk saya", href: "/dashboard/admin/disposisi-surat", aksi: "Tindak lanjuti", jumlah: untukSaya.length,
-      butir: untukSaya.map(d => ({ id: d.id, judul: d.surat.perihal, ket: d.instruksi.slice(0, 120), waktu: d.batasWaktu ?? d.tanggal, telat: !!d.batasWaktu && d.batasWaktu < kini })) },
+      butir: untukSaya.map(d => ({ href: `/dashboard/admin/disposisi-surat?sorot=${d.id}`, id: d.id, judul: d.surat.perihal, ket: d.instruksi.slice(0, 120), waktu: d.batasWaktu ?? d.tanggal, telat: !!d.batasWaktu && d.batasWaktu < kini })) },
     { kunci: "surat-masuk", judul: "Surat masuk belum didisposisi", href: "/dashboard/admin/disposisi", aksi: "Buka disposisi", jumlah: suratMasuk.length,
-      butir: suratMasuk.map(s => ({ id: s.id, judul: s.perihal, ket: `Dari ${s.pihak}${s.fileUrl ? "" : " · tanpa pindaian"}`, waktu: s.tanggal, telat: lama(s.tanggal, 3) })) },
+      butir: suratMasuk.map(s => ({ href: `/dashboard/admin/persuratan?cari=${q(s.perihal)}`, id: s.id, judul: s.perihal, ket: `Dari ${s.pihak}${s.fileUrl ? "" : " · tanpa pindaian"}`, waktu: s.tanggal, telat: lama(s.tanggal, 3) })) },
     { kunci: "disposisi-jalan", judul: "Disposisi belum selesai", href: "/dashboard/admin/disposisi", aksi: "Pantau", jumlah: disposisiJalan.length,
-      butir: disposisiJalan.map(d => ({ id: d.id, judul: d.surat.perihal, ket: `Kepada ${d.tujuan.join(", ")}`, waktu: d.batasWaktu ?? d.tanggal, telat: !!d.batasWaktu && d.batasWaktu < kini })) },
+      butir: disposisiJalan.map(d => ({ href: `/dashboard/admin/disposisi?cari=${q(d.surat.perihal)}`, id: d.id, judul: d.surat.perihal, ket: `Kepada ${d.tujuan.join(", ")}`, waktu: d.batasWaktu ?? d.tanggal, telat: !!d.batasWaktu && d.batasWaktu < kini })) },
     { kunci: "permintaan-surat", judul: "Permintaan surat keterangan", href: "/dashboard/admin/permintaan-surat", aksi: "Proses", jumlah: suratKet.length,
-      butir: suratKet.map(s => ({ id: s.id, judul: `${s.namaSiswa}${s.kelasSiswa ? ` (${s.kelasSiswa})` : ""}`, ket: `${s.jenis.replace(/_/g, " ").toLowerCase()} — ${s.keperluan}`.slice(0, 140), waktu: s.requestedAt, telat: lama(s.requestedAt, 2) })) },
+      butir: suratKet.map(s => ({ href: `/dashboard/admin/permintaan-surat?sorot=${s.id}`, id: s.id, judul: `${s.namaSiswa}${s.kelasSiswa ? ` (${s.kelasSiswa})` : ""}`, ket: `${s.jenis.replace(/_/g, " ").toLowerCase()} — ${s.keperluan}`.slice(0, 140), waktu: s.requestedAt, telat: lama(s.requestedAt, 2) })) },
     { kunci: "legalisir", judul: "Permintaan legalisir", href: "/dashboard/admin/permintaan-surat", aksi: "Proses", jumlah: legalisir.length,
-      butir: legalisir.map(l => ({ id: l.id, judul: l.applicantName, ket: `${l.documentType.toLowerCase()} · ${l.copies} lembar`, waktu: l.requestedAt, telat: lama(l.requestedAt, 2) })) },
+      butir: legalisir.map(l => ({ href: `/dashboard/admin/permintaan-surat?sorot=${l.id}`, id: l.id, judul: l.applicantName, ket: `${l.documentType.toLowerCase()} · ${l.copies} lembar`, waktu: l.requestedAt, telat: lama(l.requestedAt, 2) })) },
     { kunci: "biodata", judul: "Perubahan biodata menunggu verifikasi", href: "/dashboard/admin/verifikasi-data", aksi: "Verifikasi", jumlah: bioSiswa.length + bioPegawai.length,
-      butir: [...bioSiswa.map(b => ({ id: b.id, judul: b.student.user.name, ket: `Siswa${b.student.class ? ` · ${b.student.class.name}` : ""}`, waktu: b.createdAt, telat: lama(b.createdAt, 3) })),
-        ...bioPegawai.map(b => ({ id: b.id, judul: b.user.name, ket: "Guru / staf", waktu: b.createdAt, telat: lama(b.createdAt, 3) }))].sort((a, z) => (a.waktu?.getTime() ?? 0) - (z.waktu?.getTime() ?? 0)) },
+      butir: [...bioSiswa.map(b => ({ href: `/dashboard/admin/verifikasi-data?cari=${q(b.student.user.name)}`, id: b.id, judul: b.student.user.name, ket: `Siswa${b.student.class ? ` · ${b.student.class.name}` : ""}`, waktu: b.createdAt, telat: lama(b.createdAt, 3) })),
+        ...bioPegawai.map(b => ({ href: `/dashboard/admin/verifikasi-data?cari=${q(b.user.name)}`, id: b.id, judul: b.user.name, ket: "Guru / staf", waktu: b.createdAt, telat: lama(b.createdAt, 3) }))].sort((a, z) => (a.waktu?.getTime() ?? 0) - (z.waktu?.getTime() ?? 0)) },
     { kunci: "spmb", judul: "Berkas SPMB belum diverifikasi", href: "/pusat-spmb/tahapan", aksi: "Periksa berkas", jumlah: spmb.length,
-      butir: spmb.map(a => ({ id: a.id, judul: a.fullName, ket: a.chosenMajor || "jurusan belum dipilih", waktu: a.createdAt, telat: lama(a.createdAt, 3) })) },
+      butir: spmb.map(a => ({ href: `/pusat-spmb/tahapan?buka=${a.id}`, id: a.id, judul: a.fullName, ket: a.chosenMajor || "jurusan belum dipilih", waktu: a.createdAt, telat: lama(a.createdAt, 3) })) },
     { kunci: "arsip", judul: "Dokumen arsip habis / segera habis masa berlakunya", href: "/dashboard/admin/arsip", aksi: "Buka arsip", jumlah: arsip.length,
-      butir: arsip.map(a => ({ id: a.id, judul: a.judul, ket: a.kategori, waktu: a.berlakuSampai, telat: !!a.berlakuSampai && a.berlakuSampai < kini })) },
+      butir: arsip.map(a => ({ href: `/dashboard/admin/arsip?cari=${q(a.judul)}`, id: a.id, judul: a.judul, ket: a.kategori, waktu: a.berlakuSampai, telat: !!a.berlakuSampai && a.berlakuSampai < kini })) },
     { kunci: "pesan", judul: "Pesan masuk dari situs belum dibaca", href: "/dashboard/admin/messages", aksi: "Baca", jumlah: pesan.length,
-      butir: pesan.map(p => ({ id: p.id, judul: p.name, ket: p.subject || "tanpa judul", waktu: p.createdAt, telat: lama(p.createdAt, 3) })) },
+      butir: pesan.map(p => ({ href: `/dashboard/admin/messages?sorot=${p.id}`, id: p.id, judul: p.name, ket: p.subject || "tanpa judul", waktu: p.createdAt, telat: lama(p.createdAt, 3) })) },
     { kunci: "mutasi", judul: "Mutasi siswa: langkah belum lengkap", href: "/dashboard/admin/mutasi-siswa", aksi: "Buka daftar periksa", jumlah: mutasi.length,
-      butir: mutasi.map(x => ({ id: x.id, judul: x.nama, ket: `${x.arah === "MASUK" ? "Pindah masuk" : x.status === "PINDAH" ? "Pindah" : "Keluar"} · ${x.sisaManual} langkah belum dicentang`, waktu: x.tanggal, telat: lama(x.tanggal, 14) })) },
+      butir: mutasi.map(x => ({ href: `/dashboard/admin/mutasi-siswa?periksa=${x.id}`, id: x.id, judul: x.nama, ket: `${x.arah === "MASUK" ? "Pindah masuk" : x.status === "PINDAH" ? "Pindah" : "Keluar"} · ${x.sisaManual} langkah belum dicentang`, waktu: x.tanggal, telat: lama(x.tanggal, 14) })) },
     { kunci: "legalisir-proses", judul: "Legalisir sedang dikerjakan", href: "/dashboard/admin/legalisir", aksi: "Selesaikan", jumlah: legalProses.length,
-      butir: legalProses.map(l => ({ id: l.id, judul: l.applicantName, ket: `${l.documentType.toLowerCase()} · ${l.copies} lembar`, waktu: l.requestDate, telat: lama(l.requestDate, 3) })) },
+      butir: legalProses.map(l => ({ href: `/dashboard/admin/legalisir?cari=${q(l.applicantName)}`, id: l.id, judul: l.applicantName, ket: `${l.documentType.toLowerCase()} · ${l.copies} lembar`, waktu: l.requestDate, telat: lama(l.requestDate, 3) })) },
     { kunci: "legalisir-siap", judul: "Legalisir selesai, belum diambil", href: "/dashboard/admin/legalisir", aksi: "Tandai diambil", jumlah: legalSiap.length,
-      butir: legalSiap.map(l => ({ id: l.id, judul: l.applicantName, ket: l.documentType.toLowerCase(), waktu: l.requestDate, telat: lama(l.requestDate, 14) })) },
+      butir: legalSiap.map(l => ({ href: `/dashboard/admin/legalisir?cari=${q(l.applicantName)}`, id: l.id, judul: l.applicantName, ket: l.documentType.toLowerCase(), waktu: l.requestDate, telat: lama(l.requestDate, 14) })) },
     { kunci: "ekspedisi", judul: "Surat terkirim belum ada tanda terima", href: "/dashboard/admin/ekspedisi", aksi: "Buka ekspedisi", jumlah: ekspedisi.length,
-      butir: ekspedisi.map(e => ({ id: e.id, judul: e.perihal, ket: `Kepada ${e.tujuan}`, waktu: e.tanggal, telat: lama(e.tanggal, 7) })) },
+      butir: ekspedisi.map(e => ({ href: `/dashboard/admin/ekspedisi?cari=${q(e.perihal)}`, id: e.id, judul: e.perihal, ket: `Kepada ${e.tujuan}`, waktu: e.tanggal, telat: lama(e.tanggal, 7) })) },
     { kunci: "surat-kosong", judul: "Surat keluar bernomor tetapi belum ada isinya", href: "/dashboard/admin/persuratan", aksi: "Lengkapi", jumlah: suratKosong.length,
-      butir: suratKosong.map(x => ({ id: x.id, judul: x.perihal, ket: x.nomor, waktu: x.tanggal, telat: lama(x.tanggal, 3) })) },
+      butir: suratKosong.map(x => ({ href: `/dashboard/admin/persuratan?cari=${q(x.nomor)}&tab=KELUAR`, id: x.id, judul: x.perihal, ket: x.nomor, waktu: x.tanggal, telat: lama(x.tanggal, 3) })) },
     { kunci: "surat-tanpa-pindai", judul: "Surat masuk belum ada pindaiannya", href: "/dashboard/admin/persuratan", aksi: "Pindai", jumlah: suratTanpaPindai.length,
-      butir: suratTanpaPindai.map(x => ({ id: x.id, judul: x.perihal, ket: `Dari ${x.pihak}`, waktu: x.tanggal })) },
+      butir: suratTanpaPindai.map(x => ({ href: `/dashboard/admin/persuratan?cari=${q(x.perihal)}`, id: x.id, judul: x.perihal, ket: `Dari ${x.pihak}`, waktu: x.tanggal })) },
     { kunci: "nomor-kembar", judul: "Nomor surat keluar dipakai lebih dari sekali", href: "/dashboard/admin/persuratan", aksi: "Periksa", jumlah: nomorKembar.length,
-      butir: nomorKembar.map(v => ({ id: v[0].id, judul: v[0].nomor, ket: `${v.length} surat: ${v.map(x => x.perihal).join(" · ")}`.slice(0, 160), waktu: v[0].tanggal, telat: true })) },
+      butir: nomorKembar.map(v => ({ href: `/dashboard/admin/persuratan?cari=${q(v[0].nomor)}&tab=KELUAR`, id: v[0].id, judul: v[0].nomor, ket: `${v.length} surat: ${v.map(x => x.perihal).join(" · ")}`.slice(0, 160), waktu: v[0].tanggal, telat: true })) },
     { kunci: "arsip-tanpa-berkas", judul: "Arsip dicatat tanpa berkas", href: "/dashboard/admin/arsip", aksi: "Lengkapi", jumlah: arsipTanpaBerkas.length,
-      butir: arsipTanpaBerkas.map(x => ({ id: x.id, judul: x.judul, ket: x.kategori, waktu: x.tanggal })) },
+      butir: arsipTanpaBerkas.map(x => ({ href: `/dashboard/admin/arsip?cari=${q(x.judul)}`, id: x.id, judul: x.judul, ket: x.kategori, waktu: x.tanggal })) },
     { kunci: "cuti", judul: "Pengajuan cuti pegawai menunggu", href: "/dashboard/admin/cuti", aksi: "Putuskan", jumlah: cuti.length,
-      butir: cuti.map(x => ({ id: x.id, judul: x.teacher.user.name, ket: `${x.jenis.replace(/_/g, " ").toLowerCase()} · ${x.days} hari`, waktu: x.startDate, telat: x.startDate < kini })) },
+      butir: cuti.map(x => ({ href: `/dashboard/admin/cuti?cari=${q(x.teacher.user.name)}`, id: x.id, judul: x.teacher.user.name, ket: `${x.jenis.replace(/_/g, " ").toLowerCase()} · ${x.days} hari`, waktu: x.startDate, telat: x.startDate < kini })) },
     { kunci: "sk", judul: "SK / sertifikat pegawai habis atau segera habis", href: "/dashboard/admin/arsip-sk", aksi: "Buka arsip SK", jumlah: sk.length,
-      butir: sk.map(x => ({ id: x.id, judul: x.judul, ket: `${namaGuru.get(x.teacherId) ?? "—"} · ${x.jenis.toLowerCase()}`, waktu: x.berlakuSampai, telat: !!x.berlakuSampai && x.berlakuSampai < kini })) },
+      butir: sk.map(x => ({ href: `/dashboard/admin/arsip-sk?sorot=${x.id}`, id: x.id, judul: x.judul, ket: `${namaGuru.get(x.teacherId) ?? "—"} · ${x.jenis.toLowerCase()}`, waktu: x.berlakuSampai, telat: !!x.berlakuSampai && x.berlakuSampai < kini })) },
     { kunci: "bantuan", judul: "Bantuan / beasiswa sudah cair, belum diambil", href: "/dashboard/admin/bantuan-siswa", aksi: "Buka bantuan", jumlah: bantuan.length,
-      butir: bantuan.map(x => ({ id: x.id, judul: x.student.user.name, ket: `${x.jenis.replace(/_/g, " ")}${x.tahap ? ` ${x.tahap}` : ""}${x.student.class ? ` · ${x.student.class.name}` : ""}`, waktu: x.tanggalCair, telat: lama(x.tanggalCair, 30) })) },
+      butir: bantuan.map(x => ({ href: `/dashboard/admin/bantuan-siswa?cari=${q(x.student.user.name)}`, id: x.id, judul: x.student.user.name, ket: `${x.jenis.replace(/_/g, " ")}${x.tahap ? ` ${x.tahap}` : ""}${x.student.class ? ` · ${x.student.class.name}` : ""}`, waktu: x.tanggalCair, telat: lama(x.tanggalCair, 30) })) },
     { kunci: "ijazah", judul: "Lulusan belum mengambil ijazah", href: `/dashboard/admin/paket-kelulusan?lulus=${new Date(kini.getTime() + 7 * 3600_000).getUTCFullYear()}`, aksi: "Paket Kelulusan", jumlah: lulusBelum.length,
-      butir: lulusBelum.map(x => ({ id: x.id, judul: x.user.name, ket: x.class?.name ?? "lulusan", waktu: null })) },
+      butir: lulusBelum.map(x => ({ href: `/dashboard/admin/students/${x.id}`, id: x.id, judul: x.user.name, ket: x.class?.name ?? "lulusan", waktu: null })) },
     { kunci: "tamu", judul: "Tamu hari ini belum ditandai pulang", href: "/dashboard/admin/buku-tamu", aksi: "Buku tamu", jumlah: tamu.length,
-      butir: tamu.map(x => ({ id: x.id, judul: x.guestName, ket: x.purpose, waktu: null })) },
+      butir: tamu.map(x => ({ href: `/dashboard/admin/buku-tamu?cari=${q(x.guestName)}`, id: x.id, judul: x.guestName, ket: x.purpose, waktu: null })) },
     { kunci: "pemeriksa", judul: "Pemeriksa Data: temuan pada data siswa", href: "/dashboard/admin/pemeriksa-data", aksi: "Buka Pemeriksa Data", jumlah: temuan.length,
-      butir: temuan.map(t => ({ id: t.id, judul: t.judul, ket: `${t.jumlah} data · ${t.kategori}`, waktu: null, telat: t.kategori === "kritis" })) },
+      butir: temuan.map(t => ({ href: `/dashboard/admin/pemeriksa-data#temuan-${t.id}`, id: t.id, judul: t.judul, ket: `${t.jumlah} data · ${t.kategori}`, waktu: null, telat: t.kategori === "kritis" })) },
     { kunci: "nama-sekolah", judul: "Nama sekolah asal ditulis berbeda-beda", href: "/dashboard/admin/rapikan-sekolah", aksi: "Rapikan Nama Sekolah", jumlah: namaSekolah.length,
-      butir: [...namaSekolah].sort((a, b) => b.varian.length - a.varian.length).map(x => ({ id: x.saran, judul: x.saran, ket: `${x.varian.length} penulisan · ${x.varian.reduce((n, v) => n + v.jumlah, 0)} siswa · ${x.pasti ? "pasti sama" : "mirip, perlu diperiksa"}`, waktu: null })) },
+      butir: [...namaSekolah].sort((a, b) => b.varian.length - a.varian.length).map(x => ({ href: `/dashboard/admin/rapikan-sekolah?sorot=${q(x.saran)}`, id: x.saran, judul: x.saran, ket: `${x.varian.length} penulisan · ${x.varian.reduce((n, v) => n + v.jumlah, 0)} siswa · ${x.pasti ? "pasti sama" : "mirip, perlu diperiksa"}`, waktu: null })) },
     { kunci: "induk-siswa", judul: "Buku Induk Siswa belum lengkap", href: "/dashboard/admin/buku-induk/siswa", aksi: "Buku Induk Siswa", jumlah: siswaKurang.length,
-      butir: siswaKurang.map(x => ({ id: x.id, judul: x.nama, ket: `${x.kelas} · ${sebut(x.kurang)}`, waktu: null })) },
+      butir: siswaKurang.map(x => ({ href: tautanPokok(x.id, x.kurang), id: x.id, judul: x.nama, ket: `${x.kelas} · ${sebut(x.kurang)}`, waktu: null })) },
     { kunci: "guru", judul: "Buku Induk Guru belum lengkap", href: "/dashboard/admin/buku-induk/guru", aksi: "Buku Induk Guru", jumlah: guruKurang.length,
-      butir: guruKurang.map(g => ({ id: g.id, judul: g.nama, ket: sebut(g.kurang), waktu: null })) },
+      butir: guruKurang.map(g => ({ href: tautanGuru(g.id, g.kurang), id: g.id, judul: g.nama, ket: sebut(g.kurang), waktu: null })) },
     { kunci: "alumni", judul: "Data alumni belum lengkap", href: "/dashboard/admin/buku-induk/siswa", aksi: "Buku Induk Siswa", jumlah: alumniKurang.length,
-      butir: alumniKurang.map(a => ({ id: a.id, judul: a.nama, ket: `${a.jurusan ? `${a.jurusan} · ` : ""}belum ada: ${a.kurang.join(", ")}`, waktu: null })) },
+      butir: alumniKurang.map(a => ({ href: tautanPokok(a.id, a.kurang), id: a.id, judul: a.nama, ket: `${a.jurusan ? `${a.jurusan} · ` : ""}belum ada: ${a.kurang.join(", ")}`, waktu: null })) },
     { kunci: "tracer", judul: "Alumni belum mengisi tracer study", href: "/dashboard/admin/tracer-study", aksi: "Tracer Study", jumlah: belumTracer.length,
-      butir: belumTracer.map(a => ({ id: a.id, judul: a.user.name, ket: a.major?.code ?? "alumni", waktu: null })) },
+      butir: belumTracer.map(a => ({ href: `/dashboard/admin/tracer-study?cari=${q(a.user.name)}`, id: a.id, judul: a.user.name, ket: a.major?.code ?? "alumni", waktu: null })) },
     { kunci: "ttd", judul: "Guru & staf belum punya tanda tangan digital", href: "/dashboard/admin/tanda-tangan", aksi: "Tanda Tangan Pegawai", jumlah: tanpaTtd,
-      butir: tanpaTtdContoh.map(x => ({ id: x.id, judul: x.name, ket: x.role === "TAS" ? "Staf" : "Guru", waktu: null })) },
+      butir: tanpaTtdContoh.map(x => ({ href: `/dashboard/admin/tanda-tangan?cari=${q(x.name)}`, id: x.id, judul: x.name, ket: x.role === "TAS" ? "Staf" : "Guru", waktu: null })) },
   ];
+  // BERKAS SISWA DIGITAL: dokumen pokok (ijazah SMP, KK, akta) yang belum dipindai — sumber sama dengan Profil Siswa.
+  const berkasKurang = await pegang(berkasPokokKurang(), []);
+  bagian.push({ kunci: "berkas-siswa", judul: "Berkas siswa belum dipindai", href: "/dashboard/admin/students", aksi: "Kelola Siswa", jumlah: berkasKurang.length,
+    butir: berkasKurang.sort((x, y) => x.kelas.localeCompare(y.kelas, "id", { numeric: true }) || x.nama.localeCompare(y.nama, "id"))
+      .map(x => ({ href: `/dashboard/admin/students/${x.id}#berkas`, id: x.id, judul: x.nama, ket: `${x.kelas} · belum ada: ${x.kurang.map(labelBerkasSiswa).join(", ")}`, waktu: null })) });
   return bagian;
 }

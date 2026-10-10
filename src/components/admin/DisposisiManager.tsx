@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -40,6 +41,7 @@ export default function DisposisiManager() {
   const [surat, setSurat] = useState<SuratRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [statusFilter, setStatusFilter] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);

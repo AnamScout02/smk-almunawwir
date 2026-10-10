@@ -76,6 +76,8 @@ export async function kirimNotifikasi(n: IsiNotifikasi): Promise<{ terkirim: boo
     }
     await prisma.notifikasiPengguna.createMany({ data: userIds.map(userId => ({ userId, notifikasiId: id })), skipDuplicates: true }).catch(() => null);
   }
+  // Telegram (guru & staf yang menautkan) — jalur ketiga di samping kotak notifikasi & push; tidak ditunggu, tidak boleh menggagalkan.
+  void import("@/lib/telegram").then(t => t.kirimKeTelegram(userIds, n.judul, n.isi, n.url)).catch(() => {});
   if (!konfigurasi()) return { terkirim: false, perangkat: 0, alasan: "VAPID belum dikonfigurasi" };
 
   const langganan = await prisma.pushSubscription.findMany({ where: { userId: { in: userIds } } });

@@ -33,8 +33,13 @@ export async function POST(req: NextRequest) {
       || (session.role === "TEACHER" && (await getJabatanNames(session.email)).some(n => TAS_JABATAN.includes(n))));
     // Dokumen MoU DUDI — Pusat PKL dibuka Wakil Kepala Humas (guru) & staf TU; dulu hanya Admin yang lolos di sini.
     const bolehMitra = folder === "mitra-industri" && (session.role === "TEACHER" || session.role === "TAS") && (await aksesPusatPkl(session));
+    // Sampul buku & e-book — Pusat Perpustakaan dipegang Koordinator/Tim Perpustakaan (guru maupun staf), tetapi rute ini dulu
+    // hanya meloloskan Admin, sehingga petugasnya sendiri mendapat "Tidak diizinkan" (laporan user 10 Okt 2026).
+    const folderPerpus = folder === "perpustakaan" || folder === "perpustakaan/ebook";
+    const bolehPerpus = folderPerpus && (session.role === "TEACHER" || session.role === "TAS")
+      && (await getJabatanNames(session.email)).some(n => ["Koordinator Perpustakaan", "Tim Perpustakaan"].includes(n));
     const allowed_ =
-      session.role === "ADMIN" || bolehBukuInduk || bolehMitra ||
+      session.role === "ADMIN" || bolehBukuInduk || bolehMitra || bolehPerpus ||
       (session.role === "STUDENT" && isStudentAllowedFolder) ||
       (session.role === "TEACHER" && (isTeacherAllowedFolder || isTasAllowedFolder)) ||
       (session.role === "TAS" && (isTasAllowedFolder || folder === "soal"));
@@ -47,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isIdPhotoFolder = folderBukuInduk;
-    const isDocFolder = folder === "mitra-industri" || folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban" || folder === "event";
+    const isDocFolder = folder === "perpustakaan/ebook" || folder === "mitra-industri" || folder === "materi" || folder === "tugas" || folder === "tugas-jawaban" || folder === "ujian-jawaban" || folder === "event";
     const isAudioFolder = folder === "bel-sekolah";
     const isSoalFolder = folder === "soal";
     const allowed = isIdPhotoFolder

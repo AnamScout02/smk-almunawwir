@@ -1,4 +1,5 @@
 "use client";
+import { sorotIsian } from "@/lib/cari-awal";
 import React, { useState, useEffect } from "react";
 import {
   Save, User, Home, GraduationCap, Users, Smile,
@@ -142,8 +143,8 @@ interface GuardianKeys {
 
 /** Section E/F/G (Ayah/Ibu/Wali) berstruktur identik — hanya beda key & field penutup. */
 function GuardianSection({
-  title, accent, roleLabel, open, onToggle, keys, f, setF, md, trailing, addressReadOnly, birthPlaceListId,
-}: {
+  title, accent, roleLabel, open, onToggle, keys, f, setF, md, trailing, addressReadOnly, birthPlaceListId, penanda,}: {
+  penanda?: string;
   title: string; accent: string; roleLabel: string;
   open: boolean; onToggle: () => void; keys: GuardianKeys;
   f: (key: keyof BukuIndukData) => string;
@@ -156,7 +157,7 @@ function GuardianSection({
   birthPlaceListId?: string;
 }) {
   return (
-    <Section title={title} icon={Users} open={open} onToggle={onToggle} accent={accent}>
+    <Section penanda={penanda} title={title} icon={Users} open={open} onToggle={onToggle} accent={accent}>
       <Field label={`Nama ${roleLabel}${roleLabel === "Ayah" || roleLabel === "Ibu" ? " Kandung" : " Siswa"}`}
         value={f(keys.name)} wide onChange={setF(keys.name)} />
       <Field label={`NIK ${roleLabel} (16 digit)`} value={f(keys.nik)} type="nik" onChange={setF(keys.nik)} />
@@ -187,8 +188,12 @@ function GuardianSection({
 }
 
 export default function BukuIndukSiswaModal({
-  student, isNew, onClose, onSaved, canManageAccount = true,
+  student, isNew, onClose, onSaved, canManageAccount = true, bagianAwal, isianAwal,
 }: {
+  /** Huruf bagian (a–m) yang langsung DIBUKA & digulir saat formulir muncul — tautan langsung dari Meja Kerja TU. */
+  bagianAwal?: string;
+  /** Awalan label isian (dipisah "|") yang disorot di dalam bagian itu. */
+  isianAwal?: string;
   student: BukuIndukModalStudent | null;
   isNew: boolean;
   onClose: () => void;
@@ -359,6 +364,12 @@ export default function BukuIndukSiswaModal({
   const setF = (key: keyof BukuIndukData) => (v: string) =>
     setBukuForm(p => ({ ...p, [key]: v } as BukuIndukData));
   const toggleSection = (key: string) => setSections(p => (p[key] ? {} : { [key]: true }));
+  useEffect(() => {
+    if (!student || !bagianAwal) return;
+    setSections({ [bagianAwal]: true });
+    const t = sorotIsian(bagianAwal, (isianAwal ?? "").split("|"));
+    return () => clearTimeout(t);
+  }, [student, bagianAwal, isianAwal]);
 
   function setAddrField(key: keyof BukuIndukData, fKey: keyof BukuIndukData, mKey: keyof BukuIndukData) {
     return (v: string) => setBukuForm(p => ({ ...p, [key]: v, [fKey]: v, [mKey]: v } as BukuIndukData));
@@ -409,7 +420,7 @@ export default function BukuIndukSiswaModal({
       {saveError && <Alert variant="error">{saveError}</Alert>}
 
       {/* ── A ─────────────────────────────────────────────────────── */}
-      <Section title="A. Keterangan Siswa" icon={User} open={!!sections.a} onToggle={() => toggleSection("a")}>
+      <Section penanda="a" title="A. Keterangan Siswa" icon={User} open={!!sections.a} onToggle={() => toggleSection("a")}>
         <div className="col-span-2">
           <ImageUpload value={f("fotoMasukUrl")} onChange={setF("fotoMasukUrl")} folder="buku-induk/masuk" label="Foto Masuk (saat pendaftaran)"
             accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
@@ -472,7 +483,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── B ─────────────────────────────────────────────────────── */}
-      <Section title="B. Tempat Tinggal Siswa" icon={Home} open={!!sections.b} onToggle={() => toggleSection("b")}>
+      <Section penanda="b" title="B. Tempat Tinggal Siswa" icon={Home} open={!!sections.b} onToggle={() => toggleSection("b")}>
         <div className="col-span-2 text-xs text-blue-600 bg-blue-50 rounded px-3 py-1.5">
           Alamat Dusun s/d Kabupaten otomatis mengisi alamat Ayah &amp; Ibu
         </div>
@@ -511,7 +522,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── C ─────────────────────────────────────────────────────── */}
-      <Section title="C. Kesehatan Siswa" icon={Heart} open={!!sections.c} onToggle={() => toggleSection("c")} accent="text-rose-600">
+      <Section penanda="c" title="C. Kesehatan Siswa" icon={Heart} open={!!sections.c} onToggle={() => toggleSection("c")} accent="text-rose-600">
         <Field label="Golongan Darah" value={f("bloodType")} options={md("golongan_darah")} onChange={setF("bloodType")} />
         <Field label="Tinggi Badan (cm)" value={f("height")} type="number" min={100} max={220} onChange={setF("height")} />
         <Field label="Berat Badan (kg)" value={f("weight")} type="number" min={20} max={200} onChange={setF("weight")} />
@@ -519,7 +530,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── D ─────────────────────────────────────────────────────── */}
-      <Section title="D. Pendidikan Sebelumnya" icon={GraduationCap} open={!!sections.d} onToggle={() => toggleSection("d")}>
+      <Section penanda="d" title="D. Pendidikan Sebelumnya" icon={GraduationCap} open={!!sections.d} onToggle={() => toggleSection("d")}>
         {isNew && (
           <>
             <div className="col-span-2 text-xs text-blue-600 bg-blue-50 rounded px-3 py-1.5">
@@ -640,7 +651,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── E: Ayah ───────────────────────────────────────────────── */}
-      <GuardianSection
+      <GuardianSection penanda="e"
         title="E. Keterangan Ayah" accent="text-blue-600" roleLabel="Ayah"
         open={!!sections.e} onToggle={() => toggleSection("e")}
         f={f} setF={setF} md={md} addressReadOnly birthPlaceListId="birth-place-options"
@@ -654,7 +665,7 @@ export default function BukuIndukSiswaModal({
       />
 
       {/* ── F: Ibu ────────────────────────────────────────────────── */}
-      <GuardianSection
+      <GuardianSection penanda="f"
         title="F. Keterangan Ibu" accent="text-pink-600" roleLabel="Ibu"
         open={!!sections.f} onToggle={() => toggleSection("f")}
         f={f} setF={setF} md={md} addressReadOnly birthPlaceListId="birth-place-options"
@@ -668,7 +679,7 @@ export default function BukuIndukSiswaModal({
       />
 
       {/* ── G: Wali ───────────────────────────────────────────────── */}
-      <GuardianSection
+      <GuardianSection penanda="g"
         title="G. Keterangan Wali" accent="text-violet-600" roleLabel="Wali"
         open={!!sections.g} onToggle={() => toggleSection("g")}
         f={f} setF={setF} md={md} birthPlaceListId="birth-place-options"
@@ -682,7 +693,7 @@ export default function BukuIndukSiswaModal({
       />
 
       {/* ── H: Kegemaran ──────────────────────────────────────────── */}
-      <Section title="H. Kegemaran Siswa" icon={Smile} open={!!sections.h} onToggle={() => toggleSection("h")} accent="text-amber-600">
+      <Section penanda="h" title="H. Kegemaran Siswa" icon={Smile} open={!!sections.h} onToggle={() => toggleSection("h")} accent="text-amber-600">
         <Field label="Kesenian" value={f("hobbyArt")} options={md("kesenian")} onChange={setF("hobbyArt")} />
         <Field label="Olahraga" value={f("hobbySport")} options={md("olahraga")} onChange={setF("hobbySport")} />
         <Field label="Organisasi" value={f("hobbyOrg")} options={md("organisasi")} onChange={setF("hobbyOrg")} />
@@ -690,7 +701,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── I: Perkembangan ───────────────────────────────────────── */}
-      <Section title="I. Keterangan Perkembangan Siswa" icon={Award} open={!!sections.i} onToggle={() => toggleSection("i")} accent="text-yellow-600">
+      <Section penanda="i" title="I. Keterangan Perkembangan Siswa" icon={Award} open={!!sections.i} onToggle={() => toggleSection("i")} accent="text-yellow-600">
         <div className="col-span-2 space-y-3">
           {achievements.length === 0 ? (
             <p className="text-sm text-gray-400">Belum ada data penghargaan/prestasi</p>
@@ -733,7 +744,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── J: PKL ────────────────────────────────────────────────── */}
-      <Section title="J. Praktik Kerja Lapangan (PKL)" icon={Briefcase} open={!!sections.j} onToggle={() => toggleSection("j")} accent="text-teal-600">
+      <Section penanda="j" title="J. Praktik Kerja Lapangan (PKL)" icon={Briefcase} open={!!sections.j} onToggle={() => toggleSection("j")} accent="text-teal-600">
         {bukuForm.pklDariPusat === "1" && (
           <p className="col-span-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">Bagian ini terisi otomatis dari <span className="font-semibold">Pusat PKL</span> (penempatan, guru pembimbing, tanggal, dan nilai). Ubah di Pusat PKL → Penempatan Siswa; ketikan di sini akan tertimpa saat penempatannya diperbarui.</p>
         )}
@@ -758,7 +769,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── K: Kelulusan ──────────────────────────────────────────── */}
-      <Section title="K. Keterangan Kelulusan" icon={GraduationCap} open={!!sections.k} onToggle={() => toggleSection("k")} accent="text-emerald-600">
+      <Section penanda="k" title="K. Keterangan Kelulusan" icon={GraduationCap} open={!!sections.k} onToggle={() => toggleSection("k")} accent="text-emerald-600">
         <div className="col-span-2">
           <ImageUpload value={f("fotoKeluarUrl")} onChange={setF("fotoKeluarUrl")} folder="buku-induk/keluar" label="Foto Keluar (saat lulus/pindah/keluar)"
             accept="image/jpeg,image/png" hint="JPG/PNG, rasio 3x4 — maks. 5MB" aspect="portrait" checkRatio={3/4} />
@@ -773,7 +784,7 @@ export default function BukuIndukSiswaModal({
       </Section>
 
       {/* ── L: Pindah/Keluar ──────────────────────────────────────── */}
-      <Section title="L. Keterangan Pindah / Keluar" icon={LogOut} open={!!sections.l} onToggle={() => toggleSection("l")} accent="text-red-600">
+      <Section penanda="l" title="L. Keterangan Pindah / Keluar" icon={LogOut} open={!!sections.l} onToggle={() => toggleSection("l")} accent="text-red-600">
         <div>
           <label className="label-field">Status Siswa</label>
           <Select
@@ -797,7 +808,7 @@ export default function BukuIndukSiswaModal({
 
       {/* ── M: Akun & Login ───────────────────────────────────────── */}
       {canManageAccount && (
-        <Section title="M. Akun & Login" icon={KeyRound} open={!!sections.m} onToggle={() => toggleSection("m")} accent="text-indigo-600">
+        <Section penanda="m" title="M. Akun & Login" icon={KeyRound} open={!!sections.m} onToggle={() => toggleSection("m")} accent="text-indigo-600">
           <div>
             <label className="label-field">
               Email Login {isNew && <span className="text-red-500">*</span>}

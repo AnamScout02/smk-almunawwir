@@ -1,4 +1,5 @@
 "use client";
+import { useSorotBaris } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Inbox, Loader2, Check, X, Printer, FileText, Stamp, Clock, Pencil } from "lucide-react";
@@ -61,6 +62,7 @@ export default function PermintaanSuratManager() {
       .finally(() => setLoading(false));
   }, [statusFilter]);
   useEffect(() => { load(); }, [load]);
+  useSorotBaris();
 
   const namaPemohon = (id: string | null) => {
     const p = pemohon.find(x => x.id === id);
@@ -141,7 +143,7 @@ export default function PermintaanSuratManager() {
                   const s = isSurat ? (r as SuratReq) : null;
                   const l = !isSurat ? (r as LegalisirReq) : null;
                   return (
-                    <tr key={`${item.tipe}-${r.id}`}>
+                    <tr key={`${item.tipe}-${r.id}`} data-baris={r.id}>
                       <td className="whitespace-nowrap text-sm">{fmt(r.requestedAt)}</td>
                       <td>
                         <span className="font-medium">{r.student?.user.name ?? (s?.namaSiswa ?? l?.applicantName ?? "—")}</span>

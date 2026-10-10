@@ -1,4 +1,5 @@
 "use client";
+import CariIsbn from "@/components/perpustakaan/CariIsbn";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { usePrintTitle } from "@/lib/usePrintTitle";
 import { buildPrintFilename } from "@/lib/print-filename";
@@ -707,6 +708,8 @@ export default function PerpustakaanManager() {
       >
         {bookError && <p className="error-msg mb-3">{bookError}</p>}
         <div className="space-y-3">
+          {/* Hanya mengisi isian yang MASIH KOSONG — ketikan petugas tidak pernah ditimpa hasil katalog. */}
+          <CariIsbn onHasil={h => setBookForm(p => ({ ...p, title: p.title || h.title, author: p.author || h.author, publisher: p.publisher || h.publisher, coverUrl: p.coverUrl || h.coverUrl, barcode: p.barcode || h.isbn }))} />
           <ImageUpload value={bookForm.coverUrl} onChange={v => setBookForm(p => ({ ...p, coverUrl: v }))}
             folder="perpustakaan" label="Foto Sampul Buku" aspect="portrait" />
           <div>

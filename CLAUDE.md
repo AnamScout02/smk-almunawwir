@@ -2391,3 +2391,92 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        saat laporan dibuat (situs tidak menyimpan potret akhir bulan) dan lembarnya menyebut begitu — jangan ditulis seolah
        angka akhir bulan. TTD Kepala = TTD pribadi (#123); Kepala TU dikosongkan (tidak ada akun pasti).
 
+152. **Berkas Siswa Digital, tujuan disposisi, dan TAUTAN LANGSUNG ke data (10 Oktober 2026).**
+     - **Berkas Siswa** (`BerkasSiswa`, src/lib/berkas-siswa.ts + `berkas-siswa-jenis.ts` netral): pindaian ijazah SMP, KK, akta, dst.
+       per siswa di folder RAHASIA `public/uploads/rahasia/berkas-siswa/<studentId>/`, dibuka hanya lewat `/api/berkas-siswa/[id]`
+       (`hakBerkasSiswa`: kelola = Admin & akses Buku Induk penuh; lihat = itu + wali kelas siswa tersebut; lainnya 404).
+       Panel `BerkasSiswaPanel` di Profil Siswa (`#berkas`). Dokumen pendaftaran SPMB dihitung sebagai berkas yang ADA
+       (`DARI_SPMB`). Jenis `pokok` (ijazah, KK, akta) yang belum ada masuk Meja Kerja → Kelengkapan data.
+     - **`TUJUAN_DISPOSISI_UMUM` kini memakai NAMA JABATAN yang sebenarnya** ("Wakil Kepala Kurikulum", bukan "…Bidang
+       Kurikulum") — dulu penerimanya tidak pernah dikabari. Dua sebutan kelompok diurai `TUJUAN_KELOMPOK`: "Kepala Program
+       Keahlian" = semua kepala kompetensi/konsentrasi keahlian, "Wali Kelas" = semua wali kelas (`akunTujuan` & `sebutanSaya`).
+     - **Butir daftar perbaikan WAJIB menaut LANGSUNG ke datanya** (permintaan user: "klik ya munculnya langsung ke anak
+       tersebut … yang perlu mengisi NISN ya langsung ke NISN"). `ButirMeja.href` per butir; polanya:
+       Buku Induk siswa/guru `?edit=<id>&bagian=<accordion>&isian=<awalan label>` (peta di `tautanPokok`/`LETAK` induk-pokok.ts
+       & `LETAK_GURU` meja-kerja-tu.ts; formulir membuka bagian itu lalu `sorotIsian` menggulir, menyorot, dan memfokuskan
+       isiannya), daftar berkotak cari `?cari=<kata>` (`useCariAwal`, src/lib/cari-awal.ts — dipasang di Persuratan, Disposisi,
+       Legalisir, Ekspedisi, Cuti, Bantuan, Buku Tamu, Tracer, Tanda Tangan, Verifikasi Data, Arsip), Mutasi `?periksa=<id>`,
+       SPMB `?buka=<id>`, berkas/ijazah → Profil Siswa. Daftar perbaikan baru & halaman tujuan baru mengikuti pola ini;
+       jangan menaut ke halaman menu polos bila datanya bisa dituju.
+       Daftar TANPA kotak cari memakai `?sorot=<id>` + atribut `data-baris` (`useSorotBaris`: permintaan surat, pesan, arsip SK,
+       kelompok nama sekolah, disposisi HP). Persuratan menerima `&tab=KELUAR` (bawaannya Surat Masuk). Meja Kerja:
+       `?lihat=<kunci>` menampilkan semua butir satu bagian (maks 400). **Jebakan:** halaman ADMIN Buku Induk Siswa
+       (`buku-induk/siswa/page.tsx`) adalah SALINAN, bukan `BukuIndukSiswaManager` — pembaca parameter harus dipasang di keduanya.
+     - **Buku Mutasi, kolom "Asal Sekolah" mutasi masuk = `bukuIndukData.pindahanDari`** (sekolah yang ditinggalkan), BUKAN
+       `previousSchool` (SMP/MTs asal). Mutasi Masuk tidak mengisi `previousSchool` (temuan user 10 Okt 2026).
+
+
+153. **Bot Telegram guru & staf, Galat Server, dan pemantau situs (10 Oktober 2026).**
+     - **Telegram = jalur ketiga `kirimNotifikasi`** (kotak notifikasi → Telegram → push), src/lib/telegram.ts. HANYA peran
+       guru/staf/admin (`PERAN_TELEGRAM`) — siswa & orang tua tidak. Tidak ada kode baru di pemanggil: apa pun yang lewat
+       `kirimNotifikasi` otomatis ikut. Token bot dari BotFather dipasang Superadmin di Notifikasi Push → panel "Bot Telegram"
+       (terenkripsi di SiteSetting `telegram.token`, pola `dapodik.kunci`; menyimpan = `getMe` + `setWebhook` ke
+       `${ALAMAT_APLIKASI}/api/telegram/webhook` dengan `secret_token` acak). Selama token kosong seluruh fitur diam dan kartu
+       di Profil tidak tampil.
+     - **Menautkan dilakukan orangnya sendiri** dari Profil (`TelegramSaya`): tautan `t.me/<bot>?start=<kode>`, kode = userId +
+       kedaluwarsa + HMAC (15 menit). Jangan membuat isian "chat id" yang diketik — itu cara menautkan akun orang lain.
+       `TautanTelegram` satu baris per akun, `chatId` unik; obrolan yang memblokir bot (403) dilepas otomatis; `/berhenti` melepas.
+     - Webhook SELALU membalas 200 (balasan galat membuat Telegram mengirim ulang) dan hanya melayani obrolan pribadi.
+       `/api/telegram/webhook` & `/api/sehat` masuk `AWALAN_BEBAS` pemeliharaan.
+     - **Galat Server** (`GalatServer`, src/lib/galat-server.ts, halaman `/dashboard/admin/galat-server`, khusus ADMIN): kait resmi
+       `onRequestError` di instrumentation.ts. Satu baris per JENIS galat (sidik = pesan tanpa id/angka + rute), dihitung; kabar
+       Telegram ke Superadmin saat pertama muncul dan paling sering sekali per 6 jam. Isi permintaan TIDAK disimpan. Route yang
+       menangkap galatnya sendiri (try/catch → 500 JSON) tidak lewat kait ini. Dipilih daripada GlitchTip (butuh DB + Redis +
+       pekerja sendiri, ±1 GB RAM di server 8 GB).
+     - **Pemantau situs** = `scripts/pantau-situs.mjs`, cron HOST tiap 2 menit (di luar aplikasi): `/api/sehat` gagal dua kali
+       berturut → "situs tidak menjawab", lalu "pulih"; disk ≥90%; dan "server menyala kembali" bila jeda antar-jalan >10 menit.
+       Token & obrolan Superadmin dibaca dari DB lalu disinggahkan di `/root/pantau/situs.json` (0600) untuk saat DB ikut mati.
+       Listrik/internet sekolah padam TIDAK terpantau dari sini (mesinnya ikut mati) — itu butuh pemantau di luar sekolah.
+
+154. **Antrean kirim guru, Pencarian Cepat diperluas, dan ISBN perpustakaan (10 Oktober 2026).**
+     - **Antrean kirim** (`src/lib/antrean-kirim.ts` + `AntreanKiriman` di layout guru): jurnal mengajar & absensi kelas yang
+       gagal terkirim karena sinyal putus / server tak menjawab (≥500) disimpan di IndexedDB dan dikirim sendiri saat `online`,
+       saat halaman dibuka, dan tiap 45 detik. Halaman cukup memanggil `kirimAtauAntre({ kunci, url, isi, label })`.
+       Penolakan server (4xx) TIDAK diantrekan — pesannya ditampilkan. `kunci` = jenis + kelas (+ mapel) + tanggal, jadi simpan
+       ulang mengganti antreannya. Hanya untuk rute yang aman dikirim ulang (hapus-lalu-tulis per tanggal). Batasnya: halaman
+       tetap perlu sinyal untuk DIBUKA; yang ditahan hanya kirimannya. Absensi dulu juga diam saja saat simpan gagal — sekarang
+       pesannya tampil.
+     - **Pencarian Cepat (Ctrl+K) sudah ada sejak 18 Sep** (`cariCepat`, src/lib/pencarian-cepat.ts) — jangan dibuat ulang. Yang
+       ditambah: staf TU (peran TAS & guru-TU) kini dihitung staf (dulu hanya ADMIN, sehingga TU tidak menemukan apa-apa);
+       hasil menaut ke DATANYA (profil guru, surat `?cari=&tab=`, arsip, pendaftar SPMB `?buka=`, DUDI khusus Superadmin, buku
+       `/perpustakaan?cari=`). Cakupan tetap ditentukan server menurut peran. Entitas baru → tautkan ke rute yang PASTI boleh
+       dibuka peran itu (#90).
+     - **ISBN** (`CariIsbn` di formulir buku, `/api/perpustakaan/isbn`, `rapikanIsbn` di src/lib/isbn.ts): pindai kamera
+       (`usePindaiKamera({ format: ["ean_13"] })` — hanya lewat BarcodeDetector; Safari iPhone "tidak-didukung"), ketik, atau
+       pemindai USB. Sumber: Google Books lalu Open Library; sampul DISALIN ke `uploads/perpustakaan`. Google Books tanpa kunci
+       sering 429 (jatah bersama) — kunci gratis sekolah bisa ditaruh di SiteSetting `perpustakaan.kunciGoogleBooks`. Hasil
+       hanya mengisi isian yang MASIH KOSONG; ISBN mengisi `barcode` bila kosong. Buku lokal sering tidak ada di katalog.
+
+155. **Sapuan 10 Oktober 2026 (sore): rekap pembayaran SPMB, kursi per jurusan, menu guru-TU, izin unggah perpustakaan.**
+     - **Rekap Pembayaran SPMB** (`/pusat-spmb/pembayaran`, `RekapBayarSpmb`): pemuat `muatRekapBayar` (src/lib/spmb-rekap-bayar.ts)
+       + hitungan MURNI `src/lib/spmb-rekap-hitung.ts` (`ringkasRekap`, `rekapPerGelombang`, `rekapPerTanggal`) dipakai layar DAN
+       Excel `/api/spmb/tahapan/pembayaran` — jangan menghitung ulang di tempat lain. Yang dihitung MASUK hanya cicilan SAH;
+       MENUNGGU tampil terpisah; DITOLAK tidak dihitung. Halaman hanya MEMBACA (mengesahkan/mencatat tetap di jendela calon).
+       Calon ditolak tidak ikut kecuali pernah membayar.
+     - **Kartu gelombang di halaman pendaftaran**: gelombang yang SEDANG berjalan punya `<details>` "Sisa kursi per jurusan"
+       (`kursiGelombang`, aturan hitung sama dengan pemeriksa kuota: ditolak tidak memakan kursi, `cocokJurusan`). Gelombang
+       terjadwal/selesai sengaja tidak bisa dibuka (permintaan user).
+     - **Menu TU di portal guru DITURUNKAN dari `menuGroupsTas`** (grup berawalan "TU — ") + "Meja Kerja TU" + "Semua Menu Tata
+       Usaha" (`/dashboard/admin/menu` — bukan `/dashboard/admin`, karena kisi menu HP membuang tautan dashboard polos). Dulu
+       tertulis mati 7 butir sehingga guru-TU (peran TEACHER berjabatan TAS) tidak melihat Meja Kerja dll. Jangan ditulis ulang.
+     - **`/api/upload` folder `perpustakaan` & `perpustakaan/ebook`**: boleh untuk Koordinator/Tim Perpustakaan (dulu hanya Admin
+       → "Tidak diizinkan"); folder e-book menerima PDF.
+     - **Rapikan Nama Sekolah**: tiap penulisan bisa diklik → daftar anaknya (`GET /api/spmb/sekolah-asal?sumber=&nama=`),
+       tiap anak menaut ke isian Asal Sekolah (Buku Induk portal yang sesuai peran) / jendela calon.
+     - **ISBN**: kotak yang sama menerima JUDUL (`cariJudul`); kunci Google Books dipasang dari formulir (`PUT`, diuji dulu).
+       Terbukti 10 Okt 2026: buku paket sekolah (seri "Esensi" Erlangga) TIDAK ada di Google Books maupun Open Library, dan
+       katalog ISBN Perpusnas dijaga reCAPTCHA (jangan dilewati) — untuk buku itu hanya barcode yang terisi.
+     - **Docker & containerd di server ini pernah dimatikan paksa (SIGKILL) dari luar kontainer** (10 Okt 2026 14.50 WIB, di
+       tengah build; penghitung OOM cgroup nol). Situs pulih sendiri ±20 detik, build putus dengan "rpc error … EOF" dan
+       meninggalkan proses `next build` yatim (±3,5 GB) yang harus dihentikan lewat PID. Jangan `pgrep -f "next build"` di
+       perintah yang memuat kata itu — shell sendiri ikut terbunuh (terulang lagi hari itu).

@@ -48,6 +48,7 @@ export function lupakanPemeliharaan() { delete g.__pemeliharaan; }
 const AWALAN_BEBAS = [
   "/login", "/pemeliharaan", "/api/passkey", "/_next/", "/images/", "/icons/", "/ikon-aplikasi/", "/uploads/", "/fonts/",
   "/layar/", "/api/layar/",
+  "/api/sehat", "/api/telegram/webhook", // pemantau server & bot tidak boleh ikut "mati" saat pemeliharaan (keduanya tidak mengubah data sekolah)
 ];
 const BERKAS_BEBAS = ["/favicon.ico", "/manifest.webmanifest", "/sw.js", "/robots.txt", "/apple-icon.png", "/icon.png"];
 

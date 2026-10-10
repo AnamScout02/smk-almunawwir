@@ -1,4 +1,5 @@
 "use client";
+import SetelanTelegram from "@/components/admin/SetelanTelegram";
 import { useCallback, useEffect, useState } from "react";
 import { BellRing, CalendarX2, Clock, Copy, Eye, Loader2, Save, Send, Smartphone, Users, UserX, X, AlertTriangle, Inbox } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -343,6 +344,7 @@ export default function NotifikasiPushManager() {
               </div>
             )}
           </div>
+          <SetelanTelegram />
         </div>
       )}
     </div>

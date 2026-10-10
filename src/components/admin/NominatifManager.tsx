@@ -20,6 +20,10 @@ interface RosterRow {
 // tabel data siswa (keputusan eksplisit user 2026-09-11: "tampilkan semua data yang dibutuhkan
 // ... agar kelihatan data mana yang belum lengkap"). NIS/gender/nama tidak dicek — field wajib
 // sistem, praktis selalu terisi.
+// Isian yang kosong → letaknya di formulir Buku Induk (bagian + awalan label), supaya lencana "N kosong" membuka isian itu langsung.
+const LETAK_NOMINATIF: Record<string, [string, string]> = { "Tempat/Tgl Lahir": ["a", "Tempat Lahir|Tanggal Lahir"], "Alamat": ["b", "Provinsi|Desa|Dusun"],
+  "Nama Orangtua": ["e", "Nama Ayah"], "Asal Sekolah": ["d", "Asal Sekolah|Nama Sekolah|Sekolah Asal"], "No Ijazah": ["d", "Nomor Ijazah|No. Ijazah|No Ijazah|Nomor Seri"], "Tahun Ijazah": ["d", "Tahun Ijazah|Tahun Lulus|Tanggal Ijazah"] };
+const tautanNominatif = (id: string, kurang: string) => { const [b, i] = LETAK_NOMINATIF[kurang] ?? ["a", ""]; return `/dashboard/admin/buku-induk/siswa?edit=${id}&bagian=${b}&isian=${encodeURIComponent(i)}`; };
 function missingFieldsOf(r: RosterRow): string[] {
   const missing: string[] = [];
   if (!r.birthPlace || !r.birthDate) missing.push("Tempat/Tgl Lahir");
@@ -412,7 +416,7 @@ export default function NominatifManager() {
                             {missing.length === 0 ? (
                               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Lengkap</span>
                             ) : (
-                              <span title={missing.join(", ")} className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">{missing.length} kosong</span>
+                              <Link href={tautanNominatif(r.id, missing[0])} title={`Lengkapi: ${missing.join(", ")}`} className="status-badge bg-red-50 text-red-700 border-red-200 hover:underline">{missing.length} kosong</Link>
                             )}
                           </td>
                         </tr>

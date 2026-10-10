@@ -1,4 +1,5 @@
 "use client";
+import { tautanTemuan } from "@/lib/induk-pokok";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -31,6 +32,14 @@ export default function PemeriksaDataManager() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [buka, setBuka] = useState<Set<string>>(new Set());
+  // Tautan langsung dari Meja Kerja TU: #temuan-<kode> membuka temuan itu dan menggulir ke sana.
+  useEffect(() => {
+    const kode = window.location.hash.replace(/^#temuan-/, "");
+    if (!kode || kode === window.location.hash) return;
+    setBuka(new Set([kode]));
+    const w = setTimeout(() => document.getElementById(`temuan-${kode}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 900);
+    return () => clearTimeout(w);
+  }, []);
 
   const muat = () => {
     setLoading(true);
@@ -96,7 +105,7 @@ export default function PemeriksaDataManager() {
                   const Icon = g.icon;
                   const terbuka = buka.has(t.id);
                   return (
-                    <div key={t.id} className="page-card overflow-hidden">
+                    <div key={t.id} id={`temuan-${t.id}`} className="page-card overflow-hidden scroll-mt-24">
                       <button onClick={() => toggle(t.id)}
                         className="w-full flex items-start gap-3 p-4 text-left hover:bg-gray-50 transition">
                         <span className={`w-1 self-stretch rounded-full ${g.bar} shrink-0`} />
@@ -130,7 +139,7 @@ export default function PemeriksaDataManager() {
                                     <td className="text-gray-500">{c.detail}</td>
                                     <td className="text-center">
                                       {c.id ? (
-                                        <Link href={`/dashboard/admin/buku-induk/siswa/${c.id}/cetak`} title="Buka Buku Induk"
+                                        <Link href={tautanTemuan(t.id, c.id)} title="Betulkan di Buku Induk — langsung ke isiannya"
                                           className="inline-flex p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors">
                                           <ExternalLink size={14} />
                                         </Link>

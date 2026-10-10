@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BookUser, Loader2, Plus, Search, Printer, Edit2, Trash2, LogOut, Users, QrCode, Camera } from "lucide-react";
@@ -61,6 +62,7 @@ export default function BukuTamuManager() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(thisMonth());
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [catFilter, setCatFilter] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);

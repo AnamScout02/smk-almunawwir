@@ -1,4 +1,5 @@
 ﻿"use client";
+import { useSorotBaris } from "@/lib/cari-awal";
 import { useState, useEffect, useCallback } from "react";
 import { Mail, MailOpen, Trash2, Loader2, CheckCheck, MessageSquare } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -21,6 +22,8 @@ export default function AdminMessagesPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  // Dari Meja Kerja: ?sorot=<id> → pesan itu langsung terbuka (dan ditandai dibaca, sama seperti diketuk).
+  useSorotBaris(id => { setExpanded(id); markRead(id, true); });
 
   async function markRead(id: string, isRead: boolean) {
     await fetch(`/api/admin/messages/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isRead }) });
@@ -68,7 +71,7 @@ export default function AdminMessagesPage() {
       ) : (
         <div className="space-y-2">
           {items.map(item => (
-            <div key={item.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${!item.isRead ? "border-primary-100 shadow-primary-50" : "border-gray-100"}`}>
+            <div key={item.id} data-baris={item.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${!item.isRead ? "border-primary-100 shadow-primary-50" : "border-gray-100"}`}>
               <div className="p-4 flex items-start gap-3 cursor-pointer" onClick={() => openMsg(item)}>
                 <div className={`mt-0.5 shrink-0 ${!item.isRead ? "text-primary-700" : "text-gray-300"}`}>
                   {item.isRead ? <MailOpen size={18} /> : <Mail size={18} />}

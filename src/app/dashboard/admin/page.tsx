@@ -119,9 +119,9 @@ export default async function AdminDashboard() {
   ]);
 
   const dataGaps = [
-    { label: "Siswa belum ada jenis kelamin", count: noGenderStudents, href: "/dashboard/admin/buku-induk/siswa" },
-    { label: "Guru belum ada jenis kelamin", count: noGenderTeachers, href: "/dashboard/admin/buku-induk/guru" },
-    { label: "Siswa belum punya kelas", count: unclassedStudents, href: "/dashboard/admin/buku-induk/siswa" },
+    { label: "Siswa belum ada jenis kelamin", count: noGenderStudents, href: "/dashboard/admin/meja-kerja?bagian=data&lihat=induk-siswa#induk-siswa" },
+    { label: "Guru belum ada jenis kelamin", count: noGenderTeachers, href: "/dashboard/admin/meja-kerja?bagian=data&lihat=guru#guru" },
+    { label: "Siswa belum punya kelas", count: unclassedStudents, href: "/dashboard/admin/pemeriksa-data#temuan-aktif-tanpa-kelas" },
   ].filter(g => g.count > 0);
 
   const [recentAdmissions, recentNews, recentMessages] = await Promise.all([

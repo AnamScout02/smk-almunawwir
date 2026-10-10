@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UserCircle } from "lucide-react";
 import { verifyTasAccess } from "@/lib/tas-access-guard";
@@ -9,7 +10,8 @@ import Panel from "@/components/shared/Panel";
 import { TautanIkon } from "@/components/shared/IkonNama";
 import { BarisKembali } from "@/components/shared/TombolKembali";
 import { muatProfilSiswa } from "@/lib/profil-siswa";
-import { JUMLAH_POKOK } from "@/lib/induk-pokok";
+import BerkasSiswaPanel from "@/components/admin/BerkasSiswaPanel";
+import { JUMLAH_POKOK, tautanPokok } from "@/lib/induk-pokok";
 import { penempatanBelumPasti } from "@/lib/pkl-tempat";
 
 export const metadata = { title: "Profil Siswa" };
@@ -57,11 +59,6 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
   // Alamat lama sering sudah memuat desa/kecamatan — bagian wilayah hanya ditambahkan bila belum tertulis di sana.
   const alamatDasar = (s.address ?? "").trim(), alamatKecil = alamatDasar.toLowerCase();
   const alamat = [alamatDasar, ...[d.desa, d.kecamatan, d.kabupaten, d.province].filter(w => w && !alamatKecil.includes(String(w).toLowerCase().replace(/^(kabupaten|kota)\s+/, "")))].filter(Boolean).join(", ");
-  const berkas = [
-    ["Foto", p.foto], ["Ijazah / SKL SMP", p.spmb?.ijazahUrl], ["Kartu Keluarga", p.spmb?.kkUrl], ["KTP wali", p.spmb?.ktpWaliUrl],
-    ["Pas foto pendaftaran", p.spmb?.fotoUrl], ["Dokumen lain", p.spmb?.dokumenLainUrl],
-  ] as [string, string | null | undefined][];
-
   return (
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<UserCircle size={22} />} title={s.user.name}
@@ -88,7 +85,7 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
 
         {(p.kurang.length > 0 || p.pengajuan > 0) && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            {p.kurang.length > 0 && <p>Isian pokok yang belum ada: <span className="font-semibold">{p.kurang.join(", ")}</span>.</p>}
+            {p.kurang.length > 0 && <p>Isian pokok yang belum ada: {p.kurang.map((k, i) => <span key={k}>{i > 0 && ", "}<Link href={tautanPokok(s.id, [k])} className="font-semibold underline decoration-amber-400 underline-offset-2 hover:text-amber-900">{k}</Link></span>)}. Ketuk satu isian untuk langsung mengisinya.</p>}
             {p.pengajuan > 0 && <p>Ada {p.pengajuan} pengajuan perubahan biodata dari siswa ini yang menunggu verifikasi.</p>}
           </div>
         )}
@@ -207,15 +204,8 @@ export default async function AdminStudentDetailPage({ params }: { params: Promi
               )}
             </Panel>
 
-            <Panel judul="Berkas" keterangan={p.spmb?.nomor ? `pendaftaran ${p.spmb.nomor}` : undefined} isi={false}>
-              <ul className="divide-y divide-gray-100">
-                {berkas.map(([nama, url]) => (
-                  <li key={nama} className="flex items-center gap-3 px-5 py-2.5 text-sm">
-                    <span className="min-w-0 flex-1 truncate font-medium text-primary-900">{nama}</span>
-                    {url ? <a href={url} className="panel-tautan">Buka</a> : <span className="text-xs text-gray-400">belum ada</span>}
-                  </li>
-                ))}
-              </ul>
+            <Panel id="berkas" judul="Berkas Siswa" keterangan="dokumen pribadi — tersimpan tertutup" isi={false}>
+              <BerkasSiswaPanel studentId={s.id} />
             </Panel>
 
             <Panel judul="Lainnya">

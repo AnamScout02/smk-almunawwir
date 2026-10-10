@@ -1,4 +1,5 @@
 "use client";
+import { useSorotBaris } from "@/lib/cari-awal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -32,6 +33,7 @@ export default function ArsipSkManager() {
     }).catch(() => setGalat("Gagal memuat."));
   }, []);
   useEffect(() => { muat(); }, [muat]);
+  useSorotBaris();
 
   async function unggah(file: File) {
     setMengunggah(true);
@@ -70,7 +72,7 @@ export default function ArsipSkManager() {
               <table className="data-table">
                 <thead><tr><th>Dokumen</th>{d.kelola && <th className="hidden md:table-cell">Pegawai</th>}<th>Tanggal</th><th>Berlaku s/d</th><th className="text-right">Aksi</th></tr></thead>
                 <tbody>{d.daftar.map(a => (
-                  <tr key={a.id}>
+                  <tr key={a.id} data-baris={a.id}>
                     <td className="min-w-[12rem]">
                       <p className="font-semibold text-primary-900">{a.judul}</p>
                       <p className="text-xs text-gray-500">{d.jenis[a.jenis] ?? a.jenis}{a.nomor ? ` · ${a.nomor}` : ""}</p>

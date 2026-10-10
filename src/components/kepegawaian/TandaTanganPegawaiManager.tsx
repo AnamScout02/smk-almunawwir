@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, PenLine, Search, Trash2 } from "lucide-react";
 import Modal from "@/components/admin/Modal";
@@ -18,6 +19,7 @@ export default function TandaTanganPegawaiManager() {
   const confirm = useConfirm();
   const [daftar, setDaftar] = useState<Baris[] | null>(null);
   const [cari, setCari] = useState("");
+  useCariAwal(setCari);
   const [saring, setSaring] = useState<"semua" | "belum" | "sudah">("semua");
   const [edit, setEdit] = useState<Baris | null>(null);
   const [versi, setVersi] = useState(0);

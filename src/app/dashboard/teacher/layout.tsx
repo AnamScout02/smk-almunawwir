@@ -1,3 +1,4 @@
+import AntreanKiriman from "@/components/shared/AntreanKiriman";
 import { verifyRole } from "@/lib/dal";
 import { PENANDA_PANITIA_PKL, anggotaPanitiaPkl } from "@/lib/pkl-humas";
 import { getSettings } from "@/lib/site-settings";
@@ -81,6 +82,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             komentar sama di dashboard/student/layout.tsx (fix device ber-notch 2026-08-23). */}
         <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-24 print:pt-0 print:pb-0 min-h-dvh">
           <PusatNotifikasiPortal tindakan={tindakan} />
+          <AntreanKiriman />
           {children}
         </main>
       </div>

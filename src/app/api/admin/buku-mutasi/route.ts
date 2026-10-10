@@ -106,7 +106,8 @@ export async function GET(req: NextRequest) {
           kelas: s.class?.name ?? "-",
           jurusan: s.major.code,
           asal: b.pindahanDari,
-          asalSekolah: s.previousSchool ?? "-",
+          // "Asal sekolah" di Buku Mutasi = sekolah yang DITINGGALKAN (pindahan dari), bukan SMP/MTs asal di Buku Induk (temuan user 10 Okt 2026).
+          asalSekolah: b.pindahanDari || "-",
           asalNis: b.asalNis ?? "-",
           asalAlamat: b.prevSchoolAddress ?? "-",
           kelasAsal: b.kelasAsal ?? "-",

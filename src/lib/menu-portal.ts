@@ -44,6 +44,7 @@ export const MENU_PUSAT_SPMB: ItemNavPortal[] = [
   { href: "/pusat-spmb/tahapan", label: "Tahapan Calon", singkat: "Tahapan", ikon: "tahapan" },
   { href: "/pusat-spmb/seleksi", label: "Seleksi & Nilai", singkat: "Seleksi", ikon: "seleksi" },
   { href: "/pusat-spmb/pengumuman", label: "Pengumuman", singkat: "Hasil", ikon: "pengumuman" },
+  { href: "/pusat-spmb/pembayaran", label: "Rekap Pembayaran", singkat: "Bayar", ikon: "pembayaran" },
   { href: "/pusat-spmb/konversi", label: "Jadi Siswa", ikon: "konversi" },
   { href: "/pusat-spmb/rombel", label: "Pembagian Rombel", singkat: "Rombel", ikon: "rombel" },
   { href: "/pusat-spmb/mpls", label: "MPLS", ikon: "mpls" },

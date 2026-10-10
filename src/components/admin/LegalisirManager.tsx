@@ -1,4 +1,5 @@
 "use client";
+import { useCariAwal } from "@/lib/cari-awal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Stamp, Loader2, Plus, Search, Printer, Edit2, Trash2, Check, PackageCheck, FileCheck2, Clock, CheckCircle2 } from "lucide-react";
@@ -64,6 +65,7 @@ export default function LegalisirManager() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(thisMonth());
   const [search, setSearch] = useState("");
+  useCariAwal(setSearch);
   const [statusFilter, setStatusFilter] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
