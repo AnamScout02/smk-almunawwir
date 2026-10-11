@@ -18,7 +18,7 @@ interface BelumAktif {
 
 interface Data {
   tersedia: boolean;
-  pengaturan: { aktif: boolean; jamAbsensi: string; jamPiket: string; jamJurnal: string; jamPeringatanDini: string; jamPerpustakaan: string; jamRekapKelas: string; jamRingkasanOrtu: string; jamSpmb: string; jamPkl: string; jamEkstra: string; jamPerawatan: string; tanggalLibur: string[]; liburNasional: boolean };
+  pengaturan: { aktif: boolean; jamAbsensi: string; jamPiket: string; jamJurnal: string; jamPeringatanDini: string; jamPerpustakaan: string; jamRekapKelas: string; jamRingkasanOrtu: string; jamSpmb: string; jamPkl: string; jamEkstra: string; jamPerawatan: string; jamRekapBulanan: string; tanggalLibur: string[]; liburNasional: boolean };
   libur: { mendatang: { tanggal: string; nama: string; sumber: keyof typeof SUMBER_LIBUR }[]; nasional: { jumlah: number; diperbarui: string | null } };
   perangkat: { total: number; pengguna: number; perPeran: { peran: string; perangkat: number; pengguna: number }[] };
   riwayat: { id: string; jenis: string; judul: string; isi: string; jumlahPenerima: number; jumlahPerangkat: number; createdAt: string }[];
@@ -173,6 +173,7 @@ export default function NotifikasiPushManager() {
                   ["jamPkl", "Jurnal PKL belum diisi", "Ke siswa yang sedang PKL hari itu dan belum menulis jurnal hariannya"],
                   ["jamEkstra", "Absensi ekstrakurikuler & pendaftar", "Ke Koordinator Ekstrakurikuler dan pembina ber-akun: latihan hari itu yang belum diabsen, dan jumlah siswa yang mendaftar menunggu keputusan"],
                   ["jamPerawatan", "Perawatan berkala aset", "Ke Wakil Kepala Sarana Prasarana dan Kepala Laboratorium: perawatan yang jatuh tempo hari itu; yang terlambat diulang tiap 3 hari"],
+                  ["jamRekapBulanan", "Rekap bulanan sekolah", "Ke Kepala Sekolah pada hari sekolah pertama tiap bulan: ajakan membuka rekap bulan lalu (kehadiran guru & siswa, jurnal, persuratan)"],
                 ] as const).map(([kunci, judul, ket]) => (
                   <div key={kunci}>
                     <label className="label-field" htmlFor={`jam-${kunci}`}>{judul}</label>

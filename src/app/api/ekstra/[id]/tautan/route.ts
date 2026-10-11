@@ -16,7 +16,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const e = await prisma.extracurricular.findUnique({ where: { id }, select: { name: true } });
   if (!e) return Response.json({ error: "Ekstrakurikuler tidak ditemukan." }, { status: 404 });
   const token = tokenBaru();
-  await prisma.extracurricular.update({ where: { id }, data: { tokenPortalHash: hashToken(token) } });
+  await prisma.extracurricular.update({ where: { id }, data: { tokenPortalHash: hashToken(token), tokenPortalDipakai: null } });
   await logActivity(session, { action: "UPDATE", entity: "Extracurricular", entityId: id, description: `Membuat tautan pembina ${e.name}` }).catch(() => null);
   return Response.json({ url: `${ALAMAT_APLIKASI}/portal-ekstra/${token}` });
 }
@@ -25,7 +25,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const session = await verifyRole(["ADMIN", "TAS", "TEACHER"]);
   if (!(await aksesEkstra(session)).kelola) return Response.json({ error: "Khusus Koordinator Ekstrakurikuler." }, { status: 403 });
   const { id } = await params;
-  const e = await prisma.extracurricular.update({ where: { id }, data: { tokenPortalHash: null }, select: { name: true } }).catch(() => null);
+  const e = await prisma.extracurricular.update({ where: { id }, data: { tokenPortalHash: null, tokenPortalDipakai: null }, select: { name: true } }).catch(() => null);
   if (!e) return Response.json({ error: "Ekstrakurikuler tidak ditemukan." }, { status: 404 });
   await logActivity(session, { action: "UPDATE", entity: "Extracurricular", entityId: id, description: `Mencabut tautan pembina ${e.name}` }).catch(() => null);
   return Response.json({ ok: true });

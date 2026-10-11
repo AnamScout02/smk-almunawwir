@@ -2,7 +2,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarRange, Bug } from "lucide-react";
+import { ChartNoAxesCombined, BarChart3, BookOpenText, CalendarRange, Bug } from "lucide-react";
 import {
   Calculator, Signature, Construction, LayoutDashboard, Image, Newspaper, GalleryHorizontal,
   ClipboardList, ClipboardCheck, NotebookPen, Users, MessageSquare, LogOut,
@@ -130,6 +130,8 @@ export const menuGroups = [
       { href: "/dashboard/admin/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2, badge: 0 },
       { href: "/dashboard/admin/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck, badge: 0 },
       { href: "/dashboard/admin/rapor-kinerja", label: "Rapor Kinerja Guru", icon: Award, badge: 0 },
+      { href: "/dashboard/admin/rekap-bulanan", label: "Rekap Bulanan Sekolah", icon: CalendarRange, badge: 0 },
+      { href: "/dashboard/admin/analitik", label: "Analitik Data", icon: ChartNoAxesCombined, badge: 0 },
       { href: "/dashboard/admin/bukti-akreditasi", label: "Bukti Akreditasi", icon: ShieldCheck, badge: 0 },
       { href: "/dashboard/admin/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart, badge: 0 },
       { href: "/dashboard/admin/masukan-rekan-pantau", label: "Pantau Masukan Rekan", icon: ShieldCheck, badge: 0 },
@@ -226,6 +228,8 @@ export const menuGroups = [
       { href: "/dashboard/admin/survei", label: "Survei & Angket", icon: ClipboardPen, badge: 0 },
       { href: "/dashboard/admin/liputan", label: "Usulan Liputan", icon: Camera, badge: 0 },
       { href: "/dashboard/admin/bantuan", label: "Pusat Bantuan (tiket)", icon: CircleHelp, badge: 0 },
+      { href: "/dashboard/admin/panduan", label: "Panduan", icon: BookOpenText, badge: 0 },
+      { href: "/dashboard/admin/statistik-pemakaian", label: "Statistik Pemakaian", icon: BarChart3, badge: 0 },
       { href: "/dashboard/admin/messages", label: "Pesan Masuk", icon: MessageSquare, badgeKey: "unreadMessages" as const },
       { href: "/dashboard/admin/news", label: "Berita", icon: Newspaper, badge: 0 },
       { href: "/dashboard/admin/event", label: "Lomba & Event", icon: Medal, badge: 0 },

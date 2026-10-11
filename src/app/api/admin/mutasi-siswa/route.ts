@@ -27,6 +27,12 @@ export async function GET(req: NextRequest) {
       const p = await periksaMutasi(q.get("periksa") as string);
       return p ? Response.json(p) : Response.json({ error: "Siswa tidak ditemukan." }, { status: 404 });
     }
+    // `?siswa=<id>` — satu siswa aktif untuk mengisi formulir Pindah/Keluar dari tautan Meja Kerja TU.
+    const satu = q.get("siswa");
+    if (satu) {
+      const x = /^[a-z0-9]{10,40}$/i.test(satu) ? await prisma.student.findFirst({ where: { id: satu, studentStatus: "AKTIF" }, select: { id: true, nis: true, user: { select: { name: true } }, class: { select: { name: true } } } }) : null;
+      return Response.json({ siswa: x ? [{ id: x.id, nis: x.nis, nama: x.user.name, kelas: x.class?.name ?? null }] : [] });
+    }
     const cari = teks(q.get("cari"), 60);
     if (cari.length >= 2) {
       const s = await prisma.student.findMany({

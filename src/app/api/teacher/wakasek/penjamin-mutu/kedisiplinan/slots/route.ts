@@ -7,15 +7,20 @@ import { cakupanTingkat } from "@/lib/kehadiran-guru";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { kabariJamKosong } from "@/lib/jam-kosong";
+import { kirimLatar, kirimNotifikasi } from "@/lib/push-server";
 
 export const dynamic = "force-dynamic";
 
 const DAYS = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
 
+const tugas = (r: { status: string; hasTugas?: boolean | null; tugasTitipan?: string }) =>
+  (r.hasTugas === true && r.status !== "HADIR" && r.status !== "TERLAMBAT" ? (r.tugasTitipan ?? "").trim().slice(0, 500) || null : null);
+
 interface FlatSlot {
   id: string; classId: string; className: string; subject: string; startTime: string; endTime: string; room: string | null;
   teacherId: string | null; teacherName: string; teacherNip: string;
-  status: string; hasTugas: boolean | null; notes: string;
+  status: string; hasTugas: boolean | null; notes: string; tugasTitipan: string;
   /** Status presensi harian dari TU (StaffAttendance) pada tanggal itu — hanya DITAMPILKAN sebagai
    *  petunjuk; guru piket tetap yang memutuskan status tiap jam. Lihat komentar di GET. */
   statusHarian: string | null; keteranganHarian: string | null;
@@ -34,7 +39,7 @@ function groupConsecutive(slots: FlatSlot[], periodMap: Map<string, number>) {
       startPeriod: periodMap.get(first.startTime) ?? null,
       endPeriod: periodMap.get(last.startTime) ?? null,
       teacherId: first.teacherId, teacherName: first.teacherName, teacherNip: first.teacherNip,
-      status: first.status, hasTugas: first.hasTugas, notes: first.notes,
+      status: first.status, hasTugas: first.hasTugas, notes: first.notes, tugasTitipan: first.tugasTitipan,
       statusHarian: first.statusHarian, keteranganHarian: first.keteranganHarian,
       periodCount: items.length,
     }));
@@ -111,7 +116,7 @@ export async function GET(req: NextRequest) {
         teacherId: s.teacher?.id ?? null, teacherName: s.teacher?.user.name ?? "-", teacherNip: s.teacher?.nip ?? "-",
         // "" (bukan "HADIR") kalau belum pernah dicatat — supaya Wakasek/Guru Piket TERPAKSA
         // memilih status secara sadar, bukan diam2 dianggap sudah "Hadir" tanpa dicek.
-        status: e?.status ?? "", hasTugas: e?.hasTugas ?? null, notes: e?.notes ?? "",
+        status: e?.status ?? "", hasTugas: e?.hasTugas ?? null, notes: e?.notes ?? "", tugasTitipan: e?.tugasTitipan ?? "",
         statusHarian: (s.teacher?.userId && harianMap.get(s.teacher.userId)?.status) || null,
         keteranganHarian: (s.teacher?.userId && harianMap.get(s.teacher.userId)?.keterangan) || null,
       };
@@ -135,7 +140,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { date, records } = body as {
       date: string;
-      records: { scheduleIds: string[]; status: string; hasTugas?: boolean | null; checkInTime?: string; notes?: string }[];
+      records: { scheduleIds: string[]; status: string; hasTugas?: boolean | null; checkInTime?: string; notes?: string; tugasTitipan?: string }[];
     };
     if (!date || !Array.isArray(records) || records.length === 0) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
@@ -155,11 +160,15 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction(
       records.flatMap(r => r.scheduleIds.map(scheduleId => prisma.teacherScheduleAttendance.upsert({
         where: { scheduleId_date: { scheduleId, date: dateObj } },
-        update: { status: r.status, hasTugas: r.hasTugas ?? null, checkInTime: r.checkInTime || null, notes: r.notes || null },
-        create: { scheduleId, date: dateObj, status: r.status, hasTugas: r.hasTugas ?? null, checkInTime: r.checkInTime || null, notes: r.notes || null },
+        // Tugas titipan hanya disimpan bila guru tidak hadir DAN petugas menandai "ada tugas" — selain itu dikosongkan
+        // supaya tugas kemarin tidak tertinggal tampil ke siswa.
+        update: { status: r.status, hasTugas: r.hasTugas ?? null, checkInTime: r.checkInTime || null, notes: r.notes || null, tugasTitipan: tugas(r) },
+        create: { scheduleId, date: dateObj, status: r.status, hasTugas: r.hasTugas ?? null, checkInTime: r.checkInTime || null, notes: r.notes || null, tugasTitipan: tugas(r) },
       })))
     );
 
+    // Tugas titipan untuk jam kosong HARI INI → kabar ke siswa kelas itu (sekali per blok per hari), setelah tersimpan.
+    kirimLatar(() => kabariJamKosong(records, String(date).slice(0, 10), kirimNotifikasi));
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (e) {
     lemparBilaPengalihan(e);

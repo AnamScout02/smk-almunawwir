@@ -53,6 +53,14 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   /* Kartu identitas */
   /* Buku terbuka + sosok siswa & tanda centang — Buku Wali Kelas (ringkasan tiap siswa satu halaman) */
   bukuWali: p => <S {...p}><path d="M4 10h17a4 4 0 014 4v26a4 4 0 00-4-3H4z" fill={W} /><path d="M44 10H27a4 4 0 00-4 4v26a4 4 0 014-3h17z" fill={B} /><circle cx="13" cy="19" r="4" fill={N2} /><path d="M7 31c0-3.6 2.7-6 6-6s6 2.4 6 6z" fill={N2} /><path d="M29 18l2.4 2.4L36 16" stroke={N} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" /><rect x="29" y="25" width="11" height="2.6" rx="1.3" fill={N2} /><rect x="29" y="31" width="8" height="2.6" rx="1.3" fill={N2} /></S>,
+  /* Lembar kalender bulan + batang ringkasan — Rekap Bulanan Sekolah (satu lembar per bulan untuk pimpinan) */
+  rekapBulanan: p => <S {...p}><rect x="5" y="8" width="38" height="34" rx="5" fill={W} /><rect x="5" y="8" width="38" height="9" rx="5" fill={N} /><rect x="13" y="4" width="4" height="9" rx="2" fill={B} /><rect x="31" y="4" width="4" height="9" rx="2" fill={B} /><rect x="11" y="30" width="5" height="7" rx="1.5" fill={N2} /><rect x="19" y="25" width="5" height="12" rx="1.5" fill={N} /><rect x="27" y="28" width="5" height="9" rx="1.5" fill={N2} /><rect x="35" y="22" width="5" height="15" rx="1.5" fill={N} /></S>,
+  /* Buku terbuka bertanda tanya — Panduan (penjelasan fitur per peran) */
+  panduanFitur: p => <S {...p}><path d="M4 9h16a4 4 0 014 4v27a4 4 0 00-4-3H4z" fill={W} /><path d="M44 9H28a4 4 0 00-4 4v27a4 4 0 014-3h16z" fill={B} /><rect x="8" y="15" width="10" height="2.6" rx="1.3" fill={N2} /><rect x="8" y="21" width="12" height="2.6" rx="1.3" fill={N2} /><rect x="8" y="27" width="8" height="2.6" rx="1.3" fill={N2} /><path d="M31 18.5a4 4 0 117 2.6c-1.6 1.4-3 2-3 4.4" stroke={N} strokeWidth="2.8" strokeLinecap="round" fill="none" /><circle cx="35" cy="31" r="1.9" fill={N} /></S>,
+  /* Kursor menunjuk batang grafik — Statistik Pemakaian (menu mana yang dibuka) */
+  statistikPemakaian: p => <S {...p}><rect x="4" y="6" width="40" height="30" rx="5" fill={W} /><rect x="10" y="22" width="6" height="9" rx="1.5" fill={N2} /><rect x="19" y="15" width="6" height="16" rx="1.5" fill={N} /><rect x="28" y="19" width="6" height="12" rx="1.5" fill={N2} /><path d="M33 27l10 4.5-4.4 1.6L37 37.5z" fill={B} stroke={N} strokeWidth="1.6" strokeLinejoin="round" /><rect x="14" y="40" width="20" height="3" rx="1.5" fill={G} /></S>,
+  /* Garis tren + kaca pembesar pada titik menyimpang — Analitik Data (kejanggalan, pola, proyeksi) */
+  analitikData: p => <S {...p}><rect x="4" y="7" width="34" height="30" rx="5" fill={W} /><path d="M9 29l6-6 5 4 6-9 7 5" stroke={N} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /><circle cx="26" cy="18" r="2.6" fill={N} /><circle cx="35" cy="33" r="7.5" fill={B} stroke={N} strokeWidth="2.4" /><path d="M40.5 38.5L45 43" stroke={N} strokeWidth="3.2" strokeLinecap="round" /></S>,
   kartu: p => <S {...p}><rect x="4" y="10" width="40" height="30" rx="6" fill={W} /><rect x="4" y="10" width="40" height="8" rx="5" fill={N} /><circle cx="16" cy="27" r="6" fill={N2} /><path d="M8 38c0-4.4 3.6-7.4 8-7.4s8 3 8 7.4z" fill={N2} /><rect x="28" y="23" width="12" height="3.2" rx="1.6" fill={N2} /><rect x="28" y="30" width="9" height="3.2" rx="1.6" fill={N2} /><rect x="20" y="2" width="8" height="10" rx="2" fill={B} /></S>,
   /* Perisai + bintang */
   poin: p => <S {...p}><path d="M24 3l16 6.5v12.5c0 9.6-6.8 17.4-16 21.5C14.8 39.4 8 31.6 8 22V9.5z" fill={W} /><path d="M24 3v40c9.2-4.1 16-11.9 16-21.5V9.5z" fill={B} /><path d="M24 14l2.8 5.8 6.4 1-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-1z" fill={N} /></S>,
@@ -327,6 +335,11 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
 
 /** Alamat menu → nama ilustrasi. Menu di luar daftar ini tetap memakai ikon lucide biasa. */
 export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
+  "/dashboard/admin/analitik": "analitikData", "/dashboard/teacher/analitik": "analitikData",
+  "/dashboard/admin/panduan": "panduanFitur", "/dashboard/teacher/panduan": "panduanFitur", "/dashboard/student/panduan": "panduanFitur", "/dashboard/parent/panduan": "panduanFitur",
+  "/dashboard/admin/statistik-pemakaian": "statistikPemakaian",
+  "/dashboard/admin/rekap-bulanan": "rekapBulanan",
+  "/dashboard/teacher/rekap-bulanan": "rekapBulanan",
   "/dashboard/teacher/buku-wali": "bukuWali",
   "/dashboard/admin/buku-wali": "bukuWali",
   // Sarana — layar & jaringan (24 September 2026). WAJIB didaftarkan tegas: aturan kata kunci akan

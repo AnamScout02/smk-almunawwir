@@ -9,6 +9,8 @@ import { masukkanSesi, keluarkanSesiIni } from "@/lib/sesi-server";
 import { checkRateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
 import { verifyTotpToken, consumeBackupCode } from "@/lib/totp";
 import { REDIRECT_MAP, resolveRedirectTarget, ambilLanjut } from "@/lib/tujuan-masuk";
+import { normalizePhoneKey } from "@/lib/parent-account";
+import { DEFAULT_PASSWORD } from "@/lib/constants";
 
 const loginSchema = z.object({
   email: z.string().includes("@"),
@@ -23,8 +25,13 @@ export type LoginState = {
 } | undefined;
 
 export async function login(state: LoginState, formData: FormData): Promise<LoginState> {
+  // ORANG TUA BOLEH MASUK DENGAN NOMOR HP (11 Okt 2026): akun orang tua beralamat `ortu<62…>@smkalmunawwir.sch.id`,
+  // dan mengetik alamat sepanjang itu di HP adalah salah satu sebab hampir tidak ada yang pernah masuk. Isian yang
+  // hanya berisi angka (boleh +, spasi, tanda hubung) diterjemahkan ke alamat itu; selain itu perilakunya sama.
+  const isian = String(formData.get("email") ?? "").trim();
+  const angka = isian.replace(/[\s+()-]/g, "");
   const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
+    email: !isian.includes("@") && /^\d{9,15}$/.test(angka) ? `ortu${normalizePhoneKey(angka)}@smkalmunawwir.sch.id` : isian,
     password: formData.get("password"),
   });
 
@@ -71,6 +78,9 @@ export async function login(state: LoginState, formData: FormData): Promise<Logi
     return { needsTotp: true };
   }
 
+  // Masuk dengan SANDI AWAL yang sama untuk semua akun baru → wajib menggantinya (jendela di portal, `GantiSandiWajib`).
+  // Ditandai di sini karena hanya saat login sandi polosnya diketahui; admin ber-2FA tidak lewat jalur ini.
+  if (password === DEFAULT_PASSWORD && !user.wajibGantiSandi) await prisma.user.update({ where: { id: user.id }, data: { wajibGantiSandi: true } }).catch(() => null);
   await masukkanSesi({ id: user.id, name: user.name, email: user.email, role: user.role }, ingatSaya);
 
   redirect((await ambilLanjut()) ?? await resolveRedirectTarget(user.role, user.email));

@@ -33,7 +33,7 @@ export async function ekskulBoleh(session: { role: string; email: string }) {
   const daftar = await prisma.extracurricular.findMany({
     where: a.kelola ? {} : { name: { in: a.milik } },
     orderBy: [{ jenis: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, jenis: true, pembinaNama: true, pembinaKontak: true, jadwalRutin: true, hariRutin: true, bukaDaftar: true, kuota: true, deskripsi: true, tokenPortalHash: true, _count: { select: { members: true } } },
+    select: { id: true, name: true, jenis: true, pembinaNama: true, pembinaKontak: true, jadwalRutin: true, hariRutin: true, bukaDaftar: true, kuota: true, deskripsi: true, tokenPortalHash: true, tokenPortalDipakai: true, _count: { select: { members: true } } },
   });
   return { akses: a, daftar };
 }

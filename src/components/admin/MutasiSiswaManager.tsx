@@ -50,6 +50,12 @@ export default function MutasiSiswaManager() {
     setPeriksa({ id, data: null });
     fetch(`/api/admin/mutasi-siswa?periksa=${id}`).then(r => r.json()).then(x => setPeriksa(x.error ? null : { id, data: x })).catch(() => setPeriksa(null));
   }, []);
+  // Tautan dari Meja Kerja TU: ?keluar=<id siswa> membuka formulir Pindah/Keluar dengan siswa itu sudah terpilih.
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("keluar");
+    if (!v || !/^[a-z0-9]{10,40}$/i.test(v)) return;
+    fetch(`/api/admin/mutasi-siswa?siswa=${v}`).then(r => r.json()).then(x => { const c = (x.siswa ?? [])[0]; if (c) { setTab("keluar"); setPilih(c); setK(s => ({ ...s, jenis: "KELUAR" })); } }).catch(() => {});
+  }, []);
   // Tautan langsung dari Meja Kerja TU: ?periksa=<id> membuka daftar periksa siswa itu.
   useEffect(() => { const v = new URLSearchParams(window.location.search).get("periksa"); if (v && /^[a-z0-9]{10,40}$/i.test(v)) bukaPeriksa(v); }, [bukaPeriksa]);
   async function kirim(body: Record<string, unknown>) {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
 import PapanLayar, { type IsiPapan } from "@/components/sarpras/PapanLayar";
+import { jamKosongKelas } from "@/lib/jam-kosong";
 import { getWeekTypeForDate } from "@/lib/schedule-week.server";
 import { weekTypesOverlap } from "@/lib/schedule-week";
 import { kutipanHariIni, peringkatKedisiplinan, perluPerhatian } from "@/lib/papan-kelas";
@@ -25,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
     select: {
       nama: true, ruang: true, papanJudul: true, papanIsi: true, papanManualSaja: true, papanCara: true, papanQr: true,
       papanJenis: true, papanGiliran: true, volumeBel: true, belMode: true, belModeSampai: true,
-      kelas: { select: { id: true, name: true } },
+      kelas: { select: { id: true, name: true } }, jurusanId: true,
     },
   }).catch(() => null);
   if (!layar) notFound();
@@ -40,6 +41,14 @@ export default async function Page({ params }: { params: Promise<{ token: string
   // 07.15?"). Penyaringnya sama persis dengan yang dipakai Jurnal, Buku Piket, dan pengingat terjadwal.
   const minggu = await getWeekTypeForDate(new Date(`${hariIni}T00:00:00.000Z`)).catch(() => "SEMUA");
 
+  const kodeJurusan = layar.jurusanId && !layar.kelas ? (await prisma.major.findUnique({ where: { id: layar.jurusanId }, select: { code: true } }).catch(() => null))?.code ?? null : null;
+  const kosong = layar.kelas ? await jamKosongKelas(layar.kelas.id, hariIni) : [];
+  const mapelKejuruan = layar.jurusanId && !layar.kelas
+    // Hanya Dasar Program Keahlian & Konsentrasi Keahlian: kategori "kejuruan" di Data Mapel juga memuat Informatika,
+    // Bahasa Inggris, PKK, dan Koding (diperiksa di data 11 Okt 2026), yang tidak berlangsung di lab jurusan.
+    ? [...new Set((await prisma.subject.findMany({ where: { OR: [{ name: { startsWith: "Dasar", mode: "insensitive" } }, { name: { startsWith: "Konsentrasi Keahlian", mode: "insensitive" } }] }, select: { name: true } }).catch(() => []))
+        .map(x => x.name).filter(n => /^(dasar[- ]*(dasar )?program keahlian|konsentrasi keahlian)/i.test(n)))]
+    : [];
   const [jadwal, pengumuman, agenda, setelan, bel] = await Promise.all([
     /* DUA JENIS JADWAL (25 September 2026, pertanyaan user: "lab itu kan dipakai banyak kelas yang berbeda").
        - TV di depan KELAS (punya `kelasId`): jadwal kelas itu.
@@ -47,16 +56,32 @@ export default async function Page({ params }: { params: Promise<{ token: string
          dengan nama kelasnya. Memaksa lab terikat satu kelas membuat papannya berbohong sepanjang hari, karena
          kelas lain yang sedang memakai lab tidak pernah muncul. */
     prisma.schedule.findMany({
+      // TV LAB (11 Okt 2026): `Schedule.room` kosong di seluruh jadwal, jadi "jadwal ruang" tidak pernah berisi dan TV lab
+      // terpaksa diikat ke satu kelas (temuan user: "kenapa selalu XI TKJ 2?"). Dengan `jurusanId`, papan menampilkan
+      // jam KEJURUAN semua kelas jurusan itu — mapel berkategori kejuruan di Data Mapel.
       where: layar.kelas
         ? { classId: layar.kelas.id, day: hari, scheduleType: "BLOK" }
-        : { room: layar.ruang, day: hari, scheduleType: "BLOK" },
+        : layar.jurusanId
+          ? { class: { majorId: layar.jurusanId }, day: hari, scheduleType: "BLOK", subject: { in: mapelKejuruan } }
+          : { room: layar.ruang, day: hari, scheduleType: "BLOK" },
       orderBy: { startTime: "asc" },
       select: {
         subject: true, startTime: true, endTime: true, room: true, weekType: true,
         class: { select: { name: true } },
         teacher: { select: { user: { select: { name: true } } } },
       },
-    }).then(r => r.filter(j => weekTypesOverlap(j.weekType, minggu))).catch(() => []),
+    }).then(r => r.filter(j => weekTypesOverlap(j.weekType, minggu))).then(r => {
+      if (!layar.jurusanId || layar.kelas) return r;
+      // Papan lab memuat beberapa kelas: jam berurutan untuk kelas + mapel + guru yang sama dijadikan SATU baris
+      // (jadwal kelas XII tersimpan per 30 menit), lalu diurutkan jam mulai → nama kelas.
+      const gabung: typeof r = [];
+      for (const j of [...r].sort((a, b) => (a.class?.name ?? "").localeCompare(b.class?.name ?? "") || a.subject.localeCompare(b.subject) || a.startTime.localeCompare(b.startTime))) {
+        const t = gabung[gabung.length - 1];
+        if (t && t.class?.name === j.class?.name && t.subject === j.subject && t.teacher?.user.name === j.teacher?.user.name && t.endTime >= j.startTime) { if (j.endTime > t.endTime) t.endTime = j.endTime; }
+        else gabung.push({ ...j });
+      }
+      return gabung.sort((a, b) => a.startTime.localeCompare(b.startTime) || (a.class?.name ?? "").localeCompare(b.class?.name ?? ""));
+    }).catch(() => []),
     // Hanya pengumuman yang memang pantas terpampang di dinding: sasaran umum/siswa, sedang berlaku.
     prisma.announcement.findMany({
       where: {
@@ -113,13 +138,19 @@ export default async function Page({ params }: { params: Promise<{ token: string
     namaLayar: layar.nama,
     ruang: layar.ruang,
     kelas: layar.kelas?.name ?? null,
+    judulJadwal: kodeJurusan ? `Jam kejuruan ${kodeJurusan} hari ini` : null,
     namaSekolah: setelan["school.name"] ?? "SMK Al-Munawwir IIBS",
     // Logo versi PANJANG (berikut tulisan nama sekolah) di atas latar navy — permintaan user 24 Sep 2026.
     logo: setelan["logo.full_white"] || setelan["logo.full"] || null,
-    jadwal: jadwal.map(j => ({
-      mapel: j.subject, mulai: j.startTime, selesai: j.endTime,
-      guru: j.teacher?.user.name ?? null, ruang: j.room ?? null, kelas: j.class?.name ?? null,
-    })),
+    jadwal: jadwal.map(j => {
+      // Jam kosong (catatan guru piket) tampil di TV KELAS itu: nama guru diganti keterangan + tugas titipannya.
+      const k = kosong.find(x => x.mapel === j.subject && j.startTime >= x.mulai && j.startTime < x.selesai);
+      return {
+        mapel: j.subject, mulai: j.startTime, selesai: j.endTime,
+        guru: k ? (k.tugas ? `Guru berhalangan — tugas: ${k.tugas.slice(0, 140)}` : "Guru berhalangan hadir") : j.teacher?.user.name ?? null,
+        ruang: j.room ?? null, kelas: j.class?.name ?? null,
+      };
+    }),
     pengumuman: pengumuman.map(p => ({ judul: p.title, isi: p.content.slice(0, 400) })),
     agenda: agenda.map(a => ({ judul: a.judul, tanggal: a.tanggalMulai.toISOString(), jenis: a.jenis })),
     kutipan: kutipanHariIni(setelan, wib),

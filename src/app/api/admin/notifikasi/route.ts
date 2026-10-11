@@ -54,6 +54,7 @@ export async function GET() {
       jamPkl: s[PENGATURAN_NOTIFIKASI.jamPkl] ?? "",
       jamEkstra: s[PENGATURAN_NOTIFIKASI.jamEkstra] ?? "",
       jamPerawatan: s[PENGATURAN_NOTIFIKASI.jamPerawatan] ?? "",
+      jamRekapBulanan: s[PENGATURAN_NOTIFIKASI.jamRekapBulanan] ?? "",
       tanggalLibur: (s[PENGATURAN_NOTIFIKASI.tanggalLibur] ?? "").split(/[\s,;]+/).filter(Boolean).sort(),
       liburNasional: s[PENGATURAN_NOTIFIKASI.liburNasional] !== "0",
     },
@@ -87,7 +88,7 @@ export async function PUT(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const b = (await req.json().catch(() => ({}))) as {
-    aktif?: boolean; jamAbsensi?: string; jamPiket?: string; jamJurnal?: string; jamPeringatanDini?: string; jamPerpustakaan?: string; jamRekapKelas?: string; jamRingkasanOrtu?: string; jamSpmb?: string; jamPkl?: string; jamEkstra?: string; jamPerawatan?: string; tanggalLibur?: string[]; liburNasional?: boolean;
+    aktif?: boolean; jamAbsensi?: string; jamPiket?: string; jamJurnal?: string; jamPeringatanDini?: string; jamPerpustakaan?: string; jamRekapKelas?: string; jamRingkasanOrtu?: string; jamSpmb?: string; jamPkl?: string; jamEkstra?: string; jamPerawatan?: string; jamRekapBulanan?: string; tanggalLibur?: string[]; liburNasional?: boolean;
   };
   const jamAbsensi = rapikanJam(b.jamAbsensi);
   const jamPiket = rapikanJam(b.jamPiket);
@@ -100,7 +101,8 @@ export async function PUT(req: Request) {
   const jamPkl = rapikanJam(b.jamPkl);
   const jamEkstra = rapikanJam(b.jamEkstra);
   const jamPerawatan = rapikanJam(b.jamPerawatan);
-  if (jamAbsensi === null || jamPiket === null || jamJurnal === null || jamPeringatanDini === null || jamPerpustakaan === null || jamRekapKelas === null || jamRingkasanOrtu === null || jamSpmb === null || jamPkl === null || jamEkstra === null || jamPerawatan === null) {
+  const jamRekapBulanan = rapikanJam(b.jamRekapBulanan);
+  if (jamAbsensi === null || jamPiket === null || jamJurnal === null || jamPeringatanDini === null || jamPerpustakaan === null || jamRekapKelas === null || jamRingkasanOrtu === null || jamSpmb === null || jamPkl === null || jamEkstra === null || jamPerawatan === null || jamRekapBulanan === null) {
     return Response.json({ error: "Format jam harus JJ:MM (contoh 07:30), dipisah koma." }, { status: 400 });
   }
   const libur = [...new Set((b.tanggalLibur ?? []).map(String))].filter(t => TANGGAL.test(t)).sort();
@@ -117,6 +119,7 @@ export async function PUT(req: Request) {
     [PENGATURAN_NOTIFIKASI.jamPkl]: jamPkl,
     [PENGATURAN_NOTIFIKASI.jamEkstra]: jamEkstra,
     [PENGATURAN_NOTIFIKASI.jamPerawatan]: jamPerawatan,
+    [PENGATURAN_NOTIFIKASI.jamRekapBulanan]: jamRekapBulanan,
     [PENGATURAN_NOTIFIKASI.tanggalLibur]: libur.join(","),
     [PENGATURAN_NOTIFIKASI.liburNasional]: b.liburNasional === false ? "0" : "1",
   };

@@ -1,3 +1,4 @@
+import { pengingatRekapBulanan } from "@/lib/pengingat-rekap-bulanan";
 import { pengingatPerawatan } from "@/lib/pengingat-perawatan";
 import { pengingatEkstra } from "@/lib/pengingat-ekstra";
 import { kelasIkutKegiatan } from "@/lib/absensi-otomatis";
@@ -40,6 +41,7 @@ export const PENGATURAN_NOTIFIKASI = {
   jamPkl: "notifikasi.jamPkl",
   jamEkstra: "notifikasi.jamEkstra",
   jamPerawatan: "notifikasi.jamPerawatan",
+  jamRekapBulanan: "notifikasi.jamRekapBulanan",
 } as const;
 
 const HARI = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
@@ -98,6 +100,7 @@ export async function jalankanPengingat(now = new Date(), opsi: OpsiPengingat = 
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamPkl], w.menit)) { void slot; await jalan(() => pengingatPkl(w, { kirim })); }
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamEkstra], w.menit)) { void slot; await jalan(() => pengingatEkstra(w, { kirim })); }
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamPerawatan], w.menit)) { void slot; await jalan(() => pengingatPerawatan(w, { kirim })); }
+  for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRekapBulanan], w.menit)) { void slot; await jalan(() => pengingatRekapBulanan(w, { kirim })); }
   if (w.hari === "SABTU") {
     for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRingkasanOrtu], w.menit)) await jalan(() => ringkasanMingguanOrtu(w, slot, kirim));
   }

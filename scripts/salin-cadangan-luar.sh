@@ -42,7 +42,7 @@ while IFS= read -r tujuan || [ -n "$tujuan" ]; do
     continue
   fi
   ok=1
-  for jenis in db uploads; do
+  for jenis in db uploads rahasia; do
     [ -d "$ROOT/$jenis" ] || continue
     echo "-- $jenis → $tujuan/$jenis"
     rclone copy "$ROOT/$jenis" "$tujuan/$jenis" --transfers 2 --retries 3 --low-level-retries 10 || ok=0

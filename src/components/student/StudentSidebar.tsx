@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown, Library, FileText, Vote } from "lucide-react";
+import { BookOpenText, LayoutDashboard, Printer, IdCard, UserCircle, LogOut, Globe, Briefcase, BookOpen, CheckSquare, FileQuestion, Trophy, ShieldAlert, BookOpenCheck, ChevronDown, Library, FileText, Vote } from "lucide-react";
 import { QrCode, MessagesSquare, MessageSquareHeart, Megaphone, ClipboardPen, BriefcaseBusiness, CircleHelp, DoorOpen } from "lucide-react";
 import { CalendarX2, Flag, Medal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -174,6 +174,7 @@ export function grupMenuSiswa({ hasPendingBiodata = false, isKelasAdmin = false,
         { href: "/kartu-identitas", label: "Kartu Identitas", icon: IdCard },
         { href: "/dashboard/student/profile", label: "Profil Saya", icon: UserCircle },
         { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp },
+        { href: "/dashboard/student/panduan", label: "Panduan", icon: BookOpenText },
       ],
     },
   ].map(g => ({ ...g, items: g.items.filter(item => "href" in item) })) as MenuGroup[];

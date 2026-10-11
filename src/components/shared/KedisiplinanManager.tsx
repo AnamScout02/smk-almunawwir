@@ -41,7 +41,7 @@ interface DaySlotItem {
   scheduleIds: string[]; className: string; subject: string; startTime: string; endTime: string; room: string | null;
   startPeriod: number | null; endPeriod: number | null;
   teacherId: string | null; teacherName: string; teacherNip: string;
-  status: string; hasTugas: boolean | null; notes: string; periodCount: number;
+  status: string; hasTugas: boolean | null; notes: string; tugasTitipan?: string; periodCount: number;
   /** Presensi harian dari TU (Presensi Pegawai) pada tanggal itu — PETUNJUK saja, tidak pernah
    *  mengisi status sendiri. Kalau TU sudah mencatat izin/sakit/dinas/cuti (artinya ada surat),
    *  petugas piket bisa menerapkannya ke semua jam guru itu sekali klik. */
@@ -55,7 +55,7 @@ function jamKeLabel(s: { startPeriod: number | null; endPeriod: number | null; s
 
 interface SlotItem {
   scheduleIds: string[]; className: string; subject: string; startTime: string; endTime: string; room: string | null;
-  status: string; hasTugas: boolean | null; notes: string; periodCount: number;
+  status: string; hasTugas: boolean | null; notes: string; tugasTitipan?: string; periodCount: number;
 }
 
 // Kehadiran petugas piket ITU SENDIRI (bukan absensi mengajar) — siapa yang terjadwal piket di
@@ -245,7 +245,7 @@ export default function KedisiplinanManager() {
   }
   useEffect(() => { loadDay(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [viewDate]);
 
-  function setDaySlotField(key: string, field: "status" | "hasTugas" | "notes", value: string | boolean | null) {
+  function setDaySlotField(key: string, field: "status" | "hasTugas" | "notes" | "tugasTitipan", value: string | boolean | null) {
     setDaySlots(prev => prev.map(s => {
       if (groupKey(s.scheduleIds) !== key) return s;
       const next = { ...s, [field]: value };
@@ -293,7 +293,7 @@ export default function KedisiplinanManager() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         date: viewDate,
-        records: changed.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
+        records: changed.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes, tugasTitipan: s.tugasTitipan ?? "" })),
       }),
     });
     setSavingDay(false);
@@ -383,7 +383,7 @@ export default function KedisiplinanManager() {
       .catch(() => setLoadingSlots(false));
   }, [modal, form.teacherId, form.date]);
 
-  function setSlotField(key: string, field: "status" | "hasTugas" | "notes", value: string | boolean | null) {
+  function setSlotField(key: string, field: "status" | "hasTugas" | "notes" | "tugasTitipan", value: string | boolean | null) {
     setSlots(prev => prev.map(s => {
       if (groupKey(s.scheduleIds) !== key) return s;
       const next = { ...s, [field]: value };
@@ -414,7 +414,7 @@ export default function KedisiplinanManager() {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date: form.date,
-            records: toSend.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes })),
+            records: toSend.map(s => ({ scheduleIds: s.scheduleIds, status: s.status, hasTugas: s.hasTugas, notes: s.notes, tugasTitipan: s.tugasTitipan ?? "" })),
           }),
         })
       : await fetch("/api/teacher/wakasek/penjamin-mutu/kedisiplinan", {
@@ -575,6 +575,10 @@ export default function KedisiplinanManager() {
                               options={TUGAS_OPTIONS}
                               buttonClassName="w-full flex items-center justify-between gap-1 text-xs rounded-lg border border-gray-200 px-2 py-1.5 disabled:opacity-40 disabled:bg-white bg-white cursor-pointer disabled:cursor-not-allowed" />
                           </div>
+                          {s.hasTugas === true && (
+                            <textarea value={s.tugasTitipan ?? ""} onChange={e => setDaySlotField(key, "tugasTitipan", e.target.value)} rows={2} maxLength={500}
+                              className="input-field text-xs py-1.5 w-full" placeholder="Tugas untuk kelas — tampil di HP siswa & TV kelas (mis. Kerjakan LKS hal. 24 no. 1–5)" />
+                          )}
                           <input value={s.notes} onChange={e => setDaySlotField(key, "notes", e.target.value)}
                             className="input-field text-xs py-1.5 w-full" placeholder="Catatan (opsional)" />
                         </div>
@@ -842,6 +846,10 @@ export default function KedisiplinanManager() {
                             onChange={v => setSlotField(key, "hasTugas", v === "" ? null : v === "ya")}
                             options={TUGAS_OPTIONS} />
                         </div>
+                        {s.hasTugas === true && (
+                          <textarea value={s.tugasTitipan ?? ""} onChange={e => setSlotField(key, "tugasTitipan", e.target.value)} rows={2} maxLength={500}
+                            className="input-field text-xs" placeholder="Tugas untuk kelas — tampil di HP siswa & TV kelas" />
+                        )}
                         <input value={s.notes} onChange={e => setSlotField(key, "notes", e.target.value)}
                           className="input-field text-xs" placeholder="Catatan (opsional)" />
                       </div>

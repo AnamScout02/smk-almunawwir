@@ -33,7 +33,7 @@ export async function GET() {
       id: d.id, nama: d.name, jenis: d.jenis, anggota: d._count.members, jadwalRutin: d.jadwalRutin, hariRutin: d.hariRutin, bukaDaftar: d.bukaDaftar, kuota: d.kuota, deskripsi: d.deskripsi,
       pendaftar: menunggu.find(m => m.extracurricularId === d.id)?._count._all ?? 0,
       pembinaAkun: jab ? [...jab.teachers.map(t => t.teacher.user.name), ...jab.staff.map(s => s.user.name)] : [],
-      pembinaLuar: d.pembinaNama, pembinaKontak: akses.kelola ? d.pembinaKontak : null, adaTautan: !!d.tokenPortalHash,
+      pembinaLuar: d.pembinaNama, pembinaKontak: akses.kelola ? d.pembinaKontak : null, adaTautan: !!d.tokenPortalHash, tautanDipakai: d.tokenPortalDipakai?.toISOString() ?? null,
       pertemuanBulanIni: bulan.length, persenHadir: entri.length ? Math.round((hadir / entri.length) * 100) : null,
       fotoBulanIni: bulan.reduce((n, j) => n + j.foto.length, 0), tanpaFoto: bulan.filter(j => j.foto.length === 0).length,
       terakhir: semua[0]?.date.toISOString().slice(0, 10) ?? null,

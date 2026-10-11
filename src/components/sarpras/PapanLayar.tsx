@@ -12,6 +12,8 @@ export interface IsiPapan {
   volumeBel: number | null;
   manualJudul: string | null; manualIsi: string | null; manualSaja: boolean; manualCara: string;
   namaLayar: string; ruang: string; kelas: string | null; namaSekolah: string; logo: string | null;
+  /** Judul panel jadwal untuk TV lab yang bersumber jam kejuruan satu jurusan (bukan "pemakaian ruang"). */
+  judulJadwal?: string | null;
   jadwal: { mapel: string; mulai: string; selesai: string; guru: string | null; ruang: string | null; kelas: string | null }[];
   pengumuman: { judul: string; isi: string }[];
   agenda: { judul: string; tanggal: string; jenis: string }[];
@@ -241,7 +243,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
     // Papan ruang guru yang DIBERI KELAS ikut menayangkan jadwal kelas itu — TV ruang guru kadang dipasangkan
     // ke satu kelas tertentu untuk dipantau. Tanpa kelas, panel ini memang tidak ada.
     ...(isi.jadwal.length ? [{
-      kunci: "jadwal", judul: isi.kelas ? `Jadwal hari ini — ${isi.kelas}` : `Pemakaian ${isi.ruang} hari ini`,
+      kunci: "jadwal", judul: isi.kelas ? `Jadwal hari ini — ${isi.kelas}` : isi.judulJadwal ?? `Pemakaian ${isi.ruang} hari ini`,
       kosong: "Tidak ada jadwal hari ini.",
       baris: jendela(isi.jadwal, j => j.selesai, kini, 10).isi.map(j => ({
         utama: !isi.kelas && j.kelas ? `${j.kelas} — ${j.mapel}` : j.mapel,
@@ -437,7 +439,7 @@ export default function PapanLayar({ isi }: { isi: IsiPapan }) {
             </div>
             ) : (
             <div className="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            <Panel judul={isi.kelas ? "Jadwal hari ini" : `Pemakaian ${isi.ruang} hari ini`}
+            <Panel judul={isi.kelas ? "Jadwal hari ini" : isi.judulJadwal ?? `Pemakaian ${isi.ruang} hari ini`}
               kosong={isi.kelas ? "Tidak ada jadwal hari ini." : `Tidak ada kelas terjadwal di ${isi.ruang} hari ini.`}>
               {isi.jadwal.length > 0 ? (
                 <ul className="space-y-1.5">

@@ -1,5 +1,6 @@
 "use client";
 import GrafSosiometri from "@/components/survei/GrafSosiometri";
+import SaranKelompok from "@/components/survei/SaranKelompok";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowUp, BarChart3, ClipboardPen, Download, Loader2, Lock, Pencil, Plus, Save, Send, Trash2, Unlock } from "lucide-react";
@@ -155,6 +156,7 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
                 {sosio && sosio.pilihan && sosio.pilihan.length > 0 && (
                   <div><p className="mb-2 text-sm font-semibold text-primary-900">Peta pertemanan kelas</p><GrafSosiometri siswa={sosio.siswa} pilihan={sosio.pilihan} /></div>
                 )}
+                {sosio && sosio.pilihan && sosio.pilihan.length > 0 && <SaranKelompok siswa={sosio.siswa} pilihan={sosio.pilihan} />}
                 {sosio && (
                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="min-w-0"><p className="mb-2 text-sm font-semibold text-primary-900">Berapa kali dipilih teman</p>

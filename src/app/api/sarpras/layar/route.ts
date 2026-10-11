@@ -21,7 +21,11 @@ export async function GET() {
       daftarLayar(),
       akses.kelola ? kandidatPerangkat() : Promise.resolve([]),
       daftarRuang().catch(() => [] as string[]),
-      prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }], select: { id: true, name: true } }).catch(() => []),
+      // Pilihan sumber jadwal papan: jam kejuruan satu JURUSAN (untuk TV lab, nilai "jurusan:<id>") lalu kelas satu per satu.
+      Promise.all([
+        prisma.major.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, code: true } }).catch(() => []),
+        prisma.class.findMany({ orderBy: [{ grade: "asc" }, { name: "asc" }], select: { id: true, name: true } }).catch(() => []),
+      ]).then(([j, k]) => [...j.map(x => ({ id: `jurusan:${x.id}`, name: `Lab / ruang praktik ${x.code} — jam kejuruan semua kelas ${x.code}` })), ...k]),
     ]);
     // Status layar hanya untuk TV yang terlihat hidup di jaringan — sekaligus, masing-masing dibatasi ±6 detik.
     const layar = await Promise.all(baris.map(b => (b.status !== "OFFLINE" && b.ip ? statusLayar(b.ip).catch(() => null) : Promise.resolve(null))));
@@ -82,7 +86,8 @@ export async function PUT(req: NextRequest) {
         // "HH:MM" atau kosong. Jadwal hanya MEMATIKAN — menyalakan tidak mungkin lewat WiFi (layar-jadwal.ts).
         jadwalMati: b.jadwalMati === undefined ? lama.jadwalMati : (/^\d{1,2}:\d{2}$/.test(b.jadwalMati.trim()) ? b.jadwalMati.trim() : null),
         jadwalNyala: b.jadwalNyala === undefined ? lama.jadwalNyala : (/^\d{1,2}:\d{2}$/.test(b.jadwalNyala.trim()) ? b.jadwalNyala.trim() : null),
-        kelasId: b.kelasId === undefined ? lama.kelasId : (b.kelasId || null),
+        kelasId: b.kelasId === undefined ? lama.kelasId : (b.kelasId && !b.kelasId.startsWith("jurusan:") ? b.kelasId : null),
+        jurusanId: b.kelasId === undefined ? lama.jurusanId : (b.kelasId?.startsWith("jurusan:") ? b.kelasId.slice(8) : null),
         // Pengumuman yang diketik kantor — begitu terisi, papan mengganti jam besar dengan pengumuman ini.
         papanJudul: b.papanJudul === undefined ? lama.papanJudul : (b.papanJudul.trim() || null),
         papanIsi: b.papanIsi === undefined ? lama.papanIsi : (b.papanIsi.trim() || null),

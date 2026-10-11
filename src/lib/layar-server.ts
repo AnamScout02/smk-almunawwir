@@ -140,7 +140,7 @@ export async function daftarLayar(): Promise<{ baris: BarisLayar[]; routerOk: bo
       trafikMb: h ? Math.round((Number(h["bytes-in"] ?? 0) + Number(h["bytes-out"] ?? 0)) / 104857.6) / 10 : null,
       nyalaDetik: detik(h?.uptime),
       macAcak: mungkinMacAcak(mac),
-      catatan: l.catatan, jadwalMati: l.jadwalMati, jadwalNyala: l.jadwalNyala, token: l.token, kelasId: l.kelasId, papanJudul: l.papanJudul, papanIsi: l.papanIsi, papanOtomatis: l.papanOtomatis, papanQr: l.papanQr, papanJenis: l.papanJenis, papanGiliran: l.papanGiliran, volumeBel: l.volumeBel, papanCara: l.papanCara, ipTetap: l.ipTetap,
+      catatan: l.catatan, jadwalMati: l.jadwalMati, jadwalNyala: l.jadwalNyala, token: l.token, kelasId: l.jurusanId ? `jurusan:${l.jurusanId}` : l.kelasId, papanJudul: l.papanJudul, papanIsi: l.papanIsi, papanOtomatis: l.papanOtomatis, papanQr: l.papanQr, papanJenis: l.papanJenis, papanGiliran: l.papanGiliran, volumeBel: l.volumeBel, papanCara: l.papanCara, ipTetap: l.ipTetap,
       belMode: modeBelBerlaku(l), belModeSampai: modeBelBerlaku(l) === "NORMAL" ? null : l.belModeSampai?.toISOString() ?? null,
       perangkatModel: l.perangkatModel, aplikasiDepan: l.aplikasiDepan, terakhirDenyut: l.terakhirDenyut,
     };

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Printer, CalendarDays, ShieldAlert, CalendarClock, Bell, UserCircle, LogOut, Globe, ChevronDown, FileText, GraduationCap, CalendarX, ClipboardPen, HeartPulse, CircleHelp, MessagesSquare, LayoutGrid, Briefcase } from "lucide-react";
-import { CalendarX2, Flag } from "lucide-react";
+import { BookOpenText, CalendarX2, Flag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/actions/auth";
@@ -126,6 +126,7 @@ const GRUP_ORTU: MenuGroup[] = [
         { href: "/dashboard/parent/pengumuman", label: "Pengumuman", icon: Bell },
         { href: "/dashboard/parent/survei", label: "Survei & Angket", icon: ClipboardPen },
         { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp },
+        { href: "/dashboard/parent/panduan", label: "Panduan", icon: BookOpenText },
       ],
     },
     {

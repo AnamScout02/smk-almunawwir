@@ -29,7 +29,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export async function susunBukuWali(classId: string) {
   const semester = semesterBerjalan(), r = rentangSemester(semester);
-  const kelas = await prisma.class.findUnique({ where: { id: classId }, select: { id: true, name: true, grade: true, homeroom: { select: { user: { select: { name: true } } } } } });
+  const kelas = await prisma.class.findUnique({ where: { id: classId }, select: { id: true, name: true, grade: true, homeroom: { select: { userId: true, user: { select: { name: true } } } } } });
   if (!kelas) return null;
   const siswa = await prisma.student.findMany({
     where: { classId, studentStatus: "AKTIF" }, orderBy: { user: { name: "asc" } },
@@ -73,7 +73,7 @@ export async function susunBukuWali(classId: string) {
       risiko: rs ? { tingkat: rs.tingkat, alasan: rs.alasan } : null,
     });
   }
-  return { kelas: { id: kelas.id, nama: kelas.name, wali: kelas.homeroom?.user.name ?? null }, semester, baris };
+  return { kelas: { id: kelas.id, nama: kelas.name, wali: kelas.homeroom?.user.name ?? null, waliUserId: kelas.homeroom?.userId ?? null }, semester, baris };
 }
 
 /** Kelas yang boleh dibuka: wali kelas → kelas walinya; Admin → semua kelas yang punya siswa aktif. */

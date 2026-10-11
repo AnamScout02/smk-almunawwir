@@ -7,6 +7,7 @@ import { sebutanSaya } from "@/lib/surat-berkas";
 import { mutasiTerbaru } from "@/lib/mutasi-siswa";
 import { jalankanPemeriksaan } from "@/lib/pemeriksa-data";
 import { kelompokkanSekolah } from "@/lib/nama-sekolah";
+import { siswaMenghilang } from "@/lib/siswa-menghilang";
 
 /** `href` = tautan LANGSUNG ke data butir itu (10 Okt 2026, permintaan user: klik butir harus membuka anak/suratnya, bukan
  *  sekadar halaman menunya). Kosong = pakai tautan bagian. Butir baru sebisa mungkin mengisinya. */
@@ -172,5 +173,11 @@ export async function susunMejaKerja(session: { role: string; email: string; use
   bagian.push({ kunci: "berkas-siswa", judul: "Berkas siswa belum dipindai", href: "/dashboard/admin/students", aksi: "Kelola Siswa", jumlah: berkasKurang.length,
     butir: berkasKurang.sort((x, y) => x.kelas.localeCompare(y.kelas, "id", { numeric: true }) || x.nama.localeCompare(y.nama, "id"))
       .map(x => ({ href: `/dashboard/admin/students/${x.id}#berkas`, id: x.id, judul: x.nama, ket: `${x.kelas} · belum ada: ${x.kurang.map(labelBerkasSiswa).join(", ")}`, waktu: null })) });
+  // SISWA "AKTIF" YANG DIDUGA SUDAH TIDAK BERSEKOLAH — sumber `siswaMenghilang`; ditindak lewat Mutasi Siswa (Keluar).
+  const hilang = await pegang(siswaMenghilang(), []);
+  const tglId = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  bagian.push({ kunci: "siswa-menghilang", judul: "Siswa aktif yang diduga sudah tidak bersekolah", href: "/dashboard/admin/mutasi-siswa", aksi: "Mutasi Siswa", jumlah: hilang.length,
+    butir: hilang.map(x => ({ href: `/dashboard/admin/mutasi-siswa?keluar=${x.id}`, id: x.id, judul: x.nama, telat: true, waktu: x.terakhirHadir,
+      ket: `${x.kelas} · tidak hadir ${x.alpha} dari ${x.hari} hari absensi terakhir · ${x.terakhirHadir ? `terakhir hadir ${tglId(x.terakhirHadir)}` : "belum pernah tercatat hadir"} — pastikan dulu ke wali kelas` })) });
   return bagian;
 }

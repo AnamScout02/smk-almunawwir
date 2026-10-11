@@ -8,6 +8,7 @@ import { getWakilKepalaAgenda } from "@/lib/agenda";
 import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { cekLibur } from "@/lib/hari-libur";
 import AgendaCalendar from "@/components/shared/AgendaCalendar";
+import { jamKosongKelas } from "@/lib/jam-kosong";
 import JadwalHariIni from "@/components/shared/JadwalHariIni";
 import JadwalMingguan from "@/components/shared/JadwalMingguan";
 import Panel, { PanelKosong, DaftarPengumuman } from "@/components/shared/Panel";
@@ -119,6 +120,8 @@ export default async function StudentDashboard() {
     .map(b => ({ id: b.first.id, mulai: b.first.startTime, selesai: b.last.endTime, judul: b.first.subject, keterangan: b.first.teacher?.user.name ?? undefined }));
   const jadwalMinggu = DAYS.map(kode => ({ kode, label: DAY_LABEL[kode], slot: slotHari(kode).map(s => ({ ...s, keterangan: undefined })) })).filter(h => h.slot.length);
   const slotHariIni = hariIni === "MINGGU" || libur ? [] : slotHari(hariIni);
+  // Jam kosong hari ini dari catatan guru piket (src/lib/jam-kosong.ts) — hanya "guru berhalangan" + tugas titipannya.
+  const jamKosong = student?.classId && !libur ? await jamKosongKelas(student.classId, tanggalWib) : [];
   const kosongHariIni = libur ? `Hari ini libur — ${libur.nama}.`
     : hariIni === "MINGGU" ? "Hari Minggu, selamat beristirahat."
     : student?.classId ? "Tidak ada jadwal pelajaran hari ini." : "Kamu belum terdaftar di kelas mana pun.";
@@ -170,6 +173,16 @@ export default async function StudentDashboard() {
         <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
           <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-7">
             <Panel judul="Jadwal Hari Ini" ikon={<CalendarClock />} keterangan={DAY_LABEL[hariIni] ?? "Minggu"}>
+              {jamKosong.length > 0 && (
+                <ul className="mb-4 space-y-2">
+                  {jamKosong.map(j => (
+                    <li key={`${j.mulai}-${j.mapel}`} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      <strong className="angka">{j.mulai}–{j.selesai}</strong> · {j.mapel}: guru berhalangan hadir.
+                      {j.tugas ? <span className="mt-0.5 block text-amber-900"><strong>Tugas:</strong> {j.tugas}</span> : <span className="mt-0.5 block">Belum ada tugas titipan — tetap di kelas dan tunggu arahan guru piket.</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <JadwalHariIni slot={slotHariIni} kosong={kosongHariIni} />
               {piketHariIni.length > 0 && !libur && (
                 <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${sayaPiket ? "border-amber-200 bg-amber-50 text-amber-800" : "border-gray-100 bg-gray-50 text-gray-600"}`}>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { JABATAN_PANTAU_GURU } from "@/lib/pantau-guru-akses";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { BookUser, LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal, MapPinned, Merge } from "lucide-react";
+import { ChartNoAxesCombined, BookOpenText, BookUser, LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal, MapPinned, Merge } from "lucide-react";
 import { JABATAN_PETA } from "@/lib/peta-akses";
 import { JABATAN_EVENT } from "@/lib/event-label";
 import { Siren, Calculator, Forward } from "lucide-react";
@@ -322,6 +322,8 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart },
         { href: "/dashboard/teacher/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck },
         { href: "/dashboard/teacher/rapor-kinerja", label: pantauGuru ? "Rapor Kinerja Guru" : "Rapor Kinerja Saya", icon: Award },
+        ...(pantauGuru ? [{ href: "/dashboard/teacher/rekap-bulanan", label: "Rekap Bulanan Sekolah", icon: CalendarRange }] : []),
+        ...(pantauGuru || kesiswaanBkAccess ? [{ href: "/dashboard/teacher/analitik", label: "Analitik Data", icon: ChartNoAxesCombined }] : []),
         ...(pantauGuru ? [{ href: "/dashboard/teacher/bukti-akreditasi", label: "Bukti Akreditasi", icon: BadgeCheck }] : []),
         { href: "/dashboard/teacher/kegiatan", label: "Presensi Kegiatan", icon: CalendarCheck },
         { href: "/dashboard/teacher/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2 },
@@ -392,6 +394,7 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/biodata", label: "Biodata Saya", icon: FileUser },
         { href: "/dashboard/teacher/profile", label: "Profil Saya", icon: UserCircle },
         { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp },
+        { href: "/dashboard/teacher/panduan", label: "Panduan", icon: BookOpenText },
       ],
     },
   ];

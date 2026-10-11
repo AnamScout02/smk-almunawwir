@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  *  itu (tanpa NIS, alamat, kontak). Hari lampau tidak bisa diubah dari sini — itu wewenang koordinator. */
 async function ekskulDari(token: string) {
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
-  return prisma.extracurricular.findFirst({ where: { tokenPortalHash: hashToken(token) }, select: { id: true, name: true, jenis: true, jadwalRutin: true } });
+  return prisma.extracurricular.findFirst({ where: { tokenPortalHash: hashToken(token) }, select: { id: true, name: true, jenis: true, jadwalRutin: true, tokenPortalDipakai: true } });
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -21,6 +21,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   const e = await ekskulDari((await params).token);
   if (!e) return Response.json({ error: "Tautan tidak berlaku. Minta tautan baru ke Koordinator Ekstrakurikuler sekolah." }, { status: 404 });
   const hariIni = hariWibIso(), { awal, akhir } = rentangHari(hariIni);
+  // Jejak pemakaian tautan — paling sering sejam sekali supaya membuka portal tidak menulis ke database tiap kali.
+  if (!e.tokenPortalDipakai || Date.now() - e.tokenPortalDipakai.getTime() > 3600_000) await prisma.extracurricular.update({ where: { id: e.id }, data: { tokenPortalDipakai: new Date() } }).catch(() => null);
   const pendaftar = await pendaftarMenunggu([e.id]);
   const [anggota, jurnal, riwayat, s] = await Promise.all([
     prisma.extracurricularMember.findMany({ where: { extracurricularId: e.id, student: { studentStatus: "AKTIF" } }, orderBy: { student: { user: { name: "asc" } } }, select: { studentId: true, role: true, student: { select: { user: { select: { name: true } }, class: { select: { name: true } } } } } }),

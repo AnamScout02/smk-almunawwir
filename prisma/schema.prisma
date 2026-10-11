@@ -44,6 +44,9 @@ model User {
   /// TANDA TANGAN (5 Okt 2026, src/lib/ttd.ts): nama berkas PNG transparan di public/uploads/rahasia/ttd — dibuka
   /// hanya lewat rute berizin / disisipkan server ke dokumen cetak. Kosong = belum punya TTD.
   ttdBerkas         String?
+  /// Masuk dengan SANDI AWAL bersama (11 Okt 2026): ditandai saat login, dilepas saat sandi diganti. Selama menyala,
+  /// portal menampilkan jendela ganti sandi yang tidak bisa ditutup (`GantiSandiWajib`).
+  wajibGantiSandi Boolean @default(false)
   ttdDiperbarui     DateTime?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
@@ -160,6 +163,9 @@ model TeacherScheduleAttendance {
   date        DateTime
   status      String // HADIR | TERLAMBAT | IZIN | SAKIT | ALPHA
   hasTugas    Boolean? // guru piket titipkan tugas ke kelas atau tidak — cuma relevan saat status != HADIR, null = tidak diisi/tidak relevan
+  /// Isi tugas titipan untuk kelas (11 Okt 2026) — TERLIHAT SISWA kelas itu di HP dan papan TV kelasnya. Terpisah dari
+  /// `notes` (catatan petugas piket tentang gurunya, tidak pernah ditampilkan ke siswa).
+  tugasTitipan String?
   checkInTime String?
   notes       String?
   createdAt   DateTime @default(now())
@@ -374,6 +380,9 @@ model Extracurricular {
   jadwalRutin     String?
   /// Hash tautan portal pembina (/portal-ekstra/<token>) — token asli hanya tampil sekali saat dibuat (pola portal DUDI).
   tokenPortalHash String?
+  /// Kapan tautan pembina terakhir DIBUKA (dicatat paling sering sejam sekali) — supaya koordinator tahu tautan mana
+  /// yang masih dipakai dan mana yang perlu dicabut. Dikosongkan saat tautan dibuat ulang/dicabut.
+  tokenPortalDipakai DateTime?
   /// Hari latihan rutin (0 = Minggu … 6 = Sabtu) — dipakai pengingat "latihan lewat tanpa absensi" (10 Okt 2026).
   /// `jadwalRutin` tetap teks bebas untuk ditampilkan (jam & tempat).
   hariRutin       Int[]   @default([])
@@ -3705,6 +3714,10 @@ model Layar {
   /// JAM_PRESENSI untuk TV siswa (muncul & hilang sendiri mengikuti jam buka–tutup absen, sehingga jendela
   /// risikonya sempit bila tautan layar bocor). SELALU untuk TV ruang guru — jadwal guru tidak semuanya pagi,
   /// jadi QR-nya harus tersedia sepanjang hari (keputusan user 25 Sep 2026).
+  /// TV LAB / ruang bersama satu jurusan (11 Okt 2026): tampilkan JAM KEJURUAN semua kelas jurusan ini hari itu.
+  /// Dipakai karena `Schedule.room` kosong di seluruh jadwal, sehingga jadwal per RUANG tidak punya data. Dipilih
+  /// petugas; bila terisi, `kelasId` dikosongkan (satu TV satu sumber jadwal).
+  jurusanId       String?
   papanQr         String    @default("MATI")
   /// Jenis papan: UMUM (TV kelas/koridor — jadwal, pengumuman, agenda, bel) atau GURU (TV ruang guru &
   /// ruang rapat). Ruang rapat adalah tempat guru berkumpul dan TIDAK punya jadwal pelajaran, jadi papannya
@@ -4170,4 +4183,30 @@ model GalatServer {
   diberitahuAt DateTime?
 
   @@index([terakhir])
+}
+
+
+/// STATISTIK PEMAKAIAN MENU (11 Okt 2026) — hitungan pembukaan halaman per hari × peran × jalur (id di alamat sudah
+/// diganti ":id"). Tidak menyimpan siapa membuka apa per kunjungan; `PemakaianOrang` hanya mencatat SEKALI per bulan bahwa
+/// satu akun pernah membuka satu jalur, supaya "berapa orang yang memakai menu ini" bisa dihitung.
+model PemakaianMenu {
+  id      String   @id @default(cuid())
+  tanggal DateTime @db.Date
+  peran   String
+  jalur   String
+  jumlah  Int      @default(0)
+
+  @@unique([tanggal, peran, jalur])
+  @@index([tanggal])
+}
+
+model PemakaianOrang {
+  id     String @id @default(cuid())
+  bulan  String // YYYY-MM (WIB)
+  peran  String
+  jalur  String
+  userId String
+
+  @@unique([bulan, jalur, userId])
+  @@index([bulan, peran])
 }

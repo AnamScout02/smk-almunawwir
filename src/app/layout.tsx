@@ -7,6 +7,8 @@ import ServiceWorkerRegister from "@/components/shared/ServiceWorkerRegister";
 import InstallPwaPrompt from "@/components/shared/InstallPwaPrompt";
 import PitaPerbaruiAplikasi from "@/components/shared/PitaPerbaruiAplikasi";
 import TawaranPasskey from "@/components/shared/TawaranPasskey";
+import GantiSandiWajib from "@/components/shared/GantiSandiWajib";
+import PencatatPemakaian from "@/components/shared/PencatatPemakaian";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -97,6 +99,8 @@ export default function RootLayout({
           <InstallPwaPrompt />
           <PitaPerbaruiAplikasi />
           <TawaranPasskey />
+          <GantiSandiWajib />
+          <PencatatPemakaian />
         </Providers>
       </body>
     </html>

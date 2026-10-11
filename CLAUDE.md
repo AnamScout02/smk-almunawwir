@@ -2648,3 +2648,116 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        kosong di seluruh jadwal (0 dari 1.536 baris, 11 Okt 2026) — jadwal per ruang (#81) tidak punya data untuk dibaca.
      - **Tangkapan layar halaman panjang**: sidebar `sticky h-screen` hanya setinggi satu layar, jadi `fullPage` membuatnya
        tampak "terpotong" (laporan user: "kenapa melebihi navbar"). Potret dengan tinggi viewport = tinggi halaman.
+
+166. **Ruang per mapel, lembar siswa, kelompok sosiometri, kartu orang tua, login nomor HP (11 Oktober 2026).**
+     - **Ruang per Mapel** (`RuangJadwalManager`, `/dashboard/admin/schedules/ruang` &
+       `/dashboard/teacher/wakasek/kurikulum/jadwal/ruang`, API `/api/admin/schedules/ruang`, `assertKurikulum`):
+       `Schedule.room` diisi SEKALI per kelas × mapel dan berlaku untuk semua jamnya (BLOK & NONBLOK) — mengisi per baris
+       jadwal (1.500+) tidak masuk akal. Ruang bebas diketik (saran dari `daftarRuang`); "Terapkan ke yang tampil" mengisi
+       hasil saringan sekaligus. Dipakai papan TV ruang (#81), `cekBentrokRuang` (#47), dan daftar ruang.
+     - **TV lab punya tiga sumber jadwal**: kelas (`kelasId`), jam kejuruan satu jurusan (`Layar.jurusanId`, hanya mapel
+       berawalan "Dasar Program Keahlian"/"Konsentrasi Keahlian" — kategori "kejuruan" di Data Mapel juga memuat
+       Informatika, Bahasa Inggris, PKK), atau ruang (`Schedule.room`). Mode jurusan menjawab "siapa yang jam kejuruan",
+       BUKAN "siapa yang ada di lab" (beberapa kelas bisa bersamaan) — yang pasti hanya mode ruang setelah ruang diisi.
+     - **Lembar Siswa** (`BukuWaliCetak`, `…/buku-wali/cetak?kelas=&siswa=`): satu A4 per siswa dari `susunBukuWali`,
+       untuk diperlihatkan ke orang tua — karena itu JUMLAH catatan BK tidak ikut dicetak. TTD wali kelas = TTD pribadi.
+     - **Usulan kelompok belajar** (`sarankanKelompok`, src/lib/kelompok-sosiometri.ts, murni & deterministik): siswa
+       terpopuler disebar satu per kelompok, sisanya ditempatkan mulai dari yang paling sedikit dipilih ke kelompok yang
+       memuat pilihannya. Tidak disimpan; usulan saja.
+     - **Orang tua masuk dengan NOMOR HP**: `login()` menerjemahkan isian angka (9–15 digit) ke
+       `ortu<62…>@smkalmunawwir.sch.id` SEBELUM pembatas laju per akun, jadi batas 5 percobaan/5 menit tetap berlaku.
+       Isian di halaman Masuk kini `type="text"` dan menerima `?akun=` (dibaca setelah hydrate). Jangan dikembalikan ke
+       `type="email"` — nomor HP ditolak peramban.
+     - **Kartu Aktivasi Orang Tua** (`KartuOrtuCetak`, `/dashboard/admin/parents/kartu` & `/dashboard/teacher/buku-wali/kartu-ortu`):
+       8 kartu per A4, QR → `/login?akun=<nomor>`. Sandi awal HANYA dicetak untuk akun yang belum punya catatan sesi; akun
+       yang pernah masuk diarahkan memakai sandinya sendiri.
+     - **Uji pemulihan cadangan (11 Okt 2026)**: dump terbaru diunduh DARI Google Drive, hash sama dengan salinan lokal,
+       dipulihkan ke database sementara dalam 14 detik, 195 tabel & jumlah baris 12 tabel inti cocok; arsip unggahan utuh
+       (1.463 berkas = isi volume). **Yang TIDAK ikut cadangan**: `.env` (SESSION_SECRET — kunci pembuka sandi router,
+       kunci Dapodik, token Telegram yang terenkripsi; kunci VAPID) dan kunci rilis APK di `/root/.cache/android-ujian`.
+     - **Temuan sapuan keamanan yang belum ditutup**: pembatas laju per IP membaca `X-Forwarded-For` mentah, sehingga lewat
+       `:3000` langsung (tanpa Caddy) bisa dipalsukan — pembatas per AKUN pada login tetap menahan; dan semua akun baru
+       (612 orang tua, siswa) memakai sandi awal yang sama tanpa kewajiban ganti saat masuk pertama.
+
+167. **Cadangan rahasia, sandi awal, jam kosong, rekap bulanan, statistik pemakaian, panduan (11 Oktober 2026).**
+     - **Cadangan rahasia** (`scripts/cadang-rahasia.sh`, cron 19.20, lalu ikut `salin-cadangan-luar.sh` ke Drive):
+       `.env`, kunci rilis APK, kunci ADB, Caddyfile → satu arsip gpg AES-256. Sandinya `/root/kunci-cadangan/sandi-arsip.txt`
+       (di luar repo) — arsip di Drive tak berguna bila sandi itu hanya ada di server. Skrip membuka ulang arsipnya sebelum
+       menyatakan berhasil. **Jangan menjalankan `docker run`/`docker inspect` saat build berjalan**: daemon tertahan
+       menit-menitan dan meninggalkan kontainer "Dead" (terjadi 11 Okt 2026); alamat DB `172.18.0.2` dipakai langsung.
+     - **Wajib ganti sandi awal** (`User.wajibGantiSandi`): ditandai DI `login()` saat sandi yang dipakai = `DEFAULT_PASSWORD`
+       (hanya di situ sandi polosnya diketahui), dilepas `POST /api/profile/password` (yang juga menolak sandi baru = sandi
+       awal dan tidak meminta sandi lama selama tanda menyala). Jendela `GantiSandiWajib` (layout akar) tidak bisa ditutup,
+       tetapi SENGAJA tidak tampil di `/ujian-online` dan tidak untuk admin yang "Masuk Sebagai". Ini mempersempit masa
+       sandi awal berlaku, bukan pengaman mutlak — orang lain yang lebih dulu masuk dengan sandi awal tetap bisa.
+     - **Jam kosong ke kelas** (`TeacherScheduleAttendance.tugasTitipan`, src/lib/jam-kosong.ts): isian tugas muncul di Buku
+       Piket saat "ada tugas" dipilih; tersimpan hanya bila guru tidak hadir. Tampil di dashboard siswa dan papan TV KELAS
+       itu (nama guru diganti "Guru berhalangan — tugas: …"); kabar ke siswa kelas itu sekali per blok per hari. **Alasan
+       ketidakhadiran guru dan `notes` petugas piket tidak pernah sampai ke siswa** — itu sebabnya tugas punya kolom sendiri.
+     - **Rekap Bulanan Sekolah** (`susunRekapKepsek`, `/dashboard/{admin,teacher}/rekap-bulanan`, `JABATAN_PANTAU_GURU`):
+       presensi pegawai, guru masuk kelas (piket), jurnal per PERTEMUAN, absensi siswa, dan angka surat yang SAMA dengan
+       Laporan Bulanan TU. Kabar ke Kepala Sekolah pada hari sekolah pertama tiap bulan (`notifikasi.jamRekapBulanan`).
+     - **Statistik Pemakaian** (`PemakaianMenu` per hari × peran × jalur, `PemakaianOrang` sekali per bulan per akun;
+       `PencatatPemakaian` di layout akar → `POST /api/pemakaian`; halaman `/dashboard/admin/statistik-pemakaian`): jalur
+       dicocokkan ke href menu terpanjang yang menjadi awalannya; daftar menu dari pembangun sidebar (guru: semua jabatan
+       dianggap ada). "Belum pernah dibuka" = sejak pencatatan mulai. Halaman ujian & layar dinding tidak dicatat.
+     - **Panduan** (`/dashboard/{admin,teacher,student,parent}/panduan`): `Menu*` di MenuPortal.tsx menerima
+       `sebagai="panduan"` → grup menu yang SAMA dengan sidebar dirender `PanduanLengkap`. Keterangan per NAMA menu & alur
+       kerja per peran di `src/lib/panduan-fitur.ts` (`KHUSUS` untuk nama yang artinya beda per portal). **Menu baru =
+       tambahkan satu baris keterangan di sana.**
+     - **Tautan pembina ekskul**: `Extracurricular.tokenPortalDipakai` (dicatat paling sering sejam sekali) tampil di
+       Pembina & Tautan sebagai "terakhir dibuka".
+     - **Jalur `:3000` dari internet BELUM ditutup** — menunggu hitungan pemakaian aturan NAT pada jam sekolah.
+
+168. **Pemecah Jadwal & saran guru pengganti (11 Oktober 2026) — `src/lib/pemecah-jadwal.ts` (murni) + `-server.ts`.**
+     Halaman `…/schedules/pemecah` (admin) & `…/wakasek/kurikulum/jadwal/pemecah` (`PemecahJadwalManager`, `assertKurikulum`).
+     - **Rantai geser, bukan pengisi rakus**: untuk menaruh satu jam, pelajaran yang menghalangi boleh dipindah, dan yang
+       itu boleh menggeser lagi (kedalaman 0 → 1 → 2, lacak-balik, anggaran simpul). Satu unit = satu JAM pelajaran
+       (`Sel`, id `<rowId>#<pi>`); baris jadwal multi-jam dipecah jadi sel saat dimuat. Aturan = pembangkit lama: minggu
+       A/B/SEMUA, rangkap guru hanya untuk mapel sama sampai `maxSharedTeacher`, jam ber-Preferensi (`tetap`) tak digeser.
+     - **Selalu USULAN**: `susunUsulan` tidak menulis; `terapkan` memeriksa ulang di server (`periksaUsulan`: hasil akhir
+       tidak boleh menambah kelas dobel/bentrok guru, jam BARU harus milik penugasan yang memang kurang) dan ditolak 423
+       bila jadwal dikunci.
+     - **Menerapkan TIDAK menghapus baris jadwal**: `TeacherScheduleAttendance` menggantung pada `Schedule.id` dengan
+       hapus-berantai — hapus-lalu-buat-ulang (cara pembangkit lama) menghapus riwayat piket. Baris satu jam dipindah di
+       tempat; baris multi-jam dipendekkan/dibelah. Baris asal dicari dari ISINYA (kelas, mapel, hari, minggu, jam), bukan
+       id, karena langkah sebelumnya bisa sudah membelahnya.
+     - Diuji pada SALINAN database (bukan yang hidup): 4 jam yang belum terjadwal + 60 bentrok guru → 0 dan 0 dengan 96
+       langkah, 376 catatan piket utuh. Menguji penerapan: `createdb uji_jadwal` + pg_dump|pg_restore, arahkan
+       `DATABASE_URL` ke sana, dan PASTIKAN `current_database()` sebelum menulis.
+     - 60 bentrok itu kebanyakan kelas XII × X/XI yang dulu sengaja dibiarkan (XII PKL) — layar memilih per bentrok,
+       tidak mengurai otomatis. Menyusun ulang dari nol tetap lewat pembangkit lama.
+     - **Guru pengganti** (`saranPengganti`, tab kedua, juga untuk petugas piket): guru berhalangan menurut Presensi
+       Pegawai tanggal itu + pilihan petugas → calon = guru yang kosong sepanjang blok; urutan mapel sama → kelas sama →
+       ada jam lain hari itu → jam paling sedikit. Usulan saja; tidak menetapkan atau mengabari siapa pun.
+
+169. **Analitik Data (11 Oktober 2026) — `src/lib/analitik-data.ts`, `/dashboard/{admin,teacher}/analitik?bagian=`.**
+     Tiga pembaca atas data yang sudah ada, semuanya ATURAN yang bisa dijelaskan dan hasilnya DAFTAR UNTUK DIPERIKSA:
+     - **Kejanggalan nilai**: satu pertemuan bernilai seragam (≥8 siswa), nilai di luar 0–100, nilai siswa menyimpang ≥30
+       dari nilai-nilainya sebelumnya, nilai harian vs ujian pada mapel yang sama (siswa ≥35, kelas ≥25).
+     - **Pola ketidakhadiran**: siswa menumpuk di satu hari, siswa sering tidak ada di satu mapel (jurnal guru), guru
+       (per TANGGAL tidak masuk, bukan per jam — satu hari absen dengan empat jam bukan pola), kelas naik 2 pekan
+       terakhir / menjelang Kegiatan Ujian.
+     - **Proyeksi kenaikan — BUKAN model terlatih**: sekolah belum punya riwayat hasil untuk melatih/menguji, jadi yang
+       dihitung adalah "bila pola 4 pekan terakhir berlanjut sampai akhir semester" terhadap batas yang DITETAPKAN
+       SEKOLAH (`akademik.kriteriaNaik`: minHadir, maksAlpha, maksDibawahKkm; bawaan hanya titik awal dan layar
+       menyebutnya). Faktor disebut satu per satu dengan angkanya. Jangan diberi nama "prediksi AI".
+     - Tiap pemeriksaan punya jumlah data minimum; di bawah itu diam. Akses: pimpinan (`bolehPantauGuru`) semua bagian;
+       Wakil Kepala Kesiswaan & Guru BK hanya bagian siswa (tanpa kejanggalan nilai & pola guru).
+     - Peringatan Dini (#32) tetap daftar kerja harian 30 hari; halaman ini melihat sampai akhir semester.
+
+170. **Siswa "aktif" yang diduga sudah tidak bersekolah, SSH publik, dan pengukur jalur :3000 (11 Oktober 2026).**
+     - **`siswaMenghilang`** (src/lib/siswa-menghilang.ts) → bagian Meja Kerja TU "Siswa aktif yang diduga sudah tidak
+       bersekolah": pada 20 hari terakhir yang KELASNYA punya absensi, tidak sekali pun HADIR dan alpha/tanpa catatan ≥15
+       hari. Kelas dengan absensi <15 hari tidak dinilai (mis. sedang PKL). Tiap butir menaut ke
+       `/dashboard/admin/mutasi-siswa?keluar=<studentId>` (formulir Pindah/Keluar terbuka dengan siswa itu terpilih, lewat
+       `GET /api/admin/mutasi-siswa?siswa=<id>`). Status TIDAK pernah diubah otomatis — petugas memastikan ke wali kelas dulu.
+     - **SSH server dari internet dibatasi di ROUTER**: aturan dst-nat port 2233 kini ber-`src-address-list=SSH-SITUS-IZIN`
+       (blok ISP sekolah 103.194.175.0/24 + jaringan sekolah). `sshd` sudah kunci-saja sejak awal. Mengubah/melepas:
+       `node /root/pantau/ssh-batasi.mjs [buka]`. Aturan srcnat "Masquerade SSH SMK Almunawwir" membuat SEMUA sambungan SSH
+       tampak dari 172.15.0.1 di log server — asal sebenarnya hanya terlihat di tabel sambungan router.
+       **Pengelola masuk dari luar sekolah (103.194.175.x), bukan lewat Tailscale** (tailnet hanya berisi server ini) —
+       jangan menutup aturan itu sepenuhnya sebelum laptop pengelola bergabung ke tailnet dan `ssh root@100.102.232.53` terbukti.
+     - `/root/pantau/ukur-3000.mjs` (cron 5 menit, hanya 12–17 Okt 2026 jam 06–17 WIB) mencatat pemakaian jalur publik
+       :3000 ke `/root/pantau/jalur-3000.log`. Hapus baris cron-nya setelah keputusan diambil.
+     - `/tmp` (termasuk scratchpad & alat uji) HILANG saat server hidup ulang; skrip yang harus bertahan taruh di `/root/pantau`.

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
-import {
+import { BookOpenText,
   LayoutDashboard, Users, School, UserCog, Briefcase,
   BookOpen, Globe, LogOut, Calendar, CalendarCheck, Bell, BarChart2, GraduationCap,
   UserCircle, ClipboardList, Repeat, Mail, Archive, BookMarked, Award, Building2, ListChecks, Boxes,
@@ -188,6 +188,7 @@ export const menuGroupsTas = [
       { href: "/dashboard/admin/biodata", label: "Biodata Saya", icon: FileUser, show: (_j: string[], _full: boolean) => true },
       { href: "/dashboard/admin/profile", label: "Profil Saya", icon: UserCircle, show: (_j: string[], _full: boolean) => true },
       { href: "/bantuan", label: "Pusat Bantuan", icon: CircleHelp, show: (_j: string[], _full: boolean) => true },
+      { href: "/dashboard/admin/panduan", label: "Panduan", icon: BookOpenText, show: (_j: string[], _full: boolean) => true },
     ],
   },
 ];

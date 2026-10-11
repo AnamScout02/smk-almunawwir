@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Heart, Loader2, KeyRound, Unlink, Search } from "lucide-react";
+import { Heart, Loader2, KeyRound, QrCode, Unlink, Search } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
@@ -66,6 +66,7 @@ export default function AdminParentsPage() {
     <div className="p-6 lg:p-8 pt-16 lg:pt-8">
       <PageHeader icon={<Heart size={22} />} title="Akun Orang Tua" description="Akun Portal Orang Tua dibuat otomatis dari No. HP Orang Tua saat data siswa disimpan" />
 
+      <div className="alat-aksi alat-teks justify-end mb-5"><a href="/dashboard/admin/parents/kartu" className="btn-modal-cancel btn-teks"><QrCode /> Kartu Aktivasi Orang Tua</a></div>
       <div className="flex flex-wrap items-center gap-2.5 mb-5">
         <div className="baris-alat">
         <div className="alat-cari">

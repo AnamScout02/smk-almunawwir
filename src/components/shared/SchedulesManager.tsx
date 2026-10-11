@@ -2,7 +2,7 @@
 import TimePicker from "@/components/shared/TimePicker";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Calendar, CalendarDays, Loader2, Wand2, AlertTriangle, CheckCircle2, Printer, Lock } from "lucide-react";
+import { Puzzle, DoorOpen, Plus, Pencil, Trash2, Calendar, CalendarDays, Loader2, Wand2, AlertTriangle, CheckCircle2, Printer, Lock } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
@@ -449,6 +449,8 @@ export default function SchedulesManager({
           berbagi baris dengan judul, jadi kalau diisi banyak tombol judul & deskripsinya kepepet
           bahkan bisa tertimpa (persis laporan user: teks "jam pelajaran terjadwal" ketiban tombol). */}
       <div className="flex flex-wrap gap-2 mb-5">
+        <Link href={`${basePath}/ruang`} className="btn-modal-cancel btn-teks"><DoorOpen size={16} /> Ruang per Mapel</Link>
+        <Link href={`${basePath}/pemecah`} className="btn-modal-cancel btn-teks"><Puzzle size={16} /> Pemecah Jadwal</Link>
         {showPrintLinks && (
           <>
             <Link href="/dashboard/admin/schedules/nonblok"

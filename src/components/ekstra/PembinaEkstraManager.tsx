@@ -8,7 +8,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { useConfirm } from "@/components/shared/ConfirmProvider";
 import { salinTeks } from "@/lib/salin-teks";
 
-interface Ekskul { id: string; nama: string; jenis: string; anggota: number; jadwalRutin: string | null; hariRutin: number[]; bukaDaftar: boolean; kuota: number | null; deskripsi: string | null; pembinaAkun: string[]; pembinaLuar: string | null; pembinaKontak: string | null; adaTautan: boolean }
+interface Ekskul { id: string; nama: string; jenis: string; anggota: number; jadwalRutin: string | null; hariRutin: number[]; bukaDaftar: boolean; kuota: number | null; deskripsi: string | null; pembinaAkun: string[]; pembinaLuar: string | null; pembinaKontak: string | null; adaTautan: boolean; tautanDipakai?: string | null }
 const HARI = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const wa = (no: string) => { const d = no.replace(/\D/g, ""); return d.startsWith("0") ? `62${d.slice(1)}` : d; };
 
@@ -78,7 +78,7 @@ export default function PembinaEkstraManager() {
                     <td className="text-sm">{e.pembinaAkun.join(", ") || <span className="text-gray-400">—</span>}</td>
                     <td className="text-sm">{e.pembinaLuar ? <>{e.pembinaLuar}{e.pembinaKontak && <span className="angka block text-xs text-gray-400">{e.pembinaKontak}</span>}</> : <span className="text-gray-400">—</span>}</td>
                     <td className="text-sm text-gray-600">{e.jadwalRutin || <span className="text-gray-400">—</span>}{e.hariRutin?.length > 0 && <span className="block text-xs text-gray-400">Pengingat: {e.hariRutin.map(h => HARI[h]).join(", ")}</span>}</td>
-                    <td>{e.adaTautan ? <span className="status-badge bg-emerald-50 text-emerald-700 border-emerald-200">Aktif</span> : <span className="status-badge bg-gray-50 text-gray-500 border-gray-200">Belum ada</span>}</td>
+                    <td>{e.adaTautan ? <><span className="status-badge bg-emerald-50 text-emerald-700 border-emerald-200">Aktif</span><span className="mt-1 block text-xs text-gray-500">{e.tautanDipakai ? `terakhir dibuka ${new Date(e.tautanDipakai).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}` : "belum pernah dibuka"}</span></> : <span className="status-badge bg-gray-50 text-gray-500 border-gray-200">Belum ada</span>}</td>
                     <td><div className="flex justify-end gap-1.5">
                       <button type="button" title="Ubah keterangan" onClick={() => { setUbah(e); setIsi({ jenis: e.jenis, pembinaNama: e.pembinaLuar ?? "", pembinaKontak: e.pembinaKontak ?? "", jadwalRutin: e.jadwalRutin ?? "", hariRutin: e.hariRutin ?? [], bukaDaftar: e.bukaDaftar !== false, kuota: e.kuota ? String(e.kuota) : "", deskripsi: e.deskripsi ?? "" }); }} className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"><Pencil size={14} /></button>
                       <button type="button" disabled={sibuk === e.id} onClick={() => buatTautan(e)} className="btn-modal-cancel btn-teks px-3 text-xs">{sibuk === e.id ? <Loader2 className="animate-spin" /> : <Link2 />} {e.adaTautan ? "Tautan baru" : "Buat tautan"}</button>

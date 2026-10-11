@@ -14,8 +14,9 @@ const ui = {
     title: "Masuk Portal",
     signInPrompt: "Masuk dengan akun sekolah untuk membuka portal guru, siswa, orang tua, dan staf.",
     badge: "Akses resmi warga sekolah",
-    email: "Email",
+    email: "Email atau nomor HP orang tua",
     emailPh: "nama@smkalmunawwiriibs.sch.id",
+    petunjukHp: "Orang tua/wali: cukup ketik nomor HP yang terdaftar di sekolah.",
     password: "Password",
     showPassword: "Tampilkan password",
     hidePassword: "Sembunyikan password",
@@ -43,8 +44,9 @@ const ui = {
     title: "Portal Sign In",
     signInPrompt: "Sign in with your school account to open the teacher, student, parent, and staff portals.",
     badge: "Official school member access",
-    email: "Email",
+    email: "Email or parent phone number",
     emailPh: "name@smkalmunawwiriibs.sch.id",
+    petunjukHp: "Parents/guardians: just type the phone number registered at school.",
     password: "Password",
     showPassword: "Show password",
     hidePassword: "Hide password",
@@ -98,6 +100,9 @@ export default function LoginClient({ ayat, keteranganAyat, lang = "id", modeApl
   // salah — totpState.error), bukan cuma sekali cek state.needsTotp saja.
   const showTotpStep = !!state?.needsTotp || totpState !== undefined;
   const [showPass, setShowPass] = useState(false);
+  // Kartu aktivasi orang tua membuka /login?akun=<nomor HP> — dibaca setelah hydrate (bukan saat render server).
+  const [akunAwal, setAkunAwal] = useState("");
+  useEffect(() => { try { const a = new URLSearchParams(window.location.search).get("akun") ?? ""; if (/^[\w.@+-]{3,80}$/.test(a)) setAkunAwal(a); } catch { /* abaikan */ } }, []);
 
   const t = ui[lang];
   const galat = showTotpStep ? totpState?.error : state?.error;
@@ -132,8 +137,10 @@ export default function LoginClient({ ayat, keteranganAyat, lang = "id", modeApl
         <label htmlFor="email-masuk" className="label-field">{t.email}</label>
         <div className="group/isian relative">
           <Mail size={16} className={IKON_ISIAN} aria-hidden="true" />
-          <input id="email-masuk" name="email" type="email" required autoComplete="username" inputMode="email"
-            placeholder={t.emailPh} className="input-field pl-10" />
+          {/* type="text": orang tua boleh mengetik NOMOR HP (diterjemahkan server), dan kartu aktivasi mengisi lewat ?akun=. */}
+          <input id="email-masuk" name="email" type="text" required autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false}
+            defaultValue={akunAwal} key={akunAwal} placeholder={t.emailPh} className="input-field pl-10" />
+          <p className="mt-1 text-xs text-gray-500">{t.petunjukHp}</p>
         </div>
       </div>
 

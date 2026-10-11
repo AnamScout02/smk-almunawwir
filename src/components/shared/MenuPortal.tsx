@@ -1,5 +1,6 @@
 "use client";
 import MenuLengkap, { type GrupMenuKisi, type ItemMenuKisi } from "@/components/shared/MenuLengkap";
+import PanduanLengkap from "@/components/shared/PanduanLengkap";
 import { grupMenuSiswa } from "@/components/student/StudentSidebar";
 import { grupMenuGuru } from "@/components/teacher/TeacherSidebar";
 import { grupMenuOrtu } from "@/components/parent/ParentSidebar";
@@ -20,7 +21,11 @@ function rapikan(grup: Grup[]): GrupMenuKisi[] {
     .filter(g => g.items.length > 0);
 }
 
-export interface PropsMenuPortal { ringkas?: number; hrefSemua?: string; judul?: string; favoritAwal?: string[] | null }
+export interface PropsMenuPortal {
+  ringkas?: number; hrefSemua?: string; judul?: string; favoritAwal?: string[] | null;
+  /** "panduan" = tampilkan grup menu yang SAMA sebagai halaman Panduan (penjelasan tiap fitur), bukan kisi menu. */
+  sebagai?: "panduan";
+}
 
 /** KISI MENU per portal — membungkus `MenuLengkap` dengan sumber menu portal yang bersangkutan.
  * Halaman SERVER cukup mengirim data polos (bukan elemen ikon — CLAUDE.md #35). */
@@ -28,6 +33,7 @@ export function MenuSiswa({ isKelasAdmin, overdueBooks, kelasXII, hasPendingBiod
   isKelasAdmin?: boolean; overdueBooks?: number; kelasXII?: boolean; hasPendingBiodata?: boolean;
 }) {
   const grup = rapikan(grupMenuSiswa({ isKelasAdmin, overdueBooks, kelasXII, hasPendingBiodata }) as Grup[]);
+  if (p.sebagai === "panduan") return <PanduanLengkap grup={grup} portal="siswa" />;
   // Pita pintasan SENGAJA berbeda dari empat tautan bottom navbar (Tugas/Absen/Rapor/Buku) — kalau isinya
   // sama persis, pita itu cuma mengulang bar bawah (temuan saat memeriksa tampilan 18 Sep 2026).
   const pintasan: ItemMenuKisi[] = [
@@ -44,6 +50,7 @@ export function MenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternship
   isGuruPiketOnDutyToday?: boolean; overdueBooks?: number; panitiaSpmb?: boolean;
 }) {
   const grup = rapikan(grupMenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternshipBimbingan, isGuruPiketOnDutyToday, overdueBooks, panitiaSpmb }) as Grup[]);
+  if (p.sebagai === "panduan") return <PanduanLengkap grup={grup} portal="guru" />;
   // Pintasan guru (pilihan user 18 Sep 2026): Guru Piket hanya saat memang terjadwal piket hari ini —
   // di hari lain slot itu diisi Jadwal Mengajar supaya tidak ada pintasan yang mentok.
   const pintasan: ItemMenuKisi[] = [
@@ -59,6 +66,7 @@ export function MenuGuru({ jabatanNames, hasHomeroom, hasTeaching, hasInternship
 
 export function MenuOrtu(p: PropsMenuPortal) {
   const grup = rapikan(grupMenuOrtu() as Grup[]);
+  if (p.sebagai === "panduan") return <PanduanLengkap grup={grup} portal="ortu" />;
   const pintasan: ItemMenuKisi[] = [
     { href: "/dashboard/parent/poin", label: "Poin Anak", icon: ShieldAlert },
     { href: "/dashboard/parent/kesehatan", label: "Kesehatan", icon: HeartPulse },
@@ -70,6 +78,7 @@ export function MenuOrtu(p: PropsMenuPortal) {
 
 export function MenuAdmin(p: PropsMenuPortal) {
   const grup = rapikan(GRUP_ADMIN as unknown as Grup[]);
+  if (p.sebagai === "panduan") return <PanduanLengkap grup={grup} portal="admin" />;
   const pintasan: ItemMenuKisi[] = [
     { href: "/dashboard/admin/buku-induk/siswa", label: "Buku Induk", icon: BookUser },
     { href: "/dashboard/admin/classes", label: "Kelas", icon: School },
@@ -85,6 +94,7 @@ export function MenuTas({ jabatanNames = [], ...p }: PropsMenuPortal & { jabatan
     (GRUP_TAS as unknown as { label: string | null; items: (Grup["items"][number] & { show: (j: string[], f: boolean) => boolean })[] }[])
       .map(g => ({ label: g.label, items: g.items.filter(i => i.show(jabatanNames, penuh)) })) as Grup[],
   );
+  if (p.sebagai === "panduan") return <PanduanLengkap grup={grup} portal="tas" />;
   /* Pintasan Tata Usaha hanya untuk staf TU penuh — keempat tautannya dijaga `verifyTasAccess()`,
      jadi bagi staf TAS non-TU (Kepala UKS, Tim Perpustakaan, Security) tiga di antaranya memantul
      ke /login lalu kembali ke dashboard, terbaca sebagai "dipencet tidak terjadi apa-apa"

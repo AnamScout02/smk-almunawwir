@@ -643,10 +643,10 @@ export default function PapanTvManager({ tanpaKerangka }: { tanpaKerangka?: bool
               </div>
             )}
             <div>
-              <label className="label-field">Kelas yang jadwalnya ditampilkan (opsional)</label>
+              <label className="label-field">Jadwal yang ditampilkan (opsional)</label>
               <Select value={form.kelasId} onChange={v => setForm({ ...form, kelasId: v })}
                 options={[{ value: "", label: "— papan umum (agenda & pengumuman saja) —" }, ...data.kelas.map(k => ({ value: k.id, label: k.name }))]} />
-              <p className="mt-1 text-xs text-gray-500">Hanya untuk TV di depan kelas. TV ruang rapat, TU, dan lab dibiarkan kosong — papannya menampilkan jam, pengumuman, dan agenda saja.</p>
+              <p className="mt-1 text-xs text-gray-500">TV di depan kelas: pilih kelasnya. TV <b>lab</b>: pilih &ldquo;Lab / ruang praktik&rdquo; jurusannya — papan menampilkan jam kejuruan semua kelas jurusan itu hari ini, lengkap dengan nama kelasnya. TV ruang rapat dan TU dibiarkan kosong.</p>
             </div>
             <div>
               <label className="label-field">Volume TV saat bel berbunyi (%)</label>
