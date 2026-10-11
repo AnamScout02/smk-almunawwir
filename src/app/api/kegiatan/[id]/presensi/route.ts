@@ -3,7 +3,7 @@ import { verifySession } from "@/lib/dal";
 import { hariKegiatan, isoWib, jendelaSekarang, kegiatanMilik, tengahMalamWib } from "@/lib/kegiatan-qr";
 import { penerimaPengumuman } from "@/lib/pengumuman";
 import { balasanExcelBanyakSheet } from "@/lib/ekspor-excel";
-import { hadirkanAbsensiHarian } from "@/lib/absensi-otomatis";
+import { alphakanAbsensiHarian, cabutAbsensiKegiatan, hadirkanAbsensiHarian } from "@/lib/absensi-otomatis";
 import { pesertaKegiatan } from "@/lib/kegiatan-tidak-hadir";
 
 export const dynamic = "force-dynamic";
@@ -86,6 +86,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const m = await kegiatanMilik(id, session);
   if (!m) return Response.json({ error: "Tidak berhak." }, { status: 403 });
   const b = await req.json().catch(() => ({}));
+  // "Tidak hadir = Alpha di absen kelas" (10 Okt 2026): tombol panitia di tab Tidak Hadir. Hanya siswa sasaran yang
+  // hari itu TANPA presensi kegiatan dan TANPA catatan absensi; hari yang belum lewat ditolak (kegiatan masih berjalan).
+  if (b.alpha === true) {
+    const { dipilih } = hariDipilih(m.k, String(b.tanggal ?? "") || null);
+    const hariIni = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+    const jamSelesaiHariItu = m.k.selesai.getTime() + (new Date(`${dipilih}T00:00:00Z`).getTime() - new Date(`${isoWib(m.k.mulai)}T00:00:00Z`).getTime());
+    if (dipilih > hariIni || Date.now() < jamSelesaiHariItu) return Response.json({ error: "Kegiatan hari itu belum selesai — yang belum hadir masih bisa datang." }, { status: 409 });
+    const sudah = new Set((await prisma.presensiKegiatan.findMany({ where: { kegiatanId: id, tanggal: tengahMalamWib(dipilih) }, select: { userId: true } })).map(x => x.userId));
+    const belum = (await pesertaKegiatan(m.k)).map(x => x.userId).filter(u => !sudah.has(u));
+    const n = await alphakanAbsensiHarian(belum, dipilih);
+    return Response.json({ ok: true, alpha: n });
+  }
   const diminta: string[] = Array.isArray(b.userIds)
     ? [...new Set((b.userIds as unknown[]).map(x => String(x)).filter(Boolean))].slice(0, 500)
     : [String(b.userId ?? "")].filter(Boolean);
@@ -108,7 +120,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     update: { keterangan },
   })));
   // Lihat catatan di src/lib/absensi-otomatis.ts — mengisi absensi harian yang masih kosong saja.
-  const harian = await hadirkanAbsensiHarian(orang.map(u => u.id), dipilih).catch(() => null);
+  const harian = await hadirkanAbsensiHarian(orang.map(u => u.id), dipilih, keterangan).catch(() => null);
   return Response.json({ ok: true, tersimpan: orang.length, absensiHarian: harian });
 }
 
@@ -121,5 +133,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const userId = sp.get("userId") ?? "";
   const { dipilih } = hariDipilih(m.k, sp.get("tanggal"));
   await prisma.presensiKegiatan.deleteMany({ where: { kegiatanId: id, userId, tanggal: tengahMalamWib(dipilih) } });
+  // Absensi kelas yang berasal dari presensi ini ikut dicabut (isian wali kelas tidak disentuh).
+  await cabutAbsensiKegiatan(userId, dipilih).catch(() => null);
   return Response.json({ ok: true });
 }

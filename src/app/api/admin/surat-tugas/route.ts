@@ -31,6 +31,8 @@ export async function GET(req: Request) {
       orderBy: [{ tanggal: "desc" }, { createdAt: "desc" }],
       ...(year ? {} : { take: 200 }),
     });
+    // Cuti/surat tugas ↔ Presensi Pegawai (src/lib/presensi-turunan.ts) — di latar, gagal di sini tidak menggagalkan simpan.
+    void import("@/lib/presensi-turunan").then(m => m.sinkronPresensiDokumenBaku()).catch(() => null);
     return Response.json(rows);
   } catch (e) {
     lemparBilaPengalihan(e);

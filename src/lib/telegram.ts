@@ -99,3 +99,20 @@ export function bacaKodeTaut(kode: string): string | null {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   return parseInt(m[2], 36) * 1000 > Date.now() ? m[1] : null;
 }
+
+/** Webhook lama dipasang hanya untuk `message`; tombol bot (10 Okt 2026) butuh `callback_query`. Dipasang ulang SEKALI
+ *  oleh penjadwal (penanda SiteSetting `telegram.webhookVersi`) — token & rahasia tidak berubah, kiriman tertunda tidak dibuang. */
+export async function pastikanWebhookTelegram() {
+  const s = await setelanTelegram();
+  if (!s) return;
+  const VERSI = "2", kunci = "telegram.webhookVersi";
+  const ada = await prisma.siteSetting.findUnique({ where: { key: kunci }, select: { value: true } }).catch(() => null);
+  if (ada?.value === VERSI) return;
+  const r = await panggilTelegram(s.token, "setWebhook", { url: `${ALAMAT_APLIKASI}/api/telegram/webhook`, secret_token: s.rahasia, allowed_updates: ["message", "callback_query"] });
+  if (r.ok) {
+    await prisma.siteSetting.upsert({ where: { key: kunci }, create: { key: kunci, value: VERSI }, update: { value: VERSI } }).catch(() => null);
+    await panggilTelegram(s.token, "setMyCommands", { commands: [
+      { command: "jadwal", description: "Jadwal mengajar hari ini" }, { command: "jurnal", description: "Isi jurnal yang belum diisi" }, { command: "berhenti", description: "Berhenti menerima kabar" },
+    ] });
+  }
+}

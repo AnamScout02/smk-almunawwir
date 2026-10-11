@@ -25,8 +25,16 @@ export default function TawaranPasskey() {
       if (sessionStorage.getItem("tawaran-passkey-dicek") === "1") return; // sekali periksa per sesi peramban
       sessionStorage.setItem("tawaran-passkey-dicek", "1");
     } catch { return; }
-    fetch("/api/passkey", { cache: "no-store" })
-      .then(r => (r.ok ? r.json() : null))
+    // HANYA HP/tablet yang punya pembaca sidik jari/wajah sendiri (10 Okt 2026, temuan user: tawaran ikut muncul di
+    // desktop). `passkeyDidukung` hanya memeriksa adanya WebAuthn — semua peramban desktop lolos walau komputernya
+    // tanpa sidik jari, dan komputer TU/lab dipakai bergantian (PIN Windows-nya diketahui banyak orang). Di komputer
+    // pendaftaran tetap bisa dilakukan sengaja lewat Profil.
+    const hp = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    if (!hp) return;
+    const cek = window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable;
+    Promise.resolve(cek ? cek.call(window.PublicKeyCredential) : false)
+      .then(ada => (ada ? fetch("/api/passkey", { cache: "no-store" }) : null))
+      .then(r => (r && r.ok ? r.json() : null))
       .then(d => { if (d?.boleh && d.domainAman) setTampil(true); })
       .catch(() => {});
   }, [jalur]);

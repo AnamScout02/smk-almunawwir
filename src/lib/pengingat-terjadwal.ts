@@ -1,3 +1,6 @@
+import { pengingatPerawatan } from "@/lib/pengingat-perawatan";
+import { pengingatEkstra } from "@/lib/pengingat-ekstra";
+import { kelasIkutKegiatan } from "@/lib/absensi-otomatis";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/site-settings";
@@ -35,6 +38,8 @@ export const PENGATURAN_NOTIFIKASI = {
   jamRingkasanOrtu: "notifikasi.jamRingkasanOrtu",
   jamSpmb: "notifikasi.jamSpmb",
   jamPkl: "notifikasi.jamPkl",
+  jamEkstra: "notifikasi.jamEkstra",
+  jamPerawatan: "notifikasi.jamPerawatan",
 } as const;
 
 const HARI = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
@@ -91,6 +96,8 @@ export async function jalankanPengingat(now = new Date(), opsi: OpsiPengingat = 
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRekapKelas], w.menit)) await jalan(() => rekapHarianKelas(w, slot, kirim));
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamSpmb], w.menit)) { void slot; await jalan(() => pengingatSpmb(w, { kirim, kering: opsi.kering })); }
   for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamPkl], w.menit)) { void slot; await jalan(() => pengingatPkl(w, { kirim })); }
+  for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamEkstra], w.menit)) { void slot; await jalan(() => pengingatEkstra(w, { kirim })); }
+  for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamPerawatan], w.menit)) { void slot; await jalan(() => pengingatPerawatan(w, { kirim })); }
   if (w.hari === "SABTU") {
     for (const slot of slotJatuhTempo(s[PENGATURAN_NOTIFIKASI.jamRingkasanOrtu], w.menit)) await jalan(() => ringkasanMingguanOrtu(w, slot, kirim));
   }
@@ -217,8 +224,10 @@ async function pengingatAbsensi(w: WaktuWib, slot: string, kirim: Pengirim) {
     select: { student: { select: { classId: true } } },
   });
   const sudah = new Set(terisi.map(t => t.student.classId));
+  // Kelas yang hari ini ikut kegiatan seharian diabsen di kegiatannya (absensi kelas mengikuti) — wali & pengurus tidak ditagih.
+  const diKegiatan = await kelasIkutKegiatan(w.tanggal).catch(() => new Map<string, string>());
   for (const k of hariIni) {
-    if (sudah.has(k.id)) continue;
+    if (sudah.has(k.id) || diKegiatan.has(k.id)) continue;
     const pengurus = [k.ketuaKelas?.userId, k.sekretaris?.userId].filter((x): x is string => !!x);
     if (pengurus.length) {
       await kirim({

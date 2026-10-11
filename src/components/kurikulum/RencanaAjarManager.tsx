@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CalendarRange, Loader2, Plus, Printer, Save, Trash2 } from "lucide-react";
+import { CalendarRange, Loader2, Plus, Printer, Save, Trash2, Upload } from "lucide-react";
+import Modal from "@/components/admin/Modal";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import EmptyState from "@/components/admin/EmptyState";
@@ -23,6 +24,25 @@ export default function RencanaAjarManager() {
   const [items, setItems] = useState<Item[]>([]);
   const [catatan, setCatatan] = useState("");
   const [sibuk, setSibuk] = useState(false);
+  // Impor dari berkas Word/Excel guru (10 Okt 2026): dibaca server, DITINJAU di sini, baru disimpan lewat tombol Simpan.
+  const [impor, setImpor] = useState<{ butir: Item[]; cara: string; kolomMateri?: string; catatan: string[]; nama: string } | null>(null);
+  const [membaca, setMembaca] = useState(false);
+  async function bacaBerkas(file: File | null) {
+    if (!file) return;
+    const fd = new FormData(); fd.set("file", file);
+    setMembaca(true);
+    const r = await fetch("/api/teacher/rencana-ajar/impor", { method: "POST", body: fd }).catch(() => null);
+    const x = await r?.json().catch(() => null);
+    setMembaca(false);
+    if (!r?.ok || !x?.butir) { toast.error(x?.error ?? "Berkas gagal dibaca."); return; }
+    setImpor({ ...x, nama: file.name });
+  }
+  function pakaiImpor(ganti: boolean) {
+    if (!impor) return;
+    setItems(i => (ganti ? impor.butir : [...i.filter(x => x.materi.trim()), ...impor.butir]));
+    toast.success(`${impor.butir.length} materi dimasukkan. Periksa JP & pekannya, lalu tekan Simpan.`);
+    setImpor(null);
+  }
   const muat = useCallback((q: Partial<{ tahunAjaranId: string; semester: string; subject: string; tingkat: number }> = {}) => {
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => [k, String(v)]));
     fetch(`/api/teacher/rencana-ajar?${p}`, { cache: "no-store" }).then(async r => {
@@ -82,7 +102,11 @@ export default function RencanaAjarManager() {
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <p className="label-kecil">Program semester — {d.subject} kelas {d.tingkat}</p>
                 <span className="text-xs text-gray-500">total {totalJp} JP</span>
-                <button type="button" onClick={() => setItems(i => [...i, { materi: "", jp: 2, pekanMulai: null, pekanSelesai: null, catatan: null }])} className="btn-modal-cancel ml-auto px-3 text-xs print:hidden"><Plus /> Tambah Materi</button>
+                <label className={`btn-modal-cancel btn-teks ml-auto cursor-pointer px-3 text-xs print:hidden ${membaca ? "pointer-events-none opacity-60" : ""}`}>
+                  {membaca ? <Loader2 className="animate-spin" /> : <Upload />} Impor dari Word / Excel
+                  <input type="file" accept=".docx,.xlsx,.xls" className="sr-only" onChange={e => { void bacaBerkas(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                </label>
+                <button type="button" onClick={() => setItems(i => [...i, { materi: "", jp: 2, pekanMulai: null, pekanSelesai: null, catatan: null }])} className="btn-modal-cancel px-3 text-xs print:hidden"><Plus /> Tambah Materi</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="data-table">
@@ -125,6 +149,29 @@ export default function RencanaAjarManager() {
           </div>
         </>
       )}
+      <Modal open={!!impor} onClose={() => setImpor(null)} size="xl" scrollBody title="Tinjau Hasil Impor" description={impor ? `${impor.nama} · ${impor.butir.length} materi terbaca${impor.kolomMateri ? ` dari kolom "${impor.kolomMateri}"` : ""}` : undefined}
+        footer={<>
+          <button type="button" onClick={() => setImpor(null)} className="btn-modal-cancel">Batal</button>
+          {items.some(x => x.materi.trim()) && <button type="button" onClick={() => pakaiImpor(false)} className="btn-modal-cancel">Tambahkan di bawah yang ada</button>}
+          <button type="button" onClick={() => pakaiImpor(true)} className="btn-modal-save">{items.some(x => x.materi.trim()) ? "Ganti semua materi" : "Pakai hasil ini"}</button>
+        </>}>
+        {impor && (
+          <div className="space-y-3">
+            {impor.catatan.map((c, i) => <p key={i} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{c}</p>)}
+            <p className="text-sm text-gray-600">Hasil bacaan belum disimpan. Setelah dipakai, materi, JP, dan pekannya masih bisa diubah di tabel, lalu tekan <b>Simpan</b>.</p>
+            <div className="max-h-[50vh] overflow-auto rounded-xl border border-gray-100">
+              <table className="data-table">
+                <thead><tr><th className="w-10">No</th><th>Materi / tujuan pembelajaran</th><th className="text-right">JP</th><th className="text-center">Pekan</th></tr></thead>
+                <tbody>
+                  {impor.butir.map((b, i) => (
+                    <tr key={i}><td className="angka text-gray-400">{i + 1}</td><td>{b.materi}</td><td className="angka text-right">{b.jp || "—"}</td><td className="angka text-center">{b.pekanMulai ? `${b.pekanMulai}${b.pekanSelesai && b.pekanSelesai !== b.pekanMulai ? `–${b.pekanSelesai}` : ""}` : "—"}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -42,7 +42,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
       // Rentang tanggal dibentuk di UTC — kolomnya bertipe DATE dan ditulis pada tengah malam
       // UTC oleh API-nya, jadi batasnya harus memakai skala yang sama.
       where: { tanggal: { gte: new Date(Date.UTC(y, m - 1, 1)), lt: new Date(Date.UTC(y, m, 1)) } },
-      select: { userId: true, tanggal: true, status: true },
+      select: { userId: true, tanggal: true, status: true, sumber: true },
     }),
     getSettings(["logo.full_white", "school.structure"]),
   ]);
@@ -54,10 +54,13 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
 
   // peta: userId -> tanggal(1-31) -> kode status
   const peta = new Map<string, Map<number, string>>();
+  const turunan = new Set<string>();
   for (const r of rows) {
     const hari = new Date(r.tanggal).getUTCDate();
     if (!peta.has(r.userId)) peta.set(r.userId, new Map());
     peta.get(r.userId)!.set(hari, KODE[r.status] ?? "?");
+    // Catatan TURUNAN (dibuat sistem dari catatan guru piket / jurnal mengajar — src/lib/presensi-turunan.ts) ditandai ° di rekap.
+    if (r.sumber === "PIKET" || r.sumber === "JURNAL") turunan.add(`${r.userId}|${hari}`);
   }
   const hitung = (uid: string, kode: string) =>
     [...(peta.get(uid)?.values() ?? [])].filter(v => v === kode).length;
@@ -118,7 +121,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
                     const kode = peta.get(p.id)?.get(d + 1) ?? "";
                     const minggu = new Date(y, m - 1, d + 1).getDay() === 0;
                     return (
-                      <td key={d} className={`${td} ${minggu ? "bg-red-50" : ""} ${WARNA[kode] ?? ""}`}>{kode}</td>
+                      <td key={d} className={`${td} ${minggu ? "bg-red-50" : ""} ${WARNA[kode] ?? ""}`}>{kode}{turunan.has(`${p.id}|${d + 1}`) ? "°" : ""}</td>
                     );
                   })}
                   <td className={`${td} font-semibold`}>{hitung(p.id, "H")}</td>
@@ -137,6 +140,7 @@ export default async function RekapPresensiPegawaiPage({ searchParams }: { searc
           Keterangan: <b>H</b> Hadir · <b>I</b> Izin · <b>S</b> Sakit · <b>D</b> Dinas Luar ·
           <b> C</b> Cuti · <b>A</b> Tanpa Keterangan. Kolom kosong berarti hari itu belum dicek
           (bukan berarti tidak hadir). Kolom berlatar merah muda adalah hari Minggu.
+          {turunan.size > 0 && <> <b>H°</b> = hadir menurut catatan guru piket atau jurnal mengajar hari itu (catatan turunan, bukan pindaian atau isian Tata Usaha).</>}
         </p>
 
         <div className="text-xs text-right pr-8" style={{ breakInside: "avoid" }}>

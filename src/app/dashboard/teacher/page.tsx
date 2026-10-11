@@ -11,6 +11,7 @@ import { groupConsecutiveSchedules } from "@/lib/schedule-grouping";
 import { cekLibur } from "@/lib/hari-libur";
 import AgendaCalendar from "@/components/shared/AgendaCalendar";
 import JadwalHariIni from "@/components/shared/JadwalHariIni";
+import JurnalCepat from "@/components/shared/JurnalCepat";
 import JadwalMingguan from "@/components/shared/JadwalMingguan";
 import Panel, { PanelKosong, DaftarPengumuman } from "@/components/shared/Panel";
 import StatTile from "@/components/admin/StatTile";
@@ -129,6 +130,9 @@ export default async function TeacherDashboard() {
         <div className={`kisi-kartu ${kartu.length >= 4 ? "kisi-kartu-4" : ""}`}>
           {kartu.map(k => <Fragment key={k.key}>{k.node}</Fragment>)}
         </div>
+
+        {/* Jurnal sekali ketuk (10 Okt 2026) — alat isi, bukan pengingat: materi sudah terisi dari Prota/Promes. Tidak tampil tanpa jadwal hari ini. */}
+        {mengajar && session.role === "TEACHER" && <JurnalCepat />}
 
         <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
           <div className="kolom-dashboard min-w-0 space-y-6 xl:col-span-7">

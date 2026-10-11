@@ -365,9 +365,45 @@ model UksMedicineUsage {
 model Extracurricular {
   id        String                   @id @default(cuid())
   name      String                   @unique
+  /// EKSTRA | INTRA (10 Okt 2026) — OSIS adalah organisasi INTRA; tetap di tabel ini supaya rapor & sertifikat tidak berubah
+  /// (rapor menulis keikutsertaan OSIS di tabel kegiatan ekstrakurikuler), hanya penandanya yang berbeda di Pusat Ekstra.
+  jenis           String  @default("EKSTRA")
+  /// Pembina dari LUAR sekolah (tanpa akun): nama & kontak untuk catatan; ia mengabsen lewat tautan portal di bawah.
+  pembinaNama     String?
+  pembinaKontak   String?
+  jadwalRutin     String?
+  /// Hash tautan portal pembina (/portal-ekstra/<token>) — token asli hanya tampil sekali saat dibuat (pola portal DUDI).
+  tokenPortalHash String?
+  /// Hari latihan rutin (0 = Minggu … 6 = Sabtu) — dipakai pengingat "latihan lewat tanpa absensi" (10 Okt 2026).
+  /// `jadwalRutin` tetap teks bebas untuk ditampilkan (jam & tempat).
+  hariRutin       Int[]   @default([])
+  /// Pendaftaran oleh siswa: ekskul ini menerima pendaftar baru / kuota anggota (kosong = tanpa batas) / keterangan singkat.
+  bukaDaftar      Boolean @default(true)
+  kuota           Int?
+  deskripsi       String?
   createdAt DateTime                 @default(now())
   members   ExtracurricularMember[]
   journals  ExtracurricularJournal[]
+  pendaftar PendaftaranEkstra[]
+}
+
+/// PENDAFTARAN EKSKUL OLEH SISWA (10 Okt 2026): siswa memilih → pembina/koordinator memutuskan → DITERIMA membuat
+/// baris ExtracurricularMember. Baris ini tetap disimpan sebagai jejak (siapa memutuskan, kapan, catatannya).
+model PendaftaranEkstra {
+  id                String          @id @default(cuid())
+  extracurricularId String
+  extracurricular   Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status            String          @default("MENUNGGU") // MENUNGGU | DITERIMA | DITOLAK
+  alasan            String?
+  catatan           String?
+  diputusOleh       String?
+  diputusAt         DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([extracurricularId, status])
+  @@index([studentId])
 }
 
 model ExtracurricularMember {
@@ -402,6 +438,10 @@ model ExtracurricularJournal {
   recordedByRole    String                        @default("")
   date              DateTime
   materi            String?
+  /// Foto bukti kegiatan (alamat /api/uploads/ekstra/…), maks 6 per pertemuan.
+  foto              String[]                      @default([])
+  /// "PORTAL" = diisi pembina luar lewat tautan portal; kosong = akun sekolah.
+  sumber            String?
   entries           ExtracurricularJournalEntry[]
   createdAt         DateTime                      @default(now())
   updatedAt         DateTime                      @updatedAt
@@ -698,6 +738,7 @@ model Student {
   alumniTracer                  AlumniTracer?
   uksVisits                     UksVisit[]
   extracurricular               ExtracurricularMember[]
+  pendaftaranEkstra             PendaftaranEkstra[]
   extracurricularJournalEntries ExtracurricularJournalEntry[]
   ketuaKelasOf                  Class[]                       @relation("KetuaKelas")
   sekretarisOf                  Class[]                       @relation("Sekretaris")
@@ -899,6 +940,9 @@ model Attendance {
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   date      DateTime
   status    String
+  /// Asal catatan: kosong = diisi wali kelas/pengurus kelas/pindai; "KEGIATAN" = disalin dari presensi kegiatan sekolah
+  /// (10 Okt 2026). Hanya baris ber-asal KEGIATAN yang boleh diubah lagi oleh presensi kegiatan — isian wali tidak pernah.
+  sumber    String?
 }
 
 model Internship {
@@ -1505,6 +1549,9 @@ model TeachingJournal {
   subject   String
   date      DateTime
   materi    String
+  /// MATERI KE-N pada hari itu (10 Okt 2026): satu kelas–mapel boleh punya beberapa materi sehari, masing-masing dengan
+  /// nilainya sendiri. Kehadiran siswa HANYA disimpan di baris urutan 1; baris berikutnya `attendanceStatus` null.
+  urutan    Int            @default(1)
   semester  String
   entries   JournalEntry[]
   createdAt DateTime       @default(now())
@@ -1623,6 +1670,9 @@ model PendaftaranEvent {
   catatanPanitia String?
   /// Diisi setelah lomba: "Juara 1", "Harapan 2", dst. Dipakai saat mencatat Poin Prestasi.
   juara          String?
+  /// Catatan poin PRESTASI (StudentPointRecord.id) yang dibuat dari juara ini (10 Okt 2026) — supaya juara lomba sampai ke
+  /// rapor & piagam tanpa dicatat dua kali, dan tidak pernah tercatat ganda.
+  prestasiId     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -2626,6 +2676,11 @@ model StaffAttendance {
   jamPulang    String?
   keterangan   String?
   recordedById String?
+  /// ASAL catatan (10 Okt 2026): TU | QR | KARTU | KEGIATAN | PIKET | JURNAL. PIKET & JURNAL = TURUNAN (dibuat
+  /// sistem dari catatan masuk kelas / jurnal). Urutan kuasa TU > pindai > PIKET > JURNAL — lihat src/lib/presensi-turunan.ts.
+  sumber          String?
+  /// Jam pulang diisi sistem dari akhir jam mengajar terakhir (bukan pindaian) — ditandai "perkiraan" di layar.
+  pulangPerkiraan Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

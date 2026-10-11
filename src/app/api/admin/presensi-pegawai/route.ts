@@ -112,6 +112,14 @@ export async function POST(req: Request) {
     const isi = entries.filter(e => e.userId && e.status);
     const kosong = entries.filter(e => e.userId && !e.status).map(e => e.userId);
 
+    // ASAL catatan (src/lib/presensi-turunan.ts): layar TU mengirim SELURUH baris hari itu, termasuk yang berasal dari
+    // pindaian/turunan dan tidak disentuh. Baris yang isinya tidak berubah mempertahankan asalnya; yang diubah TU menjadi "TU".
+    const lama = new Map((await prisma.staffAttendance.findMany({ where: { tanggal, userId: { in: isi.map(e => e.userId) } } })).map(r => [r.userId, r]));
+    const tetap = (e: (typeof isi)[number]) => {
+      const l = lama.get(e.userId);
+      return !!l && l.status === e.status && (l.jamMasuk ?? "") === (e.jamMasuk || "") && (l.jamPulang ?? "") === (e.jamPulang || "") && (l.keterangan ?? "") === (e.keterangan?.trim() || "");
+    };
+
     await prisma.$transaction([
       ...(kosong.length
         ? [prisma.staffAttendance.deleteMany({ where: { tanggal, userId: { in: kosong } } })]
@@ -122,12 +130,13 @@ export async function POST(req: Request) {
           create: {
             userId: e.userId, tanggal, status: e.status!,
             jamMasuk: e.jamMasuk || null, jamPulang: e.jamPulang || null,
-            keterangan: e.keterangan?.trim() || null, recordedById: session.userId,
+            keterangan: e.keterangan?.trim() || null, recordedById: session.userId, sumber: "TU",
           },
-          update: {
+          update: tetap(e) ? {} : {
             status: e.status!,
             jamMasuk: e.jamMasuk || null, jamPulang: e.jamPulang || null,
             keterangan: e.keterangan?.trim() || null, recordedById: session.userId,
+            sumber: "TU", pulangPerkiraan: (lama.get(e.userId)?.pulangPerkiraan ?? false) && (lama.get(e.userId)?.jamPulang ?? "") === (e.jamPulang || ""),
           },
         }),
       ),

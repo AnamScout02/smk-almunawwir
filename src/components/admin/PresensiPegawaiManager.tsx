@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GAYA_SUMBER, LABEL_SUMBER } from "@/lib/presensi-sumber";
 import Link from "next/link";
 import { UserCheck, Loader2, Save, Search, Printer, CheckCheck, Users } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
@@ -10,7 +11,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { STATUS_PRESENSI_PEGAWAI, labelOf, styleOf } from "@/lib/tu-konstanta";
 
 interface Pegawai { userId: string; nama: string; role: string; nip: string | null; position: string | null; jabatan: string[] }
-interface Baris { userId: string; status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null }
+interface Baris { userId: string; status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null; sumber?: string | null; pulangPerkiraan?: boolean }
 interface Isian { status: string; jamMasuk: string; jamPulang: string; keterangan: string }
 /** Usulan dari Buku Piket: guru yang SEMUA jam mengajarnya hari itu dicatat ALPHA oleh petugas
  *  piket sementara TU belum mencatat apa pun. Hanya usulan — TU yang memutuskan (CLAUDE.md #33). */
@@ -49,12 +50,15 @@ export default function PresensiPegawaiManager() {
           };
         }
         setIsian(map);
+        setAsal(Object.fromEntries((d.rows ?? []).map(r => [r.userId, { sumber: r.sumber ?? null, perkiraan: !!r.pulangPerkiraan, pulang: r.jamPulang ?? "" }])));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tanggal]);
   useEffect(() => { load(); }, [load]);
 
+  // Asal tiap catatan yang sudah tersimpan (TU / pindaian / turunan) — hanya keterangan, tidak ikut dikirim.
+  const [asal, setAsal] = useState<Record<string, { sumber: string | null; perkiraan: boolean; pulang: string }>>({});
   const get = (id: string): Isian => isian[id] ?? KOSONG;
   const set = (id: string, patch: Partial<Isian>) =>
     setIsian(m => ({ ...m, [id]: { ...(m[id] ?? KOSONG), ...patch } }));
@@ -201,6 +205,9 @@ export default function PresensiPegawaiManager() {
                           <span className="block text-xs text-gray-400">
                             {p.nip ? `${p.nip} · ` : ""}{p.jabatan[0] ?? p.position ?? (p.role === "TAS" ? "Tenaga Kependidikan" : "Guru")}
                           </span>
+                          {asal[p.userId]?.sumber && v.status && (
+                            <span className={`status-badge mt-1 ${GAYA_SUMBER[asal[p.userId].sumber!] ?? ""}`}>{LABEL_SUMBER[asal[p.userId].sumber!] ?? asal[p.userId].sumber}</span>
+                          )}
                         </td>
                         <td>
                           <div className="flex flex-wrap gap-1">
@@ -227,6 +234,7 @@ export default function PresensiPegawaiManager() {
                         <td className="text-center">
                           <input value={v.jamPulang} onChange={e => set(p.userId, { jamPulang: e.target.value })}
                             placeholder="15:00" className="input-field w-20 text-center text-xs px-2 py-1.5" />
+                          {asal[p.userId]?.perkiraan && asal[p.userId].pulang === v.jamPulang && <span className="mt-0.5 block text-xs text-amber-600">perkiraan</span>}
                         </td>
                         <td>
                           <input value={v.keterangan} onChange={e => set(p.userId, { keterangan: e.target.value })}

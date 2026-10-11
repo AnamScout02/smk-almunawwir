@@ -30,8 +30,9 @@ type Event = {
 type Pendaftar = {
   id: string; namaPeserta: string; asalSekolah: string | null; kontak: string; catatan: string | null; karyaTautan: string | null;
   status: string; juara: string | null; catatanPanitia: string | null; createdAt: string;
-  nis: string | null; kelas: string | null; studentId: string | null; adaKarya: boolean; adaBukti: boolean;
+  nis: string | null; kelas: string | null; studentId: string | null; adaKarya: boolean; adaBukti: boolean; prestasiId?: string | null;
 };
+type JenisPrestasi = { id: string; name: string; pointsMin: number; pointsMax: number };
 
 const KOSONG = {
   judul: "", penyelenggara: "", milikSekolah: true, jenis: "LOMBA", tingkat: "SEKOLAH", deskripsi: "", syarat: "", fasilitas: "",
@@ -341,12 +342,15 @@ function PendaftarModal({ event, onClose }: { event: Event; onClose: () => void 
   const [ubah, setUbah] = useState<Pendaftar | null>(null);
   const [isi, setIsi] = useState({ status: "", juara: "", catatanPanitia: "" });
   const [sibuk, setSibuk] = useState(false);
+  // Juara → poin prestasi siswa (opsional, dipilih panitia; tidak pernah dicatat dua kali).
+  const [jenisPrestasi, setJenisPrestasi] = useState<JenisPrestasi[]>([]);
+  const [prestasi, setPrestasi] = useState({ id: "", poin: "" });
 
   const muat = useCallback(() => {
     setMemuat(true);
     fetch(`/api/admin/event/${event.id}/pendaftaran`)
       .then(r => r.json())
-      .then(d => setDaftar(d.daftar ?? []))
+      .then(d => { setDaftar(d.daftar ?? []); setJenisPrestasi(d.jenisPrestasi ?? []); })
       .catch(() => {})
       .finally(() => setMemuat(false));
   }, [event.id]);
@@ -357,7 +361,7 @@ function PendaftarModal({ event, onClose }: { event: Event; onClose: () => void 
     setSibuk(true);
     try {
       const r = await fetch(`/api/admin/event/${event.id}/pendaftaran`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pid: ubah.id, ...isi }),
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pid: ubah.id, ...isi, ...(isi.status === "JUARA" && prestasi.id && ubah.studentId && !ubah.prestasiId ? { prestasi: { achievementTypeId: prestasi.id, points: Number(prestasi.poin) } } : {}) }),
       });
       const d = await r.json().catch(() => null);
       if (!r.ok) { toast.error(d?.error || "Gagal menyimpan"); return; }
@@ -413,7 +417,7 @@ function PendaftarModal({ event, onClose }: { event: Event; onClose: () => void 
                       </td>
                       <td className="text-right">
                         <div className="flex justify-end gap-1">
-                          <button type="button" title="Ubah status" onClick={() => { setUbah(p); setIsi({ status: p.status, juara: p.juara ?? "", catatanPanitia: p.catatanPanitia ?? "" }); }}
+                          <button type="button" title="Ubah status" onClick={() => { setUbah(p); setPrestasi({ id: "", poin: "" }); setIsi({ status: p.status, juara: p.juara ?? "", catatanPanitia: p.catatanPanitia ?? "" }); }}
                             className="p-1.5 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"><Pencil size={14} /></button>
                           <button type="button" title="Hapus" onClick={() => hapus(p)}
                             className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 size={14} /></button>
@@ -445,6 +449,21 @@ function PendaftarModal({ event, onClose }: { event: Event; onClose: () => void 
               <label className="label-field">Peringkat *</label>
               <input value={isi.juara} onChange={e => setIsi(s => ({ ...s, juara: e.target.value }))} className="input-field" placeholder="Cth: Juara 1, Harapan 2" />
             </div>
+          )}
+          {isi.status === "JUARA" && ubah?.studentId && (
+            ubah.prestasiId ? <p className="text-sm text-emerald-700">Juara ini sudah tercatat sebagai poin prestasi siswa (tampil di rapor & piagam).</p> : jenisPrestasi.length > 0 && (
+              <div className="rounded-xl border border-gray-100 bg-[#f5f6fa] p-3">
+                <p className="label-field">Catat juga sebagai prestasi siswa (opsional)</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="sm:col-span-2">
+                    <Select value={prestasi.id} placeholder="Jangan dicatat" onChange={v => { const j = jenisPrestasi.find(x => x.id === v); setPrestasi({ id: v, poin: j ? String(j.pointsMax) : "" }); }}
+                      options={[{ value: "", label: "Jangan dicatat" }, ...jenisPrestasi.map(j => ({ value: j.id, label: `${j.name} (${j.pointsMin}–${j.pointsMax} poin)` }))]} />
+                  </div>
+                  {prestasi.id && <input aria-label="Poin prestasi" inputMode="numeric" value={prestasi.poin} onChange={e => setPrestasi(p => ({ ...p, poin: e.target.value.replace(/\D/g, "") }))} className="input-field" placeholder="Poin" />}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">Bila dipilih, juara ini masuk Poin & Prestasi siswa (rapor, piagam) dan orang tuanya dikabari. Hanya sekali per juara.</p>
+              </div>
+            )
           )}
           <div>
             <label className="label-field">Catatan Panitia</label>

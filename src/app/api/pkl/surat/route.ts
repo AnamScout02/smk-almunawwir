@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     } else if (x.surat) {
       suratId = (await prisma.surat.create({ data: { tipe: "KELUAR", nomor, tanggal: x.tanggal, perihal: x.perihal, klasifikasi: x.klasifikasi, isRead: true, ...x.surat }, select: { id: true } })).id;
     }
+    if (suratTugasId) void import("@/lib/presensi-turunan").then(m => m.sinkronPresensiDokumenBaku()).catch(() => null);
     const tautan = await prisma.suratPkl.create({
       data: { jenis: x.isian.jenis, suratId, suratTugasId, nomor, perihal: x.perihal, mitraIds: x.isian.mitraIds, namaMitra: x.namaMitra, studentIds: x.isian.studentIds, data: x.isian, dibuatOleh: session.name },
     });

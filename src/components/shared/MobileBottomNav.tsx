@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import Icon from "@/components/ui/Icon";
-import { simbolTersedia } from "@/lib/simbol-material";
+import { simbolTersedia, URL_FONT_SIMBOL } from "@/lib/simbol-material";
 
 export interface ItemNavBawah {
   href: string; label: string; icon: LucideIcon; exact?: boolean; badge?: number;
@@ -83,6 +83,11 @@ export default function MobileBottomNav({ items, beranda }: {
     <nav aria-label="Navigasi utama"
       className={`lg:hidden print:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-white shadow-[0_-6px_20px_rgba(15,26,69,0.10)] ${keyboardOpen ? "!hidden" : ""}`}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {/* Huruf ikon dimuat oleh bar ini sendiri (bukan layout akar): halaman publik tanpa bar tidak lagi menunggu
+          fonts.googleapis.com. WAJIB di sini dan TANPA syarat — menaruhnya di dalam <Icon> membuatnya baru dirender
+          setelah `simbolSiap`, padahal `simbolSiap` menunggu huruf ini (temuan uji 10 Okt 2026: ikon cadangan selamanya).
+          `precedence` → React mengangkatnya ke <head> sebagai gaya pemblokir, jadi efek di atas menemukan @font-face-nya. */}
+      <link rel="stylesheet" href={URL_FONT_SIMBOL} precedence="default" />
       <div className="relative flex h-16 items-stretch">
         {kiri.map(i => <Tab key={i.href} item={i} />)}
 

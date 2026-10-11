@@ -33,6 +33,11 @@ export interface BarisKelengkapan {
   teacherId: string; guru: string; nip: string | null;
   mapel: string; tingkat: number; kelas: string[];
   prota: boolean; rpp: number; jurnal: number;
+  /** Dibaca dari data (10 Okt 2026), bukan dicentang: pertemuan terjadwal sampai hari ini (null = mapel tanpa jadwal),
+   *  Form Nilai Rapor per kelas, dan ujian CBT mapel itu yang kisi-kisinya (materi + indikator) terisi di SEMUA butir. */
+  pertemuan: number | null;
+  form: { dikirim: number; draf: number; kelas: number };
+  ujian: { jumlah: number; kisiLengkap: number };
   lengkap: boolean;
 }
 
@@ -66,6 +71,17 @@ export async function susunKelengkapan(opsi: { teacherId?: string } = {}): Promi
   const daftar = [...kelompok.values()];
   const guruIds = [...new Set(daftar.map(d => d.teacherId))];
 
+  const semuaKelas = [...new Set(daftar.flatMap(d => d.kelasIds))];
+  const { susunKeterlaksanaan } = await import("@/lib/keterlaksanaan");
+  const [terlaksana, form, ujian] = await Promise.all([
+    susunKeterlaksanaan({ teacherId: opsi.teacherId }).catch(() => null),
+    prisma.formNilaiRapor.findMany({ where: { semester: sem.label, classId: { in: semuaKelas } }, select: { classId: true, subject: true, status: true } }).catch(() => []),
+    // Ujian semester ini dikenali dari tanggal mulainya (Exam tidak menyimpan label semester).
+    prisma.exam.findMany({
+      where: { teacherId: { in: guruIds }, startTime: { gte: new Date(`${sem.semester === "GANJIL" ? sem.tahunAjaran.slice(0, 4) + "-07-01" : sem.tahunAjaran.slice(5, 9) + "-01-01"}T00:00:00Z`) } },
+      select: { teacherId: true, subject: true, classId: true, kelasIds: true, questions: { select: { materi: true, indikator: true } } },
+    }).catch(() => []),
+  ]);
   const [prota, rpp, jurnal] = await Promise.all([
     prisma.rencanaAjar.findMany({
       where: { teacherId: { in: guruIds }, tahunAjaran: sem.tahunAjaran, semester: sem.semester },
@@ -77,7 +93,9 @@ export async function susunKelengkapan(opsi: { teacherId?: string } = {}): Promi
     }),
     prisma.teachingJournal.findMany({
       where: { teacherId: { in: guruIds }, semester: sem.label },
-      select: { teacherId: true, subject: true, classId: true },
+      select: { teacherId: true, subject: true, classId: true, date: true },
+      // Satu hari bisa berisi beberapa materi (TeachingJournal.urutan) — yang dihitung PERTEMUAN, jadi satu per tanggal.
+      distinct: ["teacherId", "subject", "classId", "date"],
     }),
   ]);
 
@@ -86,9 +104,15 @@ export async function susunKelengkapan(opsi: { teacherId?: string } = {}): Promi
     const nRpp = rpp.filter(r => r.teacherId === d.teacherId && r.subjectId === d.subjectId && (r.grade === null || r.grade === d.tingkat)).length;
     const nJurnal = jurnal.filter(j => j.teacherId === d.teacherId && j.subject === d.mapel && d.kelasIds.includes(j.classId)).length;
     const adaProta = setProta.has(`${d.teacherId}|${d.mapel}|${d.tingkat}`);
+    const jalan = terlaksana?.baris.filter(t => t.teacherId === d.teacherId && t.mapel === d.mapel && d.kelasIds.includes(t.classId)) ?? [];
+    const formKelas = form.filter(f => f.subject === d.mapel && d.kelasIds.includes(f.classId));
+    const ujianMapel = ujian.filter(u => u.teacherId === d.teacherId && u.subject === d.mapel && [u.classId, ...u.kelasIds].some(k => d.kelasIds.includes(k)));
     return {
       teacherId: d.teacherId, guru: d.guru, nip: d.nip, mapel: d.mapel, tingkat: d.tingkat,
       kelas: d.kelas.sort(), prota: adaProta, rpp: nRpp, jurnal: nJurnal,
+      pertemuan: jalan.length ? jalan.reduce((t, x) => t + x.pertemuan, 0) : null,
+      form: { dikirim: formKelas.filter(f => f.status === "DIKIRIM").length, draf: formKelas.filter(f => f.status !== "DIKIRIM").length, kelas: d.kelasIds.length },
+      ujian: { jumlah: ujianMapel.length, kisiLengkap: ujianMapel.filter(u => u.questions.length > 0 && u.questions.every(q => q.materi?.trim() && q.indikator?.trim())).length },
       lengkap: adaProta && nRpp > 0,
     };
   });

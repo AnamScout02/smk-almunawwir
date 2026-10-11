@@ -9,7 +9,7 @@ import Select from "@/components/admin/Select";
 import DatePicker from "@/components/shared/DatePicker";
 import { useToast } from "@/components/shared/ToastProvider";
 
-type Baris = { id: string; nama: string; nis: string; nisn: string | null; kelas: string | null; status: string; skl: { id: string; nomor: string } | null; ijazah: { tanggal: string; oleh: string } | null; dokumenLain: number };
+type Baris = { id: string; nama: string; nis: string; nisn: string | null; kelas: string | null; status: string; skl: { id: string; nomor: string } | null; ijazah: { tanggal: string; oleh: string } | null; dokumenLain: number; bukuDipinjam?: number };
 type Data = { kelas: { id: string; name: string }[]; tahun: string[]; baris: Baris[] };
 const hariIni = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 
@@ -71,7 +71,7 @@ export default function PaketKelulusanManager() {
                 <table className="data-table">
                   <thead><tr>
                     <th className="w-10"><input type="checkbox" aria-label="Pilih semua yang belum punya SKL" disabled={!bisaDipilih.length} checked={bisaDipilih.length > 0 && bisaDipilih.every(x => pilih.has(x.id))} onChange={e => setPilih(e.target.checked ? new Set(bisaDipilih.map(x => x.id)) : new Set())} /></th>
-                    <th>Siswa</th><th>Status</th><th>Surat Keterangan Lulus</th><th>Ijazah</th><th className="text-right">Aksi</th>
+                    <th>Siswa</th><th>Status</th><th>Surat Keterangan Lulus</th><th>Ijazah</th><th>Perpustakaan</th><th className="text-right">Aksi</th>
                   </tr></thead>
                   <tbody>{b.map(x => (
                     <tr key={x.id}>
@@ -80,6 +80,7 @@ export default function PaketKelulusanManager() {
                       <td><span className={`status-badge ${x.status === "LULUS" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>{x.status === "LULUS" ? "Lulus" : "Aktif"}</span></td>
                       <td>{x.skl ? <span className="angka text-gray-700">{x.skl.nomor}</span> : <span className="text-gray-400">Belum dibuat</span>}</td>
                       <td>{x.ijazah ? <span className="text-emerald-700">Diserahkan {new Date(x.ijazah.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}<span className="block text-xs text-gray-400">kepada {x.ijazah.oleh}</span></span> : <span className="text-amber-700">Belum diserahkan{x.dokumenLain ? <span className="block text-xs text-gray-400">{x.dokumenLain} dokumen lain sudah</span> : null}</span>}</td>
+                      <td className="whitespace-nowrap text-sm">{x.bukuDipinjam ? <Link href="/pusat-perpustakaan/sirkulasi" className="font-semibold text-red-600 hover:underline">{x.bukuDipinjam} buku belum kembali</Link> : <span className="text-emerald-700">Bebas pustaka</span>}</td>
                       <td><div className="flex justify-end gap-1.5">
                         {x.skl && <Link href={`/dashboard/admin/persuratan/${x.skl.id}/cetak`} className="btn-modal-cancel px-3 text-xs"><ExternalLink size={14} /> SKL</Link>}
                         {!x.ijazah && <Link href={`/dashboard/admin/ijazah-serah?siswa=${encodeURIComponent(x.nama)}`} className="btn-modal-cancel btn-teks px-3 text-xs">Serahkan ijazah</Link>}
@@ -89,7 +90,7 @@ export default function PaketKelulusanManager() {
                 </table>
               </div>
             )}
-          <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">SKL tersimpan sebagai surat keluar biasa di Agenda Surat (nomornya ikut urutan sekolah) dan bisa dirapikan di sana sebelum dicetak. Penyerahan ijazah dicatat di menu Penyerahan Ijazah; halaman ini hanya membacanya.</p>
+          <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">SKL tersimpan sebagai surat keluar biasa di Agenda Surat (nomornya ikut urutan sekolah) dan bisa dirapikan di sana sebelum dicetak. Kolom Perpustakaan dibaca dari sirkulasi: siswa yang masih meminjam buku ditandai merah sebelum ijazahnya diserahkan. Penyerahan ijazah dicatat di menu Penyerahan Ijazah; halaman ini hanya membacanya.</p>
         </div>
       </div>
       <Modal open={buat} onClose={() => setBuat(false)} title="Buat Surat Keterangan Lulus" description={`${pilih.size} siswa · nomor surat berurutan menurut abjad`}

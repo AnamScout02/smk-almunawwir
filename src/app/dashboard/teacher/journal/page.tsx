@@ -9,6 +9,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import EmptyState from "@/components/admin/EmptyState";
 import { useToast } from "@/components/shared/ToastProvider";
 import DatePicker from "@/components/shared/DatePicker";
+import JurnalCepat from "@/components/shared/JurnalCepat";
 
 interface TeachClass {
   classId: string; className: string; grade: number; subjectId: string; subjectName: string;
@@ -21,7 +22,7 @@ interface BarisImpor { baris: number; nis: string; nama: string; p: number | nul
 interface HasilImpor { terbaca: number; siap: number; galat: number; jurnalAda: boolean; baris?: BarisImpor[] }
 
 interface HistoryRow {
-  id: string; date: string; classId: string; className: string; subject: string; materi: string;
+  id: string; date: string; classId: string; className: string; subject: string; materi: string; urutan?: number;
   hadir: number; izin: number; sakit: number; alpha: number;
   avgPengetahuan: number | null; avgKeterampilan: number | null; catatanCount: number;
 }
@@ -56,6 +57,9 @@ export default function TeacherJournalPage() {
   const [date, setDate] = useState(todayStr());
   const [semester, setSemester] = useState(SEMESTERS[2]);
   const [materi, setMateri] = useState("");
+  // Beberapa MATERI dalam satu hari (10 Okt 2026): tiap materi punya nilainya sendiri; kehadiran diisi di materi pertama.
+  const [urutan, setUrutan] = useState(1);
+  const [daftarMateri, setDaftarMateri] = useState<{ urutan: number; materi: string }[]>([]);
   const [rows, setRows] = useState<JournalRow[]>([]);
   const [loadingRows, setLoadingRows] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,6 +68,23 @@ export default function TeacherJournalPage() {
   // hari itu selesai dimuat, lalu dikosongkan lagi. Tanpa ini, effect di bawah selalu memaksa
   // classKey balik ke kelas pertama hari itu tiap tanggal berubah, menimpa pilihan dari Edit.
   const pendingClassKeyRef = useRef<string | null>(null);
+  /** Tanggal yang dituju sasaran di atas — sasaran hanya dipakai oleh muatan daftar kelas TANGGAL ITU. */
+  const pendingTanggalRef = useRef<string | null>(null);
+  // Tautan dari kartu "Jurnal Hari Ini": ?kelas=&mapel=&tanggal= langsung membuka pertemuan itu.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search), kelas = q.get("kelas"), mapel = q.get("mapel"), tgl = q.get("tanggal");
+    if (!kelas || !mapel) return;
+    pendingClassKeyRef.current = `${kelas}::${mapel}`;
+    const sah = !!tgl && /^\d{4}-\d{2}-\d{2}$/.test(tgl);
+    pendingTanggalRef.current = sah ? tgl : date;
+    const u = Math.round(Number(q.get("urutan")) || 1);
+    if (u > 1 && u <= 20) urutanTujuRef.current = u;
+    // Tanggal sama: muatan daftar kelas pertama (efek di bawah, pada render yang sama) sudah membawa sasaran ini —
+    // memicu muatan KEDUA justru mengembalikan pilihan ke kelas pertama (temuan uji 10 Okt 2026).
+    if (sah && tgl !== date) setDate(tgl as string);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [muatKelas, setMuatKelas] = useState(0);
   // Impor nilai dari Excel (17 Sep 2026).
   const [imporBuka, setImporBuka] = useState(false);
   const [berkasImpor, setBerkasImpor] = useState<File | null>(null);
@@ -77,20 +98,29 @@ export default function TeacherJournalPage() {
   useEffect(() => {
     fetch(`/api/teacher/journal-classes?date=${date}`).then(r => r.json()).then((d: TeachClass[]) => {
       setClasses(d);
-      const pending = pendingClassKeyRef.current;
-      pendingClassKeyRef.current = null;
+      const tunggu = pendingTanggalRef.current !== null && pendingTanggalRef.current !== date;
+      const pending = tunggu ? null : pendingClassKeyRef.current;
+      if (!tunggu) { pendingClassKeyRef.current = null; pendingTanggalRef.current = null; }
       if (pending && d.some(c => `${c.classId}::${c.subjectName}` === pending)) {
+        setUrutan(urutanTujuRef.current); urutanTujuRef.current = 1;
         setClassKey(pending);
       } else {
         setClassKey(d.length > 0 ? `${d[0].classId}::${d[0].subjectName}` : "");
       }
     }).catch(() => {});
-  }, [date]);
+  }, [date, muatKelas]);
 
   function editHistoryRow(h: HistoryRow) {
     const dateOnly = new Date(h.date).toISOString().slice(0, 10);
     pendingClassKeyRef.current = `${h.classId}::${h.subject}`;
+    pendingTanggalRef.current = dateOnly;
+    urutanTujuRef.current = h.urutan ?? 1;
     setDate(dateOnly);
+    // Tanggal sama: efek [classKey, date] tidak selalu terpicu, jadi materinya dipilih langsung.
+    if (dateOnly === date) {
+      if (`${h.classId}::${h.subject}` === classKey) { pendingClassKeyRef.current = null; pendingTanggalRef.current = null; urutanTujuRef.current = 1; setUrutan(h.urutan ?? 1); }
+      else setMuatKelas(n => n + 1);
+    }
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -102,14 +132,20 @@ export default function TeacherJournalPage() {
   useEffect(() => {
     if (!selected) return;
     setLoadingRows(true);
-    fetch(`/api/teacher/journal?classId=${selected.classId}&subject=${encodeURIComponent(selected.subjectName)}&date=${date}`)
+    fetch(`/api/teacher/journal?classId=${selected.classId}&subject=${encodeURIComponent(selected.subjectName)}&date=${date}&urutan=${urutan}`)
       .then(r => r.json())
-      .then(d => { setMateri(d.materi ?? ""); setRows(d.rows ?? []); })
+      .then(d => { setMateri(d.materi ?? ""); setRows(d.rows ?? []); setDaftarMateri(Array.isArray(d.daftarMateri) ? d.daftarMateri : []); })
       .catch(() => {})
       .finally(() => setLoadingRows(false));
     loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, date, muatKe]);
+  }, [selected, date, muatKe, urutan]);
+  // Ganti kelas/mapel/tanggal → kembali ke materi pertama.
+  // Materi yang dituju tautan/riwayat. Kembali ke materi 1 dilakukan TEGAS saat pengguna mengganti tanggal/kelas
+  // (`gantiTanggal`/`gantiKelas`), bukan lewat efek — efek [kelas, tanggal] menimpa materi yang baru saja dituju.
+  const urutanTujuRef = useRef(1);
+  const gantiTanggal = (v: string) => { setUrutan(1); setDate(v); };
+  const gantiKelas = (v: string) => { setUrutan(1); setClassKey(v); };
 
   function bukaImpor() {
     setBerkasImpor(null);
@@ -127,6 +163,7 @@ export default function TeacherJournalPage() {
     fd.set("semester", semester);
     fd.set("materi", materi.trim());
     fd.set("simpan", simpan ? "1" : "0");
+    fd.set("urutan", String(urutan));
     setMemprosesImpor(true);
     const r = await fetch("/api/teacher/journal/impor-nilai", { method: "POST", body: fd }).catch(() => null);
     const d = await r?.json().catch(() => null);
@@ -155,7 +192,7 @@ export default function TeacherJournalPage() {
   async function handleSave() {
     if (!selected) return;
     if (!materi.trim()) { toast.warning("Materi yang diajarkan wajib diisi."); return; }
-    const missing = rows.filter(r => !r.attendanceStatus);
+    const missing = urutan === 1 ? rows.filter(r => !r.attendanceStatus) : [];
     if (missing.length > 0) {
       toast.warning(`${missing.length} siswa belum diisi status kehadirannya: ${missing.slice(0, 3).map(r => r.name).join(", ")}${missing.length > 3 ? ", dst." : ""}`);
       return;
@@ -163,16 +200,28 @@ export default function TeacherJournalPage() {
     setSaving(true);
     // Sinyal kelas sering hilang: kiriman yang tidak sampai disimpan di perangkat dan dikirim sendiri (src/lib/antrean-kirim.ts).
     const { antre, res } = await kirimAtauAntre({
-      kunci: `jurnal|${selected.classId}|${selected.subjectName}|${date}`, url: "/api/teacher/journal",
+      kunci: `jurnal|${selected.classId}|${selected.subjectName}|${date}|${urutan}`, url: "/api/teacher/journal",
       label: `Jurnal ${selected.className} ${date.split("-").reverse().join("/")}`,
-      isi: { classId: selected.classId, subject: selected.subjectName, date, semester, materi, rows },
+      isi: { classId: selected.classId, subject: selected.subjectName, date, semester, materi, rows, urutan },
     });
     setSaving(false);
     if (antre) { toast.info("Sinyal terputus — jurnal disimpan di perangkat ini dan dikirim sendiri saat tersambung. Jangan keluar dari akun dulu."); return; }
     if (!res || !res.ok) { const d = await res?.json().catch(() => null); toast.error(d?.error || "Gagal menyimpan jurnal"); return; }
     loadHistory();
-    toast.success("Jurnal pertemuan tersimpan.");
+    setMuatKe(n => n + 1);
+    toast.success(urutan > 1 ? `Materi ke-${urutan} tersimpan.` : "Jurnal pertemuan tersimpan.");
   }
+
+  async function hapusMateri() {
+    if (!selected || urutan < 2) return;
+    const r = await fetch(`/api/teacher/journal?classId=${selected.classId}&subject=${encodeURIComponent(selected.subjectName)}&date=${date}&urutan=${urutan}`, { method: "DELETE" }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    if (!r?.ok) { toast.error(d?.error ?? "Materi gagal dihapus."); return; }
+    toast.success(`Materi ke-${urutan} dihapus.`);
+    setUrutan(urutan - 1); loadHistory();
+  }
+  const jumlahMateri = Math.max(1, ...daftarMateri.map(m => m.urutan));
+  const materiTersimpan = daftarMateri.some(m => m.urutan === urutan);
 
   const printHref = selected
     ? `/dashboard/teacher/journal/cetak?classId=${selected.classId}&subject=${encodeURIComponent(selected.subjectName)}&semester=${encodeURIComponent(semester)}`
@@ -186,18 +235,20 @@ export default function TeacherJournalPage() {
         description="Catat kehadiran, nilai, materi, dan catatan siswa setiap pertemuan"
       />
 
+      <JurnalCepat className="mb-6" saatTersimpan={() => setMuatKe(n => n + 1)} />
+
       {/* Tanggal & Semester SELALU tampil di luar — supaya guru tetap bisa ganti tanggal walau
           hari yang lagi dipilih kebetulan tidak ada jadwal mengajar sama sekali. */}
       <div ref={formRef} className="panel p-5 mb-6 scroll-mt-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="label-field">Tanggal Pertemuan</label>
-            <DatePicker value={date} onChange={setDate} />
+            <DatePicker value={date} onChange={gantiTanggal} />
           </div>
           {classes.length > 0 && (
             <div>
               <label className="label-field">Kelas & Mapel</label>
-              <Select value={classKey} onChange={setClassKey}
+              <Select value={classKey} onChange={gantiKelas}
                 options={classes.map(c => ({ value: `${c.classId}::${c.subjectName}`, label: `${c.className} — ${c.subjectName}` }))} />
             </div>
           )}
@@ -206,9 +257,25 @@ export default function TeacherJournalPage() {
             <Select value={semester} onChange={setSemester} options={SEMESTERS.map(s => ({ value: s, label: s }))} />
           </div>
         </div>
+        {classes.length > 0 && selected && (daftarMateri.length > 0 || urutan > 1) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
+              {Array.from({ length: Math.max(jumlahMateri, urutan) }, (_, i) => i + 1).map(n => (
+                <button key={n} type="button" onClick={() => setUrutan(n)}
+                  className={`sentuh whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${urutan === n ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>Materi {n}</button>
+              ))}
+            </div>
+            {urutan === jumlahMateri && materiTersimpan && (
+              <button type="button" onClick={() => setUrutan(jumlahMateri + 1)} className="btn-modal-cancel btn-teks px-3 text-xs">+ Materi lain hari ini</button>
+            )}
+            {urutan > 1 && urutan === jumlahMateri && materiTersimpan && (
+              <button type="button" onClick={hapusMateri} className="btn-modal-cancel btn-teks px-3 text-xs text-red-600">Hapus materi {urutan}</button>
+            )}
+          </div>
+        )}
         {classes.length > 0 && (
           <div className="mt-4">
-            <label className="label-field">Materi yang Diajarkan</label>
+            <label className="label-field">Materi yang Diajarkan{urutan > 1 ? ` — materi ke-${urutan}` : ""}</label>
             <textarea value={materi} onChange={e => setMateri(e.target.value)} rows={2}
               placeholder="Contoh: Jurnal Umum &amp; Buku Besar — latihan soal bab 3"
               className="input-field" />
@@ -255,7 +322,9 @@ export default function TeacherJournalPage() {
                         <td className="py-2 text-gray-400 text-xs">{i + 1}</td>
                         <td className="py-2 font-semibold text-primary-900">{r.name}</td>
                         <td className="py-2">
-                          <Select value={r.attendanceStatus} onChange={v => updateRow(r.studentId, { attendanceStatus: v })} options={ATTENDANCE_OPTIONS} placeholder="Pilih" />
+                          {urutan === 1
+                            ? <Select value={r.attendanceStatus} onChange={v => updateRow(r.studentId, { attendanceStatus: v })} options={ATTENDANCE_OPTIONS} placeholder="Pilih" />
+                            : <span className="text-sm text-gray-500">{ATTENDANCE_OPTIONS.find(o => o.value === r.attendanceStatus)?.label ?? "—"}</span>}
                         </td>
                         <td className="py-2">
                           <input type="number" min={0} max={100} value={r.scorePengetahuan ?? ""}
@@ -278,7 +347,7 @@ export default function TeacherJournalPage() {
               </div>
               <div className="p-4 border-t border-gray-50 flex justify-end">
                 <button onClick={handleSave} disabled={saving} className="btn-modal-save">
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Jurnal Pertemuan
+                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} {urutan > 1 ? `Simpan Materi ke-${urutan}` : "Simpan Jurnal Pertemuan"}
                 </button>
               </div>
             </div>
@@ -317,8 +386,8 @@ export default function TeacherJournalPage() {
                 {history.map(h => (
                   <tr key={h.id} className="transition-colors">
                     <td className="whitespace-nowrap">{new Date(h.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                    <td className="max-w-xs truncate">{h.materi}</td>
-                    <td className="whitespace-nowrap text-xs">{h.hadir}/{h.izin}/{h.sakit}/{h.alpha}</td>
+                    <td className="max-w-xs truncate">{(h.urutan ?? 1) > 1 && <span className="mr-1 text-xs text-gray-400">materi {h.urutan} ·</span>}{h.materi}</td>
+                    <td className="whitespace-nowrap text-xs">{(h.urutan ?? 1) > 1 ? "—" : `${h.hadir}/${h.izin}/${h.sakit}/${h.alpha}`}</td>
                     <td>{h.avgPengetahuan ?? "—"}</td>
                     <td>{h.avgKeterampilan ?? "—"}</td>
                     <td className="text-xs text-gray-400">{h.catatanCount > 0 ? `${h.catatanCount} siswa` : "—"}</td>

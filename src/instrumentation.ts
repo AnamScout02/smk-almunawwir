@@ -46,6 +46,20 @@ export async function register() {
   setTimeout(cekPengingat, 60_000);
   setInterval(cekPengingat, PENGINGAT_INTERVAL_MS);
 
+  // Presensi turunan & jam pulang perkiraan (10 Okt 2026, src/lib/presensi-turunan.ts) — mengisi hari yang belum punya
+  // catatan dari bukti masuk kelas; idempoten, tiga hari terakhir saja.
+  async function cekPresensiTurunan() {
+    try {
+      const { jalankanPresensiTurunan } = await import("@/lib/presensi-turunan");
+      await jalankanPresensiTurunan();
+    } catch {
+      // Coba lagi di putaran berikutnya.
+    }
+  }
+  setTimeout(() => { import("@/lib/telegram").then(m => m.pastikanWebhookTelegram()).catch(() => {}); }, 90_000);
+  setTimeout(cekPresensiTurunan, 150_000);
+  setInterval(cekPresensiTurunan, 2 * PENGINGAT_INTERVAL_MS);
+
   // Jadwal mati otomatis TV kelas (24 Sep 2026) — menumpang irama 5 menit yang sama. Hanya MEMATIKAN:
   // menyalakan TV dari jauh tidak mungkin lewat WiFi (lihat src/lib/layar-jadwal.ts).
   async function cekJadwalLayar() {

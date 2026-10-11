@@ -2480,3 +2480,171 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        tengah build; penghitung OOM cgroup nol). Situs pulih sendiri ±20 detik, build putus dengan "rpc error … EOF" dan
        meninggalkan proses `next build` yatim (±3,5 GB) yang harus dihentikan lewat PID. Jangan `pgrep -f "next build"` di
        perintah yang memuat kata itu — shell sendiri ikut terbunuh (terulang lagi hari itu).
+
+156. **Alat guru gelombang 10 Oktober 2026: jurnal sekali ketuk, keterlaksanaan, kelengkapan otomatis, rapor kinerja, bukti akreditasi.**
+     Modulnya sudah ada tetapi kosong (RPP 1, Prota 0, supervisi 0, PKB 0) — jadi yang dibuat adalah cara mengisinya nyaris
+     tanpa usaha dan pembaca dari data yang sudah ada, BUKAN modul baru.
+     - **Jurnal sekali ketuk** (`src/lib/jurnal-cepat.ts`, kartu `JurnalCepat` di dashboard guru & di atas halaman Jurnal,
+       `/api/teacher/jurnal-cepat`): jadwal guru hari itu (blok berurutan = satu kartu) + saran materi = butir Prota/Promes
+       BERIKUTNYA yang belum tercatat di jurnal kelas itu (bukan butir "pekan ini" — guru yang tertinggal mengajar butir
+       berikutnya), cadangan materi pertemuan lalu. **Simpan cepat hanya menulis MATERI**: kehadiran siswa baru "Hadir semua"
+       bila guru mencentangnya (CLAUDE.md #10), selain itu barisnya KOSONG untuk dilengkapi lewat "Isi lengkap"
+       (`?kelas=&mapel=&tanggal=` di halaman Jurnal). Jurnal yang sudah ada tidak pernah dihapus-tulis dari jalur ini.
+       `scheduleId` dari klien/Telegram diperiksa ulang: harus jadwal guru itu, berlaku tanggal itu, dan sudah dimulai.
+     - **Materi "tercapai" = teks butir Prota tertulis di jurnal** (`cocokMateri`, src/lib/cocok-materi.ts — sengaja tanpa
+       kemiripan kabur; salah cocok membuat materi yang belum diajarkan terlapor tercapai). Nomor pekan = pekan efektif
+       sejak awal semester (`pekanEfektifKe`), sama dengan tabel pekan di halaman Prota/Promes.
+     - **Keterlaksanaan Kurikulum** (`susunKeterlaksanaan`, src/lib/keterlaksanaan.ts; halaman
+       `/dashboard/{admin,teacher}/keterlaksanaan`): satu baris = guru × kelas × mapel; pertemuan terjadwal dari Jadwal
+       Pelajaran `scheduleType: "BLOK"` (NONBLOK adalah salinan untuk Dapodik — menghitung keduanya = dobel) pada tiap hari
+       sekolah. **Dua jebakan data nyata**: (a) hitungan dimulai dari `awalKbm` (catatan pertama jurnal/piket/absensi siswa),
+       bukan 1 Juli — kalender tidak menandai jeda awal tahun sebagai libur; (b) `hariTanpaKbm` (src/lib/hari-kbm.ts) TIDAK
+       menganggap semua agenda berjenis UJIAN tanpa pelajaran: simulasi/gladi ANBK berlangsung berminggu-minggu sambil KBM
+       jalan, dan Kegiatan Ujian > 21 hari adalah wadah ujian. Yang dikecualikan hanya libur, kegiatan sumatif ≤ 21 hari
+       per tingkat, dan kode kalender KTS/PR (STS/SAS kalender hanya bila tidak ada Kegiatan Ujian sejenis).
+       Jadwal yang dipakai = jadwal SEKARANG untuk seluruh semester (perkiraan bila jadwal pernah diganti) — tertulis di layar.
+       Bawaan hanya tingkat yang dipantau piket (`cakupanTingkat`); pimpinan = `JABATAN_PANTAU_GURU`
+       (src/lib/pantau-guru-akses.ts; penjaga `bolehPantauGuru`), guru lain hanya barisnya sendiri.
+     - **Kelengkapan Perangkat** kini juga membaca Form Nilai Rapor per kelas, ujian CBT yang kisi-kisinya lengkap (materi +
+       indikator di SEMUA butir), dan pertemuan terjadwal. Syarat "Lengkap" TIDAK diubah (Prota + minimal satu RPP).
+     - **Rapor Kinerja Guru** (`susunRaporKinerja`, `/dashboard/{admin,teacher}/rapor-kinerja[/id]`, lembar
+       `RaporKinerjaLembar`): kehadiran, masuk kelas (piket), jurnal, perangkat, supervisi, PKB, masukan rekan. **Tanpa nilai
+       gabungan** — bobot antar-aspek wewenang pimpinan. Masukan rekan hanya JUMLAH per jenis (#92). Hari sekolah untuk
+       kehadiran dihitung sejak catatan Presensi Pegawai PERTAMA semester itu (presensi baru dipakai 18 Sep 2026). Guru
+       hanya membuka rapornya sendiri.
+     - **Bukti Akreditasi** (src/lib/bukti-akreditasi.ts, `/dashboard/{admin,teacher}/bukti-akreditasi`): butir disimpan di
+       SiteSetting `mutu.butirAkreditasi`, tiap butir memilih sumber dari `KATALOG` (hitungan + tautan). **Teks butir
+       instrumen resmi TIDAK ditulis di kode** — daftar bawaan hanya pengelompokan bukti dan layar mengatakannya; Penjamin
+       Mutu menyesuaikan dengan instrumen asesor. Di portal guru hanya sumber ber-`guru` yang diberi tautan (#45). BK & UKS
+       jumlah saja. Sumber baru = satu baris di `KATALOG`.
+
+157. **Bot Telegram dua arah (10 Oktober 2026) — `src/lib/telegram-perintah.ts`.** `/jadwal`, `/jurnal`, membalas pesan
+     jam dengan materi, tombol "Sesuai rencana" (`callback_query`, data `jc:<scheduleId>`). Orangnya dikenali HANYA dari
+     `TautanTelegram.chatId`; jam dari tombol diperiksa ulang `simpanJurnalCepat`. Yang ditulis hanya materi. Balasan ke
+     pesan bertombol dikenali dari `reply_to_message.reply_markup` (tanpa menyimpan keadaan percakapan). `kirim` disuntikkan
+     supaya logikanya bisa diuji tanpa mengirim apa pun. Webhook lama hanya `message` → `pastikanWebhookTelegram`
+     memasang ulang sekali (penanda `telegram.webhookVersi`); kalau jenis kiriman baru dibutuhkan, NAIKKAN versinya.
+
+158. **Asal catatan Presensi Pegawai & presensi turunan (10 Oktober 2026) — `src/lib/presensi-turunan.ts`.**
+     `StaffAttendance.sumber` = TU | QR | KARTU | KEGIATAN | PIKET | JURNAL (label netral di presensi-sumber.ts). Kuasa:
+     TU > pindai > PIKET > JURNAL. **Turunan hanya mengisi hari tanpa catatan**; satu-satunya kenaikan otomatis JURNAL →
+     PIKET, dan pindaian orangnya menaikkan turunan menjadi pindaian. **Jurnal yang diisi susulan (dibuat di hari lain)
+     bukan bukti hadir** — dan simpan ulang jurnal lewat halaman Jurnal membuat ulang barisnya (`createdAt` berubah), jadi
+     pemeriksaan "dibuat di hari yang sama" memang konservatif. Turunan tidak pernah mengarang jam masuk; jam pulang
+     perkiraan = akhir jam mengajar terakhir, hanya untuk baris ber-jam-masuk, bertanda `pulangPerkiraan` dan boleh diganti
+     pindaian sungguhan. Layar TU mengirim SELURUH baris hari itu: baris yang isinya tidak berubah mempertahankan asalnya.
+     Rekap bulanan menandai turunan `H°`. Dijalankan penjadwal tiap 10 menit untuk tiga hari terakhir; rentang lampau lewat
+     `POST /api/admin/presensi-pegawai/turunan`. `prisma db push` TIDAK membangkitkan klien di server ini — jalankan
+     `npx prisma generate` sebelum tsc.
+
+159. **Huruf ikon bottom navbar dimuat oleh `MobileBottomNav`, bukan layout akar (10 Oktober 2026).** Tautan Google Fonts
+     di layout akar menahan SETIAP halaman ±750 md (PageSpeed). Jebakan yang sempat terpasang di build37: menaruh `<link>`
+     di dalam `<Icon>` — `<Icon>` baru dirender setelah `simbolSiap`, padahal `simbolSiap` menunggu huruf itu, sehingga
+     ikon cadangan lucide tampil selamanya (tanpa galat). Tautannya harus dirender TANPA syarat oleh bar itu sendiri.
+     Animasi `diagonalDrift` di `body` & `gradientShift` di Hero dihapus: keduanya menggambar ulang layar penuh tiap bingkai.
+
+160. **Jurnal Mengajar: beberapa MATERI dalam satu hari (`TeachingJournal.urutan`, 10 Oktober 2026).** Satu kelas–mapel–tanggal
+     boleh punya beberapa baris jurnal (materi 1, 2, …), masing-masing dengan nilainya sendiri. **Kehadiran siswa HANYA di
+     baris `urutan = 1`**; baris berikutnya `attendanceStatus` null, sehingga pembaca yang menjumlah kehadiran tidak dobel.
+     POST `/api/teacher/journal` menghapus-tulis HANYA materi yang dikirim (dulu seluruh jurnal tanggal itu — materi kedua
+     menimpa yang pertama); materi ke-N hanya boleh setelah N−1 ada; DELETE hanya materi TERAKHIR dan bukan materi 1.
+     Yang menghitung PERTEMUAN wajib per tanggal (keterlaksanaan, kelengkapan `distinct`, cetak rekap) — bukan per baris.
+     Simpan cepat & Telegram selalu menyasar materi 1. **Jebakan tautan langsung** (`?kelas=&mapel=&tanggal=`): sasaran kelas
+     disimpan di ref dan HANYA boleh dipakai muatan daftar kelas untuk TANGGAL ITU (`pendingTanggalRef`); memicu muatan kedua
+     untuk tanggal yang sama mengembalikan pilihan ke kelas pertama (terbukti di uji).
+
+161. **Kegiatan ≠ libur (10 Oktober 2026, temuan user: LDKS kelas X membuat seluruh sekolah "libur").** `tebakKode`
+     menjatuhkan SEMUA agenda yang tidak dicentang "hari efektif" ke kode LHB untuk pewarnaan kalender; `daftarLibur` dulu
+     memakainya apa adanya, sehingga TV, pengingat, dan absen mandiri menganggap sekolah libur dan guru tidak bisa presensi.
+     Sekarang libur sungguhan = agenda berjenis LIBUR, kode libur yang DIPILIH tegas, atau judul yang memang nama libur.
+     Kalender belum punya "peserta per tingkat" — kegiatan satu tingkat cukup tidak diberi jenis LIBUR.
+
+162. **Tautan data 10 Oktober 2026.**
+     - **Cuti disetujui & Surat Tugas → Presensi Pegawai** (`sinkronPresensiDokumen`, src/lib/presensi-turunan.ts; asal
+       `CUTI` / `SURAT_TUGAS`): mengisi hari tanpa catatan atau yang masih turunan murni; dokumen dibatalkan → barisnya
+       dicabut. Dipanggil setelah cuti/surat tugas disimpan dan oleh penjadwal (−30 … +120 hari). **Dinas luar dari Surat
+       Tugas TIDAK mengunci pindaian** (banyak tugas luar hanya beberapa jam) — pindaian mengubahnya jadi HADIR; cuti tetap
+       terkunci. Rute baru yang menulis `StaffLeave`/`SuratTugas` WAJIB memanggil `sinkronPresensiDokumenBaku`.
+     - **Juara lomba → poin prestasi** (`PendaftaranEvent.prestasiId`): panitia MEMILIH jenis & poinnya di jendela status
+       (tidak pernah otomatis — poin tidak ditebak), sekali per juara, orang tua dikabari lewat `beritahuPoin`.
+     - **Paket Kelulusan** membaca buku yang masih dipinjam (`bukuDipinjam`). Mutasi Keluar sudah memeriksanya sejak awal.
+     - **Buku Induk Guru**: kolom `jabatanStruktural` & `pkbRingkas` DIBACA dari Jabatan & PKB (tanpa `isian`, jadi tidak
+       ikut formulir/impor). Wali kelas sudah ada sejak awal.
+     - **Impor Prota/Promes** (`uraiProta`, src/lib/urai-prota.ts murni; `/api/teacher/rencana-ajar/impor`): tabel biasa,
+       Promes kisi minggu (judul dua tingkat; colspan/rowspan Word DIBENTANGKAN dulu), atau daftar bernomor. Hasilnya hanya
+       DITINJAU di penyunting — tidak pernah langsung disimpan.
+
+163. **Pusat Ekstrakurikuler (10 Oktober 2026) — `/pusat-ekstra` + `/portal-ekstra/<token>`, src/lib/ekstra-server.ts.**
+     Keputusan user: koordinator umum (Rudy, jabatan Koordinator Ekstrakurikuler) mengelola semua; yang mengabsen adalah
+     pembina masing-masing, yang BISA ORANG LUAR sekolah.
+     - Pembina luar TIDAK diberi akun (akan ikut terhitung pegawai): ia memakai tautan rahasia per ekskul (hash di
+       `Extracurricular.tokenPortalHash`, token asli tampil SEKALI; buat ulang = yang lama mati) — absensi, kegiatan, dan foto
+       HARI ITU saja, hanya nama & kelas anggota. Pembina guru/staf tetap lewat jabatan "Pembina <nama ekskul>"; menu
+       sidebar kini mengikuti SEMUA jabatan berawalan "Pembina " (dulu tertulis mati OSIS & Pramuka).
+     - **Foto bukti kegiatan** `ExtracurricularJournal.foto` (maks 6, folder `uploads/ekstra` — bukan data pribadi).
+       Absensi disimpan lewat SATU pintu `simpanAbsenEkstra` supaya foto pertemuan itu tidak ikut terhapus saat absensi
+       disimpan ulang; foto boleh masuk lebih dulu daripada absensinya.
+     - **OSIS = organisasi INTRA** (`Extracurricular.jenis`), tetapi TETAP di tabel yang sama: rapor menulis keikutsertaan
+       OSIS di tabel kegiatan ekstrakurikuler dan itu tidak diubah (jawaban atas pertanyaan user).
+     - Menu ekstrakurikuler di ketiga sidebar = satu pintu "Pusat Ekstrakurikuler"; rute lama pengalihan. Menguji portal
+       pembina: pakai ekskul SEMENTARA — menyimpan absensi lewat tautan menimpa pertemuan hari itu milik ekskul sungguhan.
+     - **Laporan Bulanan Ekstrakurikuler** (`/pusat-ekstra/laporan?ekskul=&bulan=`, satu sumber `laporanBulananEkstra` di
+       src/lib/ekstra-laporan.ts untuk lembar cetak & Excel `/api/ekstra/laporan`): pertemuan (pencatat, lewat tautan atau
+       tidak, jumlah foto), agenda/lomba, kehadiran per anggota, foto, TTD kepala (pribadi) & pembina. Rekap kehadiran per
+       anggota di layar SUDAH ada sejak lama (tab Rekap pada Absensi) — jangan dibuat ulang. Foto kegiatan SENGAJA tidak
+       dialirkan otomatis ke Galeri publik (foto siswa tanpa seleksi).
+     - **Kartu jurnal ke-N untuk kelas & mapel yang sama mengisi materi ke-N** (`KartuJurnal.urutan`): guru dengan dua blok
+       sehari tidak lagi menimpa jurnal yang sama. Kembali ke materi 1 di halaman Jurnal dilakukan TEGAS saat pengguna
+       mengganti tanggal/kelas (`gantiTanggal`/`gantiKelas`) — efek [kelas, tanggal] menimpa materi yang dituju tautan.
+
+164. **Ekskul untuk siswa & orang tua, pendaftaran, pengingat, dan absen kelas mengikuti kegiatan (10 Oktober 2026).**
+     - **Halaman Ekstrakurikuler** `/dashboard/{student,parent}/ekstrakurikuler` = SATU komponen `EkstraSaya` + `/api/ekstra/saya`
+       (`ekstraSiswa`, src/lib/ekstra-siswa.ts): ekskul yang diikuti, kehadiran semester berjalan, kegiatan & foto, jadwal,
+       nilai. Orang tua hanya membaca; anaknya dipilih `resolveSelectedChild` (tidak pernah id mentah). Foto hanya dari
+       ekskul yang diikuti anak itu.
+     - **Pendaftaran oleh siswa** (`PendaftaranEkstra`): MENUNGGU → pembina/koordinator memutuskan
+       (`/pusat-ekstra/pendaftaran`, atau pembina luar lewat tautan portal) → DITERIMA membuat `ExtracurricularMember`.
+       Setelan koordinator: `ekstra.pendaftaranDibuka` (bawaan terbuka) & `ekstra.maksPilihan` (bawaan 3, menghitung
+       keanggotaan + yang masih menunggu); per ekskul `bukaDaftar`, `kuota`, `deskripsi` (menu Pembina & Tautan). Kuota
+       diperiksa lagi saat MEMUTUSKAN supaya "Terima semua" tidak melampauinya. **Pendaftar baru tidak dikabarkan satu per
+       satu** (awal semester bisa ratusan) — jumlahnya tampil di beranda Pusat Ekstra dan ikut pengingat harian; yang
+       dikabari adalah SISWA saat diputuskan. `putuskanPendaftaran` menerima `kirim` suntikan (uji tanpa mengirim) dan
+       `ekskulIds` = batas ekskul yang boleh diputuskan pemanggil.
+     - **Pengingat ekskul** (`pengingatEkstra`, jam `notifikasi.jamEkstra` bawaan 17.30, terdaftar di keempat tempat #51):
+       ekskul yang hari itu hari latihannya (`Extracurricular.hariRutin` 0–6, atau agenda LATIHAN hari itu) tetapi belum
+       diabsen + jumlah pendaftar menunggu → SATU kabar per orang: Koordinator (semua, menyebut nama pembina luar) dan
+       pembina ber-akun (ekskulnya saja). `jadwalRutin` tetap teks bebas untuk tampilan. Modul penjadwal jangan mengimpor
+       `ekstra-server`/`kegiatan-qr` (menarik penjaga halaman Next lewat `jabatan-guard`).
+     - **Nilai ekskul → rapor SUDAH tersambung sejak 17 Sep** (`NilaiEkstra` dibaca `rapor-data.ts` & `rapor-cetak.ts`) —
+       wali kelas tidak mengetik ulang; jangan dibuat jalur kedua.
+     - **Absen kelas mengikuti absen kegiatan** (keputusan user; src/lib/absensi-otomatis.ts): keterangan presensi kegiatan
+       terbawa (Izin → IZIN, Sakit → SAKIT, selain itu HADIR) ke `Attendance` bertanda **`sumber: "KEGIATAN"`**. Hanya baris
+       bertanda itu yang diubah/dicabut lagi saat presensi kegiatan diubah/dihapus; isian wali kelas tidak pernah (rute
+       absensi wali menghapus-lalu-menulis, jadi tandanya hilang begitu wali menyimpan). "Tidak hadir = Alpha" HANYA lewat
+       tombol panitia di tab Belum (`{alpha: true}`), setelah jam kegiatan hari itu lewat, dan hanya untuk siswa tanpa
+       catatan. `kelasIkutKegiatan(tanggal)`: kelas sasaran kegiatan SISWA yang DISETUJUI, bukan daftar orang per orang,
+       dan berjam harian ≥ 4 jam → tidak ditagih di `getClassesMissingAttendance` maupun `pengingatAbsensi` (upacara satu
+       jam sengaja tidak membungkam). Kegiatan satu tingkat (kasus LDKS) dibuat di menu Kegiatan dengan pintasan
+       "Kelas X/XI/XII" — agenda Kalender Pendidikan tidak punya presensi, jadi tidak bisa mengisi absensi.
+     - **Tawaran passkey hanya di HP/tablet ber-sidik-jari** (`TawaranPasskey`): `passkeyDidukung` hanya memeriksa adanya
+       WebAuthn sehingga tawaran muncul di desktop, padahal komputer TU/lab dipakai bergantian. Di komputer tetap bisa
+       didaftarkan sengaja lewat Profil.
+
+165. **Buku Wali Kelas, peta pertemanan sosiometri, pengingat perawatan (11 Oktober 2026).**
+     - **Buku Wali Kelas** `/dashboard/{teacher,admin}/buku-wali?kelas=` (`susunBukuWali`, src/lib/buku-wali.ts; komponen
+       `HalamanBukuWali` + `BukuWaliKelas`; Excel `/api/buku-wali`): satu baris per siswa — kehadiran semester, alpha, poin,
+       jumlah mapel di bawah KKM, izin, ekskul, kunjungan rumah, peringatan dini — ketuk baris untuk rinciannya. HANYA
+       membaca, dan tiap angka dari SUMBER HALAMANNYA SENDIRI (`susunRaporSiswa` untuk nilai vs KKM, `hitungRisikoSiswa`,
+       `levelPoin`, Attendance rentang semester). Kunjungan = Rekam BK berjenis "Home Visit"; catatan BK lain hanya JUMLAH
+       (#151). Kelas dari alamat tidak dipercaya: `kelasBukuWali` (wali → kelas walinya, Admin → semua).
+     - **Peta pertemanan sosiometri** (`GrafSosiometri`, di hasil angket jenis SOSIOMETRI): API hasil menambah
+       `pilihan: [pemilih, dipilih][]`. Tata letak gaya-pegas DETERMINISTIK (posisi awal lingkaran, tanpa acak) supaya
+       gambarnya sama tiap dibuka. Daftar "tidak dipilih" & "saling memilih" sudah ada sejak 17 Sep — graf hanya tambahan.
+     - **Perawatan berkala aset SUDAH ADA sejak 17 Sep** (`JadwalPerawatan` + riwayat, menu Sarpras/Lab → Perawatan) — yang
+       ditambah hanya pengingatnya (`pengingatPerawatan`, jam `notifikasi.jamPerawatan` bawaan 07.00, keempat tempat #51):
+       jatuh tempo hari itu + terlambat diulang tiap 3 hari, satu kabar per orang ke Wakil Kepala Sarana Prasarana (semua)
+       dan Kepala Laboratorium (lingkup LAB). Stok obat UKS juga sudah ada — periksa dulu sebelum mengusulkan fitur.
+     - **TV lab menampilkan satu kelas terus** karena TV itu diikat ke satu kelas (`Layar.kelasId`) DAN `Schedule.room`
+       kosong di seluruh jadwal (0 dari 1.536 baris, 11 Okt 2026) — jadwal per ruang (#81) tidak punya data untuk dibaca.
+     - **Tangkapan layar halaman panjang**: sidebar `sticky h-screen` hanya setinggi satu layar, jadi `fullPage` membuatnya
+       tampak "terpotong" (laporan user: "kenapa melebihi navbar"). Potret dengan tinggi viewport = tinggi halaman.

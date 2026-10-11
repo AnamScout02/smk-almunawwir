@@ -10,6 +10,9 @@ export interface TeacherRow {
   bukuIndukData?: Record<string, unknown> | null;
   user: { name: string };
   homeroomOf: { name: string }[];
+  /** Dibaca dari menu Jabatan & Portofolio PKB — bukan isian Buku Induk (satu sumber, tidak diketik dua kali). */
+  jabatan?: { jabatan: { name: string } }[];
+  pkb?: { judul: string; mulai: Date | string; jamPelajaran: number | null }[];
 }
 
 const b = (t: TeacherRow, key: string): string => {
@@ -65,6 +68,13 @@ export const GURU_COLUMNS: ColDef[] = [
 
   { key: "shortCode", label: "Kode Guru", group: "Sekolah", get: t => t.shortCode ?? "" },
   { key: "homeroomOf", label: "Wali Kelas", group: "Sekolah", get: t => t.homeroomOf.map(c => c.name).join(", ") },
+  { key: "jabatanStruktural", label: "Jabatan / Tugas Tambahan", group: "Sekolah", get: t => (t.jabatan ?? []).map(j => j.jabatan.name).join(", ") },
+  { key: "pkbRingkas", label: "Pelatihan (PKB)", group: "Sekolah", get: t => {
+    const p = t.pkb ?? [];
+    if (!p.length) return "";
+    const jp = p.reduce((n, x) => n + (x.jamPelajaran ?? 0), 0);
+    return `${p.length} kegiatan${jp ? ` · ${jp} JP` : ""}: ${p.slice(0, 5).map(x => `${x.judul} (${new Date(x.mulai).getFullYear()})`).join("; ")}${p.length > 5 ? "; …" : ""}`;
+  } },
   { key: "teacherStatus", label: "Status", group: "Sekolah", get: t => t.teacherStatus ?? "AKTIF" },
 
   /* ── Isian dari berkas rujukan Buku Induk sekolah (dikirim user 30 September 2026) ──

@@ -85,8 +85,9 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
         <div className="absolute inset-0"
           style={{
             background: "linear-gradient(135deg, #080e25 0%, #0F1A45 25%, #1B2B6B 55%, #0a1535 80%, #0F1A45 100%)",
-            backgroundSize: "400% 400%",
-            animation: "gradientShift 14s ease infinite",
+            // Diam: menggeser background-position lapisan sebesar hero menggambar ulang seluruh hero tiap bingkai
+            // ("animasi yang tidak digabungkan" di PageSpeed). Gerak hero cukup dari orb & cincin yang memakai transform.
+            backgroundSize: "400% 400%", backgroundPosition: "50% 50%",
           }}
         />
       )}
@@ -95,8 +96,7 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
       <div className="absolute inset-0 pointer-events-none"
         style={{
           background: "linear-gradient(200deg, transparent 10%, rgba(59,91,219,0.18) 35%, transparent 55%, rgba(232,160,32,0.10) 75%, transparent 95%)",
-          backgroundSize: "300% 300%",
-          animation: "gradientShift 22s ease infinite reverse",
+          backgroundSize: "300% 300%", backgroundPosition: "50% 50%",
         }}
       />
 
@@ -112,7 +112,7 @@ export default function Hero({ lang = "id", stats, slideUtama }: { lang?: Lang; 
         <div className="absolute bottom-20 left-[10%] w-80 h-80 rounded-full opacity-15 blur-3xl"
           style={{ background: "radial-gradient(circle, #3b5bdb 0%, transparent 70%)", animation: "float 14s ease-in-out infinite reverse" }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-3xl"
-          style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 60%)", animation: "gradientShift 20s ease infinite" }} />
+          style={{ background: "radial-gradient(circle, #E8A020 0%, transparent 60%)" }} />
       </div>
 
       {/* Dekorasi cincin emas animasi */}

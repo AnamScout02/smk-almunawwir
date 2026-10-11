@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         class: { select: { id: true, name: true } },
         entries: { select: { scorePengetahuan: true, scoreKeterampilan: true, catatan: true, studentId: true, attendanceStatus: true } },
       },
-      orderBy: { date: "asc" },
+      orderBy: [{ date: "asc" }, { urutan: "asc" }],
     });
 
     const result = journals.map(j => {
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
         classId: j.class.id,
         className: j.class.name,
         subject: j.subject,
-        materi: j.materi,
+        materi: j.materi, urutan: j.urutan,
         hadir: count("HADIR"), izin: count("IZIN"), sakit: count("SAKIT"), alpha: count("ALPHA"),
         avgPengetahuan: avg(scoresP), avgKeterampilan: avg(scoresK),
         catatanCount: catatanList,

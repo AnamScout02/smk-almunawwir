@@ -70,7 +70,7 @@ export interface BarisKehadiranGuru {
   nama: string;
   nip: string | null;
   tanggal: string; // YYYY-MM-DD
-  harian: { status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null } | null;
+  harian: { status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null; sumber: string | null; pulangPerkiraan: boolean } | null;
   blok: BlokKelas[];
   blokSeharusnya: number;
   piket: { status: string; catatan: string | null } | null;
@@ -122,7 +122,7 @@ export async function susunKehadiranGuru(opsi: { dari: string; sampai: string; u
     }),
     prisma.staffAttendance.findMany({
       where: { tanggal: { gte: awal, lt: akhir }, ...(opsi.userId ? { userId: opsi.userId } : {}) },
-      select: { userId: true, tanggal: true, status: true, jamMasuk: true, jamPulang: true, keterangan: true },
+      select: { userId: true, tanggal: true, status: true, jamMasuk: true, jamPulang: true, keterangan: true, sumber: true, pulangPerkiraan: true },
     }),
     prisma.teacherScheduleAttendance.findMany({
       where: { date: { gte: awal, lt: akhir } },
@@ -224,7 +224,7 @@ export async function susunKehadiranGuru(opsi: { dari: string; sampai: string; u
         nama: p.name,
         nip: p.teacher?.nip ?? null,
         tanggal: iso(d),
-        harian: h ? { status: h.status, jamMasuk: h.jamMasuk, jamPulang: h.jamPulang, keterangan: h.keterangan } : null,
+        harian: h ? { status: h.status, jamMasuk: h.jamMasuk, jamPulang: h.jamPulang, keterangan: h.keterangan, sumber: h.sumber, pulangPerkiraan: h.pulangPerkiraan } : null,
         blok: b,
         blokSeharusnya: seharusnya,
         piket: pk ? { status: pk.status, catatan: pk.notes } : null,

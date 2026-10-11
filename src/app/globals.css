@@ -262,7 +262,10 @@
       transparent 1px,
       transparent 18px
     );
-    animation: diagonalDrift 10s linear infinite;
+    /* Garis diagonal SENGAJA DIAM (10 Okt 2026). Dulu digeser `diagonalDrift` 18px/10 dtk: menganimasikan
+       background-position pada body membuat SELURUH halaman digambar ulang tiap bingkai — terukur utas utama sibuk
+       4,3 dari 6 detik saat halaman diam (0,6 dtk tanpa itu) dan TBT Lighthouse 28 detik. Geserannya nyaris tak terlihat.
+       Jangan menghidupkan animasi background-position/-size pada elemen besar; gerak dekoratif pakai transform/opacity. */
     color: var(--color-navy);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -666,7 +669,6 @@ section.bg-white {
     transparent 1px,
     transparent 18px
   );
-  animation: diagonalDrift 10s linear infinite;
 }
 
 /* Geometric pattern overlay untuk semua section hero dark-navy */

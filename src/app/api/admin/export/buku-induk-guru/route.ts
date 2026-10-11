@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
     include: {
       user: { select: { name: true, email: true } },
       homeroomOf: { select: { name: true } },
+      // Jabatan struktural & riwayat PKB ikut tampil di Buku Induk (tautan data 10 Okt 2026) — dibaca, bukan disalin.
+      jabatan: { select: { jabatan: { select: { name: true } } } },
+      pkb: { select: { judul: true, mulai: true, jamPelajaran: true }, orderBy: { mulai: "desc" } },
     },
     orderBy: { user: { name: "asc" } },
   });

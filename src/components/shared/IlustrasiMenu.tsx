@@ -51,6 +51,8 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   /* Megafon */
   pengumuman: p => <S {...p}><path d="M7 19h7l16-10v30l-16-10H7a4 4 0 01-4-4v-2a4 4 0 014-4z" fill={W} /><rect x="13" y="29" width="7" height="13" rx="2.5" fill={N2} /><path d="M35 15c3.4 2.4 5.6 5.3 5.6 9s-2.2 6.6-5.6 9" stroke={B} strokeWidth="3.4" strokeLinecap="round" /><path d="M40 9c5 3.6 7 8 7 15" stroke={G} strokeWidth="2.6" strokeLinecap="round" /></S>,
   /* Kartu identitas */
+  /* Buku terbuka + sosok siswa & tanda centang — Buku Wali Kelas (ringkasan tiap siswa satu halaman) */
+  bukuWali: p => <S {...p}><path d="M4 10h17a4 4 0 014 4v26a4 4 0 00-4-3H4z" fill={W} /><path d="M44 10H27a4 4 0 00-4 4v26a4 4 0 014-3h17z" fill={B} /><circle cx="13" cy="19" r="4" fill={N2} /><path d="M7 31c0-3.6 2.7-6 6-6s6 2.4 6 6z" fill={N2} /><path d="M29 18l2.4 2.4L36 16" stroke={N} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" /><rect x="29" y="25" width="11" height="2.6" rx="1.3" fill={N2} /><rect x="29" y="31" width="8" height="2.6" rx="1.3" fill={N2} /></S>,
   kartu: p => <S {...p}><rect x="4" y="10" width="40" height="30" rx="6" fill={W} /><rect x="4" y="10" width="40" height="8" rx="5" fill={N} /><circle cx="16" cy="27" r="6" fill={N2} /><path d="M8 38c0-4.4 3.6-7.4 8-7.4s8 3 8 7.4z" fill={N2} /><rect x="28" y="23" width="12" height="3.2" rx="1.6" fill={N2} /><rect x="28" y="30" width="9" height="3.2" rx="1.6" fill={N2} /><rect x="20" y="2" width="8" height="10" rx="2" fill={B} /></S>,
   /* Perisai + bintang */
   poin: p => <S {...p}><path d="M24 3l16 6.5v12.5c0 9.6-6.8 17.4-16 21.5C14.8 39.4 8 31.6 8 22V9.5z" fill={W} /><path d="M24 3v40c9.2-4.1 16-11.9 16-21.5V9.5z" fill={B} /><path d="M24 14l2.8 5.8 6.4 1-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-1z" fill={N} /></S>,
@@ -312,6 +314,9 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
   /* Kartu grafik + megafon — dashboard jabatan */
   dsbHumas: p => <S {...p}><rect x="3" y="12" width="30" height="31" rx="4" fill={W} /><rect x="8" y="30" width="4.5" height="8" rx="1.6" fill={N2} /><rect x="15" y="25" width="4.5" height="13" rx="1.6" fill={N2} /><rect x="22" y="20" width="4.5" height="18" rx="1.6" fill={N} /><path d="M26 11h4l12-6v17l-12-6h-4a2.6 2.6 0 01-2.6-2.6v-.8A2.6 2.6 0 0126 11z" fill={B} /><path d="M45 9c2 1.6 3.2 3.4 3.2 6" stroke={G} strokeWidth="2.4" strokeLinecap="round" /></S>,
   /* Map dokumen bertumpuk + lencana centang — kelengkapan perangkat ajar */
+  keterlaksanaan: p => <S {...p}><path d="M6 34a18 18 0 0 1 36 0" stroke={G} strokeWidth="7" strokeLinecap="round" fill="none" /><path d="M6 34a18 18 0 0 1 24.5-16.8" stroke={B} strokeWidth="7" strokeLinecap="round" fill="none" /><path d="M24 34l9-12" stroke={N} strokeWidth="3.4" strokeLinecap="round" /><circle cx="24" cy="34" r="4.2" fill={W} stroke={N} strokeWidth="2.4" /><rect x="14" y="40" width="20" height="3" rx="1.5" fill={N2} /></S>,
+  raporKinerja: p => <S {...p}><rect x="7" y="5" width="28" height="38" rx="4" fill={W} /><circle cx="16" cy="14" r="4.5" fill={B} /><rect x="23" y="11" width="8" height="2.6" rx="1.3" fill={N} /><rect x="23" y="15.5" width="6" height="2.4" rx="1.2" fill={N2} /><rect x="12" y="32" width="4" height="6" rx="1.5" fill={G} /><rect x="18.5" y="27" width="4" height="11" rx="1.5" fill={B} /><rect x="25" y="23" width="4" height="15" rx="1.5" fill={N} /><path d="M37 26l1.8 3.8 4.2.5-3.1 2.9.8 4.1-3.7-2-3.7 2 .8-4.1-3.1-2.9 4.2-.5z" fill={G} stroke={N} strokeWidth="1.6" strokeLinejoin="round" /></S>,
+  buktiAkreditasi: p => <S {...p}><path d="M4 14a4 4 0 0 1 4-4h10l4 5h18a4 4 0 0 1 4 4v19a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" fill={B} /><path d="M4 21h40v17a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" fill={W} /><circle cx="24" cy="31" r="7.5" fill={G} /><path d="M20.2 31l2.8 2.8 5-5.2" stroke={N} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></S>,
   kelengkapan: p => <S {...p}><rect x="4" y="10" width="24" height="32" rx="3.5" fill={G} /><rect x="9" y="5" width="24" height="32" rx="3.5" fill={W} /><path d="M13.5 13l2 2 3.5-3.6" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /><rect x="21" y="12.5" width="8" height="2.4" rx="1.2" fill={N2} /><path d="M13.5 21l2 2 3.5-3.6" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /><rect x="21" y="20.5" width="8" height="2.4" rx="1.2" fill={N2} /><rect x="13.5" y="28" width="15" height="2.4" rx="1.2" fill={N2} /><circle cx="36" cy="34" r="9" fill={B} /><path d="M32 34l2.8 2.8 5.2-5.4" stroke={N} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></S>,
   /* Papan tulis + guru */
   /* Dua label nama menyatu jadi satu — Rapikan Nama Sekolah (8 Okt 2026) */
@@ -322,6 +327,8 @@ export const ILUSTRASI: Record<string, (p: Props) => React.ReactElement> = {
 
 /** Alamat menu → nama ilustrasi. Menu di luar daftar ini tetap memakai ikon lucide biasa. */
 export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
+  "/dashboard/teacher/buku-wali": "bukuWali",
+  "/dashboard/admin/buku-wali": "bukuWali",
   // Sarana — layar & jaringan (24 September 2026). WAJIB didaftarkan tegas: aturan kata kunci akan
   // menyamakan "Papan & TV", "Perangkat Jaringan", "Jaringan Sekolah", dan "Mode Ujian Jaringan"
   // menjadi gambar yang sama karena sama-sama mengandung kata "jaringan".
@@ -562,6 +569,12 @@ export const PETA_ILUSTRASI: Record<string, keyof typeof ILUSTRASI> = {
   "/dashboard/admin/mitra-mou": "klip",
   "/dashboard/teacher/branding": "palet",
   "/dashboard/admin/branding": "palet",
+  "/dashboard/admin/keterlaksanaan": "keterlaksanaan",
+  "/dashboard/teacher/keterlaksanaan": "keterlaksanaan",
+  "/dashboard/admin/rapor-kinerja": "raporKinerja",
+  "/dashboard/teacher/rapor-kinerja": "raporKinerja",
+  "/dashboard/admin/bukti-akreditasi": "buktiAkreditasi",
+  "/dashboard/teacher/bukti-akreditasi": "buktiAkreditasi",
   "/dashboard/admin/kelengkapan-perangkat": "kelengkapan",
   "/dashboard/teacher/kelengkapan-perangkat": "kelengkapan",
   // Umum

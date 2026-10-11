@@ -17,10 +17,10 @@ export async function GET() {
   return balasanExcel({
     namaFile: `kelengkapan-perangkat-ajar-${semester.label.replace(/[ /]/g, "-")}`,
     namaSheet: "Kelengkapan Perangkat",
-    headers: ["No", "Guru", "NIP", "Mata Pelajaran", "Tingkat", "Kelas", "Prota & Promes", "Jumlah RPP", "Jumlah Jurnal", "Status"],
+    headers: ["No", "Guru", "NIP", "Mata Pelajaran", "Tingkat", "Kelas", "Prota & Promes", "Jumlah RPP", "Jumlah Jurnal", "Pertemuan Terjadwal", "Form Nilai Terkirim", "Form Nilai Draf", "Ujian CBT", "Ujian Berkisi-kisi Lengkap", "Status"],
     rows: baris.map((b, i) => [
       i + 1, b.guru, b.nip ?? "", b.mapel, b.tingkat, b.kelas.join(", "),
-      b.prota ? "Ada" : "Belum", b.rpp, b.jurnal, b.lengkap ? "Lengkap" : "Belum lengkap",
+      b.prota ? "Ada" : "Belum", b.rpp, b.jurnal, b.pertemuan ?? "", b.form.dikirim, b.form.draf, b.ujian.jumlah, b.ujian.kisiLengkap, b.lengkap ? "Lengkap" : "Belum lengkap",
     ]),
   });
 }

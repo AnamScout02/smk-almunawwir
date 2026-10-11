@@ -3,7 +3,7 @@ import TimePicker from "@/components/shared/TimePicker";
 import DatePicker from "@/components/shared/DatePicker";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarCheck, Check, Download, Loader2, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Check, Download, Loader2, Pencil, Plus, QrCode, Search, Trash2, UserCheck, UserX, Users, X } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import Select from "@/components/admin/Select";
 import Modal from "@/components/admin/Modal";
@@ -122,6 +122,17 @@ export default function KegiatanManager() {
     const r = await fetch(`/api/kegiatan/${rekap.id}/presensi`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, keterangan, tanggal: hariRekap }) }).catch(() => null);
     if (r?.ok) muatRekap(rekap.id, hariRekap); else toast.error("Gagal mencatat.");
   }
+  /** Siswa yang tidak hadir → ALPHA di absensi kelas hari itu. Hanya mengisi yang belum punya catatan; ditekan panitia. */
+  async function alphakan() {
+    if (!rekap) return;
+    if (!(await confirm("Catat ALPHA di absensi kelas untuk semua siswa yang belum hadir pada hari ini? Siswa yang absensinya sudah diisi wali kelas tidak diubah."))) return;
+    setSibuk(true);
+    const r = await fetch(`/api/kegiatan/${rekap.id}/presensi`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ alpha: true, tanggal: hariRekap }) }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    setSibuk(false);
+    if (!r?.ok) { toast.error(d?.error ?? "Gagal mencatat."); return; }
+    toast.success(d.alpha ? `${d.alpha} siswa dicatat Alpha di absensi kelas.` : "Tidak ada yang perlu dicatat — semua sudah punya catatan absensi.");
+  }
   /** Ubah keterangan catatan hadir yang sudah ada. POST-nya upsert, jadi jalur simpannya sama
    *  dengan mencatat manual — yang berubah hanya kolom keterangan. */
   async function simpanSuntingan() {
@@ -202,8 +213,15 @@ export default function KegiatanManager() {
           if (grup.length === 0) {
             return <p className="py-10 text-center text-sm text-gray-400">{tab === "hadir" ? "Belum ada yang hadir." : "Semua sasaran sudah hadir."}</p>;
           }
+          const siswaBelum = semuaBelum.filter(x => x.kelas).length;
           return (
             <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                <p className="min-w-0 flex-1">Absensi kelas siswa <b>mengikuti presensi kegiatan ini</b>: hadir, izin, dan sakit di sini langsung mengisi absensi kelas hari itu. Isian yang sudah dibuat wali kelas tidak diubah.</p>
+                {tab === "belum" && siswaBelum > 0 && (
+                  <button type="button" disabled={sibuk} onClick={alphakan} className="btn-awas btn-teks px-3 text-xs"><UserX /> Catat Alpha di absen kelas ({siswaBelum})</button>
+                )}
+              </div>
               {grup.map(([nama, baris]) => (
                 <div key={nama} className="panel overflow-hidden">
                   <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-[#f5f6fa] px-4 py-2.5">
@@ -412,6 +430,19 @@ export default function KegiatanManager() {
               </p>
             ) : (<>
               {siswaOrtu && <PilihBanyak label={data.semua ? "Kelas (kosongkan = semua)" : "Kelas *"} opsi={data.kelas.map(k => ({ value: k.id, label: k.name }))} nilai={form.targetKelasIds} onChange={v => setForm({ ...form, targetKelasIds: v })} />}
+              {siswaOrtu && data.semua && (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                  <span>Pilih satu tingkat:</span>
+                  {(["X", "XI", "XII"] as const).map(t => {
+                    const ids = data.kelas.filter(k => k.name.trim().toUpperCase().startsWith(`${t} `)).map(k => k.id);
+                    return ids.length ? (
+                      <button key={t} type="button" onClick={() => setForm({ ...form, targetKelasIds: ids })}
+                        className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 font-medium text-gray-600 transition hover:bg-gray-50">Kelas {t} ({ids.length})</button>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {siswaOrtu && <p className="text-xs text-gray-500">Kegiatan siswa yang berlangsung 4 jam atau lebih dianggap <b>menggantikan pelajaran</b> hari itu: absensi kelasnya diisi dari presensi kegiatan ini, dan wali kelas tidak ditagih absensi.</p>}
               {siswaOrtu && data.semua && <PilihBanyak label="Jurusan (kosongkan = semua)" opsi={data.jurusan.map(k => ({ value: k.id, label: k.name }))} nilai={form.targetJurusanIds} onChange={v => setForm({ ...form, targetJurusanIds: v })} />}
               {form.targetRole === "TEACHER" && <PilihBanyak label="Jabatan (kosongkan = semua guru & staf)" opsi={data.jabatan.map(j => ({ value: j, label: j }))} nilai={form.targetJabatan} onChange={v => setForm({ ...form, targetJabatan: v })} />}
             </>)}

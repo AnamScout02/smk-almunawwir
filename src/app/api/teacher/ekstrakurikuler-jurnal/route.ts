@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyRole } from "@/lib/dal";
 import { assertExtracurricularAccess } from "@/lib/ekstrakurikuler-guard";
 import { lemparBilaPengalihan } from "@/lib/galat-rute";
+import { simpanAbsenEkstra } from "@/lib/ekstra-server";
 
 /** Absen Ekstra (Pramuka, dst) — per sesi ekstrakurikuler, TERPISAH dari Attendance resmi
  * (absensi harian sekolah), sama seperti Jurnal Mengajar terpisah dari Attendance. Roster dari
@@ -68,7 +69,6 @@ export async function POST(req: Request) {
     const { extracurricularId, materi } = body;
     const rows = body.rows ?? [];
     const date = new Date(body.date);
-    const nextDay = new Date(date.getTime() + 86400000);
 
     const ekskul = await prisma.extracurricular.findUnique({ where: { id: extracurricularId } });
     if (!ekskul) return Response.json({ error: "Ekstrakurikuler tidak ditemukan" }, { status: 404 });
@@ -80,15 +80,10 @@ export async function POST(req: Request) {
       return Response.json({ error: `${missing.length} peserta belum diisi statusnya — isi semua sebelum simpan.` }, { status: 400 });
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.extracurricularJournal.deleteMany({ where: { extracurricularId, date: { gte: date, lt: nextDay } } });
-      await tx.extracurricularJournal.create({
-        data: {
-          extracurricularId, teacherId: teacher?.id ?? null, date, materi: materi?.trim() || null,
-          recordedByName: session.name, recordedByRole: session.role,
-          entries: { create: rows.map(r => ({ studentId: r.studentId, status: r.status })) },
-        },
-      });
+    // Lewat satu pintu `simpanAbsenEkstra` supaya FOTO kegiatan pertemuan itu tidak ikut terhapus saat absensi disimpan ulang.
+    await simpanAbsenEkstra({
+      extracurricularId, tanggal: date.toISOString().slice(0, 10), materi: materi?.trim() || null, rows,
+      olehNama: session.name, olehPeran: session.role, teacherId: teacher?.id ?? null,
     });
 
     return Response.json({ success: true }, { status: 201 });

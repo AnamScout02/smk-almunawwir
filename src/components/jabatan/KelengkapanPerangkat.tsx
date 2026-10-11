@@ -12,6 +12,7 @@ import { usePaginasi } from "@/lib/use-paginasi";
 interface Baris {
   teacherId: string; guru: string; nip: string | null; mapel: string; tingkat: number; kelas: string[];
   prota: boolean; rpp: number; jurnal: number; lengkap: boolean;
+  pertemuan: number | null; form: { dikirim: number; draf: number; kelas: number }; ujian: { jumlah: number; kisiLengkap: number };
 }
 interface Data { semester: { label: string }; baris: Baris[]; cakupan: "SEMUA" | "SENDIRI" }
 
@@ -106,6 +107,7 @@ export default function KelengkapanPerangkat({ protaHref, rppHref }: { protaHref
           <p className="text-xs text-gray-400 mb-3">
             &ldquo;Lengkap&rdquo; = Prota &amp; Promes sudah ada dan minimal satu RPP/Modul Ajar. Jurnal mengajar ditampilkan sebagai bukti
             pelaksanaan, tetapi tidak ikut syarat — ia bertambah tiap pertemuan, bukan dokumen yang disiapkan di awal semester.
+            Form Nilai Rapor dan kisi-kisi ujian dibaca langsung dari datanya: kisi-kisi dihitung lengkap bila materi dan indikator terisi di semua butir ujian itu.
           </p>
 
           {tersaring.length === 0 ? (
@@ -117,7 +119,7 @@ export default function KelengkapanPerangkat({ protaHref, rppHref }: { protaHref
                 <table className="data-table">
                   <thead><tr>
                     <th className="w-10">No</th>{semua && <th>Guru</th>}<th>Mata Pelajaran</th><th>Tingkat</th>
-                    <th>Prota &amp; Promes</th><th>RPP</th><th>Jurnal</th><th>Status</th>
+                    <th>Prota &amp; Promes</th><th>RPP</th><th>Jurnal</th><th>Form Nilai Rapor</th><th>Kisi-kisi Ujian</th><th>Status</th>
                   </tr></thead>
                   <tbody>
                     {hal.potongan.map((b, i) => (
@@ -128,7 +130,15 @@ export default function KelengkapanPerangkat({ protaHref, rppHref }: { protaHref
                         <td>{ROMAWI[b.tingkat] ?? b.tingkat}</td>
                         <td>{pil(b.prota, "Ada", "Belum")}</td>
                         <td>{b.rpp > 0 ? pil(true, `${b.rpp} RPP`, "") : pil(false, "", "Belum")}</td>
-                        <td className="angka">{b.jurnal || <span className="text-gray-300">0</span>}</td>
+                        <td className="angka whitespace-nowrap">{b.jurnal || <span className="text-gray-300">0</span>}{b.pertemuan !== null && <span className="text-xs text-gray-400"> / {b.pertemuan} pertemuan</span>}</td>
+                        <td className="whitespace-nowrap text-xs">
+                          <span className={`angka font-semibold ${b.form.dikirim >= b.form.kelas ? "text-emerald-700" : b.form.dikirim + b.form.draf > 0 ? "text-amber-700" : "text-gray-400"}`}>{b.form.dikirim}/{b.form.kelas}</span> kelas terkirim
+                          {b.form.draf > 0 && <span className="block text-gray-400">{b.form.draf} masih draf</span>}
+                        </td>
+                        <td className="whitespace-nowrap text-xs">
+                          {b.ujian.jumlah === 0 ? <span className="text-gray-400">Belum ada ujian</span>
+                            : <><span className={`angka font-semibold ${b.ujian.kisiLengkap >= b.ujian.jumlah ? "text-emerald-700" : "text-amber-700"}`}>{b.ujian.kisiLengkap}/{b.ujian.jumlah}</span> ujian lengkap</>}
+                        </td>
                         <td>{b.lengkap
                           ? <span className="status-badge bg-emerald-50 text-emerald-700 border-emerald-200">Lengkap</span>
                           : <span className="status-badge bg-amber-50 text-amber-700 border-amber-200">Belum lengkap</span>}</td>

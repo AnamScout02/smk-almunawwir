@@ -1,7 +1,6 @@
-import NilaiEkstraManager from "@/components/ekstra/NilaiEkstraManager";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Nilai Ekstrakurikuler" };
-
+/** Pindah ke Pusat Ekstrakurikuler (10 Okt 2026) — rute lama dipertahankan sebagai pengalihan supaya penanda & tautan lama tetap sampai. */
 export default function Page() {
-  return <NilaiEkstraManager />;
+  redirect("/pusat-ekstra/nilai");
 }

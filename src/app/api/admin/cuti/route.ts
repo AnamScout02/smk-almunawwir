@@ -19,6 +19,8 @@ export async function GET(req: Request) {
     const rows = await prisma.staffLeave.findMany({
       where, include, orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
     });
+    // Cuti/surat tugas ↔ Presensi Pegawai (src/lib/presensi-turunan.ts) — di latar, gagal di sini tidak menggagalkan simpan.
+    void import("@/lib/presensi-turunan").then(m => m.sinkronPresensiDokumenBaku()).catch(() => null);
     return Response.json(rows);
   } catch (e) {
     lemparBilaPengalihan(e);

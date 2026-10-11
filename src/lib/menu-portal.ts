@@ -75,3 +75,16 @@ export const MENU_PUSAT_PKL: ItemNavPortal[] = [
   { href: "/pusat-pkl/kompetensi", label: "Kecocokan Kompetensi", singkat: "Kompetensi", ikon: "sasaran" },
   { href: "/pusat-pkl/panitia", label: "Panitia PKL", singkat: "Panitia", ikon: "panitia" },
 ];
+
+/** Pusat Ekstrakurikuler (10 Oktober 2026) — koordinator & pembina. Pembina hanya melihat ekskulnya sendiri (dijaga API). */
+export const MENU_PUSAT_EKSTRA: ItemNavPortal[] = [
+  { href: "/pusat-ekstra", label: "Beranda", ikon: "beranda", persis: true },
+  { href: "/pusat-ekstra/absensi", label: "Absensi Latihan", singkat: "Absensi", ikon: "opname" },
+  { href: "/pusat-ekstra/kegiatan", label: "Kegiatan & Foto", singkat: "Kegiatan", ikon: "promosi" },
+  { href: "/pusat-ekstra/anggota", label: "Ekskul & Anggota", singkat: "Anggota", ikon: "pendaftar" },
+  { href: "/pusat-ekstra/pendaftaran", label: "Pendaftar", ikon: "usulan" },
+  { href: "/pusat-ekstra/agenda", label: "Jadwal & Lomba", singkat: "Jadwal", ikon: "kalender" },
+  { href: "/pusat-ekstra/nilai", label: "Nilai & Sertifikat", singkat: "Nilai", ikon: "nilaiAkhir" },
+  { href: "/pusat-ekstra/laporan", label: "Laporan Bulanan", singkat: "Laporan", ikon: "laporan" },
+  { href: "/pusat-ekstra/pembina", label: "Pembina & Tautan", singkat: "Pembina", ikon: "panitia" },
+];

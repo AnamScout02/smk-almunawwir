@@ -110,7 +110,7 @@ function CetakJurnalContent() {
             </tbody>
             <tfoot>
               <tr className="font-bold bg-gray-50">
-                <td className="border border-gray-300 text-center" colSpan={3}>Total {rows.length} pertemuan</td>
+                <td className="border border-gray-300 text-center" colSpan={3}>Total {new Set(rows.map(r => `${r.className}|${String(r.date).slice(0, 10)}`)).size} pertemuan</td>
                 <td className="border border-gray-300 text-center">{totalHadir}</td>
                 <td className="border border-gray-300 text-center">{totalIzin}</td>
                 <td className="border border-gray-300 text-center">{totalSakit}</td>

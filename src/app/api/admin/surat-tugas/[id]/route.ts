@@ -73,6 +73,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const row = await prisma.suratTugas.update({ where: { id }, data, include: INCLUDE });
+    // Cuti/surat tugas ↔ Presensi Pegawai (src/lib/presensi-turunan.ts) — di latar, gagal di sini tidak menggagalkan simpan.
+    void import("@/lib/presensi-turunan").then(m => m.sinkronPresensiDokumenBaku()).catch(() => null);
     return Response.json(row);
   } catch (e) {
     lemparBilaPengalihan(e);
@@ -85,6 +87,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await verifyTasAccess();
     const { id } = await params;
     await prisma.suratTugas.delete({ where: { id } });
+    // Cuti/surat tugas ↔ Presensi Pegawai (src/lib/presensi-turunan.ts) — di latar, gagal di sini tidak menggagalkan simpan.
+    void import("@/lib/presensi-turunan").then(m => m.sinkronPresensiDokumenBaku()).catch(() => null);
     return Response.json({ ok: true });
   } catch (e) {
     lemparBilaPengalihan(e);

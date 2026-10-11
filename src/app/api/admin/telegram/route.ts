@@ -40,7 +40,7 @@ export async function PUT(req: Request) {
   const saya = await panggilTelegram<{ username: string }>(token, "getMe");
   if (!saya.ok || !saya.hasil?.username) return NextResponse.json({ error: `Token ditolak Telegram: ${saya.pesan ?? "tidak dikenal"}` }, { status: 400 });
   const rahasia = randomBytes(24).toString("base64url");
-  const pasang = await panggilTelegram(token, "setWebhook", { url: `${ALAMAT_APLIKASI}/api/telegram/webhook`, secret_token: rahasia, allowed_updates: ["message"], drop_pending_updates: true });
+  const pasang = await panggilTelegram(token, "setWebhook", { url: `${ALAMAT_APLIKASI}/api/telegram/webhook`, secret_token: rahasia, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
   if (!pasang.ok) return NextResponse.json({ error: `Bot dikenali, tetapi alamat penerima gagal dipasang: ${pasang.pesan}` }, { status: 400 });
   const simpan = (key: string, value: string) => prisma.siteSetting.upsert({ where: { key }, create: { key, value }, update: { value } });
   await prisma.$transaction([simpan(KUNCI_TG.token, enkripsiToken(token)), simpan(KUNCI_TG.bot, saya.hasil.username), simpan(KUNCI_TG.rahasia, rahasia)]);

@@ -1,4 +1,5 @@
 "use client";
+import GrafSosiometri from "@/components/survei/GrafSosiometri";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowUp, BarChart3, ClipboardPen, Download, Loader2, Lock, Pencil, Plus, Save, Send, Trash2, Unlock } from "lucide-react";
@@ -22,7 +23,7 @@ interface Hasil {
   survei: { judul: string; jenis: string; anonim: boolean }; total: number; sasaran: number;
   pertanyaan: { id: string; teks: string; tipe: string; dijawab: number; opsi?: { label: string; jumlah: number }[]; rata?: number | null; maks?: number; isian?: string[] }[];
   akpd: null | { perBidang: { kunci: string; label: string; persen: number }[]; perButir: { teks: string; bidang: string; persen: number }[]; siswaPrioritas: { nama: string; kelas: string; total: number; per: Record<string, number> }[] };
-  sosiometri: null | { kelasId: string; kelas: string; responden: number; anggota: number; siswa: { id: string; nama: string; dipilih: number; mengisi: boolean }[]; timbalBalik: [string, string][]; terisolasi: string[] }[];
+  sosiometri: null | { kelasId: string; kelas: string; responden: number; anggota: number; siswa: { id: string; nama: string; dipilih: number; mengisi: boolean }[]; timbalBalik: [string, string][]; terisolasi: string[]; pilihan?: [string, string][] }[];
   perKelas: { kelas: string; jumlah: number }[];
 }
 
@@ -151,6 +152,9 @@ export default function SurveiManager({ isiHref }: { isiHref?: string }) {
                   {h.sosiometri.length > 1 && <div className="w-48"><Select value={kelasSosio} onChange={setKelasSosio} options={h.sosiometri.map(k => ({ value: k.kelasId, label: k.kelas }))} /></div>}
                   {sosio && <span className="text-xs text-gray-500">{sosio.responden}/{sosio.anggota} siswa mengisi</span>}
                 </div>
+                {sosio && sosio.pilihan && sosio.pilihan.length > 0 && (
+                  <div><p className="mb-2 text-sm font-semibold text-primary-900">Peta pertemanan kelas</p><GrafSosiometri siswa={sosio.siswa} pilihan={sosio.pilihan} /></div>
+                )}
                 {sosio && (
                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="min-w-0"><p className="mb-2 text-sm font-semibold text-primary-900">Berapa kali dipilih teman</p>

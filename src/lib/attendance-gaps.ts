@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { kelasIkutKegiatan } from "@/lib/absensi-otomatis";
 import { cekLibur } from "@/lib/hari-libur";
 
 /** Hari sekolah minimal = Senin–Sabtu (jadwal 6 hari). Tanggal merah, cuti bersama & libur Kalender Pendidikan dicek
@@ -38,8 +39,11 @@ export async function getClassesMissingAttendance(date: Date, classIds?: string[
     orderBy: [{ grade: "asc" }, { name: "asc" }],
   });
 
+  // Kelas yang hari itu ikut kegiatan seharian diabsen DI KEGIATANNYA (src/lib/absensi-otomatis.ts) — tidak ditagih di sini.
+  const diKegiatan = await kelasIkutKegiatan(date.toISOString().slice(0, 10)).catch(() => new Map<string, string>());
   const missing: MissingAttendanceClass[] = [];
   for (const c of classes) {
+    if (diKegiatan.has(c.id)) continue;
     const count = await prisma.attendance.count({
       where: { date: dateFilter, student: { classId: c.id, studentStatus: "AKTIF" } },
     });

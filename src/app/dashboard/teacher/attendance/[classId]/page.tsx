@@ -38,6 +38,7 @@ export default function AbsensiPage() {
   const [date, setDate] = useState(today);
   const [cls, setCls] = useState<ClassInfo | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
+  const [dariKegiatan, setDariKegiatan] = useState(0);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -88,6 +89,7 @@ export default function AbsensiPage() {
         if (Array.isArray(existing)) {
           existing.forEach((r: { studentId: string; status: AttendanceStatus }) => { init[r.studentId] = r.status; });
         }
+        setDariKegiatan(Array.isArray(existing) ? existing.filter((r: { sumber?: string | null }) => r.sumber === "KEGIATAN").length : 0);
         setAttendance(init);
       }
       if (Array.isArray(classes)) {
@@ -149,6 +151,11 @@ export default function AbsensiPage() {
       {/* Kiri: form input hari ini — Kanan: jurnal kalender bulan berjalan (live, refresh begitu disimpan) */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.4fr] gap-5 items-start">
         <div>
+          {dariKegiatan > 0 && (
+            <p className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              <b className="angka">{dariKegiatan}</b> siswa sudah terisi dari <b>presensi kegiatan sekolah</b> hari ini. Lengkapi sisanya; menyimpan di sini menjadikan seluruh isian keputusan wali kelas.
+            </p>
+          )}
           {/* Tanggal + summary */}
           <div className="panel p-5 mb-5 flex flex-col gap-4">
             <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">

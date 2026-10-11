@@ -231,6 +231,8 @@ export const DEFAULTS: Record<string, string> = {
   "notifikasi.jamPerpustakaan": "06:45", // jatuh tempo besok & terlambat 1/3/7 hari
   "notifikasi.jamSpmb": "16:00", // pengingat calon SPMB (H-1 jadwal & tahap tertahan) — hanya calon yang mengaktifkan pemberitahuan
   "notifikasi.jamPkl": "16:30", // pengingat siswa PKL yang belum mengisi jurnal hari itu
+  "notifikasi.jamEkstra": "17:30", // pengingat koordinator/pembina: latihan ekskul hari ini belum diabsen + pendaftar menunggu
+  "notifikasi.jamPerawatan": "07:00", // pengingat Sarpras/Kepala Lab: perawatan berkala jatuh tempo atau terlambat
   "notifikasi.jamRekapKelas": "10:00", // rekap kehadiran harian ke wali kelas (17 Sep 2026)
   "notifikasi.jamRingkasanOrtu": "16:00", // ringkasan mingguan ke orang tua tiap Sabtu (17 Sep 2026)
   // Cek Kelulusan — jadwal buka/tutup halaman publik, kosong = selalu buka

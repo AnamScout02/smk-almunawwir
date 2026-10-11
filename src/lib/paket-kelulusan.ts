@@ -11,11 +11,14 @@ export async function muatPaketKelulusan(f: SaringKelulusan) {
   const tahun = /^\d{4}$/.test(f.lulus ?? "") ? (f.lulus as string) : "";
   const siswa = await prisma.student.findMany({
     where: f.kelas ? { classId: f.kelas, class: { grade: 12 }, studentStatus: { in: ["AKTIF", "LULUS"] } } : tahun ? { studentStatus: "LULUS" } : { id: "tidak-ada" },
-    select: { id: true, nis: true, nisn: true, studentStatus: true, bukuIndukData: true, user: { select: { name: true } }, class: { select: { name: true } }, major: { select: { code: true } } },
+    select: { id: true, userId: true, nis: true, nisn: true, studentStatus: true, bukuIndukData: true, user: { select: { name: true } }, class: { select: { name: true } }, major: { select: { code: true } } },
     orderBy: { user: { name: "asc" } },
   });
   const kena = tahun ? siswa.filter(s => String(((s.bukuIndukData ?? {}) as Record<string, unknown>).graduationDate ?? "").startsWith(tahun)) : siswa;
   const sklIds = kena.map(s => ((s.bukuIndukData ?? {}) as Record<string, unknown>).sklSuratId).filter((x): x is string => typeof x === "string" && !!x);
+  // BEBAS PUSTAKA (tautan data 10 Okt 2026): buku perpustakaan yang masih dipinjam — dibaca dari sirkulasi, bukan dicentang.
+  const pinjam = await prisma.bookLoan.groupBy({ by: ["borrowerId"], where: { borrowerId: { in: kena.map(s => s.userId) }, status: "DIPINJAM" }, _count: { _all: true } }).catch(() => []);
+  const petaPinjam = new Map(pinjam.map(x => [x.borrowerId, x._count._all]));
   const [surat, serah] = await Promise.all([
     sklIds.length ? prisma.surat.findMany({ where: { id: { in: sklIds } }, select: { id: true, nomor: true, tanggal: true } }) : [],
     prisma.ijazahHandover.findMany({ where: { studentId: { in: kena.map(s => s.id) } }, orderBy: { tanggalSerah: "desc" }, select: { studentId: true, tanggalSerah: true, dokumen: true, pengambilNama: true } }),
@@ -27,6 +30,6 @@ export async function muatPaketKelulusan(f: SaringKelulusan) {
     const h = serah.filter(x => x.studentId === s.id);
     const ijazah = h.find(x => x.dokumen.includes("IJAZAH")) ?? null;
     return { id: s.id, nama: s.user.name, nis: s.nis, nisn: s.nisn, kelas: s.class?.name ?? s.major?.code ?? null, status: s.studentStatus ?? "AKTIF",
-      skl: skl ? { id: skl.id, nomor: skl.nomor } : null, ijazah: ijazah ? { tanggal: ijazah.tanggalSerah, oleh: ijazah.pengambilNama } : null, dokumenLain: h.filter(x => x !== ijazah).length };
+      skl: skl ? { id: skl.id, nomor: skl.nomor } : null, ijazah: ijazah ? { tanggal: ijazah.tanggalSerah, oleh: ijazah.pengambilNama } : null, dokumenLain: h.filter(x => x !== ijazah).length, bukuDipinjam: petaPinjam.get(s.userId) ?? 0 };
   });
 }

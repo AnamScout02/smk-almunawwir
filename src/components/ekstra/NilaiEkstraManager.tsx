@@ -51,7 +51,7 @@ export default function NilaiEkstraManager() {
             <div className="alat-saring"><Select value={d.ekskulId} onChange={v => muat(v, d.semester)} options={d.ekskul.map(e => ({ value: e.id, label: e.name }))} /></div>
             <div className="alat-saring"><Select value={d.semester} onChange={v => muat(d.ekskulId, v)} options={d.semesterPilihan.map(s => ({ value: s, label: s }))} /></div>
             <div className="alat-aksi">
-              <Link href="/dashboard/teacher/ekstrakurikuler/agenda" className="btn-modal-cancel btn-teks"><CalendarClock /> Jadwal & Lomba</Link>
+              <Link href="/pusat-ekstra/agenda" className="btn-modal-cancel btn-teks"><CalendarClock /> Jadwal & Lomba</Link>
               <button type="button" disabled={sibuk} onClick={simpan} className="btn-modal-save">{sibuk ? <Loader2 className="animate-spin" /> : <Save />} Simpan Nilai</button>
             </div>
           </div>

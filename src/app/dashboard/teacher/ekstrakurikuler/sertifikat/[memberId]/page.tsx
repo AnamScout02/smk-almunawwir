@@ -19,7 +19,7 @@ export const metadata = { title: "Sertifikat Ekstrakurikuler" };
 /** SERTIFIKAT EKSTRAKURIKULER (A4 lanskap) — nilai semester terbaru + QR keaslian → /verify/ekstra/<token>. */
 export default async function Page({ params }: { params: Promise<{ memberId: string }> }) {
   const [{ memberId }, session] = await Promise.all([params, verifyRole(["ADMIN", "TEACHER", "TAS"])]);
-  const kembali = "/dashboard/teacher/ekstrakurikuler/nilai";
+  const kembali = "/pusat-ekstra/nilai";
   let anggota = await prisma.extracurricularMember.findUnique({
     where: { id: memberId },
     select: { id: true, role: true, joinedAt: true, sertifikatToken: true, extracurricularId: true, extracurricular: { select: { name: true } }, student: { select: { id: true, nis: true, user: { select: { name: true } }, class: { select: { name: true } } } } },

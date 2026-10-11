@@ -51,7 +51,7 @@ export default function AgendaEkstraManager() {
         <>
           <div className="baris-alat mb-5">
             <div className="alat-aksi">
-              <Link href="/dashboard/teacher/ekstrakurikuler/nilai" className="btn-modal-cancel btn-teks"><Award /> Nilai Ekstra</Link>
+              <Link href="/pusat-ekstra/nilai" className="btn-modal-cancel btn-teks"><Award /> Nilai Ekstra</Link>
               <button type="button" onClick={() => setForm({ extracurricularId: d.ekskul[0]?.id ?? "", judul: "", jenis: "LATIHAN", tanggal: hariIniWib(), jam: "15:30", jamSelesai: "17:00", tempat: "", catatan: "", hasil: "", kabari: true })} className="btn-modal-save"><Plus /> Tambah Agenda</button>
             </div>
           </div>

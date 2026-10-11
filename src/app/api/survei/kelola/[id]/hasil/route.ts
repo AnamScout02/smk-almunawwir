@@ -86,7 +86,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       const timbal: [string, string][] = [];
       for (const [a, set] of pilih) for (const b of set) if (a < b && pilih.get(b)?.has(a)) timbal.push([namaSiswa.get(a) ?? "-", namaSiswa.get(b) ?? "-"]);
       const daftar = anggota.map(a => ({ id: a.id, nama: a.user.name, dipilih: hitung.get(a.id) ?? 0, mengisi: pilih.has(a.id) })).sort((x, y) => y.dipilih - x.dipilih || x.nama.localeCompare(y.nama));
-      return { kelasId: kid, kelas: namaKelas.get(kid) ?? "-", responden: dariKelas.length, anggota: anggota.length, siswa: daftar, timbalBalik: timbal, terisolasi: daftar.filter(d => d.dipilih === 0 && d.mengisi).map(d => d.nama) };
+      return { kelasId: kid, kelas: namaKelas.get(kid) ?? "-", responden: dariKelas.length, anggota: anggota.length, siswa: daftar, timbalBalik: timbal, terisolasi: daftar.filter(d => d.dipilih === 0 && d.mengisi).map(d => d.nama),
+        // Sisi graf pertemanan: [pemilih, dipilih], hanya antar anggota kelas itu (11 Okt 2026).
+        pilihan: [...pilih].flatMap(([a, set]) => [...set].filter(b => hitung.has(b) && hitung.has(a)).map(b => [a, b] as [string, string])) };
     });
   }
 

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { URL_FONT_SIMBOL } from "@/lib/simbol-material";
 import { Plus_Jakarta_Sans, Inter, Amiri } from "next/font/google";
 import "./globals.css";
 import WhatsAppButton from "@/components/shared/WhatsAppButton";
@@ -90,12 +89,6 @@ export default function RootLayout({
       lang="id"
       className={`${jakarta.variable} ${inter.variable} ${amiri.variable}`}
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href={URL_FONT_SIMBOL /* hanya ikon bottom navbar — src/lib/simbol-material.ts */}
-        />
-      </head>
       <body className="min-h-dvh flex flex-col">
         <Providers>
           {children}

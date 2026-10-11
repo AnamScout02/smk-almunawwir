@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import { JABATAN_PANTAU_GURU } from "@/lib/pantau-guru-akses";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal, MapPinned, Merge } from "lucide-react";
+import { BookUser, LayoutDashboard, ClipboardList, CheckSquare, Users, LogOut, Globe, UserCircle, Calendar, NotebookPen, Briefcase, BookOpen, Gauge, GraduationCap, Award, HeartHandshake, Building2, ListChecks, ShieldCheck, ShieldAlert, BadgeCheck, UserCheck, Megaphone, Database, Wrench, Boxes, FlaskConical, HeartPulse, Flag, Library, Network, FileQuestion, BookMarked, Users2, CalendarClock, UserCog, Repeat, Mail, Archive, Trophy, FileCheck2, Search, BookOpenCheck, ChevronDown, MoreHorizontal, Wallet, DatabaseZap, CalendarX2, Vote, IdCard, LayoutGrid, DoorOpen, Moon, Medal, MapPinned, Merge } from "lucide-react";
 import { JABATAN_PETA } from "@/lib/peta-akses";
 import { JABATAN_EVENT } from "@/lib/event-label";
 import { Siren, Calculator, Forward } from "lucide-react";
@@ -160,6 +161,7 @@ export function grupMenuGuru({
   const isGuruBk = jabatanNames.includes("Guru BK");
   const isWakasekKesiswaan = jabatanNames.includes("Wakil Kepala Kesiswaan");
   const isWakasekPenjaminMutu = jabatanNames.includes("Wakil Kepala Bidang Penjamin Mutu");
+  const pantauGuru = JABATAN_PANTAU_GURU.some(j => jabatanNames.includes(j));
   const isGuruPiket = jabatanNames.includes("Guru Piket");
   const isWakasekSarpras = jabatanNames.includes("Wakil Kepala Sarana Prasarana");
   const isKoordinatorBkk = jabatanNames.includes("Koordinator BKK");
@@ -179,7 +181,9 @@ export function grupMenuGuru({
   // supaya role TEACHER berjabatan ini diloloskan verifyTasAccess().
   const isTasStaff = jabatanNames.includes("Tenaga Administrasi Sekolah") || jabatanNames.includes("Kepala Tenaga Administrasi Sekolah");
 
-  const ekstrakurikulerAccess = isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler;
+  // SEMUA jabatan "Pembina <nama ekskul>" — sama dengan penjaga server (ekstrakurikuler-guard.ts). Dulu tertulis mati
+  // OSIS & Pramuka saja, jadi pembina ekskul lain (mis. Pembina Rohis) berhak di server tetapi tidak punya menunya.
+  const ekstrakurikulerAccess = isPembinaOsis || isPembinaPramuka || isKoordinatorEkstrakurikuler || jabatanNames.some(n => n.startsWith("Pembina "));
   const kesiswaanBkAccess = isWakasekKesiswaan || isGuruBk;
 
   return [
@@ -226,8 +230,11 @@ export function grupMenuGuru({
           { href: "/dashboard/teacher/materials", label: "Materi & Tugas", icon: BookOpen },
           { href: "/dashboard/teacher/rpp", label: "Bank RPP", icon: NotebookPen },
           { href: "/dashboard/teacher/kelengkapan-perangkat", label: "Kelengkapan Perangkat Ajar", icon: ClipboardCheck },
+          { href: "/dashboard/teacher/keterlaksanaan", label: "Keterlaksanaan Kurikulum", icon: Gauge },
           { href: "/dashboard/teacher/rencana-ajar", label: "Prota, Promes & Pekan Efektif", icon: CalendarRange },
         ] : []),
+        // Pimpinan yang tidak mengajar tetap perlu papan keterlaksanaan (semua guru) — src/lib/pantau-guru-akses.ts.
+        ...(!hasTeaching && pantauGuru ? [{ href: "/dashboard/teacher/keterlaksanaan", label: "Keterlaksanaan Kurikulum", icon: Gauge }] : []),
         ...(hasTeaching || isWakasekKurikulum ? [{ href: "/pusat-ujian", label: "Ujian Online (CBT)", icon: FileQuestion }] : []),
         // Form Nilai Rapor (22 Sep 2026): lembar penilaian guru mapel → rapor wali kelas (src/components/rapor).
         ...(hasTeaching || isWakasekKurikulum ? [{ href: "/dashboard/teacher/form-nilai-rapor", label: "Form Nilai Rapor", icon: ClipboardPen }] : []),
@@ -242,6 +249,8 @@ export function grupMenuGuru({
       label: "Wali Kelas & Siswa",
       items: [
         ...(hasHomeroom || kesiswaanBkAccess || isKepalaSekolah ? [{ href: "/dashboard/teacher/students", label: "Daftar Siswa", icon: Users }] : []),
+        // Satu halaman per kelas wali: kehadiran, poin, nilai di bawah KKM, izin, ekskul, kunjungan rumah (11 Okt 2026).
+        ...(hasHomeroom ? [{ href: "/dashboard/teacher/buku-wali", label: "Buku Wali Kelas", icon: BookUser }] : []),
         ...(hasHomeroom ? [{ href: "/dashboard/teacher/attendance", label: "Absensi", icon: CheckSquare }] : []),
         // Read-only. Kesiswaan/BK lintas kelas (bukan cuma kelas wali) — butuh pantau kehadiran
         // siswa sekolah utk keperluan pembinaan/konseling. Wali kelas biasa (bukan Kesiswaan/BK)
@@ -298,12 +307,8 @@ export function grupMenuGuru({
         ...(isPembinaOsis || isWakasekKesiswaan ? [{ href: "/dashboard/teacher/pemilihan-osis", label: "Pemilihan OSIS", icon: Vote }] : []),
         // Pengelola Lomba & Event — daftar jabatan SATU sumber dengan penjaga server (src/lib/event-label.ts).
         ...(JABATAN_EVENT.some(n => jabatanNames.includes(n)) ? [{ href: "/dashboard/teacher/event", label: "Lomba & Event", icon: Medal }] : []),
-        ...(ekstrakurikulerAccess ? [
-          { href: "/dashboard/teacher/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag },
-          { href: "/dashboard/teacher/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare },
-          { href: "/dashboard/teacher/ekstrakurikuler/nilai", label: "Nilai Ekstrakurikuler", icon: Award },
-          { href: "/dashboard/teacher/ekstrakurikuler/agenda", label: "Jadwal Latihan & Lomba", icon: CalendarClock },
-        ] : []),
+        // Ekstrakurikuler = SATU pintu ke portalnya (10 Okt 2026); absensi, kegiatan & foto, nilai, jadwal ada di dalamnya.
+        ...(ekstrakurikulerAccess ? [{ href: "/pusat-ekstra", label: "Pusat Ekstrakurikuler", icon: Flag }] : []),
         { href: "/dashboard/teacher/tata-tertib", label: "Tata Tertib Peserta Didik", icon: BookOpenCheck },
       ],
     },
@@ -316,6 +321,8 @@ export function grupMenuGuru({
         { href: "/dashboard/teacher/kinerja", label: "Kinerja Saya", icon: Award },
         { href: "/dashboard/teacher/masukan-rekan", label: "Masukan Rekan", icon: MessageSquareHeart },
         { href: "/dashboard/teacher/supervisi", label: "Supervisi & PKG", icon: ClipboardCheck },
+        { href: "/dashboard/teacher/rapor-kinerja", label: pantauGuru ? "Rapor Kinerja Guru" : "Rapor Kinerja Saya", icon: Award },
+        ...(pantauGuru ? [{ href: "/dashboard/teacher/bukti-akreditasi", label: "Bukti Akreditasi", icon: BadgeCheck }] : []),
         { href: "/dashboard/teacher/kegiatan", label: "Presensi Kegiatan", icon: CalendarCheck },
         { href: "/dashboard/teacher/kegiatan-tidak-ikut", label: "Tidak Ikut Kegiatan", icon: CalendarX2 },
         { href: "/dashboard/teacher/pengawas-ujian", label: "Jadwal Pengawas Ujian", icon: UserCheck },

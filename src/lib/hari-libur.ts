@@ -118,8 +118,14 @@ export async function daftarLibur(dari: string, sampai: string): Promise<InfoLib
     select: { judul: true, jenis: true, hariEfektif: true, kode: true, tanggalMulai: true, tanggalSelesai: true },
   }).catch(() => []);
   for (const a of agenda) {
-    const kode = a.kode && KODE[a.kode] ? a.kode : tebakKode(a.judul, a.jenis, a.hariEfektif);
+    const eksplisit = !!(a.kode && KODE[a.kode]);
+    const kode = eksplisit ? a.kode : tebakKode(a.judul, a.jenis, a.hariEfektif);
     if (!kode || KODE[kode]?.sifat !== "LIBUR") continue;
+    // KEGIATAN yang tidak dicentang "hari efektif" BUKAN libur (temuan user 10 Okt 2026: LDKS 7–9 Okt hanya diikuti kelas X,
+    // tetapi TV, pengingat, dan absen mandiri menganggap seluruh sekolah libur — guru tidak bisa presensi). `tebakKode`
+    // menjatuhkan semua agenda non-efektif ke "LHB" untuk pewarnaan kalender; untuk LIBUR SUNGGUHAN syaratnya lebih ketat:
+    // agendanya berjenis LIBUR, kodenya dipilih tegas, atau judulnya memang nama libur (cuti bersama, libur semester, …).
+    if (!eksplisit && kode === "LHB" && a.jenis !== "LIBUR") continue;
     for (let t = a.tanggalMulai.getTime(); t <= a.tanggalSelesai.getTime(); t += HARI_MS) tambah(isoHari(t), a.judul, "KALENDER");
   }
   if (s[KUNCI_LIBUR.nasionalAktif] !== "0") {

@@ -49,3 +49,21 @@ export async function rentangSemesterTA(tahunAjaranId: string, semester: string)
   const selesai = semester === "GENAP" ? ta.endDate.toISOString().slice(0, 10) : `${tahunAwal}-12-31`;
   return { nama: ta.name, mulai, selesai };
 }
+
+/** Nomor PEKAN EFEKTIF yang memuat `tanggal`, dihitung dari awal semester (10 Okt 2026). Pekan yang seluruh hari
+ *  sekolahnya libur tidak diberi nomor — sama dengan cara guru menomori pekan di Prota/Promes. Pekan `tanggal` sendiri
+ *  libur penuh → nomor pekan efektif terakhir sebelum itu. */
+export async function pekanEfektifKe(mulai: string, tanggal: string): Promise<number> {
+  if (tanggal < mulai) return 0;
+  const libur = new Set((await daftarLibur(mulai, tanggal)).map(l => l.tanggal));
+  const efektif = new Set<string>();
+  const akhir = new Date(`${tanggal}T00:00:00Z`);
+  for (let t = new Date(`${mulai}T00:00:00Z`); t <= akhir; t.setUTCDate(t.getUTCDate() + 1)) {
+    const hariKe = t.getUTCDay();
+    if (!HARI_SEKOLAH.includes(hariKe) || libur.has(t.toISOString().slice(0, 10))) continue;
+    const senin = new Date(t);
+    senin.setUTCDate(senin.getUTCDate() - (hariKe - 1));
+    efektif.add(senin.toISOString().slice(0, 10));
+  }
+  return efektif.size;
+}

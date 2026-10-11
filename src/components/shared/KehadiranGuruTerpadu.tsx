@@ -1,7 +1,10 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LABEL_SUMBER } from "@/lib/presensi-sumber";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Save, ShieldAlert, UserCheck } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, Loader2, Save, ShieldAlert, UserCheck } from "lucide-react";
+import MonthPicker from "@/components/shared/MonthPicker";
+import { jumlahRekap, rekapPerGuru } from "@/lib/kehadiran-guru-rekap";
 import PageHeader from "@/components/admin/PageHeader";
 import DatePicker from "@/components/shared/DatePicker";
 import Select from "@/components/admin/Select";
@@ -14,7 +17,7 @@ type Jenis = "HADIR_TAPI_ALPHA_DI_KELAS" | "TIDAK_HADIR_TAPI_ADA_JURNAL" | "PIKE
 interface Blok { kelas: string; mapel: string; jam: string; status: string; adaTugas: boolean | null; catatan: string | null }
 interface Baris {
   userId: string; nama: string; nip: string | null; tanggal: string;
-  harian: { status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null } | null;
+  harian: { status: string; jamMasuk: string | null; jamPulang: string | null; keterangan: string | null; sumber?: string | null; pulangPerkiraan?: boolean } | null;
   blok: Blok[]; blokSeharusnya: number;
   piket: { status: string; catatan: string | null } | null;
   jurnal: number; temuan: Jenis[];
@@ -53,6 +56,7 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
   const [sampai, setSampai] = useState(sampaiAwal);
   const [dari, setDari] = useState(dariAwal);
   const [saring, setSaring] = useState("temuan");
+  const [tab, setTab] = useState<"cocok" | "rekap">("cocok");
   const [data, setData] = useState<Balasan | null>(null);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
@@ -86,6 +90,15 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
   }, [semua, saring]);
   const hal = usePaginasi(tersaring, 50, `${dari}|${sampai}|${saring}`);
 
+  const rekap = useMemo(() => rekapPerGuru(semua), [semua]);
+  const total = useMemo(() => jumlahRekap(rekap), [rekap]);
+  // Satu bulan penuh sekali pilih (hari terakhir dihitung dari kalender, bukan diandaikan 30/31).
+  function pilihBulan(v: string) {
+    if (!/^\d{4}-\d{2}$/.test(v)) return;
+    const [th, bl] = v.split("-").map(Number);
+    setDari(`${v}-01`); setSampai(`${v}-${String(new Date(Date.UTC(th, bl, 0)).getUTCDate()).padStart(2, "0")}`);
+  }
+
   const hitung = (j: Jenis) => semua.filter(b => b.temuan.includes(j)).length;
 
   async function simpanTingkat() {
@@ -115,9 +128,41 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
             <StatTile value={hitung("BLOK_BELUM_DICATAT_PIKET")} label="Jam belum dicatat piket" ikon="jam" color="gray" />
           </div>
 
-          <div className="alat-aksi">
-    <Link href={bukuPiketHref} className="btn-modal-cancel btn-teks"><ArrowLeft size={16} /> Buku Piket</Link>
-  </div>
+          <div className="baris-alat mb-5 items-end">
+        <div className="alat-saring">
+          <label className="label-field">Dari tanggal</label>
+          <DatePicker value={dari} onChange={setDari} />
+        </div>
+        <div className="alat-saring">
+          <label className="label-field">Sampai tanggal</label>
+          <DatePicker value={sampai} onChange={setSampai} />
+        </div>
+        <div className="alat-saring">
+          <label className="label-field">Bulan</label>
+          <MonthPicker value={dari.slice(0, 7) === sampai.slice(0, 7) ? dari.slice(0, 7) : ""} onChange={pilihBulan} placeholder="Pilih satu bulan" />
+        </div>
+        {tab === "cocok" && <div className="alat-saring">
+          <label className="label-field">Tampilkan</label>
+          <Select value={saring} onChange={setSaring} options={[
+            { value: "temuan", label: "Hanya yang perlu diperiksa" },
+            { value: "semua", label: "Semua baris" },
+            { value: "HADIR_TAPI_ALPHA_DI_KELAS", label: "Hadir tapi jam kosong" },
+            { value: "ALPHA_SEHARIAN_TANPA_CATATAN_TU", label: "Alpha seharian, TU kosong" },
+            { value: "TIDAK_HADIR_TAPI_ADA_JURNAL", label: "Tidak hadir tapi ada jurnal" },
+            { value: "PIKET_ALPHA_TAPI_ADA_JURNAL", label: "Piket & jurnal bertolak belakang" },
+            { value: "BLOK_BELUM_DICATAT_PIKET", label: "Jam belum dicatat piket" },
+          ]} />
+        </div>}
+        <div className="alat-tab flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 scrollbar-hide">
+          {([["cocok", "Pencocokan per Hari"], ["rekap", "Rekap per Guru"]] as const).map(([k, l]) => (
+            <button key={k} type="button" onClick={() => setTab(k)} className={`sentuh whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition ${tab === k ? "bg-primary-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}>{l}</button>
+          ))}
+        </div>
+        <div className="alat-aksi">
+          <Link href={bukuPiketHref} className="btn-modal-cancel btn-teks"><ArrowLeft size={16} /> Buku Piket</Link>
+          <a href={`/api/kedisiplinan/kehadiran-terpadu/rekap?dari=${dari}&sampai=${sampai}`} className="btn-modal-cancel"><FileSpreadsheet /> Unduh Excel</a>
+        </div>
+      </div>
 
           <p className="text-xs text-gray-400 mb-4 flex items-start gap-1.5">
             <ShieldAlert size={14} className="mt-0.5 shrink-0" />
@@ -147,7 +192,38 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
             </p>
           </div>
 
-          {tersaring.length === 0 ? (
+          {tab === "rekap" ? (
+            rekap.length === 0 ? <p className="py-10 text-center text-sm text-gray-400">Tidak ada jam mengajar pada rentang tanggal ini.</p> : (
+              <div className="panel overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="data-table">
+                    <thead><tr><th className="w-10">No</th><th>Nama</th><th className="text-right">Hari</th><th className="text-right">Jam Terjadwal</th><th className="text-right">Hadir</th><th className="text-right">Terlambat</th><th className="text-right">Izin</th><th className="text-right">Sakit</th><th className="text-right">Alpha</th><th className="text-right">Belum Dicatat</th><th className="text-right">Jurnal</th><th>Masuk Kelas</th></tr></thead>
+                    <tbody>
+                      {rekap.map((x, i) => (
+                        <tr key={x.userId}>
+                          <td className="angka">{i + 1}</td>
+                          <td><span className="font-medium text-gray-700">{x.nama}</span>{x.nip && <span className="block text-xs text-gray-400 angka">{x.nip}</span>}</td>
+                          <td className="angka text-right">{x.hari}</td><td className="angka text-right">{x.terjadwal}</td>
+                          <td className="angka text-right text-emerald-700">{x.hadir}</td><td className="angka text-right text-amber-700">{x.terlambat}</td>
+                          <td className="angka text-right">{x.izin}</td><td className="angka text-right">{x.sakit}</td>
+                          <td className={`angka text-right ${x.alpha ? "font-semibold text-red-600" : ""}`}>{x.alpha}{x.tugas > 0 && <span className="block text-xs font-normal text-gray-400">{x.tugas} ada tugas</span>}</td>
+                          <td className="angka text-right text-gray-500">{x.belumDicatat}</td><td className="angka text-right">{x.jurnal}</td>
+                          <td className="min-w-[7rem]">{x.persen == null ? <span className="text-xs text-gray-400">belum dicatat</span> : (
+                            <div className="flex items-center gap-2"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100"><div className={`h-full rounded-full ${x.persen >= 90 ? "bg-emerald-500" : "bg-amber-400"}`} style={{ width: `${x.persen}%` }} /></div><span className="angka text-xs text-gray-500">{x.persen}%</span></div>)}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold">
+                        <td /><td>Jumlah ({total.guru} guru)</td><td /><td className="angka text-right">{total.terjadwal}</td><td className="angka text-right">{total.hadir}</td><td className="angka text-right">{total.terlambat}</td>
+                        <td className="angka text-right">{total.izin}</td><td className="angka text-right">{total.sakit}</td><td className="angka text-right">{total.alpha}</td><td className="angka text-right">{total.belumDicatat}</td><td className="angka text-right">{total.jurnal}</td>
+                        <td className="angka text-xs">{total.persen == null ? "—" : `${total.persen}%`}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="border-t border-gray-100 px-5 py-2.5 text-xs text-gray-500">Masuk kelas = jam yang dicatat guru piket Hadir atau Terlambat, dibagi jam yang sudah dicatat. Jam yang belum dicatat piket tidak dihitung hadir maupun alpha.</p>
+              </div>
+            )
+          ) : tersaring.length === 0 ? (
             <EmptyState icon={UserCheck} title="Tidak ada yang perlu diperiksa"
               description="Pada rentang tanggal ini semua lapisan catatan saling cocok." />
           ) : (
@@ -173,7 +249,8 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
                           {b.harian ? (
                             <>
                               <Pil teks={b.harian.status.replace("_", " ")} kelas={WARNA_STATUS[b.harian.status] ?? WARNA_STATUS.HADIR} />
-                              {b.harian.jamMasuk && <span className="block text-xs text-gray-400 angka mt-1">masuk {b.harian.jamMasuk}{b.harian.jamPulang ? ` · pulang ${b.harian.jamPulang}` : ""}</span>}
+                              {b.harian.jamMasuk && <span className="block text-xs text-gray-400 angka mt-1">masuk {b.harian.jamMasuk}{b.harian.jamPulang ? ` · pulang ${b.harian.jamPulang}${b.harian.pulangPerkiraan ? " (perkiraan)" : ""}` : ""}</span>}
+                              {b.harian.sumber && <span className="block text-xs text-gray-400 mt-0.5">{LABEL_SUMBER[b.harian.sumber] ?? b.harian.sumber}</span>}
                             </>
                           ) : <span className="text-xs text-gray-300">belum dicatat</span>}
                         </td>
@@ -219,28 +296,6 @@ export default function KehadiranGuruTerpadu({ bukuPiketHref, dariAwal, sampaiAw
         </>
       )}
 
-      <div className="baris-alat mb-5 items-end">
-        <div className="alat-saring">
-          <label className="label-field">Dari tanggal</label>
-          <DatePicker value={dari} onChange={setDari} />
-        </div>
-        <div className="alat-saring">
-          <label className="label-field">Sampai tanggal</label>
-          <DatePicker value={sampai} onChange={setSampai} />
-        </div>
-        <div className="alat-saring">
-          <label className="label-field">Tampilkan</label>
-          <Select value={saring} onChange={setSaring} options={[
-            { value: "temuan", label: "Hanya yang perlu diperiksa" },
-            { value: "semua", label: "Semua baris" },
-            { value: "HADIR_TAPI_ALPHA_DI_KELAS", label: "Hadir tapi jam kosong" },
-            { value: "ALPHA_SEHARIAN_TANPA_CATATAN_TU", label: "Alpha seharian, TU kosong" },
-            { value: "TIDAK_HADIR_TAPI_ADA_JURNAL", label: "Tidak hadir tapi ada jurnal" },
-            { value: "PIKET_ALPHA_TAPI_ADA_JURNAL", label: "Piket & jurnal bertolak belakang" },
-            { value: "BLOK_BELUM_DICATAT_PIKET", label: "Jam belum dicatat piket" },
-          ]} />
-        </div>
-      </div>
     </div>
   );
 }

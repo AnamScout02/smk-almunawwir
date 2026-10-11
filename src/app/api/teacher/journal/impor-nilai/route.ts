@@ -87,6 +87,7 @@ export async function POST(req: Request) {
   const classId = ambil("classId"), subject = ambil("subject"), semester = ambil("semester"), materi = ambil("materi");
   const tanggal = ambil("date");
   const simpan = ambil("simpan") === "1";
+  const urutan = Math.min(20, Math.max(1, Math.round(Number(ambil("urutan")) || 1))); // materi ke-N hari itu
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return Response.json({ error: "Pilih berkas Excel hasil templat dulu." }, { status: 400 });
   if (file.size > 5 * 1024 * 1024) return Response.json({ error: "Berkas terlalu besar (maks 5 MB)." }, { status: 400 });
@@ -97,9 +98,10 @@ export async function POST(req: Request) {
   const date = new Date(tanggal);
   const nextDay = new Date(date.getTime() + 86400000);
   const jurnalLama = await prisma.teachingJournal.findFirst({
-    where: { teacherId: akses.teacherId, classId, subject, date: { gte: date, lt: nextDay } },
+    where: { teacherId: akses.teacherId, classId, subject, date: { gte: date, lt: nextDay }, urutan },
     include: { entries: true },
   });
+  if (!jurnalLama && urutan > 1) return Response.json({ error: "Simpan dulu materi itu di halaman Jurnal, baru impor nilainya." }, { status: 400 });
   const terkunci = await pesanNilaiTerkunci(classId, [semester, jurnalLama?.semester ?? ""]);
   if (terkunci) return Response.json({ error: terkunci }, { status: 409 });
 
@@ -160,7 +162,7 @@ export async function POST(req: Request) {
     } else {
       await tx.teachingJournal.create({
         data: {
-          teacherId: akses.teacherId, classId, subject, date, semester, materi,
+          teacherId: akses.teacherId, classId, subject, date, semester, materi, urutan,
           entries: { create: sah.map(h => ({ studentId: h.studentId!, attendanceStatus: null, scorePengetahuan: h.p, scoreKeterampilan: h.k, catatan: h.catatan || null })) },
         },
       });

@@ -75,10 +75,8 @@ export const menuGroupsTas = [
   {
     label: "Kesiswaan & BK",
     items: [
-      { href: "/dashboard/admin/ekstrakurikuler", label: "Ekstrakurikuler", icon: Flag,
-        show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
-      { href: "/dashboard/admin/absen-ekstra", label: "Absen Ekstra", icon: CheckSquare,
-        show: (j: string[]) => j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
+      { href: "/pusat-ekstra", label: "Pusat Ekstrakurikuler", icon: Flag,
+        show: (j: string[], full: boolean) => full || j.includes("Koordinator Ekstrakurikuler") || j.some(n => n.startsWith("Pembina ")) },
       { href: "/dashboard/admin/uks", label: "UKS", icon: HeartPulse, show: (j: string[]) => j.includes("Kepala UKS") },
       { href: "/dashboard/admin/bantuan-siswa", label: "Bantuan & Beasiswa", icon: HandCoins, show: (_j: string[], full: boolean) => full },
     ],

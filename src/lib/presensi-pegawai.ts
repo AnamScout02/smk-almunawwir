@@ -30,19 +30,29 @@ export async function catatPresensiPegawai(userId: string, metode: "QR" | "KARTU
   const ada = await prisma.staffAttendance.findUnique({ where: { userId_tanggal: { userId, tanggal: h.awal } } });
   if (!ada) {
     await prisma.staffAttendance.create({
-      data: { userId, tanggal: h.awal, status: "HADIR", jamMasuk: jam, keterangan: metode === "QR" ? "Pindai QR mandiri" : metode === "KARTU" ? "Pindai kartu" : "Hadir kegiatan sekolah" },
+      data: { userId, tanggal: h.awal, status: "HADIR", jamMasuk: jam, sumber: metode, keterangan: metode === "QR" ? "Pindai QR mandiri" : metode === "KARTU" ? "Pindai kartu" : "Hadir kegiatan sekolah" },
     });
+    return { hasil: "MASUK", jam };
+  }
+  // DINAS LUAR dari Surat Tugas (dibuat sistem, belum disentuh TU) tidak mengunci pindaian: banyak tugas luar hanya beberapa
+  // jam, dan guru yang tetap datang ke sekolah harus bisa tercatat HADIR. Cuti dan catatan TU tetap terkunci.
+  if (ada.sumber === "SURAT_TUGAS" && !ada.recordedById && ada.status === "DINAS_LUAR") {
+    await prisma.staffAttendance.update({ where: { id: ada.id }, data: { status: "HADIR", jamMasuk: jam, sumber: metode, keterangan: `${ada.keterangan ?? "Surat Tugas"} · hadir di sekolah (pindaian)` } });
     return { hasil: "MASUK", jam };
   }
   if (STATUS_TETAP.includes(ada.status)) return { hasil: "TERKUNCI", status: ada.status };
   if (!ada.jamMasuk) {
-    await prisma.staffAttendance.update({ where: { id: ada.id }, data: { jamMasuk: jam } });
+    // Baris TURUNAN (dibuat sistem dari catatan piket/jurnal) dikuatkan oleh pindaian orangnya sendiri: asalnya naik
+    // menjadi pindaian. Baris yang ditetapkan TU tetap bertanda TU — hanya jam masuknya yang dilengkapi.
+    const turunan = ada.sumber === "PIKET" || ada.sumber === "JURNAL";
+    await prisma.staffAttendance.update({ where: { id: ada.id }, data: { jamMasuk: jam, ...(turunan ? { sumber: metode, keterangan: `${ada.keterangan ?? ""} · dikuatkan pindaian`.replace(/^ · /, "") } : {}) } });
     return { hasil: "MASUK", jam };
   }
   const [jm, mm] = ada.jamMasuk.split(":").map(Number);
   const selisih = h.menit - ((jm || 0) * 60 + (mm || 0));
-  if (!ada.jamPulang && selisih >= JEDA_PULANG_MENIT) {
-    await prisma.staffAttendance.update({ where: { id: ada.id }, data: { jamPulang: jam } });
+  // Jam pulang PERKIRAAN (diisi sistem dari akhir jam mengajar) boleh diganti pindaian sungguhan.
+  if ((!ada.jamPulang || ada.pulangPerkiraan) && selisih >= JEDA_PULANG_MENIT) {
+    await prisma.staffAttendance.update({ where: { id: ada.id }, data: { jamPulang: jam, pulangPerkiraan: false } });
     return { hasil: "PULANG", jam };
   }
   return { hasil: "SUDAH_ADA", jamMasuk: ada.jamMasuk, jamPulang: ada.jamPulang };
