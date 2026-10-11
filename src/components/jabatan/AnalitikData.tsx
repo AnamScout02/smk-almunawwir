@@ -75,7 +75,7 @@ export default async function AnalitikData({ bagian, dasar, bolehGuru, bolehAtur
         {p && <>
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             <p><b>Ini proyeksi, bukan ramalan terlatih.</b> Sekolah belum punya riwayat siapa yang akhirnya tinggal kelas atau keluar, jadi belum ada yang bisa dipakai untuk melatih dan menguji prediksi. Yang dihitung: bila pola 4 pekan terakhir berlanjut sampai akhir semester ({p.sisaHari} hari sekolah lagi), siapa yang akan melewati batas di bawah ini.</p>
-            <p className="mt-1">Batas yang dipakai: kehadiran minimal <b>{p.kriteria.minHadir}%</b>, alpha paling banyak <b>{p.kriteria.maksAlpha}</b> kali, mapel di bawah KKM ({p.kkm}) paling banyak <b>{p.kriteria.maksDibawahKkm}</b>. {p.ditetapkan ? "" : <b>Angka ini bawaan, belum ditetapkan sekolah.</b>}</p>
+            <p className="mt-1">Batas yang dipakai: kehadiran minimal <b>{p.kriteria.minHadir}%</b>, {p.kriteria.maksAlpha == null ? <>batas alpha tidak dipakai (sudah tercakup kehadiran & poin),</> : <>alpha paling banyak <b>{p.kriteria.maksAlpha}</b> kali,</>} mapel di bawah KKM ({p.kkm}) paling banyak <b>{p.kriteria.maksDibawahKkm}</b>. {p.ditetapkan ? "" : <b>Angka ini bawaan, belum ditetapkan sekolah.</b>}</p>
           </div>
           {bolehAtur && <KriteriaNaikForm awal={p.kriteria} />}
           <section className="panel overflow-hidden">

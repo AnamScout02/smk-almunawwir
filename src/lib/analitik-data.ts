@@ -148,13 +148,14 @@ export async function polaKetidakhadiran(opsi: { guru: boolean }) {
 }
 
 /* ─────────────────────────── 3. PROYEKSI KENAIKAN ─────────────────────────── */
-export interface KriteriaNaik { minHadir: number; maksAlpha: number; maksDibawahKkm: number }
+/** `maksAlpha: null` = batas alpha TIDAK dipakai (keputusan sekolah 11 Okt 2026: cukup kehadiran, nilai, dan poin). */
+export interface KriteriaNaik { minHadir: number; maksAlpha: number | null; maksDibawahKkm: number }
 /** Bawaan = TITIK AWAL, bukan aturan sekolah — diubah di halamannya (SiteSetting `akademik.kriteriaNaik`). */
 export const KRITERIA_BAWAAN: KriteriaNaik = { minHadir: 80, maksAlpha: 12, maksDibawahKkm: 3 };
 export async function bacaKriteria(): Promise<{ kriteria: KriteriaNaik; kkm: number; ditetapkan: boolean }> {
   const s = await getSettings(["akademik.kriteriaNaik", "akademik.kkmDefault"]).catch(() => ({} as Record<string, string>));
   let k = KRITERIA_BAWAAN, ditetapkan = false;
-  try { const o = JSON.parse(s["akademik.kriteriaNaik"] || "null"); if (o && Number.isFinite(o.minHadir)) { k = { minHadir: +o.minHadir, maksAlpha: +o.maksAlpha, maksDibawahKkm: +o.maksDibawahKkm }; ditetapkan = true; } } catch { /* bawaan */ }
+  try { const o = JSON.parse(s["akademik.kriteriaNaik"] || "null"); if (o && Number.isFinite(o.minHadir)) { k = { minHadir: +o.minHadir, maksAlpha: o.maksAlpha == null ? null : +o.maksAlpha, maksDibawahKkm: +o.maksDibawahKkm }; ditetapkan = true; } } catch { /* bawaan */ }
   const kkm = Number(s["akademik.kkmDefault"]);
   return { kriteria: k, kkm: Number.isFinite(kkm) && kkm > 0 ? kkm : 75, ditetapkan };
 }
@@ -198,7 +199,7 @@ export async function proyeksiKenaikan(classIds?: string[]) {
     // Faktor, masing-masing dengan besar pengaruhnya — yang terbesar disebut lebih dulu.
     const faktor: { nama: string; bobot: number; ket: string }[] = [];
     if (proyHadir != null && proyHadir < kriteria.minHadir) faktor.push({ nama: "Kehadiran", bobot: Math.min(5, 1 + (kriteria.minHadir - proyHadir) / 5), ket: `diperkirakan ${proyHadir}% di akhir semester (sekarang ${persen}%), batasnya ${kriteria.minHadir}%` });
-    if (proyAlpha > kriteria.maksAlpha) faktor.push({ nama: "Alpha", bobot: Math.min(5, 1 + (proyAlpha - kriteria.maksAlpha) / 4), ket: `sudah ${alpha} kali, diperkirakan ${proyAlpha} di akhir semester, batasnya ${kriteria.maksAlpha}` });
+    if (kriteria.maksAlpha != null && proyAlpha > kriteria.maksAlpha) faktor.push({ nama: "Alpha", bobot: Math.min(5, 1 + (proyAlpha - kriteria.maksAlpha) / 4), ket: `sudah ${alpha} kali, diperkirakan ${proyAlpha} di akhir semester, batasnya ${kriteria.maksAlpha}` });
     if (dibawah.length > kriteria.maksDibawahKkm) faktor.push({ nama: "Nilai", bobot: Math.min(5, 1 + (dibawah.length - kriteria.maksDibawahKkm)), ket: `${dibawah.length} dari ${mapel.length} mapel bernilai di bawah KKM ${kkm} (batasnya ${kriteria.maksDibawahKkm}): ${dibawah.slice(0, 4).map(m => `${m.nama} ${m.rata}`).join(", ")}${dibawah.length > 4 ? "…" : ""}` });
     else if (dibawah.length > 0 && dibawah.length === kriteria.maksDibawahKkm) faktor.push({ nama: "Nilai", bobot: 1, ket: `${dibawah.length} mapel di bawah KKM ${kkm} — tepat di batas` });
     if (poin >= 50) faktor.push({ nama: "Poin", bobot: poin >= 75 ? 4 : 2, ket: `${poin} poin (${levelPoin(poin)})` });

@@ -2745,6 +2745,8 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
      - Tiap pemeriksaan punya jumlah data minimum; di bawah itu diam. Akses: pimpinan (`bolehPantauGuru`) semua bagian;
        Wakil Kepala Kesiswaan & Guru BK hanya bagian siswa (tanpa kejanggalan nilai & pola guru).
      - Peringatan Dini (#32) tetap daftar kerja harian 30 hari; halaman ini melihat sampai akhir semester.
+     - **Batas sekolah per 11 Okt 2026: kehadiran minimal 85%, batas alpha TIDAK dipakai** (`maksAlpha: null` — isian dikosongkan),
+       mapel di bawah KKM masih angka bawaan 3. Poin tetap faktor sendiri (≥50).
 
 170. **Siswa "aktif" yang diduga sudah tidak bersekolah, SSH publik, dan pengukur jalur :3000 (11 Oktober 2026).**
      - **`siswaMenghilang`** (src/lib/siswa-menghilang.ts) → bagian Meja Kerja TU "Siswa aktif yang diduga sudah tidak
@@ -2754,10 +2756,15 @@ Tidak pakai sidebar — standalone header dengan icon Rapor, Profil, Logout.
        `GET /api/admin/mutasi-siswa?siswa=<id>`). Status TIDAK pernah diubah otomatis — petugas memastikan ke wali kelas dulu.
      - **SSH server dari internet dibatasi di ROUTER**: aturan dst-nat port 2233 kini ber-`src-address-list=SSH-SITUS-IZIN`
        (blok ISP sekolah 103.194.175.0/24 + jaringan sekolah). `sshd` sudah kunci-saja sejak awal. Mengubah/melepas:
-       `node /root/pantau/ssh-batasi.mjs [buka]`. Aturan srcnat "Masquerade SSH SMK Almunawwir" membuat SEMUA sambungan SSH
+       `node /root/pantau/ssh-batasi.mjs [buka]`. Panel web Proxmox (8006) & SSH host (8007) dibatasi daftar yang sama: `node /root/pantau/proxmox-batasi.mjs [buka]`. Sejak 11 Okt 2026 malam keduanya DIMATIKAN (`proxmox-tutup.mjs [buka]`): panel dibuka lewat Tailscale `https://172.15.0.2:8006` — server situs mengiklankan rute `172.15.0.2/32` (`tailscale set --advertise-routes`, disetujui di konsol admin). Aturan srcnat "Masquerade SSH SMK Almunawwir" membuat SEMUA sambungan SSH
        tampak dari 172.15.0.1 di log server — asal sebenarnya hanya terlihat di tabel sambungan router.
-       **Pengelola masuk dari luar sekolah (103.194.175.x), bukan lewat Tailscale** (tailnet hanya berisi server ini) —
-       jangan menutup aturan itu sepenuhnya sebelum laptop pengelola bergabung ke tailnet dan `ssh root@100.102.232.53` terbukti.
+       **Sejak 11 Okt 2026 sore port 2233 DIMATIKAN** setelah laptop pengelola (`desktop-lm9qa2o`) bergabung ke tailnet dan
+       `ssh root@100.102.232.53` terbukti. Masuk server = lewat Tailscale (tampak dari 127.0.0.1 di log sshd). Darurat:
+       `node /root/pantau/ssh-tutup.mjs buka` (dijalankan dari sesi Tailscale atau konsol Proxmox).
+     - **Port publik ONLYOFFICE `:8090` DITUTUP** (aturan dst-nat dimatikan; `node /root/pantau/onlyoffice-tutup.mjs [buka]`) —
+       editor hanya lewat `office.smkalmunawwiriibs.sch.id`. Blok itu di Caddyfile WAJIB `header_up -Via`: nginx ONLYOFFICE
+       tidak mengirim berkas `.gz` siap pakainya ke permintaan ber-header Via (`gzip_proxied off`), sehingga editor terunduh
+       29 MB alih-alih 4,7 MB dan "Memuat dokumen" terasa macet dari luar sekolah. Jangan diganti `encode` (#97).
      - `/root/pantau/ukur-3000.mjs` (cron 5 menit, hanya 12–17 Okt 2026 jam 06–17 WIB) mencatat pemakaian jalur publik
        :3000 ke `/root/pantau/jalur-3000.log`. Hapus baris cron-nya setelah keputusan diambil.
      - `/tmp` (termasuk scratchpad & alat uji) HILANG saat server hidup ulang; skrip yang harus bertahan taruh di `/root/pantau`.
